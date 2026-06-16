@@ -1,0 +1,47 @@
+{
+  "font": {
+    "family": {
+      "$type": "font-family",
+      "sans":  { "$value": ["Inter", "system-ui", "-apple-system", "sans-serif"],   "$description": "Primary UI typeface" },
+      "serif": { "$value": ["Georgia", "Times New Roman", "serif"],                  "$description": "Serif — long-form editorial" },
+      "mono":  { "$value": ["JetBrains Mono", "Fira Code", "Consolas", "monospace"], "$description": "Code, technical values" }
+    },
+    "weight": {
+      "$type": "font-weight",
+      "regular":   { "$value": 400, "$description": "Body text" },
+      "medium":    { "$value": 500, "$description": "Labels, button text" },
+      "semibold":  { "$value": 600, "$description": "Subheadings, emphasis" },
+      "bold":      { "$value": 700, "$description": "Headings" }
+    },
+    "size": {
+      "$type": "dimension",
+      "$description": "Type size scale. These are raw values — reference semantic type tokens in components.",
+      "xs":   { "$value": { "value": 11, "unit": "px" }, "$description": "11px — captions, labels" },
+      "sm":   { "$value": { "value": 13, "unit": "px" }, "$description": "13px — helper text, metadata" },
+      "base": { "$value": { "value": 15, "unit": "px" }, "$description": "15px — body copy" },
+      "md":   { "$value": { "value": 16, "unit": "px" }, "$description": "16px — large body, small heading" },
+      "lg":   { "$value": { "value": 18, "unit": "px" }, "$description": "18px — h5, section intro" },
+      "xl":   { "$value": { "value": 20, "unit": "px" }, "$description": "20px — h4" },
+      "2xl":  { "$value": { "value": 24, "unit": "px" }, "$description": "24px — h3" },
+      "3xl":  { "$value": { "value": 30, "unit": "px" }, "$description": "30px — h2" },
+      "4xl":  { "$value": { "value": 36, "unit": "px" }, "$description": "36px — h1" },
+      "5xl":  { "$value": { "value": 48, "unit": "px" }, "$description": "48px — display" },
+      "6xl":  { "$value": { "value": 60, "unit": "px" }, "$description": "60px — hero" }
+    },
+    "line-height": {
+      "$type": "number",
+      "tight":   { "$value": 1.15, "$description": "Headings, display text" },
+      "snug":    { "$value": 1.3,  "$description": "Subheadings, card titles" },
+      "normal":  { "$value": 1.5,  "$description": "Body text default" },
+      "relaxed": { "$value": 1.6,  "$description": "Long-form prose" },
+      "loose":   { "$value": 1.75, "$description": "Comfortable reading, help text" }
+    },
+    "letter-spacing": {
+      "$type": "dimension",
+      "tight":   { "$value": { "value": -0.03, "unit": "em" }, "$description": "Display, large headings" },
+      "normal":  { "$value": { "value": 0,     "unit": "em" }, "$description": "Default" },
+      "wide":    { "$value": { "value": 0.03,  "unit": "em" }, "$description": "Uppercase labels, badges" },
+      "wider":   { "$value": { "value": 0.06,  "unit": "em" }, "$description": "Allcaps labels" }
+    }
+  }
+}

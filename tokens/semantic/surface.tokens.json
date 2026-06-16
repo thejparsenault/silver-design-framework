@@ -1,0 +1,45 @@
+{
+  "surface": {
+    "$description": "Surface semantic tokens. These define what backgrounds exist in the system. Always use these — never raw color scale values.",
+    "page": {
+      "$type": "color",
+      "$description": "Page/body background — the lowest layer",
+      "$value": "{color.neutral.25}"
+    },
+    "base": {
+      "$type": "color",
+      "$description": "Primary content surface — cards, panels, the main content area",
+      "$value": "{color.neutral.0}"
+    },
+    "raised": {
+      "$type": "color",
+      "$description": "Elevated surface — dropdowns, popovers, tooltips",
+      "$value": "{color.neutral.0}"
+    },
+    "overlay": {
+      "$type": "color",
+      "$description": "Modal/dialog surface",
+      "$value": "{color.neutral.0}"
+    },
+    "sunken": {
+      "$type": "color",
+      "$description": "Recessed input areas, code blocks, inset sections",
+      "$value": "{color.neutral.50}"
+    },
+    "hover": {
+      "$type": "color",
+      "$description": "Hover state for interactive list items, menu items",
+      "$value": "{color.neutral.50}"
+    },
+    "selected": {
+      "$type": "color",
+      "$description": "Selected/active row or list item",
+      "$value": "{color.blue.50}"
+    },
+    "disabled": {
+      "$type": "color",
+      "$description": "Disabled control background",
+      "$value": "{color.neutral.50}"
+    }
+  }
+}

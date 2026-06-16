@@ -1,0 +1,163 @@
+@layer components {
+  /* ============================================================
+   * ds-field — form field wrapper (label + input + hint/error)
+   * HTML contract: <div class="ds-field"> containing label, input, hint
+   *
+   * ds-input — text input / textarea
+   * HTML contract: <input class="ds-input" type="text">
+   * ============================================================ */
+
+  /* --- Field layout --- */
+
+  .ds-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-field-label-gap);
+  }
+
+  .ds-field + .ds-field {
+    margin-top: var(--ds-field-stack-gap);
+  }
+
+  /* --- Label --- */
+
+  .ds-field-label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ds-space-4);
+    font-size: var(--ds-field-label-font-size);
+    font-weight: var(--ds-field-label-font-weight);
+    color: var(--ds-text-primary);
+    line-height: 1.2;
+    cursor: default;
+  }
+
+  .ds-field-label[data-required]::after {
+    content: "*";
+    color: var(--ds-feedback-danger-text);
+    margin-left: 2px;
+  }
+
+  .ds-field-label[data-optional]::after {
+    content: "(optional)";
+    font-size: var(--ds-field-hint-font-size);
+    font-weight: 400;
+    color: var(--ds-text-muted);
+    margin-left: var(--ds-space-4);
+  }
+
+  /* --- Input --- */
+
+  .ds-input {
+    display: block;
+    width: 100%;
+    min-height: var(--ds-field-input-height-md);
+    padding-inline: var(--ds-field-input-padding-x);
+    padding-block: 0;
+
+    font-size: var(--ds-field-input-font-size);
+    line-height: 1.5;
+    color: var(--ds-text-primary);
+
+    background-color: var(--ds-surface-base);
+    border: var(--ds-field-input-border-width) solid var(--ds-border-default);
+    border-radius: var(--ds-field-input-radius);
+
+    transition:
+      border-color var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out),
+      box-shadow   var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out);
+
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .ds-input::placeholder {
+    color: var(--ds-text-muted);
+  }
+
+  .ds-input:hover:not(:disabled) {
+    border-color: var(--ds-border-strong);
+  }
+
+  .ds-input:focus {
+    outline: none;
+    border-color: var(--ds-focus-ring-color);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) color-mix(in oklch, var(--ds-focus-ring-color), transparent 75%);
+  }
+
+  /* Sizes */
+  .ds-input[data-size="sm"] {
+    min-height: var(--ds-field-input-height-sm);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  .ds-input[data-size="lg"] {
+    min-height: var(--ds-field-input-height-lg);
+  }
+
+  /* Textarea — grows vertically */
+  textarea.ds-input {
+    min-height: calc(var(--ds-field-input-height-md) * 2.5);
+    padding-block: var(--ds-field-input-padding-y);
+    resize: vertical;
+  }
+
+  /* --- States --- */
+
+  .ds-input:disabled,
+  .ds-input[aria-disabled="true"] {
+    background-color: var(--ds-surface-disabled);
+    color: var(--ds-text-disabled);
+    border-color: var(--ds-border-subtle);
+    cursor: not-allowed;
+  }
+
+  .ds-field[data-state="error"] .ds-input,
+  .ds-input[aria-invalid="true"] {
+    border-color: var(--ds-border-danger);
+  }
+
+  .ds-field[data-state="error"] .ds-input:focus,
+  .ds-input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) color-mix(in oklch, var(--ds-border-danger), transparent 75%);
+  }
+
+  .ds-field[data-state="success"] .ds-input {
+    border-color: var(--ds-border-success);
+  }
+
+  /* --- Hint / Error text --- */
+
+  .ds-field-hint {
+    font-size: var(--ds-field-hint-font-size);
+    color: var(--ds-text-muted);
+    line-height: 1.4;
+    margin-top: var(--ds-field-hint-gap);
+  }
+
+  .ds-field-error {
+    font-size: var(--ds-field-hint-font-size);
+    color: var(--ds-feedback-danger-text);
+    line-height: 1.4;
+    margin-top: var(--ds-field-hint-gap);
+  }
+
+  /* --- Input group (input + inline button/addon) --- */
+
+  .ds-input-group {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .ds-input-group .ds-input {
+    flex: 1;
+    border-right-width: 0;
+    border-radius: var(--ds-field-input-radius) 0 0 var(--ds-field-input-radius);
+    min-width: 0;
+  }
+
+  .ds-input-group .ds-button {
+    border-radius: 0 var(--ds-field-input-radius) var(--ds-field-input-radius) 0;
+    flex-shrink: 0;
+  }
+}

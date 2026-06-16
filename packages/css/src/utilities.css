@@ -1,0 +1,47 @@
+/**
+ * Utilities layer — intentionally last in the cascade.
+ * These classes override component styles by layer position, not by specificity tricks.
+ * Escape-hatch classes live here. All uses in product code should be flagged for review.
+ */
+@layer utilities {
+  /* Layout utilities consuming system tokens */
+  .ds-stack       { display: flex; flex-direction: column; }
+  .ds-stack-sm    { gap: var(--ds-space-8); }
+  .ds-stack-md    { gap: var(--ds-space-16); }
+  .ds-stack-lg    { gap: var(--ds-space-24); }
+  .ds-stack-xl    { gap: var(--ds-space-32); }
+
+  .ds-inline      { display: flex; flex-direction: row; align-items: center; }
+  .ds-inline-sm   { gap: var(--ds-space-8); }
+  .ds-inline-md   { gap: var(--ds-space-16); }
+  .ds-inline-lg   { gap: var(--ds-space-24); }
+
+  .ds-container   { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: var(--ds-space-24); }
+  .ds-container-sm  { max-width: 40rem; }
+  .ds-container-prose { max-width: 65ch; }
+
+  /* Visibility */
+  .ds-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Text utilities */
+  .ds-text-primary   { color: var(--ds-text-primary); }
+  .ds-text-secondary { color: var(--ds-text-secondary); }
+  .ds-text-muted     { color: var(--ds-text-muted); }
+  .ds-text-danger    { color: var(--ds-feedback-danger-text); }
+  .ds-text-success   { color: var(--ds-feedback-success-text); }
+
+  /* Escape hatch marker — use sparingly, flag in code review */
+  .ds-escape {
+    /* Intentionally empty — presence of this class is flagged by the conformance checker */
+  }
+}

@@ -1,0 +1,198 @@
+@layer base {
+  :root {
+    font-family: var(--ds-font-family-sans);
+    font-size: var(--ds-font-size-base);
+    line-height: var(--ds-font-line-height-normal);
+    color: var(--ds-text-primary);
+    background-color: var(--ds-surface-page);
+  }
+
+  /* Scheme switching: OS preference establishes default; [data-scheme] overrides */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ds-surface-page:    oklch(0.12  0    0  );
+      --ds-surface-base:    oklch(0.16  0    0  );
+      --ds-surface-raised:  oklch(0.20  0    0  );
+      --ds-surface-overlay: oklch(0.20  0    0  );
+      --ds-surface-sunken:  oklch(0.10  0    0  );
+      --ds-surface-hover:   oklch(0.20  0    0  );
+
+      --ds-text-primary:    oklch(0.95  0    0  );
+      --ds-text-secondary:  oklch(0.75  0    0  );
+      --ds-text-muted:      oklch(0.55  0    0  );
+      --ds-text-disabled:   oklch(0.40  0    0  );
+
+      --ds-border-default:  oklch(0.28  0    0  );
+      --ds-border-strong:   oklch(0.42  0    0  );
+      --ds-border-subtle:   oklch(0.22  0    0  );
+    }
+  }
+
+  /* Explicit scheme overrides — always win */
+  [data-scheme="light"] {
+    --ds-surface-page:    oklch(0.985 0    0  );
+    --ds-surface-base:    oklch(1     0    0  );
+    --ds-surface-raised:  oklch(1     0    0  );
+    --ds-surface-overlay: oklch(1     0    0  );
+    --ds-surface-sunken:  oklch(0.962 0    0  );
+    --ds-surface-hover:   oklch(0.962 0    0  );
+
+    --ds-text-primary:    oklch(0.167 0    0  );
+    --ds-text-secondary:  oklch(0.381 0    0  );
+    --ds-text-muted:      oklch(0.622 0    0  );
+    --ds-text-disabled:   oklch(0.756 0    0  );
+
+    --ds-border-default:  oklch(0.863 0    0  );
+    --ds-border-strong:   oklch(0.622 0    0  );
+    --ds-border-subtle:   oklch(0.922 0    0  );
+  }
+
+  [data-scheme="dark"] {
+    --ds-surface-page:    oklch(0.12  0    0  );
+    --ds-surface-base:    oklch(0.16  0    0  );
+    --ds-surface-raised:  oklch(0.20  0    0  );
+    --ds-surface-overlay: oklch(0.20  0    0  );
+    --ds-surface-sunken:  oklch(0.10  0    0  );
+    --ds-surface-hover:   oklch(0.20  0    0  );
+
+    --ds-text-primary:    oklch(0.95  0    0  );
+    --ds-text-secondary:  oklch(0.75  0    0  );
+    --ds-text-muted:      oklch(0.55  0    0  );
+    --ds-text-disabled:   oklch(0.40  0    0  );
+
+    --ds-border-default:  oklch(0.28  0    0  );
+    --ds-border-strong:   oklch(0.42  0    0  );
+    --ds-border-subtle:   oklch(0.22  0    0  );
+  }
+
+  /* ─── Surface modes ────────────────────────────────────────────────────────
+   * Scoped to the element they're set on and all descendants. Safe to place
+   * on any container — components inside inherit the remapped tokens.
+   *
+   * Usage: <section data-mode="inverted"> or <body data-mode="brand">
+   * Composable with data-scheme: [data-scheme="dark"] [data-mode="subtle"] { … }
+   * ──────────────────────────────────────────────────────────────────────── */
+
+  /* subtle — slight neutral tint; visual rhythm break without full inversion */
+  [data-mode="subtle"] {
+    --ds-surface-page:    oklch(0.950 0 0);
+    --ds-surface-base:    oklch(0.975 0 0);
+    --ds-surface-raised:  oklch(1.000 0 0);
+    --ds-surface-sunken:  oklch(0.925 0 0);
+    --ds-surface-hover:   oklch(0.925 0 0);
+  }
+
+  /* inverted — always dark surface regardless of scheme; for alternating
+   * landing page sections, dark hero panels, footer areas */
+  [data-mode="inverted"] {
+    --ds-surface-page:    oklch(0.150 0 0);
+    --ds-surface-base:    oklch(0.200 0 0);
+    --ds-surface-raised:  oklch(0.250 0 0);
+    --ds-surface-sunken:  oklch(0.100 0 0);
+    --ds-surface-hover:   oklch(0.250 0 0);
+
+    --ds-text-primary:    oklch(0.975 0 0);
+    --ds-text-secondary:  oklch(0.800 0 0);
+    --ds-text-muted:      oklch(0.600 0 0);
+    --ds-text-disabled:   oklch(0.450 0 0);
+
+    --ds-border-default:  oklch(0.300 0 0);
+    --ds-border-strong:   oklch(0.450 0 0);
+    --ds-border-subtle:   oklch(0.220 0 0);
+  }
+
+  /* brand — primary brand color fill; hero sections, feature highlights */
+  [data-mode="brand"] {
+    --ds-surface-page:    oklch(0.500 0.200 250);
+    --ds-surface-base:    oklch(0.450 0.195 250);
+    --ds-surface-raised:  oklch(0.550 0.190 250);
+    --ds-surface-sunken:  oklch(0.400 0.185 250);
+    --ds-surface-hover:   oklch(0.550 0.190 250);
+
+    --ds-text-primary:    oklch(0.975 0 0);
+    --ds-text-secondary:  oklch(0.875 0.055 250);
+    --ds-text-muted:      oklch(0.750 0.080 250);
+    --ds-text-disabled:   oklch(0.650 0.060 250);
+    --ds-text-link:       oklch(0.950 0 0);
+    --ds-text-link-hover: oklch(1.000 0 0);
+
+    --ds-border-default:  oklch(0.580 0.170 250);
+    --ds-border-strong:   oklch(0.680 0.130 250);
+    --ds-border-subtle:   oklch(0.520 0.190 250);
+  }
+
+  /* tinted — soft brand tint; mid-page highlight, feature list backgrounds */
+  [data-mode="tinted"] {
+    --ds-surface-page:    oklch(0.950 0.020 250);
+    --ds-surface-base:    oklch(0.975 0.010 250);
+    --ds-surface-raised:  oklch(1.000 0 0);
+    --ds-surface-sunken:  oklch(0.925 0.025 250);
+    --ds-surface-hover:   oklch(0.925 0.025 250);
+  }
+
+  /* Functional modes — remap action tokens for contextual UI regions */
+  [data-mode="error"],
+  [data-mode="danger"] {
+    --ds-action-primary-bg: var(--ds-action-destructive-bg);
+    --ds-action-primary-fg: var(--ds-action-destructive-fg);
+    --ds-border-focus:      var(--ds-border-danger);
+  }
+
+  [data-mode="success"] {
+    --ds-action-primary-bg: oklch(0.550 0.181 150);
+    --ds-action-primary-fg: oklch(1 0 0);
+  }
+
+  [data-mode="warning"] {
+    --ds-action-primary-bg: oklch(0.550 0.182 75);
+    --ds-action-primary-fg: oklch(0.100 0 0);
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: var(--ds-font-line-height-tight);
+    letter-spacing: var(--ds-font-letter-spacing-tight);
+    color: var(--ds-text-primary);
+    font-weight: var(--ds-font-weight-bold);
+  }
+
+  h1 { font-size: var(--ds-font-size-4xl); }
+  h2 { font-size: var(--ds-font-size-3xl); }
+  h3 { font-size: var(--ds-font-size-2xl); }
+  h4 { font-size: var(--ds-font-size-xl); }
+  h5 { font-size: var(--ds-font-size-lg); }
+  h6 { font-size: var(--ds-font-size-md); }
+
+  p {
+    color: var(--ds-text-secondary);
+    max-width: 65ch;
+  }
+
+  a {
+    color: var(--ds-text-link);
+    text-underline-offset: 0.2em;
+  }
+
+  a:hover {
+    color: var(--ds-text-link-hover);
+    text-decoration: underline;
+  }
+
+  :focus-visible {
+    outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+    outline-offset: var(--ds-focus-ring-offset);
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--ds-font-family-mono);
+    font-size: 0.9em;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--ds-border-subtle);
+  }
+}
