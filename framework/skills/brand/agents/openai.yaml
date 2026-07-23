@@ -1,0 +1,4 @@
+interface:
+  display_name: "Define Brand"
+  short_description: "Define or refine product brand guidance"
+  default_prompt: "Use $brand to define or refine this product’s brand guidance."

@@ -14,6 +14,7 @@ const schemaNames = [
   "lock.schema.json",
   "manifest.schema.json",
   "permission-policy.schema.json",
+  "prototype.schema.json",
   "skill.schema.json",
 ];
 

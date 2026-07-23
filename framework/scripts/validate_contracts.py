@@ -130,11 +130,29 @@ def main() -> int:
         if expected and integrity(managed_path) != expected:
             raise ValueError(f"Managed-file integrity is stale: {managed['path']}")
 
-    validate(
-        load_yaml(ROOT / "fixtures" / "contracts" / "valid" / "skill-brand.yaml"),
-        "skill.schema.json",
-        "fixtures/contracts/valid/skill-brand.yaml",
+    valid_contract_examples = 0
+    skill_contract_paths = [
+        ROOT / "fixtures" / "contracts" / "valid" / "skill-brand.yaml",
+        *sorted((ROOT / "framework" / "skills").glob("*/skill.yaml")),
+    ]
+    for skill_contract_path in skill_contract_paths:
+        validate(
+            load_yaml(skill_contract_path),
+            "skill.schema.json",
+            str(skill_contract_path.relative_to(ROOT)),
+        )
+        valid_contract_examples += 1
+
+    prototype_contract_path = (
+        ROOT / "fixtures" / "contracts" / "valid" / "prototype-constrained.yaml"
     )
+    validate(
+        load_yaml(prototype_contract_path),
+        "prototype.schema.json",
+        str(prototype_contract_path.relative_to(ROOT)),
+    )
+    valid_contract_examples += 1
+
     check_result = load_json(
         ROOT
         / "fixtures"
@@ -147,6 +165,7 @@ def main() -> int:
         "check-result.schema.json",
         "fixtures/contracts/valid/check-result-not-run.json",
     )
+    valid_contract_examples += 1
     if any(
         finding["status"] != check_result["status"]
         for finding in check_result["findings"]
@@ -196,7 +215,7 @@ def main() -> int:
         "Validated "
         f"{len(schemas)} schemas, "
         f"{len(manifest['artifacts'])} mapped artifacts, "
-        "2 valid contract examples, and "
+        f"{valid_contract_examples} valid contract examples, and "
         f"{len(negative_cases)} negative fixtures."
     )
     return 0

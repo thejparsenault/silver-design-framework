@@ -1,0 +1,70 @@
+schema: design-practice/skill/v1
+id: prototype
+version: 0.1.0-dev
+summary: Create or revise a prototype under an explicit constraint profile.
+context_budget: medium
+requires:
+  artifacts:
+    - kind: product
+      required: true
+      role: canonical
+    - kind: design-system
+      required: true
+      role: canonical
+    - kind: component-catalog
+      required: false
+      role: canonical
+    - kind: research
+      required: false
+    - kind: testing
+      required: false
+  capabilities:
+    - repository
+    - prototype
+    - browser
+access:
+  read:
+    - scope: product
+      paths:
+        - design/**
+        - reference-system/**
+    - scope: prototype
+      paths:
+        - prototypes/**
+  write:
+    - scope: prototype
+      paths:
+        - prototypes/**
+produces:
+  - kind: prototype-index
+    scope: prototype
+    path_pattern: prototypes/*/prototype.yaml
+external_effects:
+  - read-external
+requested_permissions:
+  - capability: repository
+    actions:
+      - read
+    paths:
+      - design/**
+      - reference-system/**
+      - prototypes/**
+  - capability: prototype
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - prototypes/**
+  - capability: browser
+    actions:
+      - inspect
+scripts:
+  - id: init-prototype
+    path: scripts/init-prototype.mjs
+    purpose: Create prototype metadata while enforcing explicit constraint overrides.
+recommend_after:
+  - prototype-policy
+  - semantic-style
+  - accessibility
+  - responsive

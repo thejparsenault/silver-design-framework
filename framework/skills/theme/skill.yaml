@@ -1,0 +1,84 @@
+schema: design-practice/skill/v1
+id: theme
+version: 0.1.0-dev
+summary: Explore, apply, and validate visual themes without bypassing semantic styles.
+context_budget: medium
+requires:
+  artifacts:
+    - kind: brand
+      required: true
+      role: canonical
+    - kind: design-system
+      required: true
+      role: canonical
+    - kind: token-source
+      required: false
+      role: canonical
+    - kind: component-catalog
+      required: false
+      role: canonical
+  capabilities:
+    - repository
+    - canonical-artifact
+    - production-source
+    - browser
+    - design-file
+access:
+  read:
+    - scope: product
+      paths:
+        - design/**
+        - reference-system/**
+  write:
+    - scope: product
+      paths:
+        - design/system/**
+        - design/decisions/**
+        - reference-system/**
+    - scope: prototype
+      paths:
+        - prototypes/**
+produces:
+  - kind: design-system
+    scope: product
+    path_pattern: design/system/**
+  - kind: token-source
+    scope: product
+    path_pattern: reference-system/tokens/**
+  - kind: decision-log
+    scope: product
+    path_pattern: design/decisions/**
+external_effects:
+  - read-external
+requested_permissions:
+  - capability: repository
+    actions:
+      - read
+    paths:
+      - design/**
+      - reference-system/**
+  - capability: canonical-artifact
+    actions:
+      - write
+      - update
+    paths:
+      - design/system/**
+      - design/decisions/**
+  - capability: production-source
+    actions:
+      - write
+      - update
+    paths:
+      - reference-system/**
+  - capability: browser
+    actions:
+      - inspect
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+recommend_after:
+  - artifact-schema
+  - semantic-style
+  - accessibility
+  - responsive

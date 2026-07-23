@@ -1,0 +1,8 @@
+schema: design-practice/prototype/v1
+id: campaign-flow
+title: Campaign flow
+status: active
+constraint_profile: constrained
+question: Can a marketer understand the setup sequence?
+created: 2026-07-23
+updated: 2026-07-23

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check Design"
+  short_description: "Run and summarize independent design checks"
+  default_prompt: "Use $design-check to check this work against the active design standards."

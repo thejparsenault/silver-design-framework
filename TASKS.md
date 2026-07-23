@@ -44,11 +44,11 @@
   - context: small
   - notes: Exact-output setup, idempotence, project-edit preservation, refusal of inferred existing-codebase adoption, deterministic index generation, and read-only doctor checks now pass. Still install selected project skills/checks, agent pointers, the editable reference system, and repair behavior.
 
-- [ ] Implement first task-level skills
+- [x] Implement first task-level skills
   - type: build
   - priority: high
   - context: medium
-  - notes: Initial set: `brand`, `theme`, `prototype`, and `design-check`. Internal scripts live with the skill that owns them.
+  - notes: Added validated `brand`, `theme`, `prototype`, and `design-check` packages. The prototype skill owns its deterministic metadata initializer and explicit-override guard.
 
 - [ ] Validate the first vertical slice
   - type: test

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop Theme"
+  short_description: "Explore, apply, and validate visual themes"
+  default_prompt: "Use $theme to explore or refine this product’s visual theme."

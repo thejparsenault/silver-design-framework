@@ -10,6 +10,7 @@
   "files": [
     "bin/",
     "framework/schemas/v1/",
+    "framework/skills/",
     "installer/cli.mjs",
     "installer/doctor.mjs",
     "installer/lib/",
@@ -22,7 +23,7 @@
     "validate:contracts": "python3 framework/scripts/validate_contracts.py",
     "build": "npm run validate:contracts && npm run build:reference && npm test",
     "build:reference": "node reference-system/packages/tokens/src/build.mjs",
-    "test": "node --test installer/tests/*.test.mjs"
+    "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs"
   },
   "engines": {
     "node": ">=20"

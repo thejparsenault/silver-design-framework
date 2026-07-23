@@ -1,0 +1,45 @@
+schema: design-practice/skill/v1
+id: design-check
+version: 0.1.0-dev
+summary: Run independent design checks and summarize normalized findings.
+context_budget: small
+requires:
+  artifacts:
+    - kind: check-config
+      required: false
+      role: canonical
+    - kind: design-system
+      required: true
+      role: canonical
+  capabilities:
+    - repository
+    - browser
+access:
+  read:
+    - scope: product
+      paths:
+        - design/**
+        - reference-system/**
+    - scope: prototype
+      paths:
+        - prototypes/**
+    - scope: codebase
+      paths:
+        - .design-framework/**
+  write: []
+produces: []
+external_effects:
+  - read-external
+requested_permissions:
+  - capability: repository
+    actions:
+      - read
+    paths:
+      - design/**
+      - reference-system/**
+      - prototypes/**
+      - .design-framework/**
+  - capability: browser
+    actions:
+      - inspect
+recommend_after: []

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/prototype.schema.json",
+  "title": "Design Practice prototype metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "title",
+    "status",
+    "constraint_profile",
+    "created",
+    "updated"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/prototype/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "status": {
+      "enum": ["draft", "active", "retained", "archived", "discarded", "promoted"]
+    },
+    "constraint_profile": {
+      "enum": ["constrained", "partial", "suspended"]
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "suspended_constraints": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "override_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "constraint_profile": {
+            "const": "constrained"
+          }
+        },
+        "required": ["constraint_profile"]
+      },
+      "then": {
+        "properties": {
+          "suspended_constraints": false,
+          "override_reason": false
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "constraint_profile": {
+            "const": "partial"
+          }
+        },
+        "required": ["constraint_profile"]
+      },
+      "then": {
+        "required": ["suspended_constraints", "override_reason"],
+        "properties": {
+          "suspended_constraints": {
+            "minItems": 1,
+            "not": {
+              "contains": {
+                "const": "all"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "constraint_profile": {
+            "const": "suspended"
+          }
+        },
+        "required": ["constraint_profile"]
+      },
+      "then": {
+        "required": ["suspended_constraints", "override_reason"],
+        "properties": {
+          "suspended_constraints": {
+            "contains": {
+              "const": "all"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

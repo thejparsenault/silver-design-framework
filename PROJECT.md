@@ -46,7 +46,7 @@ Existing-repository adoption is the next milestone, not part of the first vertic
 
 ## Current Phase
 
-reframe
+build
 
 ## Agent Access
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Prototype"
+  short_description: "Create or revise constrained prototypes"
+  default_prompt: "Use $prototype to create or revise a product prototype."

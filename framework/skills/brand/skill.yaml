@@ -1,0 +1,57 @@
+schema: design-practice/skill/v1
+id: brand
+version: 0.1.0-dev
+summary: Define or refine audience-facing brand guidance.
+context_budget: small
+requires:
+  artifacts:
+    - kind: product
+      required: false
+      role: canonical
+    - kind: brand
+      required: true
+      role: canonical
+  capabilities:
+    - repository
+    - canonical-artifact
+access:
+  read:
+    - scope: product
+      paths:
+        - design/INDEX.md
+        - design/manifest.yaml
+        - design/product.md
+        - design/brand.md
+        - design/voice.md
+        - design/design-principles.md
+  write:
+    - scope: product
+      paths:
+        - design/brand.md
+        - design/decisions/**
+produces:
+  - kind: brand
+    scope: product
+    path_pattern: design/brand.md
+  - kind: decision-log
+    scope: product
+    path_pattern: design/decisions/**
+external_effects:
+  - none
+requested_permissions:
+  - capability: repository
+    actions:
+      - read
+    paths:
+      - design/**
+  - capability: canonical-artifact
+    actions:
+      - write
+      - update
+    paths:
+      - design/brand.md
+      - design/decisions/**
+recommend_after:
+  - artifact-schema
+  - design-index
+  - theme

@@ -2,9 +2,17 @@
 
 ## Current Focus
 
-Install the first project-local skill packages and complete the blank-workspace payload. The core setup/diagnostic boundary is now executable and validated.
+Bundle the first project-local skills and editable reference system into the blank-workspace payload. The skill sources and contracts are now implemented and validated.
 
 ## Recent Progress
+
+- 2026-07-23: First project-local skill packages
+  - Added concise, agent-readable `brand`, `theme`, `prototype`, and `design-check` packages with machine-readable authority contracts.
+  - Kept brand and theme canonical changes behind explicit permission boundaries and prevented either task from silently starting follow-up work.
+  - Made prototype work constrained by default while allowing explicit partial or suspended profiles.
+  - Added a self-contained prototype metadata initializer that refuses unconfirmed constraint overrides.
+  - Added a v1 prototype metadata schema and contract/runtime tests.
+  - Validated all four skill structures with the skill-authoring validator.
 
 - 2026-07-23: Core blank-workspace setup and diagnostics
   - Added the local `design-practice` executable with `setup`, `doctor`, and `version` commands.
@@ -40,9 +48,9 @@ Install the first project-local skill packages and complete the blank-workspace 
 
 ## Next 3 Actions
 
-1. Create the first project-local `brand`, `theme`, `prototype`, and `design-check` skill packages.
-2. Bundle the selected skills and editable reference system into setup, with accurate lock ownership and an agent discovery pointer.
-3. Add `repair` for generated indexes, then validate the blank-workspace flow end to end.
+1. Bundle the selected skills and editable reference system into setup, with accurate lock ownership and an agent discovery pointer.
+2. Add `repair` for generated indexes.
+3. Validate the blank-workspace flow end to end.
 
 ## Blockers
 
