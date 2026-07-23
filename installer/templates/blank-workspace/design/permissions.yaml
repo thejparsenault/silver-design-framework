@@ -1,0 +1,39 @@
+schema: design-practice/permission-policy/v1
+id: repository-policy
+layer: repository-restriction
+rules:
+  - capability: repository
+    actions:
+      - read
+    decision: allow
+  - capability: prototype
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - prototypes/**
+    decision: allow
+  - capability: canonical-artifact
+    actions:
+      - write
+      - update
+    paths:
+      - design/**
+    decision: ask
+  - capability: production-source
+    actions:
+      - create
+      - write
+      - update
+    decision: ask
+  - capability: version-control
+    actions:
+      - commit
+      - push
+      - open-pr
+    decision: ask
+  - capability: repository
+    actions:
+      - delete
+    decision: deny

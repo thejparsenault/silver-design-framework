@@ -17,4 +17,4 @@ Workspace: **Example Product** (`product-workspace`)
 Prototype root: `prototypes/`  
 Default constraint profile: `constrained`
 
-Available project skills: `brand`, `theme`, `prototype`, `design-check`
+Installed project skills: none

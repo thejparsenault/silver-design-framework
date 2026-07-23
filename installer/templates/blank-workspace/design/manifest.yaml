@@ -1,0 +1,121 @@
+schema: design-practice/manifest/v1
+workspace:
+  id: {{WORKSPACE_ID}}
+  name: {{WORKSPACE_NAME}}
+  scope: product-workspace
+  description: Blank-workspace fixture for the Design Practice Framework.
+
+artifacts:
+  - id: brand
+    kind: brand
+    path: design/brand.md
+    scope: product
+    role: canonical
+    status: draft
+    authority:
+      type: local
+  - id: product
+    kind: product
+    path: design/product.md
+    scope: product
+    role: canonical
+    status: draft
+    authority:
+      type: local
+  - id: voice
+    kind: voice
+    path: design/voice.md
+    scope: product
+    role: canonical
+    status: draft
+    authority:
+      type: local
+  - id: design-principles
+    kind: design-principles
+    path: design/design-principles.md
+    scope: product
+    role: canonical
+    status: draft
+    authority:
+      type: local
+  - id: design-system
+    kind: design-system
+    path: design/system/README.md
+    scope: product
+    role: canonical
+    status: draft
+    authority:
+      type: local
+  - id: decisions
+    kind: decision-log
+    path: design/decisions/README.md
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+  - id: permissions
+    kind: permission-policy
+    path: design/permissions.yaml
+    scope: codebase
+    role: canonical
+    status: active
+    authority:
+      type: local
+
+implementation_profiles:
+  reference-system:
+    recipe: static-html
+    root: reference-system
+    commands:
+      preview: python3 -m http.server 4173 --directory reference-system
+    adapters:
+      - vanilla-css
+
+prototype_policy:
+  roots:
+    - prototypes
+  default_profile: constrained
+  allowed_profiles:
+    - constrained
+    - partial
+    - suspended
+  explicit_override_required: true
+  baseline_checks:
+    - accessibility
+    - prototype-policy
+
+checks:
+  policy_profile: prototype
+  enabled:
+    - artifact-schema
+    - semantic-style
+    - prototype-policy
+    - accessibility
+    - responsive
+  suites:
+    fast:
+      - artifact-schema
+      - semantic-style
+      - prototype-policy
+    browser:
+      - accessibility
+      - responsive
+    full:
+      - artifact-schema
+      - semantic-style
+      - prototype-policy
+      - accessibility
+      - responsive
+  render_targets:
+    - id: reference-system
+      profile: reference-system
+      path: /index.html
+      start: python3 -m http.server 4173 --directory reference-system
+      viewports:
+        - width: 375
+          height: 812
+        - width: 1440
+          height: 900
+
+permission_policy: design/permissions.yaml

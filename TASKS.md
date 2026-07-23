@@ -42,7 +42,7 @@
   - type: build
   - priority: high
   - context: small
-  - notes: Expected manifest, index, artifacts, permission policy, prototype root, and lock now exist. Still implement setup/doctor, selected project skills/checks, agent pointers, and reference-system copying.
+  - notes: Exact-output setup, idempotence, project-edit preservation, refusal of inferred existing-codebase adoption, deterministic index generation, and read-only doctor checks now pass. Still install selected project skills/checks, agent pointers, the editable reference system, and repair behavior.
 
 - [ ] Implement first task-level skills
   - type: build

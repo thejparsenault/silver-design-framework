@@ -2,9 +2,16 @@
 
 ## Current Focus
 
-Implement the blank-workspace setup flow against the new v1 contracts. The contract layer and relocated reference system are now concrete and validated; the installer is the next boundary to prove.
+Install the first project-local skill packages and complete the blank-workspace payload. The core setup/diagnostic boundary is now executable and validated.
 
 ## Recent Progress
+
+- 2026-07-23: Core blank-workspace setup and diagnostics
+  - Added the local `design-practice` executable with `setup`, `doctor`, and `version` commands.
+  - Made setup safe and idempotent: it accepts blank/minimal folders, resumes valid framework workspaces, preserves project edits, and refuses to infer existing-codebase adoption.
+  - Added runtime JSON Schema and YAML validation for manifests, artifact frontmatter, permissions, and lock state.
+  - Added deterministic index generation plus doctor checks for cross-file metadata agreement, missing artifacts, stale indexes, and managed-file integrity.
+  - Added fixture tests for exact output, idempotence, edit preservation, diagnostics, and existing-codebase refusal.
 
 - 2026-07-23: First executable framework slice
   - Added strict v1 schemas for the workspace manifest, artifact frontmatter, skill contracts, permission layers, lock state, findings, and check results.
@@ -33,14 +40,14 @@ Implement the blank-workspace setup flow against the new v1 contracts. The contr
 
 ## Next 3 Actions
 
-1. Implement idempotent local `setup` and `doctor` commands against the blank-workspace fixture.
-2. Implement deterministic `design/INDEX.md` generation and cross-file semantic checks.
-3. Create the first project-local `brand`, `theme`, `prototype`, and `design-check` skill packages.
+1. Create the first project-local `brand`, `theme`, `prototype`, and `design-check` skill packages.
+2. Bundle the selected skills and editable reference system into setup, with accurate lock ownership and an agent discovery pointer.
+3. Add `repair` for generated indexes, then validate the blank-workspace flow end to end.
 
 ## Blockers
 
 - No release destination or package scope has been created yet.
-- Installer ownership/update metadata is shaped by the lock schema but three-way update behavior has not been implemented.
+- Installer ownership/update metadata is shaped by the lock schema but repair and three-way update behavior have not been implemented.
 
 ## Last Updated
 
