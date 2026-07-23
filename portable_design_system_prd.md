@@ -1,5 +1,7 @@
 # PRD: Portable Framework-Neutral Design System Foundation
 
+> **Historical document — superseded 2026-07-23.** This PRD describes the design-system architecture spike that preceded the [Design Practice Framework PRD](design_practice_framework_prd.md). Its requirements now apply only to the editable reference system where they remain useful; they no longer define the product represented by this repository.
+
 **Status:** Draft 1  
 **Owner:** JP Arsenault  
 **Date:** 2026-06-15  

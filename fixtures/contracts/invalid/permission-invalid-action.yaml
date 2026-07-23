@@ -1,0 +1,8 @@
+schema: design-practice/permission-policy/v1
+id: invalid-policy
+layer: repository-restriction
+rules:
+  - capability: version-control
+    actions:
+      - force-push
+    decision: allow

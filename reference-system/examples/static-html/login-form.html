@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — Foundation DS Phase 0 Example</title>
+  <title>Login — Design Practice Reference System</title>
   <!--
-    After running `npm run build`, ds.css is generated at packages/css/src/tokens.css
-    and the full bundle at packages/css/src/ds.css.
-    For now this file demonstrates the intended HTML contract structure.
+    Run `npm run build:reference` from the framework repository before
+    previewing this example.
   -->
   <link rel="stylesheet" href="../../packages/css/src/ds.css" />
+  <link rel="stylesheet" href="./login-form.css" />
 </head>
 <body data-scheme="light" data-mode="default">
 
-  <main style="min-height: 100dvh; display: grid; place-items: center; padding: 2rem;">
-    <div style="width: 100%; max-width: 24rem;">
+  <main class="reference-login-page">
+    <div class="reference-login-panel">
 
-      <header style="margin-bottom: 2rem;">
-        <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Sign in</h1>
-        <p style="font-size: 0.9rem;">Welcome back. Enter your credentials to continue.</p>
+      <header class="reference-login-header">
+        <h1 class="reference-login-title">Sign in</h1>
+        <p class="reference-login-lede">Welcome back. Enter your credentials to continue.</p>
       </header>
 
       <form method="post" action="/login" novalidate>
@@ -51,7 +51,7 @@
           </p>
         </div>
 
-        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="reference-login-actions">
           <button class="ds-button" data-variant="primary" data-layout="full-width" type="submit">
             Sign in
           </button>
@@ -62,7 +62,7 @@
 
       </form>
 
-      <p style="margin-top: 1.5rem; font-size: 0.85rem; text-align: center;">
+      <p class="reference-login-footer">
         Don't have an account? <a href="/signup">Create one</a>
       </p>
 
@@ -70,7 +70,7 @@
   </main>
 
   <!-- Dark mode toggle demo — scheme switching via attribute -->
-  <div style="position: fixed; bottom: 1rem; right: 1rem; display: flex; gap: 0.5rem;">
+  <div class="reference-scheme-controls" aria-label="Color scheme">
     <button
       class="ds-button"
       data-variant="secondary"

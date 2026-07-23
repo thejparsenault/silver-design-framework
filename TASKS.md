@@ -1,119 +1,94 @@
 # Tasks
 
-## Now
+## Now — First Iteration
 
-- [ ] Run `npm install && npm run build` — verify SD4 compiles token files, inspect generated tokens.css
+- [x] Define the canonical workspace manifest schema
+  - type: design
+  - priority: high
+  - context: small
+  - notes: Include artifact mappings, scope, inheritance, authority, implementation profiles, enabled checks, and external-source metadata without making every field mandatory.
+
+- [x] Define the artifact metadata and generated index contracts
+  - type: design
+  - priority: high
+  - context: small
+  - notes: Narrative artifacts use Markdown frontmatter. `design/INDEX.md` is generated, compact, and disposable.
+
+- [x] Define the skill package contract
+  - type: design
+  - priority: high
+  - context: small
+  - notes: Declare required artifacts/capabilities, reads, writes, outputs, external effects, permissions, scripts, and context budget.
+
+- [x] Define the tool capability and permission model
+  - type: design
+  - priority: high
+  - context: small
+  - notes: Resolve permissions as the intersection of framework defaults, user ceiling, organization/project restrictions, and skill request.
+
+- [x] Define the check protocol
+  - type: design
+  - priority: high
+  - context: small
+  - notes: Separate checkers, normalized findings, consistent exit behavior, and an explicit `not-run` result when a required target or provider is unavailable.
+
+- [x] Relocate the existing design-system spike to `reference-system/`
   - type: build
   - priority: high
-  - energy: low
   - context: small
-  - notes: Validates the DTCG source → Style Dictionary 4 → CSS custom properties pipeline. Fix any SD4 transform issues before building more tokens.
+  - notes: Preserve history, repair paths, then install/build/render before treating it as a valid fixture.
 
-- [ ] Open examples/static-html/login-form.html in a browser — validate Phase 0 end-to-end
+- [ ] Implement a blank-workspace installer fixture
   - type: build
   - priority: high
-  - energy: low
   - context: small
-  - notes: Check: tokens.css custom properties load, light/dark toggle works via [data-scheme] attribute, button and field components render correctly.
+  - notes: Expected manifest, index, artifacts, permission policy, prototype root, and lock now exist. Still implement setup/doctor, selected project skills/checks, agent pointers, and reference-system copying.
 
-## Next — Phase 1 Components
-
-- [ ] Card component — CSS + HTML contract
+- [ ] Implement first task-level skills
   - type: build
   - priority: high
-  - energy: medium
-  - context: small
+  - context: medium
+  - notes: Initial set: `brand`, `theme`, `prototype`, and `design-check`. Internal scripts live with the skill that owns them.
 
-- [ ] Badge component — CSS + HTML contract
-  - type: build
+- [ ] Validate the first vertical slice
+  - type: test
+  - priority: high
+  - context: medium
+  - notes: Blank folder → setup → brand/theme refinement → constrained static prototype → static conformance result → recommended next actions.
+
+- [ ] Prepare a private prerelease
+  - type: release
   - priority: medium
-  - energy: low
   - context: small
+  - notes: Publish only after fixture tests pass. Pin exact version in generated lock state.
 
-- [ ] Alert component — CSS + HTML contract
+## Next Milestone
+
+- [ ] Adopt one representative existing product repository
   - type: build
-  - priority: medium
-  - energy: medium
-  - context: small
-  - notes: Use feedback tokens (danger/success/warning/info). Test all four states.
+  - priority: high
+  - context: medium
+  - notes: Discover existing docs, tokens, components, source roots, commands, and agent files without reorganizing the repository or silently rewriting production code.
 
-- [ ] Checkbox and Radio — CSS + HTML contract
+- [ ] Generate an adoption report and reviewable installation diff
   - type: build
-  - priority: medium
-  - energy: medium
-  - context: small
-  - notes: Native <input type="checkbox|radio"> with custom appearance via CSS. No JS.
+  - priority: high
+  - context: medium
+  - notes: Map semantically clear existing artifacts, identify ambiguities, and recommend operational summaries for oversized omnibus documents.
 
-- [ ] Select — CSS + HTML contract
-  - type: build
-  - priority: medium
-  - energy: medium
-  - context: small
-  - notes: Native <select> styled. Custom select (Combobox) is Phase 3.
+## Backlog
 
-- [ ] Divider, Stack, Inline, Container layout components
-  - type: build
-  - priority: low
-  - energy: low
-  - context: small
-  - notes: Mostly CSS utility classes — low effort, high reuse.
-
-- [ ] Research icon set options
-  - type: research
-  - priority: low
-  - energy: low
-  - context: small
-  - notes: Evaluate Lucide, Phosphor, Heroicons for portability. Should be subsettable, SVG-based.
-
-## Later
-
-- [ ] Design browser-renderable page templates
-  - type: design
-  - priority: medium
-  - energy: high
-  - context: small
-  - notes: Templates render the system holistically. Must support ?mode=X&scheme=Y via URL parameters. Used for visual validation and as targets for the conformance checker.
-
-- [ ] Design the conformance checker workflow
-  - type: design
-  - priority: medium
-  - energy: high
-  - context: small
-  - notes: Agentic workflow — load page in browser, check one dimension at a time (color, typography, spacing, etc.), flag issues. CLI: npm run check -- --url <url>
-
-- [ ] Design the component addition workflow
-  - type: design
-  - priority: low
-  - energy: medium
-  - context: small
-  - notes: Define the steps to add a new component — build against semantic tokens, render in template, run conformance checker, human review.
-
-- [ ] Design the Figma bridge
-  - type: design
-  - priority: low
-  - energy: high
-  - context: small
-  - notes: Two directions — (1) code/tokens to Figma variables/components, (2) Figma rough design to code scaffolding. Code is authoritative; Figma is a scratchpad.
-
-- [ ] Phase 3 interactive components: Dialog, Dropdown, Popover, Tooltip, Tabs, Toast
-  - type: build
-  - priority: low
-  - energy: high
-  - context: small
-  - notes: Evaluate Zag.js for behavior layer vs. vanilla Web Components vs. per-adapter implementations.
-
-- [ ] Pick a test case to validate the full system end-to-end
-  - type: build
-  - priority: low
-  - energy: medium
-  - context: small
-  - notes: A small, simple page that exercises foundation + semantic layer + at least 2 components + conformance checker.
+See `BACKLOG.md` for all functionality intentionally deferred beyond the first iteration.
 
 ## Done
 
-- [x] Decide on design system shape and output format
-- [x] Decide: modes vs schemes vs themes — terminology and layer structure
-- [x] Decide: delivery model — template repo
-- [x] Decide: component technology — CSS foundation + HTML/CSS components + optional React wrappers
-- [x] Decide: agent interface — structured files + CLI conformance checker, no MCP server
-- [x] Phase 0 — architecture spike: DTCG tokens, Style Dictionary 4 build, CSS @layer stack, Button + Field components + HTML contracts, static example
+- [x] Reframe the product as a design-practice framework rather than a design system
+- [x] Define organization, product, and codebase scopes
+- [x] Set project-local skill installation and project-owned update policy
+- [x] Separate setup/update tooling from daily skill workflows
+- [x] Establish prototype constraint and explicit suspension policy
+- [x] Establish provider-neutral tool capability and permission concepts
+- [x] Establish external authority and default notify-based synchronization
+- [x] Separate deterministic checks behind a thin orchestration command
+- [x] Choose blank-workspace validation before existing-codebase adoption
+- [x] Define installer hosting and distribution recommendation

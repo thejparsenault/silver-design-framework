@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/skill.schema.json",
+  "title": "Design Practice project-local skill contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "summary",
+    "context_budget",
+    "requires",
+    "access",
+    "produces",
+    "external_effects",
+    "requested_permissions",
+    "recommend_after"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/skill/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "context_budget": {
+      "enum": ["small", "medium", "large"]
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "capabilities"],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "required"],
+            "properties": {
+              "kind": {
+                "$ref": "#/$defs/artifactKind"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "role": {
+                "enum": ["canonical", "supporting", "evidence", "generated"]
+              }
+            }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/capability"
+          }
+        }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "write"],
+      "properties": {
+        "read": {
+          "$ref": "#/$defs/pathAccess"
+        },
+        "write": {
+          "$ref": "#/$defs/pathAccess"
+        }
+      }
+    },
+    "produces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "scope"],
+        "properties": {
+          "kind": {
+            "$ref": "#/$defs/artifactKind"
+          },
+          "scope": {
+            "enum": ["organization", "product", "codebase", "prototype"]
+          },
+          "path_pattern": {
+            "$ref": "#/$defs/relativeGlob"
+          }
+        }
+      }
+    },
+    "external_effects": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "none",
+          "read-external",
+          "create-external",
+          "modify-external",
+          "send-message",
+          "version-control"
+        ]
+      }
+    },
+    "requested_permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions"],
+        "properties": {
+          "capability": {
+            "$ref": "#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/relativeGlob"
+            }
+          }
+        }
+      }
+    },
+    "scripts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "path": {
+            "$ref": "#/$defs/relativePath"
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      },
+      "default": []
+    },
+    "recommend_after": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "artifactKind": {
+      "anyOf": [
+        {
+          "enum": [
+            "brand",
+            "product",
+            "voice",
+            "design-principles",
+            "design-system",
+            "token-source",
+            "component-catalog",
+            "research",
+            "testing",
+            "decision-log",
+            "prototype-index",
+            "codebase-binding",
+            "permission-policy",
+            "check-config"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "capability": {
+      "anyOf": [
+        {
+          "enum": [
+            "repository",
+            "prototype",
+            "production-source",
+            "canonical-artifact",
+            "browser",
+            "design-file",
+            "external-artifact",
+            "version-control"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "inspect",
+        "execute",
+        "create",
+        "write",
+        "update",
+        "delete",
+        "commit",
+        "push",
+        "open-pr"
+      ]
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "relativeGlob": {
+      "$ref": "#/$defs/relativePath"
+    },
+    "pathAccess": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scope", "paths"],
+        "properties": {
+          "scope": {
+            "enum": ["organization", "product", "codebase", "prototype"]
+          },
+          "paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/relativeGlob"
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

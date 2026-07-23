@@ -16,13 +16,13 @@ Status:
 
 Decision: Implementers (agents and humans) work against a semantic token layer (bg-base, text-primary-on-base, etc.), not raw scale values. The full scale (neutral ramp, spacing steps, type sizes) is defined, but access is constrained through named semantic roles with explicit valid-use rules.
 Reason: Raw utility composition requires taste and system knowledge. A constrained semantic layer makes agent-generated UI more predictable and reduces the surface area for design decisions at implementation time.
-Status: Accepted
+Status: Accepted for conforming production implementations and the reference system
 
 ## 2026-06-05 - Code/tokens are authoritative; Figma is a scratchpad
 
 Decision: The token and component definitions in code are the source of truth. Figma will be populated from code (not the reverse), and rough Figma designs will be imported back as scaffolding only.
 Reason: Keeping Figma as the source of truth requires manual sync discipline that doesn't hold long-term. Code-authoritative systems are versionable, diffable, and CI-checkable.
-Status: Accepted
+Status: Superseded 2026-07-23 by per-artifact authority with a pinned local representation
 
 ## 2026-06-05 - Layer terminology: scale, semantic roles, mode, scheme, theme
 
@@ -36,13 +36,13 @@ Decision: Four terms, each with a distinct scope:
 Resolved value chain: Mode + Scheme → Semantic roles → Scale values.
 
 Reason: "Theme" and "mode" collide in common usage (dark mode vs. theme = light/dark). "Scheme" is the CSS spec term for light/dark and is unambiguous. Keeping "theme" for brand-level customization leaves all four terms with distinct, non-overlapping meanings.
-Status: Accepted
+Status: Accepted as the reference-system vocabulary; adopting systems may map equivalent native concepts
 
 ## 2026-06-05 - Delivery model: template repo
 
 Decision: The design system is distributed as a template repo. A new project clones it, runs `npm install && npm run dev`, and has a fully running system immediately. The consumer owns all the files — nothing is a remote dependency.
 Reason: The system is foundational and heavily customized per project. Consumers need to own the source, not depend on a remote package. A template repo requires zero publishing infrastructure, is framework-agnostic, and is the most accessible model for a non-technical user. npm package extraction is a future option if a standalone token layer becomes useful, but not the starting point.
-Status: Accepted
+Status: Superseded 2026-07-23 by project-owned installation from versioned framework packages
 
 ## 2026-06-05 - Component technology: CSS foundation + HTML/CSS components + optional React layer
 
@@ -52,13 +52,13 @@ Decision: Three tiers:
 3. **React package** — thin wrappers around tier 2 with prop interfaces and TypeScript types. Optional, additive, not the primary interface.
 
 Reason: Portability lives in the token and component CSS layers, not in the component framework. Any consuming stack (Astro, Vue, plain HTML, React) can use tiers 1 and 2 directly. The React layer adds convenience for React projects without constraining everyone else.
-Status: Accepted
+Status: Accepted for the reference system, not required of adopting systems
 
 ## 2026-06-05 - Agent interface: structured files, not MCP tools
 
 Decision: The agent's interface to the design system is the files in the repo — a well-structured `CLAUDE.md` (or `AGENT.md`) that explains the token system, valid semantic roles, component patterns, and workflow. The conformance checker is a CLI script (`npm run check -- --url <url>`) that agents call via Bash. Figma integration uses the official Figma MCP and is documented as an optional setup step, not bundled into the system.
 Reason: An MCP server requires hosting, auth, and infrastructure that adds complexity without proportional benefit. A well-written agent context file achieves the same result — agents can read files and reason about them. The conformance checker as a CLI script is simpler to run, debug, and maintain. Keeping Figma as an optional documented step avoids baking in a dependency on a specific MCP implementation.
-Status: Accepted
+Status: Superseded 2026-07-23 by agent-neutral project skills, structured artifacts, deterministic checks, and provider-neutral capabilities
 
 ## 2026-06-15 - Token source format: DTCG 2025.10 + Style Dictionary 4
 
@@ -70,7 +70,7 @@ The CSS syntax string (`oklch(0.55 0.14 250)`) is output from Style Dictionary �
 ```
 
 Reason: DTCG format is tool-portable (Figma Variables, Tokens Studio, Style Dictionary, IDE plugins all read it). SD4 removes the transformation layer that SD3 required for DTCG input. Explicit `$type` and `$description` make token files self-documenting and validatable without separate docs.
-Status: Accepted
+Status: Accepted for the reference system, not mandated for adopting systems
 
 ## 2026-06-15 - CSS cascade layer stack
 
@@ -87,7 +87,7 @@ Decision: All system CSS is organized into named cascade layers, declared in thi
 - `utilities` — escape-hatch classes; intentionally last so they win over components
 
 Reason: Without explicit layers, specificity battles undermine the override governance model (tokens first, one-off classes last). Cascade layers make that hierarchy enforceable by the browser rather than by convention.
-Status: Accepted
+Status: Accepted for the reference system
 
 ## 2026-06-15 - Scheme switching strategy: media query default + data-scheme override
 
@@ -113,7 +113,7 @@ Decision: Light/dark scheme is implemented in two steps:
 Mode is applied separately via `[data-mode="marketing"]` etc., and nests inside scheme.
 
 Reason: Media-query-only approaches can't be overridden by a UI toggle. Attribute-only approaches don't respect OS preference by default. The layered approach gives correct behavior for both.
-Status: Accepted
+Status: Accepted for the reference system
 
 ## 2026-06-15 - Distribution: template repo with Tailwind v4 output included
 
@@ -122,4 +122,70 @@ Decision: The template repo delivery model (DECISIONS.md 2026-06-05) stands. In 
 The registry model described in the PRD is a future enhancement — a tool that helps seed a new template instance with selected components. It does not change the consumer-owns-all-files model.
 
 Reason: Tailwind v4 output costs nothing to generate from the same SD4 transform pipeline and meaningfully reduces friction for Tailwind-based projects. Clarifying that the registry seeds the template (rather than being a live dependency) resolves the tension between the PRD's registry language and the template-repo decision.
+Status: Superseded 2026-07-23 by the framework installer and versioned project-owned packages; Tailwind output remains a reference-system adapter
+
+## 2026-07-23 - The product is a design-practice framework
+
+Decision: Repurpose this repository into an agent-neutral framework for design work across codebases and external tools. A design system is a managed project artifact or output, not the product itself. Preserve the existing HTML/CSS design-system spike as an editable reference system and test fixture.
+Reason: Teams need consistent ways to describe intent, invoke common design tasks, integrate tools, and enforce constraints across both blank and existing repositories. Shipping one starter design system does not solve that broader problem and incorrectly assumes the same system should begin every project.
+Status: Accepted
+
+## 2026-07-23 - Use explicit organization, product, and codebase scopes
+
+Decision: Model shared organization foundations, product design workspaces, and application codebase bindings as separate logical scopes. Repositories may combine scopes when small. Multi-repository setups use manifests and pinned versions rather than symlinks.
+Reason: Brand and accessibility may span products while audience, tone, components, and implementation details differ. Explicit scopes support both small colocated projects and multi-team product portfolios without relying on fragile filesystem relationships.
+Status: Accepted
+
+## 2026-07-23 - Fixed discovery entry points with flexible artifact locations
+
+Decision: Every participating repository exposes `design/manifest.yaml` and a compact generated `design/INDEX.md`. Artifact kinds and schemas are standardized, while physical document locations can be mapped. Narrative intent lives in frontmatter-bearing Markdown; enforceable contracts live in JSON or YAML.
+Reason: Fully fixed file layouts are brittle in existing repositories, while completely flexible layouts make agents and tools unreliable. Fixed discovery points and logical kinds provide predictability without forcing reorganizations.
+Status: Accepted
+
+## 2026-07-23 - Project-local skills and a narrowly scoped CLI
+
+Decision: Install workflow skills at the lowest useful repository scope and commit them with the repository. Skills contain their own scripts and canonical agent-neutral instructions. The CLI handles setup, update, repair, migration, and diagnostics only; it recommends but does not start daily design workflows.
+Reason: Global workflow skills pollute unrelated context, while a large workflow CLI couples independent tasks and becomes brittle. Project-local packages keep context and authority clear; shared protocols preserve consistency.
+Status: Accepted
+
+## 2026-07-23 - Tool access is capability-based and permission-bounded
+
+Decision: Skills declare abstract capabilities, supported providers, and requested permissions. Users select providers and permission ceilings in a global tool profile. Effective authority is the intersection of framework, user, organization/project, and skill policies; repositories can tighten but not broaden the user's ceiling.
+Reason: Provider choices differ by user and task, and integrations evolve. Capability-based contracts keep skills portable while explicit permission intersection prevents a repository or skill from escalating access.
+Status: Accepted
+
+## 2026-07-23 - Prototypes require explicit constraint profiles
+
+Decision: Prototypes may create new components and compositions but remain constrained by semantic visual styles by default. A designer may explicitly choose `partial` or `suspended` design-system constraints under prototype roots. Suspension is never inferred, does not silently change canonical artifacts, and retains baseline accessibility and safety requirements.
+Reason: Prototypes need freedom, but unconstrained output can become dangerously disconnected from the product. Explicit profiles make the exception visible without turning a flexible design process into an enforced lifecycle.
+Status: Accepted
+
+## 2026-07-23 - External authority is per artifact and synchronization defaults to notify
+
+Decision: Declare authority by artifact kind. An external tool may be authoritative, but production use requires a pinned and validated local representation. Synchronization supports `manual`, `notify`, and `propose`; `notify` is the default, and no mode silently overwrites either side.
+Reason: Different teams legitimately choose different sources of truth. Local validated representations make agent and CI work reproducible, while notification avoids both silent drift and surprising automatic updates.
+Status: Accepted
+
+## 2026-07-23 - Compliance uses independent deterministic checks
+
+Decision: Keep artifact/schema, token/raw-value, component-contract, prototype-policy, browser/accessibility, responsive, and freshness checks independent. A thin `design-check` orchestrator normalizes findings. Missing render targets or providers produce `not-run`, never pass.
+Reason: Independent checks are easier to run, replace, debug, and promote gradually from warning to blocking. Deterministic programs keep production enforcement available to developers and CI without depending on an agent.
+Status: Accepted
+
+## 2026-07-23 - Distribute through GitHub releases and a non-global npm CLI
+
+Decision: Keep installer source with the framework. Use GitHub as the canonical source and immutable release host, and publish a small scoped npm CLI as the convenience channel. The package bundles its matching versioned payload; projects pin the installed release in lock state. Do not use a mutable `curl | sh` command as the primary installer.
+Reason: The installer and contracts must be released and tested together. An npm command is accessible and does not require global installation, while immutable GitHub releases provide an auditable source and artifact boundary. Bundling the payload prevents a second unpinned network fetch.
+Status: Accepted
+
+## 2026-07-23 - V1 contracts are strict at their boundaries
+
+Decision: Use JSON Schema 2020-12 for YAML and JSON framework contracts. Reject unknown top-level fields, require namespaced extension keys, and reserve cross-file concerns such as path existence, unique IDs, permission intersection, result consistency, freshness, and lock integrity for deterministic semantic checks.
+Reason: Strict local shapes make contracts memorable and dependable without forcing JSON Schema to perform repository-wide reasoning. Namespaced extensions preserve deliberate flexibility without allowing accidental configuration typos to pass.
+Status: Accepted
+
+## 2026-07-23 - Tailwind exposes semantic colors and structural scales
+
+Decision: The reference Tailwind v4 adapter exposes semantic color roles and approved structural spacing, radius, type-size, and shadow scales. It does not expose primitive color ramps as utility names.
+Reason: Tailwind is implementation syntax, not an exception to the semantic-style boundary. Structural utilities remain practical, while primitive visual utilities would make it easy for production work to bypass design intent.
 Status: Accepted

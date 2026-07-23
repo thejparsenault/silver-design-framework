@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/check-result.schema.json",
+  "title": "Design Practice checker result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "checker",
+    "suite",
+    "policy_profile",
+    "status",
+    "coverage",
+    "findings"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/check-result/v1"
+    },
+    "checker": {
+      "$ref": "#/$defs/id"
+    },
+    "suite": {
+      "enum": ["fast", "browser", "full"]
+    },
+    "policy_profile": {
+      "enum": ["adoption", "conforming", "production", "prototype"]
+    },
+    "status": {
+      "enum": ["pass", "fail", "not-run"]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "completed"],
+      "properties": {
+        "requested": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "completed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "https://design-practice.dev/schemas/v1/finding.schema.json"
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["fail", "not-run"]
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "not-run"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "coverage": {
+            "required": ["reason"]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

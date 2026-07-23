@@ -1,0 +1,22 @@
+{
+  "schema": "design-practice/check-result/v1",
+  "checker": "artifact-schema",
+  "suite": "fast",
+  "policy_profile": "prototype",
+  "status": "pass",
+  "coverage": {
+    "requested": ["design/manifest.yaml"],
+    "completed": ["design/manifest.yaml"]
+  },
+  "findings": [
+    {
+      "schema": "design-practice/finding/v1",
+      "checker": "artifact-schema",
+      "rule": "manifest.invalid",
+      "severity": "error",
+      "policy_profile": "prototype",
+      "message": "A passing result cannot contain a failure.",
+      "status": "fail"
+    }
+  ]
+}

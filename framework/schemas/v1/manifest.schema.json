@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/manifest.schema.json",
+  "title": "Design Practice workspace manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "workspace",
+    "artifacts",
+    "prototype_policy",
+    "checks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/manifest/v1"
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "scope"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "scope": {
+          "enum": [
+            "organization-foundation",
+            "product-workspace",
+            "codebase-binding",
+            "combined"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "foundations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source", "version"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manifest": {
+            "$ref": "#/$defs/relativePath"
+          }
+        }
+      },
+      "default": []
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/artifactMapping"
+      }
+    },
+    "implementation_profiles": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/implementationProfile"
+      },
+      "default": {}
+    },
+    "prototype_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roots",
+        "default_profile",
+        "explicit_override_required",
+        "baseline_checks"
+      ],
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "default_profile": {
+          "const": "constrained"
+        },
+        "allowed_profiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["constrained", "partial", "suspended"]
+          },
+          "contains": {
+            "const": "constrained"
+          },
+          "default": ["constrained", "partial", "suspended"]
+        },
+        "explicit_override_required": {
+          "const": true
+        },
+        "baseline_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_profile", "enabled", "suites"],
+      "properties": {
+        "policy_profile": {
+          "enum": ["adoption", "conforming", "production", "prototype"]
+        },
+        "enabled": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "suites": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fast", "browser", "full"],
+          "properties": {
+            "fast": {
+              "$ref": "#/$defs/checkList"
+            },
+            "browser": {
+              "$ref": "#/$defs/checkList"
+            },
+            "full": {
+              "$ref": "#/$defs/checkList"
+            }
+          }
+        },
+        "render_targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/renderTarget"
+          },
+          "default": []
+        }
+      }
+    },
+    "permission_policy": {
+      "$ref": "#/$defs/relativePath"
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "artifactKind": {
+      "anyOf": [
+        {
+          "enum": [
+            "brand",
+            "product",
+            "voice",
+            "design-principles",
+            "design-system",
+            "token-source",
+            "component-catalog",
+            "research",
+            "testing",
+            "decision-log",
+            "prototype-index",
+            "codebase-binding",
+            "permission-policy",
+            "check-config"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["local", "external"]
+        },
+        "provider": {
+          "$ref": "#/$defs/id"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sync": {
+          "enum": ["manual", "notify", "propose"],
+          "default": "notify"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "external"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "required": [
+              "provider",
+              "reference",
+              "revision",
+              "sync"
+            ]
+          }
+        }
+      ]
+    },
+    "artifactMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "scope",
+        "role",
+        "status",
+        "authority"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/artifactKind"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "scope": {
+          "enum": ["organization", "product", "codebase", "prototype"]
+        },
+        "role": {
+          "enum": ["canonical", "supporting", "evidence", "generated"]
+        },
+        "status": {
+          "enum": ["draft", "active", "deprecated", "archived"]
+        },
+        "authority": {
+          "$ref": "#/$defs/authority"
+        }
+      }
+    },
+    "implementationProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipe"],
+      "properties": {
+        "recipe": {
+          "$ref": "#/$defs/id"
+        },
+        "root": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "commands": {
+          "type": "object",
+          "propertyNames": {
+            "enum": ["install", "build", "preview", "test", "check"]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "adapters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "checkList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "renderTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "profile", "path"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "profile": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "viewports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height"],
+            "properties": {
+              "width": {
+                "type": "integer",
+                "minimum": 240
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 240
+              }
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

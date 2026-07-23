@@ -1,13 +1,13 @@
 {
-  "name": "foundation-design-system",
+  "name": "design-practice-framework",
   "version": "0.0.1",
   "private": true,
-  "description": "Portable framework-neutral design system foundation",
+  "description": "Agent-neutral framework for design practice across codebases and tools",
   "type": "module",
   "scripts": {
-    "build": "node packages/tokens/src/build.mjs",
-    "build:watch": "node packages/tokens/src/build.mjs --watch",
-    "dev": "npm run build:watch"
+    "validate:contracts": "python3 framework/scripts/validate_contracts.py",
+    "build": "npm run validate:contracts && npm run build:reference",
+    "build:reference": "node reference-system/packages/tokens/src/build.mjs"
   },
   "devDependencies": {
     "style-dictionary": "^4.3.0"

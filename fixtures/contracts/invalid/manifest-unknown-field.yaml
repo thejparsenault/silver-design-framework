@@ -1,0 +1,32 @@
+schema: design-practice/manifest/v1
+workspace:
+  id: invalid-workspace
+  name: Invalid workspace
+  scope: product-workspace
+artifacts:
+  - id: brand
+    kind: brand
+    path: design/brand.md
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+prototype_policy:
+  roots:
+    - prototypes
+  default_profile: constrained
+  explicit_override_required: true
+  baseline_checks:
+    - accessibility
+checks:
+  policy_profile: prototype
+  enabled:
+    - artifact-schema
+  suites:
+    fast:
+      - artifact-schema
+    browser: []
+    full:
+      - artifact-schema
+automatic_workflows: true

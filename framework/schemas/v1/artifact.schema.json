@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/artifact.schema.json",
+  "title": "Design Practice narrative artifact frontmatter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "kind",
+    "scope",
+    "status",
+    "owner",
+    "updated",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/artifact/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "kind": {
+      "$ref": "#/$defs/artifactKind"
+    },
+    "scope": {
+      "enum": ["organization", "product", "codebase", "prototype"]
+    },
+    "status": {
+      "enum": ["draft", "active", "deprecated", "archived"]
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "retrieved": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "artifactKind": {
+      "anyOf": [
+        {
+          "enum": [
+            "brand",
+            "product",
+            "voice",
+            "design-principles",
+            "design-system",
+            "token-source",
+            "component-catalog",
+            "research",
+            "testing",
+            "decision-log",
+            "prototype-index",
+            "codebase-binding",
+            "permission-policy",
+            "check-config"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["local", "external"]
+        },
+        "provider": {
+          "$ref": "#/$defs/id"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sync": {
+          "enum": ["manual", "notify", "propose"],
+          "default": "notify"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "external"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["provider", "reference", "revision", "sync"]
+          }
+        }
+      ]
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

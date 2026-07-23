@@ -1,0 +1,12 @@
+{
+  "layout": {
+    "$description": "Reference composition layout tokens.",
+    "form": {
+      "max-width": {
+        "$type": "dimension",
+        "$value": { "value": 384, "unit": "px" },
+        "$description": "Maximum width for a focused, single-column form composition"
+      }
+    }
+  }
+}

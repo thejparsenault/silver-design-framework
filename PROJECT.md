@@ -1,5 +1,5 @@
 ---
-name: Foundation Design System
+name: Design Practice Framework
 slug: design-system-base
 stage: exploring
 path: /Users/jp/Projects/exploring/design-system-base
@@ -8,30 +8,45 @@ visibility: private
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-07-23
 ---
 
-# Foundation Design System
+# Design Practice Framework
 
 ## Purpose
 
-Build a portable, customizable design system foundation that future projects can adopt and theme without starting from scratch. It should be opinionated enough to produce coherent results out of the box, but structured so that a small set of high-leverage decisions (key colors, typefaces, tone, context type) dramatically reshapes the outcome.
+Build an agent-neutral framework that helps designers work consistently across codebases, design tools, and product contexts. The framework installs a small set of project-scoped artifacts, skills, checks, recipes, and adapters. It can initialize a blank workspace or adopt an existing product repository without requiring either one to use a particular design system or application stack.
+
+The framework is a meta-system. It defines how a design system and design practice are described, used, checked, and synchronized; it is not itself the design system for every consuming project.
 
 ## Desired Outcome
 
-A design system with the following layers, all internally consistent and browser-renderable for validation:
+A designer can:
 
-1. **Foundation** — typographic scale, spacing scale, color ramps (full neutral + accent families), default icon set
-2. **Semantic token layer** — maps raw scale values to constrained, named roles (--bg-base, --text-primary, --border-secondary, etc.) with rules about valid usage per context; this is the layer implementers (including agents) work against, not the raw scale
-3. **Modes and schemes** — modes are named contextual palettes (default, marketing, info, error, success) that define which scale values the semantic roles resolve to; schemes are the light/dark toggle within each mode. Both are implemented as CSS custom property swaps. Themes are the outermost layer — a full scale + role override for brand-level customization across projects.
-4. **Component library** — HTML structure + CSS class definitions built on the semantic layer. Framework-agnostic. Optional React wrappers add prop interfaces for React projects.
-5. **Page/screen templates** — browser-renderable pages that demonstrate the system holistically and support mode and scheme toggling via URL parameters (e.g., ?mode=marketing&scheme=dark)
-6. **Conformance checker** — a CLI script (`npm run check -- --url <url>`) that loads a page in a browser (Playwright) and checks one dimension at a time (color, typography, spacing). Agents call it via Bash and act on the output.
-7. **Figma bridge** — optional setup step using the official Figma MCP. Documented separately. Not required to use the system.
+1. Run a setup/update tool in a blank folder or existing repository.
+2. Establish discoverable sources of truth for brand, product, voice, design principles, system rules, research, and decisions.
+3. Install only the skills and deterministic checks appropriate to that repository.
+4. Use agent-supported workflows for brand definition, ideation, theming, prototyping, testing, refinement, and eventual production work.
+5. Use configured tools such as Figma or a browser through provider-neutral capabilities and explicit permissions.
+6. Constrain generated work to approved semantic styles and components, with explicit prototype-only suspension when desired.
+7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
+
+## First Iteration
+
+Validate one coherent blank-workspace path:
+
+- define the manifest, artifact, skill, tool-permission, and check-result contracts;
+- build a setup/update CLI that installs project-local framework files from a pinned release;
+- install a small initial skill set for brand, theme, prototype, and conformance work;
+- instantiate an editable reference design system and static HTML example;
+- demonstrate the flow from setup through brand/theme refinement, prototype rendering, and static checks;
+- produce recommended next actions without starting them automatically.
+
+Existing-repository adoption is the next milestone, not part of the first vertical slice.
 
 ## Current Phase
 
-clarify
+reframe
 
 ## Agent Access
 
@@ -41,14 +56,24 @@ clarify
 - Can commit: ask first
 - Can push: no
 
-## Notes
+## Key Constraints
 
-- Intended consumers: future new projects; not retrofitting portfolio-site or case-study-exhibits
-- The semantic token layer is a first-class constraint system — raw scale values are defined but the valid roles/uses are what implementers (especially agents) work with
-- Tailwind's utility approach is a reference point, but the goal here is a constrained menu of choices, not open-ended composition of raw utilities
-- Terminology settled: scale → semantic roles → mode (contextual palette) + scheme (light/dark) → resolved values. Theme = brand-level override across projects. See DECISIONS.md.
-- Delivery model: template repo. Clone, `npm install`, `npm run dev`. No publishing infrastructure.
-- Component technology: CSS foundation (portable) + HTML/CSS components (framework-agnostic) + optional React wrappers. See DECISIONS.md.
-- Agent interface: structured files + `CLAUDE.md`. Conformance checker is a CLI script agents call via Bash. No MCP server.
-- Figma: optional, documented separately, uses the official Figma MCP.
-- Figma will be used as a scratchpad, not a source of truth; the code/token layer is authoritative
+- Project workflow skills are installed at the lowest useful repository scope, never globally by default.
+- User-global configuration contains tool-provider preferences and permission ceilings only; it does not inject workflow context.
+- Installed project files are committed and project-owned. Updates arrive as reviewable diffs.
+- Daily design work belongs in skills. The CLI is limited to setup, update, repair, migration, and diagnostics.
+- Markdown records intent and judgment; structured files define enforceable contracts.
+- Design-system constraints are never silently suspended. Suspension is an explicit prototype-only choice by default.
+- Process and lifecycle guidance is recommended, not enforced.
+- External tools may be authoritative for declared artifact kinds, but production use requires a pinned, validated local representation.
+
+## Historical Work
+
+The repository contains an architecture spike for a portable HTML/CSS design system. That work is no longer the product itself. It will be preserved under `reference-system/` and used as the editable demonstration system for framework validation.
+
+## Primary Documents
+
+- `design_practice_framework_prd.md` — product requirements and first-iteration scope
+- `BACKLOG.md` — prioritized functionality beyond the first iteration
+- `DECISIONS.md` — accepted and superseded decisions
+- `docs/installer-distribution.md` — installer ownership, hosting, release, and configuration recommendation

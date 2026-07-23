@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/permission-policy.schema.json",
+  "title": "Design Practice permission policy layer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "layer", "rules"],
+  "properties": {
+    "schema": {
+      "const": "design-practice/permission-policy/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "layer": {
+      "enum": [
+        "framework-default",
+        "user-ceiling",
+        "organization-restriction",
+        "repository-restriction"
+      ]
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions", "decision"],
+        "properties": {
+          "capability": {
+            "$ref": "#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "decision": {
+            "enum": ["allow", "ask", "deny"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/relativeGlob"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "capability": {
+      "anyOf": [
+        {
+          "enum": [
+            "repository",
+            "prototype",
+            "production-source",
+            "canonical-artifact",
+            "browser",
+            "design-file",
+            "external-artifact",
+            "version-control"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "inspect",
+        "execute",
+        "create",
+        "write",
+        "update",
+        "delete",
+        "commit",
+        "push",
+        "open-pr"
+      ]
+    },
+    "relativeGlob": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

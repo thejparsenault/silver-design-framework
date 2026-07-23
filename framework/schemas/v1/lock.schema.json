@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-practice.dev/schemas/v1/lock.schema.json",
+  "title": "Design Practice installed framework lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "framework",
+    "packages",
+    "managed_files"
+  ],
+  "properties": {
+    "schema": {
+      "const": "design-practice/lock/v1"
+    },
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "source"],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "reference"],
+          "properties": {
+            "type": {
+              "enum": ["npm", "github-release", "local"]
+            },
+            "reference": {
+              "type": "string",
+              "minLength": 1
+            },
+            "integrity": {
+              "$ref": "#/$defs/integrity"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": ["npm", "github-release"]
+                  }
+                },
+                "required": ["type"]
+              },
+              "then": {
+                "required": ["integrity"]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "version", "ownership"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "type": {
+            "enum": [
+              "skill",
+              "check",
+              "recipe",
+              "adapter",
+              "reference-system"
+            ]
+          },
+          "version": {
+            "$ref": "#/$defs/version"
+          },
+          "ownership": {
+            "$ref": "#/$defs/ownership"
+          },
+          "integrity": {
+            "$ref": "#/$defs/integrity"
+          }
+        }
+      }
+    },
+    "managed_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "owner", "ownership"],
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/relativePath"
+          },
+          "owner": {
+            "$ref": "#/$defs/id"
+          },
+          "ownership": {
+            "$ref": "#/$defs/ownership"
+          },
+          "base_integrity": {
+            "$ref": "#/$defs/integrity"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "ownership": {
+                  "enum": ["generated", "framework-managed"]
+                }
+              },
+              "required": ["ownership"]
+            },
+            "then": {
+              "required": ["base_integrity"]
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "integrity": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "ownership": {
+      "enum": [
+        "generated",
+        "framework-managed",
+        "copied-and-owned",
+        "project-owned"
+      ]
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

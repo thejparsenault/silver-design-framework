@@ -1,0 +1,27 @@
+{
+  "schema": "design-practice/check-result/v1",
+  "checker": "accessibility",
+  "suite": "browser",
+  "policy_profile": "prototype",
+  "status": "not-run",
+  "coverage": {
+    "requested": [
+      "reference-system"
+    ],
+    "completed": [],
+    "reason": "No deterministic browser provider is configured."
+  },
+  "findings": [
+    {
+      "schema": "design-practice/finding/v1",
+      "checker": "accessibility",
+      "rule": "browser.provider-available",
+      "severity": "warning",
+      "policy_profile": "prototype",
+      "message": "The browser accessibility check could not run.",
+      "observed_value": "provider-unavailable",
+      "suggested_correction": "Configure a supported deterministic browser provider and run the browser suite again.",
+      "status": "not-run"
+    }
+  ]
+}
