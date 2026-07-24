@@ -108,7 +108,10 @@ async function validateV1(validators) {
   for (const mapping of manifest.artifacts) {
     const artifactPath = path.join(workspaceRoot, mapping.path);
     const content = await readFile(artifactPath, "utf8");
-    if (mapping.kind !== "permission-policy") {
+    if (
+      mapping.kind !== "permission-policy" &&
+      mapping.path.endsWith(".md")
+    ) {
       const metadata = frontmatter(content, mapping.path);
       assertValid(
         validators,
@@ -217,6 +220,8 @@ async function validateV2(validators) {
     ["tool-profile.schema.json", "fixtures/contracts/v2/valid/tool-profile.yaml", "yaml"],
     ["playbook.schema.json", "framework/playbooks/default-design-loop.yaml", "yaml"],
     ["lock.schema.json", "fixtures/blank-workspace/expected/.silver/lock.yaml", "yaml"],
+    ["asset-catalog.schema.json", "fixtures/blank-workspace/expected/design/assets/catalog.json", "json"],
+    ["presentation-kit.schema.json", "fixtures/blank-workspace/expected/design/presentation-kit/kit.json", "json"],
   ];
   for (const [schemaName, relativePath, format] of positive) {
     assertValid(

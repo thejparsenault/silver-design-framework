@@ -239,7 +239,9 @@
             "prototype-index",
             "codebase-binding",
             "permission-policy",
-            "check-config"
+            "check-config",
+            "asset-catalog",
+            "presentation-kit"
           ]
         },
         {

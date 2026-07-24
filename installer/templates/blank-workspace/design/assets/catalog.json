@@ -1,0 +1,7 @@
+{
+  "schema": "silver/asset-catalog/v2",
+  "id": "project-assets",
+  "revision": "r1",
+  "updated": "{{DATE}}T00:00:00Z",
+  "assets": []
+}

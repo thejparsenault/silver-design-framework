@@ -61,7 +61,7 @@ function location(content, offset) {
 export async function checkSemanticStyles(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "semantic-style";
-  const roots = ["reference-system", "prototypes"];
+  const roots = ["reference-system", "prototypes", "design/work/sketches", "presentations", "production"];
   const files = (
     await Promise.all(
       roots.map((relativeRoot) =>

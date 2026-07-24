@@ -132,4 +132,7 @@ scripts:
   - id: invoke
     path: scripts/invoke.mjs
     purpose: Run this skill through the shared guarded invocation runtime.
+  - id: render-static-implementation
+    path: scripts/render-static-implementation.mjs
+    purpose: Bundled deterministic implement operation.
 recommend_after: *a1

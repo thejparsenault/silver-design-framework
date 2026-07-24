@@ -13,6 +13,8 @@ Workspace: **Example Product** (`product-workspace`)
 | Design system | canonical | draft | [system/README.md](system/README.md) |
 | Decision log | canonical | active | [decisions/README.md](decisions/README.md) |
 | Permission policy | canonical | active | [permissions.yaml](permissions.yaml) |
+| Asset catalog | canonical | active | [assets/catalog.json](assets/catalog.json) |
+| Presentation kit | canonical | active | [presentation-kit/kit.json](presentation-kit/kit.json) |
 
 Flow root: `design/flows/`
 Default flow view: `mermaid`

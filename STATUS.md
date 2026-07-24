@@ -13,6 +13,13 @@ used to test framework neutrality.
 
 ## Recent Progress
 
+- 2026-07-24: Local renderers, shared project resources, and independent checks
+  - Added strict v2 contracts and installed blank-workspace templates for a portable asset catalog and a project-owned presentation kit with opportunity, proposal, and outcome templates.
+  - Added deterministic semantic-HTML renderers for inexpensive sketches, branded change-case presentations, and one production-capable static HTML/CSS/minimal-JavaScript recipe that refuses incomplete design intent.
+  - Expanded the independent suite to cover contract and reference integrity, flows, semantic styles, prototype policy, evidence provenance, presentation integrity, production readiness, asset integrity, accessibility, responsive behavior, and critical interactions.
+  - Added a real headless-Chrome DevTools suite that checks contrast and structure, horizontal overflow at declared viewports, and observable critical actions against local render targets.
+  - The full build passes 38 tests and the exact offline `silver-design-framework-0.2.0.tgz` installs and passes fast, browser, and independent skill-invocation smoke checks.
+
 - 2026-07-24: Complete v2 skill catalog and blank installation
   - Converted the original five skills and added the remaining thirteen required packages, giving Silver all eighteen project-local v2 skills with concise instructions, UI metadata, contracts, local invocation shims, declared capabilities, permissions, guardrails, completion invariants, checks, and handoffs.
   - Added a guarded invocation runtime that validates pinned inputs and declared outputs, resolves layered permissions and provider degradation, enforces guardrail relaxation rules, prevents blind overwrites, writes atomically, and emits normalized results with recommended-only follow-ups.
@@ -137,9 +144,9 @@ used to test framework neutrality.
 
 1. Add positive and relevant negative or degraded fixtures for every required
    skill, including strict working-artifact payloads and task-specific behavior.
-2. Complete the local sketch, presentation, production, asset, and browser
-   capabilities plus their independent checks.
-3. Implement v1 workspace migration and the complete evidence-to-implementation
+2. Implement v1 workspace migration and its preview, apply, idempotence,
+   ownership, and conflict fixtures.
+3. Build the complete evidence-to-implementation
    playbook fixture against the exact packed release.
 
 ## Blockers

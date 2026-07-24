@@ -57,6 +57,7 @@ try {
     "installer/repair.mjs",
     "installer/update.mjs",
     "framework/skills/design-check/scripts/run-fast.mjs",
+    "framework/skills/design-check/scripts/run-browser.mjs",
     "framework/skills/prototype/scripts/render-static-prototype.mjs",
     "framework/runtime/invoke-skill.mjs",
     "framework/schemas/v2/skill-result.schema.json",
@@ -123,6 +124,19 @@ try {
     { cwd: workspaceRoot },
   );
   assert.equal(JSON.parse(checkOutput).status, "pass");
+  const browserCheck = path.join(
+    workspaceRoot,
+    ".skills",
+    "design-check",
+    "scripts",
+    "run-browser.mjs",
+  );
+  const { stdout: browserOutput } = await command(
+    process.execPath,
+    [browserCheck, "--root", workspaceRoot],
+    { cwd: workspaceRoot },
+  );
+  assert.equal(JSON.parse(browserOutput).status, "pass");
   const invocationPath = path.join(workspaceRoot, "check-invocation.json");
   await writeFile(
     invocationPath,

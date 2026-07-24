@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   checkResult,
   exitCode,
+  findFiles,
   finding,
   loadManifest,
   parseArguments,
@@ -15,6 +16,34 @@ import {
   readYaml,
   workspacePath,
 } from "./check-lib.mjs";
+
+let contracts;
+try {
+  contracts = await import("silver-design-framework/framework/runtime/contracts.mjs");
+} catch {
+  contracts = null;
+}
+
+async function validateV2(name, value) {
+  if (contracts) {
+    await contracts.assertV2(name, value);
+    return;
+  }
+  const expected = {
+    "asset-catalog.schema.json": "silver/asset-catalog/v2",
+    "presentation-kit.schema.json": "silver/presentation-kit/v2",
+    "working-artifact.schema.json": "silver/working-artifact/v2",
+  }[name];
+  if (
+    !expected ||
+    value?.schema !== expected ||
+    typeof value.id !== "string" ||
+    (name !== "presentation-kit.schema.json" &&
+      typeof value.revision !== "string")
+  ) {
+    throw new Error(`${name} structural validation failed in dependency-free installation.`);
+  }
+}
 
 async function exists(filePath) {
   try {
@@ -27,7 +56,7 @@ async function exists(filePath) {
 
 export async function checkArtifacts(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
-  const checker = "artifact-schema";
+  const checker = "contract-integrity";
   const findings = [];
   const requested = ["design/manifest.yaml"];
   const completed = [];
@@ -138,6 +167,22 @@ export async function checkArtifacts(options = {}) {
         }
         continue;
       }
+      if (artifact.kind === "asset-catalog") {
+        const catalog = JSON.parse(await readFile(absolute, "utf8"));
+        await validateV2("asset-catalog.schema.json", catalog);
+        if (catalog.id !== artifact.id) {
+          throw new Error("Asset catalog ID does not match its manifest mapping.");
+        }
+        continue;
+      }
+      if (artifact.kind === "presentation-kit") {
+        const kit = JSON.parse(await readFile(absolute, "utf8"));
+        await validateV2("presentation-kit.schema.json", kit);
+        if (artifact.id !== "presentation-kit") {
+          throw new Error("Presentation kit manifest identity is invalid.");
+        }
+        continue;
+      }
       const metadata = parseFrontmatter(await readFile(absolute, "utf8"));
       for (const key of [
         "schema",
@@ -192,6 +237,68 @@ export async function checkArtifacts(options = {}) {
           checker,
           rule: "artifact.metadata-invalid",
           file: workspacePath(root, absolute),
+          message: error.message,
+        }),
+      );
+    }
+  }
+
+  const workingFiles = await findFiles(
+    path.join(root, "design"),
+    (file) =>
+      file.endsWith(".json") &&
+      !file.endsWith(`${path.sep}catalog.json`) &&
+      !file.endsWith(`${path.sep}kit.json`) &&
+      !file.includes(`${path.sep}presentation-kit${path.sep}templates${path.sep}`) &&
+      !file.endsWith(`${path.sep}flow.json`),
+  );
+  for (const absolute of workingFiles) {
+    const file = workspacePath(root, absolute);
+    requested.push(file);
+    try {
+      const artifact = JSON.parse(await readFile(absolute, "utf8"));
+      if (artifact.schema !== "silver/working-artifact/v2") continue;
+      await validateV2("working-artifact.schema.json", artifact);
+      for (const reference of artifact.sources) {
+        const source = path.resolve(root, reference.path);
+        if (!source.startsWith(`${root}${path.sep}`) || !(await exists(source))) {
+          findings.push(
+            finding({
+              checker,
+              rule: "artifact.reference-unavailable",
+              file,
+              message: `Pinned source ${reference.id}@${reference.revision} is unavailable.`,
+              observedValue: reference.path,
+            }),
+          );
+          continue;
+        }
+        if (source.endsWith(".json")) {
+          const sourceValue = JSON.parse(await readFile(source, "utf8"));
+          if (
+            sourceValue.id &&
+            (sourceValue.id !== reference.id ||
+              sourceValue.revision !== reference.revision)
+          ) {
+            findings.push(
+              finding({
+                checker,
+                rule: "artifact.reference-stale",
+                file,
+                message: `Pinned source ${reference.id}@${reference.revision} does not match the current source revision.`,
+                observedValue: reference.path,
+              }),
+            );
+          }
+        }
+      }
+      completed.push(file);
+    } catch (error) {
+      findings.push(
+        finding({
+          checker,
+          rule: "artifact.working-invalid",
+          file,
           message: error.message,
         }),
       );

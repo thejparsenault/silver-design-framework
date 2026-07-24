@@ -76,7 +76,7 @@ packages:
     path: .skills/sketch
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:d9cf0ee24209b7774762372b73c6b91ac0f6064b91f4c68feb0def599d411750
+    integrity: sha256:18eece7151bc5e01550d3ca5362674e3d84fd0343ecb2e7e3b7447407e0a7909
   - id: component
     type: skill
     path: .skills/component
@@ -100,25 +100,25 @@ packages:
     path: .skills/pitch
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:2c57a64b82f6b71c8a6a6085af9235ab91b271d54abcdb8c9dcd5668a685ace3
+    integrity: sha256:5ab5ff56f8aeffe6003ebd5d48622e02a9be7da1c23d51f53da5fa0b2ac1c3f9
   - id: implement
     type: skill
     path: .skills/implement
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:aa1e05f860dd61d095df074d11fdad69692211073958009b0108c2f646d8bd44
+    integrity: sha256:4f4c036cbdcecd71432204bf865ee8c93684cb10953d5e7675d9060bd9805660
   - id: design-check
     type: skill
     path: .skills/design-check
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:45adbb1ec3e5decd787bb5468401fdf3c5c434b73399eb9dafc568f4623ebd6a
+    integrity: sha256:47f669d120fd51c577675cdf563239c50e1aefa64ee52ec4966775e5c0f245ca
   - id: schemas-v2
     type: schema-bundle
     path: .silver/schemas/v2
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:1739a97245269dd0307d518082a2e63cf355147feeb4dad7b10b51c6ce9e9796
+    integrity: sha256:a9646104e1a27c22932b805d931f8f4477e0fb89fdbddd1a2ceaa95e0e88235b
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
@@ -130,7 +130,7 @@ packages:
     path: .silver/runtime
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:7de79740e7c134d62b53950987cb84d08bc06e0de08d03d51ec5784f2ba52bb3
+    integrity: sha256:edf6991ba0cc66b6fa04031337702a2ef1e6e0e41a8dbd334f173064dfc9b3d9
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
@@ -147,7 +147,7 @@ managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:43ac201d57e946c0d9bcee118afadae809c40bdb962c5c9acc82af1e65d0cb5e
+    base_integrity: sha256:3586b200eaadbd31374e31298538ed7627a301a831e44c06f3223633a4f38c68
   - path: AGENTS.md
     owner: framework-agent-pointer
     ownership: generated

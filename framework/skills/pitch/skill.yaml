@@ -118,4 +118,7 @@ scripts:
   - id: invoke
     path: scripts/invoke.mjs
     purpose: Run this skill through the shared guarded invocation runtime.
+  - id: render-presentation
+    path: scripts/render-presentation.mjs
+    purpose: Bundled deterministic pitch operation.
 recommend_after: *a1

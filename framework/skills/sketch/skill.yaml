@@ -110,4 +110,7 @@ scripts:
   - id: invoke
     path: scripts/invoke.mjs
     purpose: Run this skill through the shared guarded invocation runtime.
+  - id: render-sketch
+    path: scripts/render-sketch.mjs
+    purpose: Bundled deterministic sketch operation.
 recommend_after: *a1

@@ -5,6 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { checkArtifacts } from "./check-artifacts.mjs";
+import { checkAccessibility } from "./check-accessibility.mjs";
+import { checkAssets } from "./check-assets.mjs";
+import { checkEvidence } from "./check-evidence.mjs";
 import { checkFlows } from "./check-flows.mjs";
 import {
   checkResult,
@@ -12,13 +15,24 @@ import {
   parseArguments,
 } from "./check-lib.mjs";
 import { checkPrototypes } from "./check-prototypes.mjs";
+import { checkPresentations } from "./check-presentations.mjs";
+import { checkProduction } from "./check-production.mjs";
+import { checkResponsive } from "./check-responsive.mjs";
+import { checkInteractions } from "./check-interactions.mjs";
 import { checkSemanticStyles } from "./check-semantic-styles.mjs";
 
 const checkers = [
-  ["artifact-schema", checkArtifacts],
+  ["contract-integrity", checkArtifacts],
   ["flow-structure", checkFlows],
   ["semantic-style", checkSemanticStyles],
   ["prototype-policy", checkPrototypes],
+  ["evidence-provenance", checkEvidence],
+  ["presentation-integrity", checkPresentations],
+  ["production-readiness", checkProduction],
+  ["asset-integrity", checkAssets],
+  ["accessibility", checkAccessibility],
+  ["responsive-behavior", checkResponsive],
+  ["critical-interactions", checkInteractions],
 ];
 
 export async function runFastSuite(options = {}) {

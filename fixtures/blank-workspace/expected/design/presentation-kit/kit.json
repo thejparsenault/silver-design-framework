@@ -1,0 +1,42 @@
+{
+  "schema": "silver/presentation-kit/v2",
+  "id": "project-presentation-kit",
+  "revision": "r1",
+  "updated": "2026-07-23T00:00:00Z",
+  "source_revisions": [
+    { "id": "brand", "kind": "brand", "revision": "r1", "path": "design/brand.md" },
+    { "id": "voice", "kind": "voice", "revision": "r1", "path": "design/voice.md" },
+    { "id": "design-system", "kind": "design-system", "revision": "r1", "path": "design/system/README.md" }
+  ],
+  "roles": {
+    "canvas": "--ds-surface-canvas",
+    "surface": "--ds-surface-raised",
+    "heading": "--ds-text-primary",
+    "body": "--ds-text-primary",
+    "muted": "--ds-text-muted",
+    "accent": "--ds-action-primary",
+    "border": "--ds-border-subtle"
+  },
+  "components": [
+    {
+      "id": "title-band",
+      "purpose": "Frame the case and requested decision.",
+      "slots": ["eyebrow", "title", "summary"]
+    },
+    {
+      "id": "comparison",
+      "purpose": "Compare before and after without hiding tradeoffs.",
+      "slots": ["before", "after", "tradeoffs"]
+    },
+    {
+      "id": "impact-card",
+      "purpose": "Show impact type, claim, confidence, and source.",
+      "slots": ["impact-kind", "claim", "confidence", "source"]
+    }
+  ],
+  "templates": [
+    { "mode": "opportunity", "path": "design/presentation-kit/templates/opportunity.json" },
+    { "mode": "proposal", "path": "design/presentation-kit/templates/proposal.json" },
+    { "mode": "outcome", "path": "design/presentation-kit/templates/outcome.json" }
+  ]
+}

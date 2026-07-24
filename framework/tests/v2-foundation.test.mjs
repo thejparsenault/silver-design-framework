@@ -48,6 +48,39 @@ test("v2 schemas validate representative positive contracts", async () => {
     "tool-profile.schema.json",
     await yaml("fixtures/contracts/v2/valid/tool-profile.yaml"),
   );
+  await assertV2("asset-catalog.schema.json", {
+    schema: "silver/asset-catalog/v2",
+    id: "assets",
+    revision: "r1",
+    updated: "2026-07-24T20:00:00Z",
+    assets: [],
+  });
+  await assertV2("presentation-kit.schema.json", {
+    schema: "silver/presentation-kit/v2",
+    id: "kit",
+    revision: "r1",
+    updated: "2026-07-24T20:00:00Z",
+    source_revisions: [
+      { id: "brand", kind: "brand", revision: "r1", path: "design/brand.md" },
+      { id: "voice", kind: "voice", revision: "r1", path: "design/voice.md" },
+      { id: "system", kind: "design-system", revision: "r1", path: "design/system/README.md" }
+    ],
+    roles: {
+      canvas: "--ds-surface-canvas",
+      surface: "--ds-surface-raised",
+      heading: "--ds-text-primary",
+      body: "--ds-text-primary",
+      muted: "--ds-text-muted",
+      accent: "--ds-action-primary",
+      border: "--ds-border-subtle"
+    },
+    components: [{ id: "title", purpose: "Title", slots: ["heading"] }],
+    templates: [
+      { mode: "opportunity", path: "design/presentation-kit/templates/opportunity.json" },
+      { mode: "proposal", path: "design/presentation-kit/templates/proposal.json" },
+      { mode: "outcome", path: "design/presentation-kit/templates/outcome.json" }
+    ]
+  });
 });
 
 test("not-run execution cannot claim downstream readiness", async () => {

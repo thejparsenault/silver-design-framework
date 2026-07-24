@@ -62,6 +62,22 @@ artifacts:
     status: active
     authority:
       type: local
+  - id: project-assets
+    kind: asset-catalog
+    path: design/assets/catalog.json
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+  - id: presentation-kit
+    kind: presentation-kit
+    path: design/presentation-kit/kit.json
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
 
 implementation_profiles:
   reference-system:
@@ -94,15 +110,20 @@ prototype_policy:
 checks:
   policy_profile: prototype
   enabled:
-    - artifact-schema
+    - contract-integrity
     - flow-structure
     - semantic-style
     - prototype-policy
     - accessibility
     - responsive
+    - evidence-provenance
+    - presentation-integrity
+    - production-readiness
+    - asset-integrity
+    - critical-interactions
   suites:
     fast:
-      - artifact-schema
+      - contract-integrity
       - flow-structure
       - semantic-style
       - prototype-policy
@@ -110,7 +131,7 @@ checks:
       - accessibility
       - responsive
     full:
-      - artifact-schema
+      - contract-integrity
       - flow-structure
       - semantic-style
       - prototype-policy

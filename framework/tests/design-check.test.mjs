@@ -33,10 +33,17 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
   assert.deepEqual(
     result.results.map(({ checker }) => checker),
     [
-      "artifact-schema",
+      "contract-integrity",
       "flow-structure",
       "semantic-style",
       "prototype-policy",
+      "evidence-provenance",
+      "presentation-integrity",
+      "production-readiness",
+      "asset-integrity",
+      "accessibility",
+      "responsive-behavior",
+      "critical-interactions",
     ],
   );
   for (const checkerResult of result.results) {

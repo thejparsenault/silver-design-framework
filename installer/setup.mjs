@@ -52,7 +52,7 @@ const allowedBlankEntries = new Set([
   "LICENSE.md",
   "README.md",
 ]);
-const seededTemplates = [
+export const SEEDED_TEMPLATES = [
   "design/brand.md",
   "design/product.md",
   "design/voice.md",
@@ -61,6 +61,16 @@ const seededTemplates = [
   "design/flows/README.md",
   "design/decisions/README.md",
   "design/permissions.yaml",
+  "design/assets/catalog.json",
+  "design/assets/README.md",
+  "design/presentation-kit/kit.json",
+  "design/presentation-kit/templates/opportunity.json",
+  "design/presentation-kit/templates/proposal.json",
+  "design/presentation-kit/templates/outcome.json",
+  "design/presentation-kit/README.md",
+  "design/work/README.md",
+  "presentations/README.md",
+  "production/README.md",
   "prototypes/README.md",
 ];
 const workspaceIdPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -347,7 +357,7 @@ export async function setupWorkspace(options = {}) {
     preserved.push("design/manifest.yaml");
   }
 
-  for (const relativePath of seededTemplates) {
+  for (const relativePath of SEEDED_TEMPLATES) {
     const destination = resolveInside(root, relativePath);
     if (await exists(destination)) {
       preserved.push(relativePath);

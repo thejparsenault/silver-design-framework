@@ -1,0 +1,5 @@
+{
+  "schema": "silver/presentation-template/v1",
+  "mode": "opportunity",
+  "sections": ["title-band", "before", "reasons", "opportunity", "impact-card", "decision-request"]
+}

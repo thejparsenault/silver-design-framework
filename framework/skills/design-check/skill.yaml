@@ -71,20 +71,44 @@ scripts:
   - id: invoke
     path: scripts/invoke.mjs
     purpose: Run this skill through the shared guarded invocation runtime.
+  - id: check-accessibility
+    path: scripts/check-accessibility.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-artifacts
     path: scripts/check-artifacts.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-assets
+    path: scripts/check-assets.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-evidence
+    path: scripts/check-evidence.mjs
     purpose: Bundled deterministic design-check operation.
   - id: check-flows
     path: scripts/check-flows.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-interactions
+    path: scripts/check-interactions.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-lib
     path: scripts/check-lib.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-presentations
+    path: scripts/check-presentations.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-production
+    path: scripts/check-production.mjs
     purpose: Bundled deterministic design-check operation.
   - id: check-prototypes
     path: scripts/check-prototypes.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-responsive
+    path: scripts/check-responsive.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-semantic-styles
     path: scripts/check-semantic-styles.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: run-browser
+    path: scripts/run-browser.mjs
     purpose: Bundled deterministic design-check operation.
   - id: run-fast
     path: scripts/run-fast.mjs

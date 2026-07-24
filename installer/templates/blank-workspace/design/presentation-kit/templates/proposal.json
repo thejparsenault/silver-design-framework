@@ -1,0 +1,5 @@
+{
+  "schema": "silver/presentation-template/v1",
+  "mode": "proposal",
+  "sections": ["title-band", "before", "reasons", "after", "comparison", "impact-card", "tradeoffs", "decision-request"]
+}

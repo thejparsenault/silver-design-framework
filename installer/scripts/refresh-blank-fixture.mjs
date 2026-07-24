@@ -1,8 +1,8 @@
-import { copyFile, mkdtemp, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { setupWorkspace } from "../setup.mjs";
+import { SEEDED_TEMPLATES, setupWorkspace } from "../setup.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const fixtureRoot = path.join(
@@ -25,8 +25,13 @@ try {
   for (const relativePath of [
     "AGENTS.md",
     "design/INDEX.md",
+    "design/manifest.yaml",
     ".silver/lock.yaml",
+    ...SEEDED_TEMPLATES,
   ]) {
+    await mkdir(path.dirname(path.join(fixtureRoot, relativePath)), {
+      recursive: true,
+    });
     await copyFile(
       path.join(temporaryRoot, relativePath),
       path.join(fixtureRoot, relativePath),

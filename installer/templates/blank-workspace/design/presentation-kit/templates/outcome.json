@@ -1,0 +1,5 @@
+{
+  "schema": "silver/presentation-template/v1",
+  "mode": "outcome",
+  "sections": ["title-band", "before", "after", "impact-card", "learnings", "next-decision"]
+}

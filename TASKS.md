@@ -96,7 +96,7 @@ The authoritative requirement list and release evidence rules are in
   - type: build
   - priority: high
   - context: medium
-  - notes: Blank setup now installs the complete v2 skill and framework payload under an integrity-tracked v2 lock; diagnostics, repair, idempotence, update preservation, and managed-file conflicts pass. Completion still requires v1 workspace migration, the remaining local renderers and baseline recipe, shared assets, presentation kit, and expanded independent checks.
+  - notes: Blank setup now installs the complete v2 skill and framework payload, local flow/sketch/prototype/presentation/production renderers, shared asset model, presentation kit, eleven independent fast checks, and real local Chrome checks under an integrity-tracked v2 lock. Diagnostics, repair, idempotence, update preservation, managed-file conflicts, full build, and exact offline package smoke pass. Completion still requires the reviewable v1 workspace migration and full-loop release evidence.
 
 - [ ] Prove the complete blank-workspace release
   - type: test
