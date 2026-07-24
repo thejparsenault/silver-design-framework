@@ -1,0 +1,27 @@
+{
+  "schema": "silver/working-artifact/v2",
+  "id": "campaign-setup-finding",
+  "kind": "finding",
+  "revision": "r1",
+  "scope": "product",
+  "status": "draft",
+  "title": "Campaign setup lacks a clear review moment",
+  "created": "2026-07-24T18:00:00Z",
+  "updated": "2026-07-24T18:00:00Z",
+  "sources": [
+    {
+      "id": "seed-feedback",
+      "kind": "evidence",
+      "revision": "r1",
+      "path": "design/evidence/seed-feedback.json",
+      "role": "evidence"
+    }
+  ],
+  "payload": {
+    "statement": "People cannot confidently verify targeting before launch.",
+    "evidence_refs": [
+      "seed-feedback@r1"
+    ],
+    "confidence": "medium"
+  }
+}

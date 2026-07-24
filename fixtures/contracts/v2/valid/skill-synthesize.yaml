@@ -1,0 +1,82 @@
+schema: silver/skill/v2
+id: synthesize
+version: 0.2.0
+summary: Turn sanitized evidence and explicit assumptions into traceable findings and problem frames.
+context_budget: medium
+inputs:
+  - kind: evidence
+    required: true
+    role: evidence
+    multiple: true
+  - kind: product
+    required: false
+    role: canonical
+outputs:
+  - kind: finding
+    scope: product
+    path_pattern: design/work/findings/**
+    authority: project-owned
+  - kind: problem-frame
+    scope: product
+    path_pattern: design/work/problem-frames/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional:
+    - capability: research-evidence
+      providers:
+        - repository-evidence
+      fallback: degraded
+      description: Use sanitized repository evidence when no analysis provider is configured.
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - create
+      - write
+    paths:
+      - design/**
+    decision: allow
+guardrails:
+  - privacy-sanitized-evidence
+  - provenance-required
+  - no-fabricated-evidence
+  - revision-pinned
+  - permission-bounded
+  - followups-recommended-only
+completion:
+  invariants:
+    - sources-pinned
+    - assumptions-labeled
+    - observations-separated
+  quality_criteria:
+    - id: evidence-supported
+      description: Every finding is supported by a pinned source or labeled as an assumption.
+      evaluation: agent
+    - id: frame-actionable
+      description: The problem frame names an affected audience, desired outcome, and open questions.
+      evaluation: human
+  unresolved_questions: warn
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Accept the frame before concept selection.
+checks:
+  - id: evidence-provenance
+    required: true
+    blocks:
+      - ideation
+      - pitch
+handoffs:
+  - id: finding-to-ideation
+    target: ideate
+    readiness: ideation
+    requires:
+      - finding
+      - problem-frame
+external_effects:
+  - none
+recommend_after:
+  - ideate
+  - pitch

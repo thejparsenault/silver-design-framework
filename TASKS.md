@@ -78,7 +78,7 @@ The authoritative requirement list and release evidence rules are in
   - type: design
   - priority: high
   - context: medium
-  - notes: Complete `S02-ARC-02` through `S02-ARC-06`, including v1 migration.
+  - notes: The v2 schemas, shared guardrail registry, permission and provider resolution runtime, normalized result constraints, user tool profile, positive and negative fixtures, and v1 skill-contract migration are implemented. Completion still requires converting every installed skill and proving every invocation uses the result and guardrail contracts, plus the workspace migration under `S02-ARC-10`.
 
 - [ ] Implement and validate agentic composition
   - type: design

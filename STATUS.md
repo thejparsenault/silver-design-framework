@@ -13,6 +13,12 @@ used to test framework neutrality.
 
 ## Recent Progress
 
+- 2026-07-24: Silver 0.2 v2 contract foundation
+  - Added strict v2 contracts for skills, normalized invocation results, required working-artifact families, guardrail registries, permission layers, capability-resolution evidence, and user-global tool profiles.
+  - Implemented reusable contract validation, six-layer permission intersection, provider fallback and degradation reporting, guardrail relaxation enforcement, and a review-required v1 skill-contract migration.
+  - Added positive and negative fixtures proving that `not-run` cannot become downstream readiness, missing policy rules cannot grant authority, unsafe paths are rejected, and non-relaxable guardrails stay fixed.
+  - Replaced the contract gate's undeclared Python runtime dependency with the packaged Node/AJV/YAML stack and validated every v1 skill through the migration.
+
 - 2026-07-24: Silver 0.2 release boundary
   - Defined the Complete Blank-Workspace Suite as the next release and moved general existing-codebase adoption after it.
   - Added stable architecture, skill, and end-to-end requirement IDs plus an evidence-backed release audit rule.
@@ -116,10 +122,10 @@ used to test framework neutrality.
 
 ## Next 3 Actions
 
-1. Implement and fixture-test the v2 skill, result, working-artifact, and
-   guardrail contracts required by `S02-ARC-02` through `S02-ARC-06`.
-2. Implement the playbook contract, resumable state, and default design loop
+1. Implement the playbook contract, resumable state, and default design loop
    required by `S02-ARC-07` through `S02-ARC-09`.
+2. Convert the five existing skills and build the remaining required skills on
+   the v2 contract and shared invocation runtime.
 3. Implement the required skill catalog and prove the complete packed-release
    scenario defined by `S02-SKL-*` and `S02-E2E-*`.
 

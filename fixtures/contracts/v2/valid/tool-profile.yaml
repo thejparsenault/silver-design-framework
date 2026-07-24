@@ -1,0 +1,28 @@
+schema: silver/tool-profile/v2
+id: local-defaults
+providers:
+  - capability: browser
+    provider: playwright
+    priority: 1
+    available: true
+  - capability: design-file
+    provider: figma
+    priority: 1
+    available: false
+permission_ceiling:
+  - capability: browser
+    actions:
+      - inspect
+      - execute
+    decision: allow
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+    decision: ask
+  - capability: external-artifact
+    actions:
+      - create
+      - write
+      - publish
+    decision: ask

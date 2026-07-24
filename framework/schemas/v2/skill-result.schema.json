@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/skill-result.schema.json",
+  "title": "Silver skill invocation result v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "invocation_id",
+    "skill",
+    "started_at",
+    "completed_at",
+    "inputs",
+    "outputs",
+    "providers",
+    "degraded_capabilities",
+    "execution",
+    "acceptance",
+    "readiness",
+    "checks",
+    "guardrails",
+    "unresolved_questions",
+    "recommended_next_actions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "silver/skill-result/v2"
+    },
+    "invocation_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/version"
+        }
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "provider", "status"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "provider": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["used", "fallback", "unavailable", "denied"]
+          }
+        }
+      }
+    },
+    "degraded_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "reason", "coverage"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "coverage": {
+            "enum": ["local-fallback", "degraded", "not-run"]
+          }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary"],
+      "properties": {
+        "status": {
+          "enum": [
+            "complete",
+            "complete-with-findings",
+            "blocked",
+            "failed",
+            "not-run"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["not-required", "awaiting-review", "accepted", "rejected"]
+        },
+        "reviewer": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "readiness": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "reasons"],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["ready", "not-ready", "blocked", "not-applicable"]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "result_path"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["pass", "fail", "not-run"]
+          },
+          "result_path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["pass", "fail", "not-run", "relaxed"]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "decision_reference": {
+            "$ref": "common.schema.json#/$defs/artifactReference"
+          }
+        }
+      }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question", "blocks"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          }
+        }
+      }
+    },
+    "recommended_next_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "reason", "automatic"],
+        "properties": {
+          "action": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "automatic": {
+            "const": false
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": {
+              "status": {
+                "enum": ["blocked", "failed", "not-run"]
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "readiness": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "status": {
+                    "const": "ready"
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": {
+              "status": {
+                "const": "not-run"
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outputs": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

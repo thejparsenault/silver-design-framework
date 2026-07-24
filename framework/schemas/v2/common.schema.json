@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/common.schema.json",
+  "title": "Silver v2 shared definitions",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "artifactKind": {
+      "anyOf": [
+        {
+          "enum": [
+            "brand",
+            "product",
+            "voice",
+            "design-principles",
+            "design-system",
+            "token-source",
+            "component-catalog",
+            "check-config",
+            "research-plan",
+            "evidence",
+            "problem-frame",
+            "finding",
+            "concept",
+            "hypothesis",
+            "design-specification",
+            "flow",
+            "sketch",
+            "evaluation",
+            "observation",
+            "component-proposal",
+            "decision",
+            "prototype",
+            "change-case",
+            "presentation-view",
+            "implementation-handoff",
+            "implementation",
+            "asset-catalog",
+            "presentation-kit"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "capability": {
+      "anyOf": [
+        {
+          "enum": [
+            "repository",
+            "canonical-artifact",
+            "research-evidence",
+            "flow",
+            "sketch-renderer",
+            "prototype-renderer",
+            "presentation-renderer",
+            "production-source",
+            "browser",
+            "design-file",
+            "external-artifact",
+            "version-control"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "inspect",
+        "execute",
+        "create",
+        "write",
+        "update",
+        "delete",
+        "publish",
+        "present",
+        "send",
+        "commit",
+        "push",
+        "open-pr"
+      ]
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "revision", "path"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/artifactKind"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

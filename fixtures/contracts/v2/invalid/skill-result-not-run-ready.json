@@ -1,0 +1,32 @@
+{
+  "schema": "silver/skill-result/v2",
+  "invocation_id": "invalid-result-1",
+  "skill": {
+    "id": "prototype",
+    "version": "0.2.0"
+  },
+  "started_at": "2026-07-24T18:00:00Z",
+  "completed_at": "2026-07-24T18:00:01Z",
+  "inputs": [],
+  "outputs": [],
+  "providers": [],
+  "degraded_capabilities": [],
+  "execution": {
+    "status": "not-run",
+    "summary": "Required renderer unavailable."
+  },
+  "acceptance": {
+    "status": "not-required"
+  },
+  "readiness": [
+    {
+      "name": "production",
+      "status": "ready",
+      "reasons": []
+    }
+  ],
+  "checks": [],
+  "guardrails": [],
+  "unresolved_questions": [],
+  "recommended_next_actions": []
+}

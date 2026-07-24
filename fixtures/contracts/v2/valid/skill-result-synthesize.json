@@ -1,0 +1,79 @@
+{
+  "schema": "silver/skill-result/v2",
+  "invocation_id": "synthesize-fixture-1",
+  "skill": {
+    "id": "synthesize",
+    "version": "0.2.0"
+  },
+  "started_at": "2026-07-24T18:00:00Z",
+  "completed_at": "2026-07-24T18:00:01Z",
+  "inputs": [
+    {
+      "id": "seed-feedback",
+      "kind": "evidence",
+      "revision": "r1",
+      "path": "design/evidence/seed-feedback.json",
+      "role": "source"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "campaign-setup-finding",
+      "kind": "finding",
+      "revision": "r1",
+      "path": "design/work/findings/campaign-setup-finding.json",
+      "role": "primary"
+    }
+  ],
+  "providers": [
+    {
+      "capability": "repository",
+      "provider": "silver-local",
+      "status": "used"
+    }
+  ],
+  "degraded_capabilities": [
+    {
+      "capability": "research-evidence",
+      "reason": "No external analysis provider configured; sanitized local evidence used.",
+      "coverage": "degraded"
+    }
+  ],
+  "execution": {
+    "status": "complete",
+    "summary": "Produced one traceable finding from sanitized seed evidence."
+  },
+  "acceptance": {
+    "status": "awaiting-review"
+  },
+  "readiness": [
+    {
+      "name": "ideation",
+      "status": "not-ready",
+      "reasons": [
+        "The finding awaits human acceptance."
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "evidence-provenance",
+      "status": "pass",
+      "result_path": ".silver/results/checks/evidence-provenance.json"
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "provenance-required",
+      "status": "pass"
+    }
+  ],
+  "unresolved_questions": [],
+  "recommended_next_actions": [
+    {
+      "action": "review-finding",
+      "reason": "Human acceptance is required before the ideation handoff is ready.",
+      "automatic": false
+    }
+  ]
+}

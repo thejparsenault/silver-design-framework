@@ -10,6 +10,10 @@
   "files": [
     "bin/",
     "framework/schemas/v1/",
+    "framework/schemas/v2/",
+    "framework/guardrails/",
+    "framework/migrations/",
+    "framework/runtime/",
     "framework/skills/",
     "installer/cli.mjs",
     "installer/doctor.mjs",
@@ -22,7 +26,7 @@
     "reference-system/"
   ],
   "scripts": {
-    "validate:contracts": "python3 framework/scripts/validate_contracts.py",
+    "validate:contracts": "node framework/scripts/validate-contracts.mjs",
     "build": "npm run validate:contracts && npm run build:reference && npm test",
     "build:reference": "node reference-system/packages/tokens/src/build.mjs",
     "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs",
