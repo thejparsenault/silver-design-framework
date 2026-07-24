@@ -107,6 +107,16 @@ async function atomicWrite(filePath, content) {
   await rename(temporary, filePath);
 }
 
+async function recordResult(workspaceRoot, result) {
+  await assertV2("skill-result.schema.json", result);
+  const resultPath = inside(
+    workspaceRoot,
+    `.silver/results/skills/${result.invocation_id}.json`,
+  );
+  await atomicWrite(resultPath, `${JSON.stringify(result, null, 2)}\n`);
+  return result;
+}
+
 function blockedResult({
   request,
   contract,
@@ -214,8 +224,7 @@ export async function invokeSkill({
       degradedCapabilities: [],
       guardrails,
     });
-    await assertV2("skill-result.schema.json", result);
-    return result;
+    return recordResult(workspaceRoot, result);
   }
 
   const capabilityResolution = resolveCapabilities({
@@ -250,8 +259,7 @@ export async function invokeSkill({
         },
       ],
     };
-    await assertV2("skill-result.schema.json", result);
-    return result;
+    return recordResult(workspaceRoot, result);
   }
 
   const prepared = [];
@@ -339,8 +347,7 @@ export async function invokeSkill({
       degradedCapabilities: capabilityResolution.degradedCapabilities,
       guardrails,
     });
-    await assertV2("skill-result.schema.json", result);
-    return result;
+    return recordResult(workspaceRoot, result);
   }
 
   for (const output of prepared) {
@@ -422,13 +429,7 @@ export async function invokeSkill({
       automatic: false,
     })),
   };
-  await assertV2("skill-result.schema.json", result);
-  const resultPath = inside(
-    workspaceRoot,
-    `.silver/results/skills/${request.invocation_id}.json`,
-  );
-  await atomicWrite(resultPath, `${JSON.stringify(result, null, 2)}\n`);
-  return result;
+  return recordResult(workspaceRoot, result);
 }
 
 export async function runSkillCli({ skillDirectory, args }) {

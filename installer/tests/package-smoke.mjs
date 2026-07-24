@@ -63,6 +63,7 @@ try {
     "framework/runtime/invoke-skill.mjs",
     "framework/schemas/v2/skill-result.schema.json",
     "framework/playbooks/default-design-loop.yaml",
+    "framework/scenarios/complete-blank.mjs",
     "reference-system/packages/css/src/tokens.css",
   ]) {
     assert.ok(packedPaths.has(required), `Package is missing ${required}`);
@@ -291,6 +292,39 @@ try {
       "tokens.css",
     ),
   );
+  const completeRoot = path.join(consumerRoot, "complete-suite");
+  await command(
+    process.execPath,
+    [
+      cli,
+      "setup",
+      completeRoot,
+      "--name",
+      "Complete Suite",
+      "--id",
+      "complete-suite",
+    ],
+    { cwd: consumerRoot },
+  );
+  const completeScenario = path.join(
+    packageRoot,
+    "framework",
+    "scenarios",
+    "complete-blank.mjs",
+  );
+  const completeResult = JSON.parse(
+    (
+      await command(
+        process.execPath,
+        [completeScenario, "--root", completeRoot],
+        { cwd: completeRoot },
+      )
+    ).stdout,
+  );
+  assert.equal(completeResult.status, "pass");
+  assert.equal(completeResult.skills.length, 18);
+  assert.equal(completeResult.fast, "pass");
+  assert.equal(completeResult.browser, "pass");
 
   process.stdout.write(
     `Package smoke test passed: ${packed.filename} (${packed.size} bytes, ${packed.files.length} files)\n`,

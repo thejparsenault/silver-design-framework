@@ -275,10 +275,14 @@ export async function checkArtifacts(options = {}) {
         }
         if (source.endsWith(".json")) {
           const sourceValue = JSON.parse(await readFile(source, "utf8"));
+          const sourceRevision =
+            typeof sourceValue.revision === "number"
+              ? `r${sourceValue.revision}`
+              : sourceValue.revision;
           if (
             sourceValue.id &&
             (sourceValue.id !== reference.id ||
-              sourceValue.revision !== reference.revision)
+              sourceRevision !== reference.revision)
           ) {
             findings.push(
               finding({

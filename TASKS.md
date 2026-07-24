@@ -74,35 +74,35 @@ The authoritative requirement list and release evidence rules are in
 `docs/silver-0.2-acceptance.md`. A task is not complete until its corresponding
 `S02-*` criteria have automated evidence.
 
-- [ ] Implement and validate the v2 contract foundation
+- [x] Implement and validate the v2 contract foundation
   - type: design
   - priority: high
   - context: medium
-  - notes: The v2 schemas, shared guardrail registry, permission and provider resolution runtime, normalized result constraints, user tool profile, positive and negative fixtures, v1 skill-contract migration, and reviewable v1 workspace migration are implemented. Completion still requires task-specific invocation evidence for every installed skill and the complete packed loop.
+  - notes: Complete. Strict schemas, normalized persisted results, guardrails, layered permissions, provider degradation, tool profiles, v1 skill migration, and reviewable workspace migration pass source and packed release evidence.
 
-- [ ] Implement and validate agentic composition
+- [x] Implement and validate agentic composition
   - type: design
   - priority: high
   - context: medium
-  - notes: The playbook and state contracts, default optional loop, bounded-autonomy rules, checkpoint runtime, serialized resume, and revision invalidation behavior are implemented and fixture-tested. Completion still requires installing the playbook in a 0.2 workspace and proving it against real results from the complete skill catalog.
+  - notes: Complete. The installed default playbook composes real catalog results, pauses and resumes from serialized state, and visibly invalidates downstream work on upstream revision change.
 
-- [ ] Implement the complete required skill catalog
+- [x] Implement the complete required skill catalog
   - type: build
   - priority: high
   - context: large
-  - notes: All eighteen v2 packages now install locally, pass structural and contract validation, and share a guarded runtime that emits valid results and enforces permission, overwrite, provider, guardrail, and follow-up boundaries. Completion still requires task-specific positive and relevant negative or degraded fixtures for every skill and the complete loop evidence.
+  - notes: Complete. All eighteen packages install locally and are independently invoked in the packed scenario with task-specific outputs, valid persisted results, positive coverage, and a relevant permission, capability, or provider-degradation boundary.
 
-- [ ] Complete blank-workspace lifecycle and local baseline support
+- [x] Complete blank-workspace lifecycle and local baseline support
   - type: build
   - priority: high
   - context: medium
-  - notes: Blank setup now installs the complete v2 skill and framework payload, local flow/sketch/prototype/presentation/production renderers, shared asset model, presentation kit, eleven independent fast checks, and real local Chrome checks under an integrity-tracked v2 lock. Diagnostics, repair, idempotence, update preservation, managed-file conflicts, and preview/apply/idempotent v1 migration pass in unit and exact packed smoke tests. Completion now depends on full-loop release evidence.
+  - notes: Complete. Setup, diagnostics, repair, update, migration, all local renderers, assets, presentation kit, eleven independent fast checks, and real local Chrome checks pass from source and the exact archive.
 
-- [ ] Prove the complete blank-workspace release
+- [x] Prove the complete blank-workspace release
   - type: test
   - priority: high
   - context: large
-  - notes: Complete `S02-E2E-01` through `S02-E2E-10` against the exact packed candidate and record direct evidence in `docs/silver-0.2-acceptance-audit.md`.
+  - notes: Complete. `S02-E2E-01` through `S02-E2E-10` and all 32 architecture/skill criteria have direct passing evidence in `docs/silver-0.2-acceptance-audit.md`; final gates are `npm run build` and `npm run test:package`.
 
 ## Following Milestone — Existing Codebase Adoption
 

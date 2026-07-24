@@ -310,7 +310,9 @@ export async function runBrowserSuite(options = {}) {
     const results = notRunResults("No render targets are declared.");
     return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };
   }
-  const executable = options.chromePath ?? await firstAccessible(chromeCandidates);
+  const executable = options.chromePath
+    ? await firstAccessible([options.chromePath])
+    : await firstAccessible(chromeCandidates);
   if (!executable) {
     const results = notRunResults("No compatible local Chrome executable is available.");
     return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };

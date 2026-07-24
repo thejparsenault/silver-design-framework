@@ -112,7 +112,7 @@ packages:
     path: .skills/design-check
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:dedd42034bd10bda055d531438d56ea045382c11d47fa31b29caf6977b4bd998
+    integrity: sha256:86792a222c56e04d6a9b19711c5e22028355e3cce009c6956a042d0d66498aff
   - id: schemas-v2
     type: schema-bundle
     path: .silver/schemas/v2
@@ -130,7 +130,7 @@ packages:
     path: .silver/runtime
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:edf6991ba0cc66b6fa04031337702a2ef1e6e0e41a8dbd334f173064dfc9b3d9
+    integrity: sha256:fc4d91e24f31ccf7074830bde1c24b2329de35bb9adc1bc573b938aaf901f710
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks

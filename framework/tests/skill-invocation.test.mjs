@@ -208,6 +208,15 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
   });
   assert.equal(result.execution.status, "blocked");
   assert.match(result.execution.summary, /Approval required/);
+  assert.deepEqual(
+    JSON.parse(
+      await readFile(
+        path.join(workspace, ".silver/results/skills/brand-test-1.json"),
+        "utf8",
+      ),
+    ),
+    result,
+  );
   await assert.rejects(
     readFile(path.join(workspace, "design/brand.md")),
     /ENOENT/,

@@ -2,16 +2,20 @@
 
 ## Current Focus
 
-The blank-workspace MVP is complete at local prerelease candidate
-`0.1.0-alpha.1`. The next release target is Silver `0.2.0`, the Complete
-Blank-Workspace Suite. It implements the full project-local foundation,
-design-loop, pitch, implementation, and conformance skill catalog together with
-v2 results, guardrails, resumable playbooks, local renderers, and release
-evidence. `docs/silver-0.2-acceptance.md` is the authoritative release gate.
-Existing-codebase adoption follows `0.2.0` except for bounded discovery spikes
-used to test framework neutrality.
+Silver `0.2.0`, the Complete Blank-Workspace Suite, is complete and validated
+as an exact offline archive. All 42 required criteria pass with direct evidence
+in `docs/silver-0.2-acceptance-audit.md`. The next product milestone is
+representative existing-codebase adoption: discovering and binding to an
+existing repository without reorganizing or silently rewriting it.
 
 ## Recent Progress
+
+- 2026-07-24: Silver 0.2 Complete Blank-Workspace Suite accepted
+  - Added a packaged complete-loop scenario that invokes all eighteen skills independently, records a positive result and relevant boundary or degraded result for each, and verifies recommended-only follow-ups.
+  - Ran the full foundation → evidence → synthesis → ideation and human selection → specification → flow and sketch → constrained prototype → evaluation → accepted refinement → re-evaluation loop.
+  - Exercised branded pitch and production branches, all local render targets, eleven independent fast checks, real headless-Chrome checks, checkpoint serialization and resume, and visible upstream-revision invalidation.
+  - Added negative evidence for raw styles, untraceable claims, implicit constraint suspension, stale revisions, permission failures, incomplete production, asset scope leakage, presentation pins, and unavailable browser targets.
+  - Recorded direct passing evidence for all 42 criteria in `docs/silver-0.2-acceptance-audit.md`; the final source gate passes 45 tests and the exact offline archive passes its complete package smoke.
 
 - 2026-07-24: Reviewable v1 workspace migration
   - Added `silver migrate` with a read-only default preview and an explicit `--apply` boundary.
@@ -149,13 +153,12 @@ used to test framework neutrality.
 
 ## Next 3 Actions
 
-1. Add positive and relevant negative or degraded fixtures for every required
-   skill, including strict working-artifact payloads and task-specific behavior.
-2. Build the complete evidence-to-implementation
-   playbook fixture against the exact packed release.
-3. Exercise checkpoint resume, upstream invalidation, accepted prototype
-   refinement, pitch, implementation, and all declared render targets in that
-   packed scenario.
+1. Select one representative existing product repository for the adoption
+   milestone.
+2. Implement read-only discovery of its design docs, tokens, components,
+   source roots, commands, and agent pointers.
+3. Produce a reviewable adoption report and proposed binding without changing
+   production source.
 
 ## Blockers
 
