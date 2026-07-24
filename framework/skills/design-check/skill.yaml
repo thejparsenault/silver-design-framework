@@ -44,4 +44,20 @@ requested_permissions:
   - capability: browser
     actions:
       - inspect
+scripts:
+  - id: check-artifacts
+    path: scripts/check-artifacts.mjs
+    purpose: Validate the manifest, canonical artifact mappings, and artifact metadata.
+  - id: check-flows
+    path: scripts/check-flows.mjs
+    purpose: Validate portable flow contracts, references, reachability, decisions, and outcomes.
+  - id: check-semantic-styles
+    path: scripts/check-semantic-styles.mjs
+    purpose: Reject raw color and fixed-dimension values outside approved token outputs.
+  - id: check-prototypes
+    path: scripts/check-prototypes.mjs
+    purpose: Validate explicit prototype constraint profiles and pinned flow revisions.
+  - id: run-fast
+    path: scripts/run-fast.mjs
+    purpose: Run all bundled static checkers independently and preserve each normalized result.
 recommend_after: []

@@ -2,9 +2,16 @@
 
 ## Current Focus
 
-Validate the complete blank-workspace workflow through a constrained static prototype and independent fast checks.
+Package and test the first private/local prerelease, then audit every first-iteration acceptance criterion.
 
 ## Recent Progress
+
+- 2026-07-23: Complete blank-workspace vertical slice
+  - Added four independent, dependency-free fast checkers for artifact contracts, flow structure, semantic style use, and prototype policy.
+  - Added a constrained static prototype renderer that requires an exact pinned flow revision and refuses implicit replacement of edited output.
+  - Replaced remaining fixed visual dimensions in authored reference CSS with approved component/layout tokens.
+  - Added an end-to-end test that runs the installed skills from blank setup through brand refinement, revised flow, Mermaid view, constrained prototype, and passing conformance results.
+  - Added negative coverage for malformed artifacts, raw visual values, and stale prototype flow revisions.
 
 - 2026-07-23: Safe repair and reviewable updates
   - Added `repair` for the generated design index and agent discovery pointer without modifying canonical design work.
@@ -78,9 +85,9 @@ Validate the complete blank-workspace workflow through a constrained static prot
 
 ## Next 3 Actions
 
-1. Implement the independent fast check suite required by the reference workspace.
-2. Add an executable constrained static prototype fixture derived from a pinned flow revision.
-3. Exercise setup through refinement, flow, prototype, conformance, and recommended next actions.
+1. Pack the CLI and bundled payload as a local prerelease tarball.
+2. Install and exercise that tarball outside the source tree.
+3. Audit all ten first-iteration acceptance criteria and close any remaining evidence gaps.
 
 ## Blockers
 

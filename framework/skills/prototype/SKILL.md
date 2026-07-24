@@ -45,6 +45,17 @@ otherwise.
    styles and approved components while allowing local component experiments.
    Under `partial`, suspend only the recorded constraints. Under `suspended`,
    retain semantic HTML, accessibility, privacy, and runtime safety.
+   For a dependency-free constrained walkthrough based directly on a pinned
+   flow, use:
+
+   ```sh
+   node .skills/prototype/scripts/render-static-prototype.mjs \
+     --prototype prototypes/campaign-flow \
+     --flow design/flows/campaign-setup/flow.json
+   ```
+
+   This creates editable HTML, CSS, and JavaScript once. It refuses to replace
+   those files unless `--replace` is explicit.
 8. When revising from feedback, distinguish observations, interpretations, and
    accepted changes. Preserve useful prior behavior unless the feedback
    invalidates it.
@@ -60,3 +71,5 @@ otherwise.
 - Do not infer lo-fi work as permission to invent visual values; use the
   workspace’s restricted subset.
 - Do not move prototype code into production wholesale.
+- Do not use `--replace` when a rendered prototype contains edits that have not
+  been deliberately reconciled with the flow.

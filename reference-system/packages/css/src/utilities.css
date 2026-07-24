@@ -16,17 +16,17 @@
   .ds-inline-md   { gap: var(--ds-space-16); }
   .ds-inline-lg   { gap: var(--ds-space-24); }
 
-  .ds-container   { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: var(--ds-space-24); }
-  .ds-container-sm  { max-width: 40rem; }
-  .ds-container-prose { max-width: 65ch; }
+  .ds-container   { width: 100%; max-width: var(--ds-layout-container-max-width); margin-inline: auto; padding-inline: var(--ds-space-24); }
+  .ds-container-sm  { max-width: var(--ds-layout-container-compact-max-width); }
+  .ds-container-prose { max-width: var(--ds-layout-container-prose-max-width); }
 
   /* Visibility */
   .ds-sr-only {
     position: absolute;
-    width: 1px;
-    height: 1px;
+    width: var(--ds-layout-screen-reader-size);
+    height: var(--ds-layout-screen-reader-size);
     padding: 0;
-    margin: -1px;
+    margin: var(--ds-layout-screen-reader-offset);
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;

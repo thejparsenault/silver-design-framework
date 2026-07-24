@@ -35,7 +35,7 @@
   .ds-field-label[data-required]::after {
     content: "*";
     color: var(--ds-feedback-danger-text);
-    margin-left: 2px;
+    margin-left: var(--ds-field-label-required-gap);
   }
 
   .ds-field-label[data-optional]::after {

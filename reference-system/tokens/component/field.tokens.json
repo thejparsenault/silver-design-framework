@@ -49,6 +49,11 @@
         "$type": "dimension",
         "$value": { "value": 6, "unit": "px" },
         "$description": "Gap between label and input"
+      },
+      "required-gap": {
+        "$type": "dimension",
+        "$value": { "value": 2, "unit": "px" },
+        "$description": "Inline gap before a required marker"
       }
     },
     "hint": {

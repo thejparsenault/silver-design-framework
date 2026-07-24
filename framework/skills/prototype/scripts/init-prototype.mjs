@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { mkdir, writeFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const idPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const profiles = new Set(["constrained", "partial", "suspended"]);
@@ -236,7 +237,8 @@ async function main() {
 
 if (
   process.argv[1] &&
-  pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url
+  realpathSync(path.resolve(process.argv[1])) ===
+    realpathSync(fileURLToPath(import.meta.url))
 ) {
   await main();
 }

@@ -41,6 +41,9 @@ produces:
   - kind: prototype-index
     scope: prototype
     path_pattern: prototypes/*/prototype.yaml
+  - kind: x-prototype-render
+    scope: prototype
+    path_pattern: prototypes/*/index.html
 external_effects:
   - read-external
 requested_permissions:
@@ -65,6 +68,9 @@ scripts:
   - id: init-prototype
     path: scripts/init-prototype.mjs
     purpose: Create prototype metadata while enforcing explicit constraint overrides.
+  - id: render-static-prototype
+    path: scripts/render-static-prototype.mjs
+    purpose: Create a dependency-free constrained HTML prototype from an exactly pinned portable flow.
 recommend_after:
   - flow-structure
   - prototype-policy

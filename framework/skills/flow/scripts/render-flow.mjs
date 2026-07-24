@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { readFile, writeFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { parseArguments } from "./flow-lib.mjs";
 
@@ -95,7 +96,8 @@ async function main() {
 
 if (
   process.argv[1] &&
-  pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url
+  realpathSync(path.resolve(process.argv[1])) ===
+    realpathSync(fileURLToPath(import.meta.url))
 ) {
   await main();
 }

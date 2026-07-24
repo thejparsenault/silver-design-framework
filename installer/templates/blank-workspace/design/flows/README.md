@@ -11,3 +11,6 @@ design/flows/<flow-id>/
 Edit `flow.json`; `flow.mmd` is a generated view. Meaningful changes increment
 the source revision so prototypes and component contracts can report when their
 input is stale.
+
+Use the project-local flow skill to initialize, structurally check, and render
+these files without requiring a design-tool provider.

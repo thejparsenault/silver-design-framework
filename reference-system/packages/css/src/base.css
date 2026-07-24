@@ -170,12 +170,12 @@
 
   p {
     color: var(--ds-text-secondary);
-    max-width: 65ch;
+    max-width: var(--ds-layout-container-prose-max-width);
   }
 
   a {
     color: var(--ds-text-link);
-    text-underline-offset: 0.2em;
+    text-underline-offset: var(--ds-layout-link-underline-offset);
   }
 
   a:hover {
@@ -190,11 +190,11 @@
 
   code, kbd, samp, pre {
     font-family: var(--ds-font-family-mono);
-    font-size: 0.9em;
+    font-size: var(--ds-layout-code-relative-size);
   }
 
   hr {
     border: none;
-    border-top: 1px solid var(--ds-border-subtle);
+    border-top: var(--ds-layout-separator-width) solid var(--ds-border-subtle);
   }
 }

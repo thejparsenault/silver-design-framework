@@ -56,11 +56,11 @@
   - context: medium
   - notes: Added a strict JSON graph contract, project-local `flow` skill, dependency-free initializer, revision-stamped Mermaid renderer, normalized structural checker, and exact revision references for prototypes and future component contracts.
 
-- [ ] Validate the first vertical slice
+- [x] Validate the first vertical slice
   - type: test
   - priority: high
   - context: medium
-  - notes: Blank folder → setup → brand/theme refinement → portable flow → constrained static prototype based on the flow → static conformance result → recommended next actions.
+  - notes: Verified blank folder → setup → brand refinement → portable flow revision and Mermaid view → constrained static prototype pinned to that flow → four independent fast checks → recommended next actions without automatic execution.
 
 - [ ] Prepare a private prerelease
   - type: release

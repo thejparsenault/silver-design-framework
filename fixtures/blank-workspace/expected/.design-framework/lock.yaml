@@ -19,22 +19,22 @@ packages:
     type: skill
     version: 0.1.0-dev
     ownership: framework-managed
-    integrity: sha256:084203ba2e840f271b9127713405a79738740bbd1adab8dd8fbd6e81a0e6a3bc
+    integrity: sha256:c9ca6debd77ab97c6f6ef323bd5b8346d2d165b018169488a6b4a18e3dedb968
   - id: prototype
     type: skill
     version: 0.1.0-dev
     ownership: framework-managed
-    integrity: sha256:c23304a80b26de936daee6b4b71fbc5f4049f46a17f58ee4ff703b183f8ef192
+    integrity: sha256:544c0cee730770fb9ec3a7120e82bc6b0173fc167d33d7d235f93eab5174c085
   - id: design-check
     type: skill
     version: 0.1.0-dev
     ownership: framework-managed
-    integrity: sha256:62d00b262b0f7c1d85ea96e0193132336e615d0c2960bc2c8f667f33048dfbeb
+    integrity: sha256:bde9b3fb09bd2eff18352c35387650407cffea06b2302aa3401cf680977562dd
   - id: reference-system
     type: reference-system
     version: 0.1.0-dev
     ownership: copied-and-owned
-    integrity: sha256:c46de2fb0b7fb92a3ece89f09f7644bc2c206fb3f77bcd439257a8dae8fa3693
+    integrity: sha256:8335c1a14695911ca0422181650c5b4607781f026c8e54a1655ad524f053325b
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer

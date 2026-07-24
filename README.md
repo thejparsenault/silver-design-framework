@@ -20,7 +20,9 @@ the workspace manifest, artifact metadata, portable flows, prototypes, skill
 declarations, permissions, lock state, findings, and checker results. A local
 development CLI initializes the blank-workspace artifacts, five project-local
 skills, a ready-to-render editable reference system, and an agent discovery
-pointer, then diagnoses their contracts without changing them.
+pointer, then diagnoses their contracts without changing them. The installed
+skills can author portable flows, render constrained static walkthroughs from
+exact flow revisions, and run four independent dependency-free fast checks.
 
 The earlier token/CSS/component spike now lives in `reference-system/`. Its
 token build and static light/dark example have been build- and browser-tested.
@@ -42,6 +44,9 @@ node bin/design-practice.mjs setup ./my-design-workspace \
 node bin/design-practice.mjs doctor ./my-design-workspace
 node bin/design-practice.mjs repair ./my-design-workspace
 node bin/design-practice.mjs update ./my-design-workspace
+
+node ./my-design-workspace/.skills/design-check/scripts/run-fast.mjs \
+  --root ./my-design-workspace
 ```
 
 See [`installer/README.md`](installer/README.md) for the current command

@@ -15,6 +15,14 @@ check.
    to answer the question.
 2. Run each enabled checker independently using its declared command and policy
    profile. A failing checker must not prevent unrelated checkers from running.
+   For the bundled first-iteration fast suite, run:
+
+   ```sh
+   node .skills/design-check/scripts/run-fast.mjs --root .
+   ```
+
+   Each underlying checker can also run separately from the same `scripts/`
+   directory.
 3. Use declared render targets for browser checks. Start only the configured
    local preview needed for inspection. Do not invent an undeclared production
    target.

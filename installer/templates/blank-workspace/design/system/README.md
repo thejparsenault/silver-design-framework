@@ -18,4 +18,6 @@ the primitive-to-semantic token relationship and is a starting point for
 deliberate refinement, not a universal visual identity.
 
 Production-facing work should consume semantic styles. Raw values belong only
-in declared token sources.
+in declared token sources. The project-local design-check skill runs the
+independent fast suite for artifact contracts, flow structure, semantic style
+use, and prototype policy.
