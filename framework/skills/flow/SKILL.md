@@ -1,55 +1,27 @@
 ---
 name: flow
-description: Create, render, inspect, or revise a portable user flow, interaction flow, or component behavior flow before or alongside prototyping. Use when a user asks to map a journey, diagram screens or states, tweak a flow, enumerate transitions and decisions, prepare a prototype structure, or define component behavior without committing to a particular design tool.
+description: Create, revise, validate, and render portable user, interaction, and component-behavior graphs with stable identities, state coverage, and revision-aware references. Use for task flows, interaction flows, and component state machines.
 ---
 
-# Create or revise a flow
-
-Treat `flow.json` as the portable design model and generated diagrams or design
-canvases as views. Preserve stable node and transition IDs so revisions remain
-traceable.
+# Develop flow
 
 ## Workflow
 
-1. Read `design/INDEX.md`, `design/manifest.yaml`, and only the product,
-   research, component, or prototype artifacts needed for the request.
-2. Choose the narrowest useful flow:
-   - `user-flow` for a person’s end-to-end task;
-   - `interaction-flow` for behavior across screens or surfaces;
-   - `component-flow` for one component’s states and transitions.
-3. For a new flow, run `scripts/init-flow.mjs` with a concrete purpose and
-   desired outcome. Use a root declared by `flow_policy`.
+1. Choose user, interaction, or component behavior scope explicitly.
+2. Reuse stable actor, node, and transition identifiers across revisions.
+3. Cover start states, decisions, alternate paths, failures, and outcomes.
+4. Validate the graph and render a revision-stamped local view.
 
-   ```sh
-   node .skills/flow/scripts/init-flow.mjs \
-     --id campaign-setup \
-     --title "Campaign setup" \
-     --purpose "Decide the shortest understandable setup path" \
-     --outcome "A valid campaign is ready for review"
-   ```
-4. Replace the starter nodes with observable states, actions, decisions, and
-   outcomes. Capture important alternatives and unresolved questions without
-   inventing unsupported product requirements.
-5. When revising:
-   - retain IDs when a node or transition keeps the same meaning;
-   - create a new ID when its meaning changes;
-   - increment `revision` and update `updated` for every meaningful change;
-   - identify prototypes or component contracts that reference an older
-     revision, but do not rewrite them automatically.
-6. Run `scripts/check-flow.mjs <flow.json>`. Resolve invalid references,
-   unreachable nodes, incomplete decisions, and missing terminal outcomes.
-7. Run `scripts/render-flow.mjs <flow.json>` to generate `flow.mmd`. If the
-   workspace has an approved canvas adapter, render or synchronize the same
-   model there only within resolved permissions and authority.
-8. Recommend a prototype, product composition, component contract, research
-   question, or another revision when useful. Never start that work
-   automatically.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+
+## Done
+
+- Satisfy: stable-node-identities, outcomes-reachable, states-covered.
+- Evaluate quality: The graph exposes decisions, alternate outcomes, system actions, and missing states without depending on one renderer.
+- Emit a valid `silver/skill-result/v2` record separating execution, acceptance, and downstream readiness.
+- Recommend follow-up skills; never start them automatically.
 
 ## Boundaries
 
-- Do not require a flow before prototyping or impose a lifecycle stage.
-- Do not make a generated view authoritative unless the manifest explicitly
-  declares its external source and synchronization policy.
-- Do not silently change canonical product, component, or design-system
-  artifacts while editing a flow.
-- Do not treat structural validation as evidence that the experience is good.
+- Treat Mermaid, Figma, and other views as projections unless authority says otherwise.
+- Do not silently rewrite prototypes or specs when a flow revision changes.

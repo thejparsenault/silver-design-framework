@@ -202,8 +202,12 @@ export async function doctorWorkspace(options = {}) {
     diagnostics,
   );
   if (lock) {
+    const lockSchema =
+      lock.schema === "silver/lock/v2"
+        ? "v2/lock.schema.json"
+        : "lock.schema.json";
     const lockValid = await applySchema(
-      "lock.schema.json",
+      lockSchema,
       lock,
       ".silver/lock.yaml",
       diagnostics,
@@ -229,11 +233,12 @@ export async function doctorWorkspace(options = {}) {
 
       for (const installedPackage of lock.packages) {
         const packagePath =
-          installedPackage.type === "skill"
+          installedPackage.path ??
+          (installedPackage.type === "skill"
             ? `.skills/${installedPackage.id}`
             : installedPackage.type === "reference-system"
               ? "reference-system"
-              : undefined;
+              : undefined);
         if (!packagePath) {
           continue;
         }

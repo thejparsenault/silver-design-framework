@@ -1,0 +1,135 @@
+schema: silver/skill/v2
+id: implement
+version: 0.2.0
+summary: Rebuild accepted design intent in the local production recipe.
+context_budget: medium
+inputs:
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: flow
+    required: false
+    role: working
+  - kind: component-proposal
+    required: false
+    role: working
+  - kind: evaluation
+    required: false
+    role: working
+  - kind: prototype
+    required: false
+    role: working
+outputs:
+  - kind: implementation-handoff
+    scope: product
+    path_pattern: design/work/implementation-handoffs/**
+    authority: project-owned
+  - kind: implementation
+    scope: codebase
+    path_pattern: production/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - production-source
+  optional:
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use browser when configured; preserve explicit fallback coverage
+        otherwise.
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/implementation-handoffs/**
+    decision: allow
+  - capability: production-source
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - production/**
+    decision: ask
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - production-readiness-required
+  - semantic-styles-only
+  - approved-components-only
+completion:
+  invariants:
+    - accepted-intent-required
+    - missing-intent-reported
+    - prototype-reference-only
+    - production-checks-required
+  quality_criteria:
+    - id: task-quality
+      description: The implementation reflects accepted intent, semantic styles,
+        approved components, repository conventions, and all required states.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - design-check
+      - pitch
+  - id: semantic-styles
+    required: true
+    blocks: *a1
+  - id: production-readiness
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+  - id: responsive-behavior
+    required: true
+    blocks: *a1
+  - id: critical-interactions
+    required: true
+    blocks: *a1
+handoffs:
+  - id: implement-to-design-check
+    target: design-check
+    readiness: design-check
+    requires:
+      - implementation-handoff
+      - implementation
+  - id: implement-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - implementation-handoff
+      - implementation
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

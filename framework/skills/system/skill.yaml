@@ -1,0 +1,136 @@
+schema: silver/skill/v2
+id: system
+version: 0.2.0
+summary: Maintain semantic tokens, registries, deprecations, and migrations.
+context_budget: small
+inputs:
+  - kind: brand
+    required: false
+    role: canonical
+  - kind: design-system
+    required: false
+    role: canonical
+  - kind: component-catalog
+    required: false
+    role: canonical
+  - kind: decision
+    required: false
+    role: working
+outputs:
+  - kind: design-system
+    scope: product
+    path_pattern: design/system/**
+    authority: canonical-with-approval
+  - kind: component-catalog
+    scope: product
+    path_pattern: design/system/**
+    authority: canonical-with-approval
+  - kind: decision
+    scope: product
+    path_pattern: design/decisions/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: canonical-artifact
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/system/**
+    decision: ask
+  - capability: canonical-artifact
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/system/**
+    decision: ask
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - semantics-before-primitives
+    - deprecations-migratable
+    - canonical-change-approved
+  quality_criteria:
+    - id: task-quality
+      description: Changes preserve named intent, document affected consumers, and
+        include a migration path.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - theme
+      - component
+      - implement
+  - id: semantic-styles
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: system-to-theme
+    target: theme
+    readiness: theme
+    requires:
+      - design-system
+      - component-catalog
+      - decision
+  - id: system-to-component
+    target: component
+    readiness: component
+    requires:
+      - design-system
+      - component-catalog
+      - decision
+  - id: system-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - design-system
+      - component-catalog
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

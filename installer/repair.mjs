@@ -38,7 +38,7 @@ export async function repairWorkspace(options = {}) {
   const lock = await loadValidatedYaml(
     root,
     ".silver/lock.yaml",
-    "lock.schema.json",
+    "v2/lock.schema.json",
   );
   const skillIds = lock.packages
     .filter(({ type }) => type === "skill")

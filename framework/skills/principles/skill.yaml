@@ -1,0 +1,112 @@
+schema: silver/skill/v2
+id: principles
+version: 0.2.0
+summary: Create concrete design principles and decision tests.
+context_budget: small
+inputs:
+  - kind: brand
+    required: false
+    role: canonical
+  - kind: product
+    required: false
+    role: canonical
+  - kind: design-principles
+    required: false
+    role: canonical
+outputs:
+  - kind: design-principles
+    scope: product
+    path_pattern: design/design-principles.md
+    authority: canonical-with-approval
+  - kind: decision
+    scope: product
+    path_pattern: design/decisions/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: canonical-artifact
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/design-principles.md
+    decision: ask
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - principles-actionable
+    - tests-falsifiable
+    - examples-concrete
+  quality_criteria:
+    - id: task-quality
+      description: Each principle helps choose between plausible alternatives rather
+        than stating a platitude.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - ideate
+      - specify
+      - design-check
+handoffs:
+  - id: principles-to-ideate
+    target: ideate
+    readiness: ideate
+    requires:
+      - design-principles
+      - decision
+  - id: principles-to-specify
+    target: specify
+    readiness: specify
+    requires:
+      - design-principles
+      - decision
+  - id: principles-to-design-check
+    target: design-check
+    readiness: design-check
+    requires:
+      - design-principles
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

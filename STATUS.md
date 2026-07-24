@@ -13,6 +13,13 @@ used to test framework neutrality.
 
 ## Recent Progress
 
+- 2026-07-24: Complete v2 skill catalog and blank installation
+  - Converted the original five skills and added the remaining thirteen required packages, giving Silver all eighteen project-local v2 skills with concise instructions, UI metadata, contracts, local invocation shims, declared capabilities, permissions, guardrails, completion invariants, checks, and handoffs.
+  - Added a guarded invocation runtime that validates pinned inputs and declared outputs, resolves layered permissions and provider degradation, enforces guardrail relaxation rules, prevents blind overwrites, writes atomically, and emits normalized results with recommended-only follow-ups.
+  - Upgraded setup to install the complete catalog, schemas, guardrails, runtime, and default playbook under a v2 lock that records path, ownership, version, and integrity for every package.
+  - Updated diagnostics, repair, reviewable updates, exact-output fixtures, and the packed smoke test; the packed archive now independently invokes an installed skill through the locked runtime.
+  - The full build passes 35 tests, the packed 0.2 smoke passes, and all eighteen skill folders pass the skill-authoring validator.
+
 - 2026-07-24: Optional resumable playbook foundation
   - Added strict playbook and playbook-state contracts for version-pinned leaf skills, typed handoffs, optional branches, feedback and retry edges, readiness conditions, stopping rules, checkpoints, and bounded autonomy.
   - Added the optional default synthesis → ideation → human selection → specification ↔ flow/sketch → prototype → evaluation loop, with explicit pitch and permission-gated implementation branches.
@@ -128,12 +135,12 @@ used to test framework neutrality.
 
 ## Next 3 Actions
 
-1. Convert the five existing skills and build the remaining required skills on
-   the v2 contract and shared invocation runtime.
-2. Install the guardrails, schemas, playbook, renderers, and complete skill
-   catalog through the blank-workspace lifecycle.
-3. Implement the required skill catalog and prove the complete packed-release
-   scenario defined by `S02-SKL-*` and `S02-E2E-*`.
+1. Add positive and relevant negative or degraded fixtures for every required
+   skill, including strict working-artifact payloads and task-specific behavior.
+2. Complete the local sketch, presentation, production, asset, and browser
+   capabilities plus their independent checks.
+3. Implement v1 workspace migration and the complete evidence-to-implementation
+   playbook fixture against the exact packed release.
 
 ## Blockers
 

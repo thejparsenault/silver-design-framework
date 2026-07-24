@@ -1,0 +1,121 @@
+schema: silver/skill/v2
+id: pitch
+version: 0.2.0
+summary: Build an evidence-linked, branded change case.
+context_budget: medium
+inputs:
+  - kind: finding
+    required: false
+    role: working
+  - kind: evaluation
+    required: false
+    role: working
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: prototype
+    required: false
+    role: working
+  - kind: implementation
+    required: false
+    role: working
+outputs:
+  - kind: change-case
+    scope: product
+    path_pattern: design/pitches/**
+    authority: project-owned
+  - kind: presentation-view
+    scope: product
+    path_pattern: presentations/**
+    authority: generated
+capabilities:
+  required:
+    - repository
+    - presentation-renderer
+  optional:
+    - capability: external-artifact
+      providers: []
+      fallback: degraded
+      description: Use external-artifact when configured; preserve explicit fallback
+        coverage otherwise.
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/pitches/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - presentations/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+  - no-fabricated-evidence
+completion:
+  invariants:
+    - sources-pinned
+    - impact-kind-explicit
+    - decision-request-clear
+    - external-publish-separate
+  quality_criteria:
+    - id: task-quality
+      description: The case distinguishes evidence from inference and makes the
+        requested decision and tradeoffs legible.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - implement
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+  - id: presentation-integrity
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: pitch-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - change-case
+      - presentation-view
+external_effects:
+  - read-external
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

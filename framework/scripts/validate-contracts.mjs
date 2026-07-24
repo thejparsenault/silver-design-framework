@@ -140,10 +140,8 @@ async function validateV1(validators) {
     manifest.permission_policy,
   );
 
-  const lock = parse(
-    await readFile(path.join(workspaceRoot, ".silver/lock.yaml"), "utf8"),
-  );
-  assertValid(validators, "lock.schema.json", lock, "blank workspace lock");
+  const lock = await yaml("fixtures/contracts/valid/lock-v1.yaml");
+  assertValid(validators, "lock.schema.json", lock, "legacy v1 lock fixture");
   for (const managed of lock.managed_files) {
     if (!managed.base_integrity) {
       continue;
@@ -159,12 +157,6 @@ async function validateV1(validators) {
 
   const skillFiles = [
     "fixtures/contracts/valid/skill-brand.yaml",
-    ...(await readdir(path.join(root, "framework/skills"), {
-      withFileTypes: true,
-    }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => `framework/skills/${entry.name}/skill.yaml`)
-      .sort(),
   ];
   for (const relativePath of skillFiles) {
     assertValid(
@@ -224,6 +216,7 @@ async function validateV2(validators) {
     ["guardrail-registry.schema.json", "framework/guardrails/registry.yaml", "yaml"],
     ["tool-profile.schema.json", "fixtures/contracts/v2/valid/tool-profile.yaml", "yaml"],
     ["playbook.schema.json", "framework/playbooks/default-design-loop.yaml", "yaml"],
+    ["lock.schema.json", "fixtures/blank-workspace/expected/.silver/lock.yaml", "yaml"],
   ];
   for (const [schemaName, relativePath, format] of positive) {
     assertValid(
@@ -248,17 +241,32 @@ async function validateV2(validators) {
     })
   ).filter((entry) => entry.isDirectory());
   for (const entry of skillEntries) {
-    const legacy = await yaml(
+    const contract = await yaml(
       `framework/skills/${entry.name}/skill.yaml`,
     );
     assertValid(
       validators,
       "skill.schema.json",
-      migrateSkillContractV1(legacy),
-      `migrated ${entry.name} skill`,
+      contract,
+      `${entry.name} v2 skill`,
     );
   }
-  return { examples: positive.length, migrations: skillEntries.length };
+  const legacySkillFiles = [
+    "fixtures/contracts/valid/skill-brand.yaml",
+  ];
+  for (const relativePath of legacySkillFiles) {
+    assertValid(
+      validators,
+      "skill.schema.json",
+      migrateSkillContractV1(await yaml(relativePath)),
+      `migrated ${relativePath}`,
+    );
+  }
+  return {
+    examples: positive.length,
+    skills: skillEntries.length,
+    migrations: legacySkillFiles.length,
+  };
 }
 
 async function main() {
@@ -269,7 +277,8 @@ async function main() {
   console.log(
     `Validated ${v1.count} v1 schemas, ${v2.count} v2 schemas, ` +
       `${v1Evidence.artifacts} mapped artifacts, ${v1Evidence.skills} v1 skill contracts, ` +
-      `${v2Evidence.examples} v2 examples, and ${v2Evidence.migrations} v1-to-v2 skill migrations.`,
+      `${v2Evidence.examples} v2 examples, ${v2Evidence.skills} v2 skill contracts, ` +
+      `and ${v2Evidence.migrations} v1-to-v2 skill migrations.`,
   );
 }
 

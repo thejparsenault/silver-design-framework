@@ -1,63 +1,92 @@
-schema: silver/skill/v1
+schema: silver/skill/v2
 id: design-check
-version: 0.1.0-alpha.1
-summary: Run independent design checks and summarize normalized findings.
+version: 0.2.0
+summary: Run applicable independent checks without performing design work.
 context_budget: small
-requires:
-  artifacts:
-    - kind: check-config
-      required: false
-      role: canonical
-    - kind: design-system
-      required: true
-      role: canonical
-    - kind: flow
-      required: false
-  capabilities:
+inputs:
+  - kind: design-system
+    required: false
+    role: canonical
+  - kind: flow
+    required: false
+    role: working
+  - kind: prototype
+    required: false
+    role: working
+  - kind: presentation-view
+    required: false
+    role: working
+  - kind: implementation
+    required: false
+    role: working
+outputs: []
+capabilities:
+  required:
     - repository
-    - browser
-access:
-  read:
-    - scope: product
-      paths:
-        - design/**
-        - reference-system/**
-    - scope: prototype
-      paths:
-        - prototypes/**
-    - scope: codebase
-      paths:
-        - .silver/**
-  write: []
-produces: []
-external_effects:
-  - read-external
-requested_permissions:
+  optional:
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use browser when configured; preserve explicit fallback coverage
+        otherwise.
+permissions:
   - capability: repository
     actions:
       - read
+      - inspect
     paths:
       - design/**
-      - reference-system/**
       - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
       - .silver/**
-  - capability: browser
-    actions:
-      - inspect
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - checks-independent
+    - results-preserved
+    - not-run-never-pass
+  quality_criteria:
+    - id: task-quality
+      description: The summary names requested, completed, failed, and unavailable
+        coverage without changing the target.
+      evaluation: deterministic
+  unresolved_questions: warn
+  review:
+    required: false
+    reviewer: none
+    checkpoint: Review findings when any check fails or is not-run.
+checks: []
+handoffs: []
+external_effects:
+  - none
 scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
   - id: check-artifacts
     path: scripts/check-artifacts.mjs
-    purpose: Validate the manifest, canonical artifact mappings, and artifact metadata.
+    purpose: Bundled deterministic design-check operation.
   - id: check-flows
     path: scripts/check-flows.mjs
-    purpose: Validate portable flow contracts, references, reachability, decisions, and outcomes.
-  - id: check-semantic-styles
-    path: scripts/check-semantic-styles.mjs
-    purpose: Reject raw color and fixed-dimension values outside approved token outputs.
+    purpose: Bundled deterministic design-check operation.
+  - id: check-lib
+    path: scripts/check-lib.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-prototypes
     path: scripts/check-prototypes.mjs
-    purpose: Validate explicit prototype constraint profiles and pinned flow revisions.
+    purpose: Bundled deterministic design-check operation.
+  - id: check-semantic-styles
+    path: scripts/check-semantic-styles.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: run-fast
     path: scripts/run-fast.mjs
-    purpose: Run all bundled static checkers independently and preserve each normalized result.
+    purpose: Bundled deterministic design-check operation.
 recommend_after: []

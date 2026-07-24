@@ -1,84 +1,130 @@
-schema: silver/skill/v1
+schema: silver/skill/v2
 id: theme
-version: 0.1.0-alpha.1
-summary: Explore, apply, and validate visual themes without bypassing semantic styles.
-context_budget: medium
-requires:
-  artifacts:
-    - kind: brand
-      required: true
-      role: canonical
-    - kind: design-system
-      required: true
-      role: canonical
-    - kind: token-source
-      required: false
-      role: canonical
-    - kind: component-catalog
-      required: false
-      role: canonical
-  capabilities:
-    - repository
-    - canonical-artifact
-    - production-source
-    - browser
-    - design-file
-access:
-  read:
-    - scope: product
-      paths:
-        - design/**
-        - reference-system/**
-  write:
-    - scope: product
-      paths:
-        - design/system/**
-        - design/decisions/**
-        - reference-system/**
-    - scope: prototype
-      paths:
-        - prototypes/**
-produces:
+version: 0.2.0
+summary: Generate, compare, apply, or revise semantic themes and modes.
+context_budget: small
+inputs:
+  - kind: brand
+    required: false
+    role: canonical
+  - kind: design-system
+    required: false
+    role: canonical
+  - kind: decision
+    required: false
+    role: working
+outputs:
   - kind: design-system
     scope: product
     path_pattern: design/system/**
+    authority: canonical-with-approval
   - kind: token-source
     scope: product
     path_pattern: reference-system/tokens/**
-  - kind: decision-log
+    authority: canonical-with-approval
+  - kind: decision
     scope: product
     path_pattern: design/decisions/**
-external_effects:
-  - read-external
-requested_permissions:
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+permissions:
   - capability: repository
     actions:
       - read
+      - inspect
     paths:
       - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
       - reference-system/**
+      - .silver/**
+    decision: allow
   - capability: canonical-artifact
     actions:
+      - create
       - write
       - update
     paths:
       - design/system/**
-      - design/decisions/**
-  - capability: production-source
+    decision: ask
+  - capability: canonical-artifact
     actions:
+      - create
       - write
       - update
     paths:
-      - reference-system/**
-  - capability: browser
+      - reference-system/tokens/**
+    decision: ask
+  - capability: repository
     actions:
-      - inspect
-  - capability: design-file
-    actions:
-      - read
-      - inspect
-recommend_after:
-  - artifact-schema
-  - semantic-style
-  - accessibility
-  - responsive
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - semantic-mappings-only
+    - contrast-considered
+    - canonical-change-approved
+  quality_criteria:
+    - id: task-quality
+      description: Themes preserve semantic meaning across modes and document
+        perceptual and accessibility tradeoffs.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: semantic-styles
+    required: true
+    blocks: &a1
+      - system
+      - sketch
+      - prototype
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: theme-to-system
+    target: system
+    readiness: system
+    requires:
+      - design-system
+      - token-source
+      - decision
+  - id: theme-to-sketch
+    target: sketch
+    readiness: sketch
+    requires:
+      - design-system
+      - token-source
+      - decision
+  - id: theme-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - design-system
+      - token-source
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

@@ -1,0 +1,151 @@
+schema: silver/skill/v2
+id: evaluate
+version: 0.2.0
+summary: Evaluate a design and produce sanitized product findings.
+context_budget: medium
+inputs:
+  - kind: sketch
+    required: false
+    role: working
+  - kind: prototype
+    required: false
+    role: working
+  - kind: design-specification
+    required: false
+    role: working
+outputs:
+  - kind: evaluation
+    scope: product
+    path_pattern: design/work/evaluations/**
+    authority: project-owned
+  - kind: observation
+    scope: product
+    path_pattern: design/evidence/**
+    authority: project-owned
+  - kind: finding
+    scope: product
+    path_pattern: design/work/findings/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional:
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use browser when configured; preserve explicit fallback coverage
+        otherwise.
+    - capability: research-evidence
+      providers: []
+      fallback: degraded
+      description: Use research-evidence when configured; preserve explicit fallback
+        coverage otherwise.
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/evaluations/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/evidence/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/findings/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - privacy-sanitized-evidence
+  - no-fabricated-evidence
+  - provenance-required
+completion:
+  invariants:
+    - question-declared
+    - observations-sanitized
+    - interpretation-separated
+    - conformance-distinct
+  quality_criteria:
+    - id: task-quality
+      description: Observations, interpretations, confidence, and recommendations
+        remain distinguishable and traceable.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - synthesize
+      - prototype
+      - pitch
+      - implement
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: evaluate-to-synthesize
+    target: synthesize
+    readiness: synthesize
+    requires:
+      - evaluation
+      - observation
+      - finding
+  - id: evaluate-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - evaluation
+      - observation
+      - finding
+  - id: evaluate-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - evaluation
+      - observation
+      - finding
+  - id: evaluate-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - evaluation
+      - observation
+      - finding
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

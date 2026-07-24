@@ -1,4 +1,4 @@
 interface:
-  display_name: "Flow"
-  short_description: "Create and revise portable design flows"
-  default_prompt: "Use $flow to create or revise a portable product or component flow."
+  display_name: Develop flow
+  short_description: Create and revise portable, revision-aware behavior graphs.
+  default_prompt: Use $flow to create and revise portable, revision-aware behavior graphs.

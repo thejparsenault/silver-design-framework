@@ -1,4 +1,4 @@
 interface:
-  display_name: "Develop Theme"
-  short_description: "Explore, apply, and validate visual themes"
-  default_prompt: "Use $theme to explore or refine this product’s visual theme."
+  display_name: Generate or apply theme
+  short_description: Generate, compare, apply, or revise semantic themes and modes.
+  default_prompt: Use $theme to generate, compare, apply, or revise semantic themes and modes.

@@ -1,79 +1,150 @@
-schema: silver/skill/v1
+schema: silver/skill/v2
 id: prototype
-version: 0.1.0-alpha.1
-summary: Create or revise a prototype under an explicit constraint profile.
+version: 0.2.0
+summary: Build and refine a testable, traceable simulation.
 context_budget: medium
-requires:
-  artifacts:
-    - kind: product
-      required: true
-      role: canonical
-    - kind: design-system
-      required: true
-      role: canonical
-    - kind: component-catalog
-      required: false
-      role: canonical
-    - kind: flow
-      required: false
-    - kind: research
-      required: false
-    - kind: testing
-      required: false
-  capabilities:
-    - repository
-    - prototype
-    - browser
-access:
-  read:
-    - scope: product
-      paths:
-        - design/**
-        - reference-system/**
-    - scope: prototype
-      paths:
-        - prototypes/**
-  write:
-    - scope: prototype
-      paths:
-        - prototypes/**
-produces:
-  - kind: prototype-index
+inputs:
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: flow
+    required: false
+    role: working
+  - kind: sketch
+    required: false
+    role: working
+  - kind: finding
+    required: false
+    role: working
+outputs:
+  - kind: prototype
     scope: prototype
-    path_pattern: prototypes/*/prototype.yaml
+    path_pattern: prototypes/**
+    authority: project-owned
   - kind: x-prototype-render
     scope: prototype
-    path_pattern: prototypes/*/index.html
-external_effects:
-  - read-external
-requested_permissions:
+    path_pattern: prototypes/**
+    authority: generated
+capabilities:
+  required:
+    - repository
+    - prototype-renderer
+  optional:
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use browser when configured; preserve explicit fallback coverage
+        otherwise.
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+permissions:
   - capability: repository
     actions:
       - read
+      - inspect
     paths:
       - design/**
-      - reference-system/**
       - prototypes/**
-  - capability: prototype
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
     actions:
       - create
       - write
       - update
     paths:
       - prototypes/**
-  - capability: browser
+    decision: allow
+  - capability: repository
     actions:
-      - inspect
+      - create
+      - write
+      - update
+    paths:
+      - prototypes/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - semantic-styles-only
+  - approved-components-only
+  - constraint-profile-explicit
+completion:
+  invariants:
+    - test-question-declared
+    - inputs-pinned
+    - constraint-profile-explicit
+    - accepted-feedback-traced
+  quality_criteria:
+    - id: task-quality
+      description: The simulation is only as complete as needed to answer its test
+        question and exposes meaningful states.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - evaluate
+      - pitch
+      - implement
+  - id: prototype-policy
+    required: true
+    blocks: *a1
+  - id: semantic-styles
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+  - id: responsive-behavior
+    required: true
+    blocks: *a1
+  - id: critical-interactions
+    required: true
+    blocks: *a1
+handoffs:
+  - id: prototype-to-evaluate
+    target: evaluate
+    readiness: evaluate
+    requires:
+      - prototype
+      - x-prototype-render
+  - id: prototype-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - prototype
+      - x-prototype-render
+  - id: prototype-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - prototype
+      - x-prototype-render
+external_effects:
+  - none
 scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
   - id: init-prototype
     path: scripts/init-prototype.mjs
-    purpose: Create prototype metadata while enforcing explicit constraint overrides.
+    purpose: Bundled deterministic prototype operation.
   - id: render-static-prototype
     path: scripts/render-static-prototype.mjs
-    purpose: Create a dependency-free constrained HTML prototype from an exactly pinned portable flow.
-recommend_after:
-  - flow-structure
-  - prototype-policy
-  - semantic-style
-  - accessibility
-  - responsive
+    purpose: Bundled deterministic prototype operation.
+recommend_after: *a1

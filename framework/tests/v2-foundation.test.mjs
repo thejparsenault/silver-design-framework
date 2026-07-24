@@ -62,7 +62,7 @@ test("not-run execution cannot claim downstream readiness", async () => {
 });
 
 test("v1 skill contracts migrate to strict reviewable v2 contracts", async () => {
-  const legacy = await yaml("framework/skills/brand/skill.yaml");
+  const legacy = await yaml("fixtures/contracts/valid/skill-brand.yaml");
   const migrated = migrateSkillContractV1(legacy);
   await assertV2("skill.schema.json", migrated);
   assert.equal(migrated.schema, "silver/skill/v2");

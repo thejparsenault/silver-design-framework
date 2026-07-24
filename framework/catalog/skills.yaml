@@ -1,0 +1,345 @@
+schema: silver/skill-catalog/v2
+version: 0.2.0
+skills:
+  - id: brand
+    title: Define brand
+    description: Define, refine, or review audience-facing brand foundations and explicitly approved visual implications. Use for brand promise, desired feeling, attributes, anti-attributes, positioning evidence, or canonical brand guidance.
+    summary: Define or refine audience-facing brand foundations.
+    inputs: [product?, brand?]
+    outputs: [brand:design/brand.md:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [audience-named, claims-grounded, visual-changes-proposed-only]
+    quality: Guidance is specific enough to guide product and communication choices.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [theme, voice]
+    workflow:
+      - Read product and existing brand context before asking consequential questions.
+      - Separate working hypotheses from accepted canonical guidance.
+      - Present tradeoffs and request approval before changing brand.md.
+      - Record material redirections as normal design decisions.
+    boundaries:
+      - Do not silently change themes, tokens, components, or production source.
+      - Do not replace product facts with generic brand language.
+  - id: product
+    title: Define product
+    description: Define or revise product audience, jobs, desired outcomes, constraints, and product-specific positioning. Use for product foundations, audience framing, jobs-to-be-done, outcome definition, or canonical product guidance.
+    summary: Define or refine product audience, jobs, outcomes, and positioning.
+    inputs: [brand?, product?]
+    outputs: [product:design/product.md:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [audience-specific, jobs-observable, outcomes-distinct-from-features]
+    quality: Product guidance distinguishes audience, job, outcome, constraint, and positioning.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [brand, voice, synthesize]
+    workflow:
+      - Inspect existing product facts, decisions, and evidence.
+      - Clarify audiences, contexts, jobs, desired outcomes, constraints, and credible positioning.
+      - Label assumptions and unresolved product questions.
+      - Request approval before changing product.md.
+    boundaries:
+      - Do not imply market validation or research that did not occur.
+      - Do not turn a feature list into an audience or outcome model.
+  - id: voice
+    title: Define voice
+    description: Define or revise product tone, voice, terminology, and context-specific content guidance. Use for voice principles, terminology, message examples, error tone, or canonical voice guidance.
+    summary: Define or refine voice, tone, terminology, and content guidance.
+    inputs: [brand?, product?, voice?]
+    outputs: [voice:design/voice.md:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [voice-distinct-from-tone, terminology-consistent, examples-contextual]
+    quality: Guidance includes usable examples and context-specific variation without contradiction.
+    checks: [contract-integrity]
+    handoffs: [specify, pitch]
+    workflow:
+      - Read brand and product context relevant to the requested communication.
+      - Define durable voice traits separately from situational tone.
+      - Establish preferred terms, avoided terms, and representative examples.
+      - Request approval before changing voice.md.
+    boundaries:
+      - Do not invent legal, policy, or product claims.
+      - Do not force one emotional tone across every context.
+  - id: principles
+    title: Define principles
+    description: Create or maintain concrete design decision principles with examples and usable decision tests. Use when a team needs design principles, tradeoff rules, examples, counterexamples, or canonical decision guidance.
+    summary: Create concrete design principles and decision tests.
+    inputs: [brand?, product?, design-principles?]
+    outputs: [design-principles:design/design-principles.md:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [principles-actionable, tests-falsifiable, examples-concrete]
+    quality: Each principle helps choose between plausible alternatives rather than stating a platitude.
+    checks: [contract-integrity]
+    handoffs: [ideate, specify, design-check]
+    workflow:
+      - Identify recurring design tensions from product context and decisions.
+      - Express each principle as a choice with a reason and decision test.
+      - Add examples and counterexamples that expose its boundary.
+      - Request approval before changing canonical principles.
+    boundaries:
+      - Do not encode a mandatory lifecycle as a principle.
+      - Avoid principles that cannot reject any plausible design.
+  - id: theme
+    title: Generate or apply theme
+    description: Generate, compare, apply, or revise semantic themes, modes, and mappings without silently introducing raw or unapproved styles. Use for color ramps, semantic mappings, light or dark modes, and approved theme changes.
+    summary: Generate, compare, apply, or revise semantic themes and modes.
+    inputs: [brand?, design-system?, decision?]
+    outputs: [design-system:design/system/**:canonical, token-source:reference-system/tokens/**:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [semantic-mappings-only, contrast-considered, canonical-change-approved]
+    quality: Themes preserve semantic meaning across modes and document perceptual and accessibility tradeoffs.
+    checks: [semantic-styles, accessibility]
+    handoffs: [system, sketch, prototype]
+    workflow:
+      - Inspect current semantic roles, modes, brand intent, and approved primitives.
+      - Compare proposed ramps and mappings at the semantic layer.
+      - Run applicable contrast checks before proposing application.
+      - Apply canonical changes only after approval and record the decision.
+    boundaries:
+      - Do not introduce raw style values directly into product or prototype code.
+      - Do not infer permission to create a new mode or canonical palette.
+  - id: system
+    title: Maintain system
+    description: Define or maintain semantic tokens, color ramps, typography roles, modes, component and pattern registries, deprecations, and migration proposals. Use for design-system maintenance, component catalogs, semantic token changes, or canonical system decisions.
+    summary: Maintain semantic tokens, registries, deprecations, and migrations.
+    inputs: [brand?, design-system?, component-catalog?, decision?]
+    outputs: [design-system:design/system/**:canonical, component-catalog:design/system/**:canonical, decision:design/decisions/**:owned]
+    capabilities: [repository, canonical-artifact]
+    invariants: [semantics-before-primitives, deprecations-migratable, canonical-change-approved]
+    quality: Changes preserve named intent, document affected consumers, and include a migration path.
+    checks: [contract-integrity, semantic-styles, accessibility]
+    handoffs: [theme, component, implement]
+    workflow:
+      - Inspect the active token, component, pattern, and deprecation registries.
+      - Classify the request as maintenance, extension, deprecation, or migration.
+      - Propose semantic changes and affected-consumer migration before applying them.
+      - Request approval and record canonical decisions.
+    boundaries:
+      - Do not disguise product-specific compositions as shared primitives.
+      - Do not silently widen the design system during another task.
+  - id: research
+    title: Plan research
+    description: Define research questions and methods, participant criteria, scripts, evidence handling, and sanitized observation plans. Use to plan product research or evaluation recruitment without implying the planned research was conducted.
+    summary: Plan ethical research and sanitized evidence handling.
+    inputs: [product?, problem-frame?, design-specification?]
+    outputs: [research-plan:design/research/**:owned]
+    capabilities: [repository, research-evidence?]
+    invariants: [question-method-aligned, participant-criteria-explicit, planned-not-conducted]
+    quality: The plan can answer the declared question while minimizing sensitive data collection.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [evaluate, synthesize]
+    workflow:
+      - Define the decision the research must inform and the evidence needed.
+      - Choose a proportionate method, participant criteria, tasks, and script.
+      - Define consent, minimization, sanitation, retention, and evidence labeling.
+      - Mark the artifact as a plan until observed evidence is actually captured.
+    boundaries:
+      - Never claim planned sessions, participants, or observations occurred.
+      - Do not place sensitive raw participant data in the repository.
+  - id: synthesize
+    title: Synthesize evidence
+    description: Convert sanitized evidence, feedback, analytics, briefs, and labeled assumptions into findings, problem frames, opportunities, contradictions, and open questions with provenance. Use after research, feedback, evaluation, analytics, or a seed brief.
+    summary: Turn sanitized evidence into traceable findings and problem frames.
+    inputs: [evidence, product?, evaluation?]
+    outputs: [finding:design/work/findings/**:owned, problem-frame:design/work/problem-frames/**:owned]
+    capabilities: [repository, research-evidence?]
+    invariants: [sources-pinned, assumptions-labeled, contradictions-retained]
+    quality: Findings separate observation, interpretation, confidence, contradiction, and open question.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [ideate, pitch]
+    workflow:
+      - Confirm every source is sanitized and revision-addressable.
+      - Separate observations, analytics, supplied facts, and assumptions.
+      - Cluster evidence without erasing contradictions or minority signals.
+      - Produce traceable findings and an actionable problem frame.
+    boundaries:
+      - Do not fabricate evidence or silently upgrade assumptions into findings.
+      - Do not rewrite upstream evidence while synthesizing it.
+  - id: ideate
+    title: Ideate concepts
+    description: Generate meaningfully distinct concepts and testable hypotheses grounded in the current problem frame and canonical constraints, then support explicit human selection. Use for divergent product design exploration and hypothesis generation.
+    summary: Generate distinct concepts and testable hypotheses.
+    inputs: [problem-frame, finding?, design-principles?]
+    outputs: [concept:design/work/concepts/**:owned, hypothesis:design/work/hypotheses/**:owned, decision:design/decisions/**:owned]
+    capabilities: [repository, design-file?]
+    invariants: [concepts-distinct, hypotheses-testable, selection-explicit]
+    quality: Alternatives differ in mechanism or product bet, not merely surface treatment.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [specify, sketch, pitch]
+    workflow:
+      - Pin the current problem frame, evidence, principles, and constraints.
+      - Generate alternatives with distinct mechanisms, assumptions, and tradeoffs.
+      - Express a falsifiable hypothesis and cheapest useful test for each.
+      - Pause for explicit selection; record the choice and rejected tradeoffs.
+    boundaries:
+      - Do not select a direction on the user's behalf when human review is required.
+      - Do not evade design-system constraints through visual novelty.
+  - id: specify
+    title: Specify design
+    description: Create or revise a living design specification covering outcomes, hypothesis, scope, requirements, states, edge cases, accessibility, success criteria, linked revisions, decisions, and open questions. Use after concept selection or whenever durable design intent is needed.
+    summary: Create or revise a living, revision-linked design specification.
+    inputs: [concept?, hypothesis?, decision?, product?]
+    outputs: [design-specification:design/work/specifications/**:owned]
+    capabilities: [repository]
+    invariants: [scope-and-nongoals, states-and-edge-cases, success-fixed-before-evaluation]
+    quality: The specification makes missing intent visible and supports design or implementation without prescribing incidental detail.
+    checks: [contract-integrity, evidence-provenance, accessibility]
+    handoffs: [flow, sketch, prototype, component, implement]
+    workflow:
+      - Pin the selected concept, hypothesis, product context, and decisions.
+      - Define outcomes, scope, non-goals, requirements, content, data, states, and edge cases.
+      - Declare accessibility expectations and success criteria before evaluating output.
+      - Preserve open questions and revise through explicit new revisions.
+    boundaries:
+      - Do not invent requirements to make the specification appear complete.
+      - Do not turn every implementation detail into canonical design intent.
+  - id: flow
+    title: Develop flow
+    description: Create, revise, validate, and render portable user, interaction, and component-behavior graphs with stable identities, state coverage, and revision-aware references. Use for task flows, interaction flows, and component state machines.
+    summary: Create and revise portable, revision-aware behavior graphs.
+    inputs: [design-specification?, concept?, product?, component-proposal?]
+    outputs: [flow:design/flows/**:owned, flow:prototypes/**/flows/**:owned]
+    capabilities: [repository, flow, design-file?]
+    invariants: [stable-node-identities, outcomes-reachable, states-covered]
+    quality: The graph exposes decisions, alternate outcomes, system actions, and missing states without depending on one renderer.
+    checks: [flow-structure, contract-integrity]
+    handoffs: [sketch, prototype, component, implement]
+    workflow:
+      - Choose user, interaction, or component behavior scope explicitly.
+      - Reuse stable actor, node, and transition identifiers across revisions.
+      - Cover start states, decisions, alternate paths, failures, and outcomes.
+      - Validate the graph and render a revision-stamped local view.
+    boundaries:
+      - Treat Mermaid, Figma, and other views as projections unless authority says otherwise.
+      - Do not silently rewrite prototypes or specs when a flow revision changes.
+  - id: sketch
+    title: Sketch alternatives
+    description: Generate inexpensive alternatives from a brief, concept, specification, flow, or existing screen while recording fidelity separately from artifact type and honoring the constraint profile. Use for quick screen or component exploration before prototyping.
+    summary: Create inexpensive, constraint-aware design alternatives.
+    inputs: [concept?, design-specification?, flow?, prototype?]
+    outputs: [sketch:design/work/sketches/**:owned]
+    capabilities: [repository, sketch-renderer, design-file?]
+    invariants: [fidelity-declared, alternatives-cheap, constraint-profile-honored]
+    quality: Sketches make consequential structure and behavior choices reviewable without false production fidelity.
+    checks: [contract-integrity, semantic-styles, accessibility]
+    handoffs: [evaluate, prototype, component]
+    workflow:
+      - Declare the question, fidelity, active constraint profile, and pinned inputs.
+      - Generate alternatives that vary consequential structure or interaction.
+      - Render locally with semantic styles or the declared constrained subset.
+      - Record tradeoffs and request lightweight human review.
+    boundaries:
+      - Do not invent raw styles, even for wireframes; use an approved subset.
+      - Do not equate sketch role with a mandatory visual fidelity.
+  - id: component
+    title: Design component
+    description: Inspect the catalog, enumerate states, explore anatomy and behavior, classify composition level, propose a component contract, and document accessibility. Use for new or revised primitives, patterns, product compositions, and component state coverage.
+    summary: Explore and specify accessible component anatomy and behavior.
+    inputs: [component-catalog?, design-specification?, flow?, sketch?]
+    outputs: [component-proposal:design/work/components/**:owned, flow:design/flows/**:owned]
+    capabilities: [repository, flow, design-file?]
+    invariants: [catalog-inspected, classification-explicit, states-complete, accessibility-documented]
+    quality: The proposal separates primitive, reusable pattern, and domain-specific composition with a usable state contract.
+    checks: [contract-integrity, flow-structure, accessibility]
+    handoffs: [system, prototype, implement]
+    workflow:
+      - Inspect existing tokens, primitives, patterns, and product compositions first.
+      - Classify the proposed component and enumerate anatomy, states, transitions, and content.
+      - Document keyboard, focus, semantics, announcements, and responsive behavior.
+      - Propose catalog disposition; require approval for canonical registration.
+    boundaries:
+      - Do not create a duplicate component when an existing contract fits.
+      - Do not promote a product composition into a shared primitive without evidence.
+  - id: prototype
+    title: Build prototype
+    description: Create or revise a testable simulation for a declared question, constrained by semantic styles by default and pinned to accepted inputs. Use for interaction prototypes, feedback-driven refinement, or explicit partial and suspended experiments.
+    summary: Build and refine a testable, traceable simulation.
+    inputs: [design-specification?, flow?, sketch?, finding?]
+    outputs: [prototype:prototypes/**:owned, x-prototype-render:prototypes/**:generated]
+    capabilities: [repository, prototype-renderer, browser?, design-file?]
+    invariants: [test-question-declared, inputs-pinned, constraint-profile-explicit, accepted-feedback-traced]
+    quality: The simulation is only as complete as needed to answer its test question and exposes meaningful states.
+    checks: [contract-integrity, prototype-policy, semantic-styles, accessibility, responsive-behavior, critical-interactions]
+    handoffs: [evaluate, pitch, implement]
+    workflow:
+      - Declare the test question, fidelity, constraint profile, and pinned inputs.
+      - Default to constrained; require explicit recorded permission for partial or suspended profiles.
+      - Implement only the behavior and states needed to answer the question.
+      - Revise only from explicitly accepted findings and rerun applicable checks.
+    boundaries:
+      - Treat prototype code as reference material, not production source.
+      - Do not silently change the design system when the prototype needs a new style.
+  - id: evaluate
+    title: Evaluate design
+    description: Define an evaluation question and method, prepare tasks, inspect a sketch or prototype, capture sanitized observations, and produce findings and recommendations. Use for usability testing, expert review, or feedback analysis distinct from deterministic conformance.
+    summary: Evaluate a design and produce sanitized product findings.
+    inputs: [sketch?, prototype?, design-specification?]
+    outputs: [evaluation:design/work/evaluations/**:owned, observation:design/evidence/**:owned, finding:design/work/findings/**:owned]
+    capabilities: [repository, browser?, research-evidence?]
+    invariants: [question-declared, observations-sanitized, interpretation-separated, conformance-distinct]
+    quality: Observations, interpretations, confidence, and recommendations remain distinguishable and traceable.
+    checks: [contract-integrity, evidence-provenance]
+    handoffs: [synthesize, prototype, pitch, implement]
+    workflow:
+      - Define the decision, question, method, participants or reviewers, and tasks.
+      - Inspect the pinned sketch or prototype and capture only sanitized observations.
+      - Separate observed behavior from interpretation and deterministic check findings.
+      - Produce evidence-linked findings and recommendations for explicit acceptance.
+    boundaries:
+      - Do not imply participants or sessions existed when performing only a planned or expert review.
+      - Do not turn conformance failures into fabricated user evidence.
+  - id: pitch
+    title: Build change case
+    description: Produce an evidence-linked opportunity, proposal, or outcome change case and optional branded presentation view using the project presentation kit. Use to show before state, reasons, after state, tradeoffs, decision request, and estimated, proxy, or measured impact.
+    summary: Build an evidence-linked, branded change case.
+    inputs: [finding?, evaluation?, design-specification?, prototype?, implementation?]
+    outputs: [change-case:design/pitches/**:owned, presentation-view:presentations/**:generated]
+    capabilities: [repository, presentation-renderer, external-artifact?]
+    invariants: [sources-pinned, impact-kind-explicit, decision-request-clear, external-publish-separate]
+    quality: The case distinguishes evidence from inference and makes the requested decision and tradeoffs legible.
+    checks: [contract-integrity, evidence-provenance, presentation-integrity, accessibility]
+    handoffs: [implement]
+    workflow:
+      - Choose opportunity, proposal, or outcome mode and pin accepted evidence and design sources.
+      - Structure before state, reasons, after state, impact, tradeoffs, and decision request.
+      - Label impact as estimated, proxy, or measured with its source and confidence.
+      - Optionally render a branded local HTML view from the pinned presentation kit.
+    boundaries:
+      - Do not publish, present, or send without separate permission.
+      - Do not imply stakeholder acceptance, measured impact, or production deployment.
+  - id: implement
+    title: Implement design
+    description: Assess production readiness and rebuild accepted design intent into the local production recipe under production policy. Use when accepted specifications, flows, component proposals, or evaluation findings are ready for reviewable production code.
+    summary: Rebuild accepted design intent in the local production recipe.
+    inputs: [design-specification?, flow?, component-proposal?, evaluation?, prototype?]
+    outputs: [implementation-handoff:design/work/implementation-handoffs/**:owned, implementation:production/**:owned]
+    capabilities: [repository, production-source, browser?]
+    invariants: [accepted-intent-required, missing-intent-reported, prototype-reference-only, production-checks-required]
+    quality: The implementation reflects accepted intent, semantic styles, approved components, repository conventions, and all required states.
+    checks: [contract-integrity, semantic-styles, production-readiness, accessibility, responsive-behavior, critical-interactions]
+    handoffs: [design-check, pitch]
+    workflow:
+      - Assess readiness from accepted, revision-pinned intent and list missing or conflicting requirements.
+      - Stop with findings rather than inventing intent when readiness is incomplete.
+      - Rebuild against the static production recipe, semantic styles, and approved component contracts.
+      - Run all production-required checks and present a reviewable implementation handoff.
+    boundaries:
+      - Do not copy prototype code into production by default.
+      - Do not commit, push, open a pull request, or deploy automatically.
+  - id: design-check
+    title: Check design
+    description: Discover and run applicable independent design checks for a declared target and policy, preserve every result, and summarize coverage. Use for conformance, browser, accessibility, responsive, interaction, provenance, asset, presentation, and production readiness checks.
+    summary: Run applicable independent checks without performing design work.
+    inputs: [design-system?, flow?, prototype?, presentation-view?, implementation?]
+    outputs: []
+    capabilities: [repository, browser?]
+    invariants: [checks-independent, results-preserved, not-run-never-pass]
+    quality: The summary names requested, completed, failed, and unavailable coverage without changing the target.
+    checks: []
+    handoffs: []
+    workflow:
+      - Discover checks applicable to the declared target and policy profile.
+      - Run each checker independently and preserve its normalized result.
+      - Report unavailable required targets or providers as not-run.
+      - Summarize coverage and recommend corrections without performing design work.
+    boundaries:
+      - Do not fix designs or code as part of a check invocation.
+      - Never collapse failed or not-run results into a passing suite.

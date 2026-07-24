@@ -1,57 +1,104 @@
-schema: silver/skill/v1
+schema: silver/skill/v2
 id: brand
-version: 0.1.0-alpha.1
-summary: Define or refine audience-facing brand guidance.
+version: 0.2.0
+summary: Define or refine audience-facing brand foundations.
 context_budget: small
-requires:
-  artifacts:
-    - kind: product
-      required: false
-      role: canonical
-    - kind: brand
-      required: true
-      role: canonical
-  capabilities:
-    - repository
-    - canonical-artifact
-access:
-  read:
-    - scope: product
-      paths:
-        - design/INDEX.md
-        - design/manifest.yaml
-        - design/product.md
-        - design/brand.md
-        - design/voice.md
-        - design/design-principles.md
-  write:
-    - scope: product
-      paths:
-        - design/brand.md
-        - design/decisions/**
-produces:
+inputs:
+  - kind: product
+    required: false
+    role: canonical
+  - kind: brand
+    required: false
+    role: canonical
+outputs:
   - kind: brand
     scope: product
     path_pattern: design/brand.md
-  - kind: decision-log
+    authority: canonical-with-approval
+  - kind: decision
     scope: product
     path_pattern: design/decisions/**
-external_effects:
-  - none
-requested_permissions:
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+permissions:
   - capability: repository
     actions:
       - read
+      - inspect
     paths:
       - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
   - capability: canonical-artifact
     actions:
+      - create
       - write
       - update
     paths:
       - design/brand.md
+    decision: ask
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
       - design/decisions/**
-recommend_after:
-  - artifact-schema
-  - design-index
-  - theme
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - audience-named
+    - claims-grounded
+    - visual-changes-proposed-only
+  quality_criteria:
+    - id: task-quality
+      description: Guidance is specific enough to guide product and communication choices.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - theme
+      - voice
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: brand-to-theme
+    target: theme
+    readiness: theme
+    requires:
+      - brand
+      - decision
+  - id: brand-to-voice
+    target: voice
+    readiness: voice
+    requires:
+      - brand
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

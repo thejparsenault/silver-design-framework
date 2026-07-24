@@ -90,13 +90,13 @@ The authoritative requirement list and release evidence rules are in
   - type: build
   - priority: high
   - context: large
-  - notes: Complete every criterion from `S02-SKL-01` through `S02-SKL-18`; each skill must install locally, run independently, emit valid results, and include positive and negative fixtures.
+  - notes: All eighteen v2 packages now install locally, pass structural and contract validation, and share a guarded runtime that emits valid results and enforces permission, overwrite, provider, guardrail, and follow-up boundaries. Completion still requires task-specific positive and relevant negative or degraded fixtures for every skill and the complete loop evidence.
 
 - [ ] Complete blank-workspace lifecycle and local baseline support
   - type: build
   - priority: high
   - context: medium
-  - notes: Complete `S02-ARC-01` and `S02-ARC-10` through `S02-ARC-14`, including local renderers, the production-capable baseline recipe, shared assets, the presentation kit, independent checks, safe updates, and migrations.
+  - notes: Blank setup now installs the complete v2 skill and framework payload under an integrity-tracked v2 lock; diagnostics, repair, idempotence, update preservation, and managed-file conflicts pass. Completion still requires v1 workspace migration, the remaining local renderers and baseline recipe, shared assets, presentation kit, and expanded independent checks.
 
 - [ ] Prove the complete blank-workspace release
   - type: test

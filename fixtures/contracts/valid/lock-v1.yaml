@@ -1,0 +1,8 @@
+schema: silver/lock/v1
+framework:
+  version: 0.1.0-alpha.1
+  source:
+    type: local
+    reference: legacy-fixture
+packages: []
+managed_files: []

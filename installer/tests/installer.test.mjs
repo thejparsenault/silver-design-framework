@@ -29,10 +29,29 @@ const skillSourceRoot = path.join(repositoryRoot, "framework", "skills");
 const referenceSystemSourceRoot = path.join(repositoryRoot, "reference-system");
 const installedSkillIds = [
   "brand",
+  "product",
+  "voice",
+  "principles",
   "theme",
+  "system",
+  "research",
+  "synthesize",
+  "ideate",
+  "specify",
   "flow",
+  "sketch",
+  "component",
   "prototype",
+  "evaluate",
+  "pitch",
+  "implement",
   "design-check",
+];
+const managedPayloads = [
+  ["framework/schemas/v2", ".silver/schemas/v2"],
+  ["framework/guardrails", ".silver/guardrails"],
+  ["framework/runtime", ".silver/runtime"],
+  ["framework/playbooks", ".silver/playbooks"],
 ];
 
 async function temporaryWorkspace(t) {
@@ -50,6 +69,18 @@ async function temporaryPayload(t) {
     path.join(root, "framework", "skills"),
     { recursive: true },
   );
+  for (const relativePath of [
+    "schemas/v2",
+    "guardrails",
+    "runtime",
+    "playbooks",
+  ]) {
+    await cp(
+      path.join(repositoryRoot, "framework", relativePath),
+      path.join(root, "framework", relativePath),
+      { recursive: true },
+    );
+  }
   await cp(
     path.join(repositoryRoot, "reference-system"),
     path.join(root, "reference-system"),
@@ -73,6 +104,13 @@ async function expectedBlankWorkspaceSnapshot() {
       expected.set(path.join(".skills", id, relativePath), content);
     }
   }
+  for (const [source, destination] of managedPayloads) {
+    for (const [relativePath, content] of await snapshotFiles(
+      path.join(repositoryRoot, source),
+    )) {
+      expected.set(path.join(destination, relativePath), content);
+    }
+  }
   for (const [relativePath, content] of await snapshotFiles(
     referenceSystemSourceRoot,
   )) {
@@ -88,7 +126,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.1.0-alpha.1",
+    version: "0.2.0",
     sourceReference: "framework-development-fixture",
   });
 
@@ -267,8 +305,8 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.1.0-alpha.1",
-      "version: 0.1.1",
+      "version: 0.2.0",
+      "version: 0.2.1",
     ),
   );
   const sourceReferenceReadme = path.join(
@@ -284,7 +322,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   const result = await updateWorkspace({
     root,
     payloadRoot,
-    version: "0.1.1",
+    version: "0.2.1",
     sourceReference: "fixture-v2",
   });
 
@@ -305,7 +343,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   const repeated = await updateWorkspace({
     root,
     payloadRoot,
-    version: "0.1.1",
+    version: "0.2.1",
     sourceReference: "fixture-v2",
   });
   assert.equal(repeated.ok, true);
@@ -335,7 +373,7 @@ test("update stops before changing a locally edited managed skill", async (t) =>
   const result = await updateWorkspace({
     root,
     payloadRoot,
-    version: "0.1.1",
+    version: "0.2.1",
     sourceReference: "fixture-v2",
   });
 

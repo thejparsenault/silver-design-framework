@@ -1,0 +1,4 @@
+interface:
+  display_name: Build change case
+  short_description: Build an evidence-linked, branded change case.
+  default_prompt: Use $pitch to build an evidence-linked, branded change case.

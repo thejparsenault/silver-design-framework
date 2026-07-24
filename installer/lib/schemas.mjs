@@ -6,8 +6,8 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
-const schemaRoot = path.resolve(installerRoot, "../../framework/schemas/v1");
-const schemaNames = [
+const schemaRoot = path.resolve(installerRoot, "../../framework/schemas");
+const v1SchemaNames = [
   "artifact.schema.json",
   "check-result.schema.json",
   "finding.schema.json",
@@ -17,6 +17,10 @@ const schemaNames = [
   "permission-policy.schema.json",
   "prototype.schema.json",
   "skill.schema.json",
+];
+const v2SchemaNames = [
+  "common.schema.json",
+  "lock.schema.json",
 ];
 
 let validatorPromise;
@@ -35,9 +39,19 @@ async function createValidators() {
   });
   addFormats(ajv);
 
+  const entries = [
+    ...v1SchemaNames.map((name) => ({
+      key: name,
+      path: path.join(schemaRoot, "v1", name),
+    })),
+    ...v2SchemaNames.map((name) => ({
+      key: `v2/${name}`,
+      path: path.join(schemaRoot, "v2", name),
+    })),
+  ];
   const schemas = await Promise.all(
-    schemaNames.map(async (name) =>
-      JSON.parse(await readFile(path.join(schemaRoot, name), "utf8")),
+    entries.map(async ({ path: schemaPath }) =>
+      JSON.parse(await readFile(schemaPath, "utf8")),
     ),
   );
   for (const schema of schemas) {
@@ -46,7 +60,7 @@ async function createValidators() {
 
   return new Map(
     schemas.map((schema, index) => [
-      schemaNames[index],
+      entries[index].key,
       ajv.getSchema(schema.$id),
     ]),
   );

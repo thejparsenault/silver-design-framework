@@ -1,46 +1,27 @@
 ---
 name: brand
-description: Define, refine, or review a product’s canonical brand guidance, including its audience, promise, desired feeling, attributes, anti-attributes, and evidence. Use when a user asks to establish a brand, clarify brand positioning, revisit brand direction, or update design/brand.md.
+description: Define, refine, or review audience-facing brand foundations and explicitly approved visual implications. Use for brand promise, desired feeling, attributes, anti-attributes, positioning evidence, or canonical brand guidance.
 ---
 
 # Define brand
 
-Treat brand work as a collaborative design task, not a mandatory questionnaire.
-Use existing product context before asking for information the workspace already
-contains.
-
 ## Workflow
 
-1. Read `design/INDEX.md`, then use `design/manifest.yaml` to locate the
-   canonical product and brand artifacts. Load voice or design principles only
-   when they affect the request.
-2. Decide whether the task is definition, refinement, or review. Preserve
-   accepted guidance and identify the few consequential unknowns.
-3. Ask only questions that materially change the result. Prefer one coherent
-   decision at a time.
-4. Develop guidance covering the relevant parts of:
-   - audience and context;
-   - product promise and credible evidence;
-   - desired feeling;
-   - brand attributes and anti-attributes;
-   - implications for language or visual expression.
-5. Present the proposed guidance and meaningful tradeoffs before changing a
-   canonical artifact.
-6. Resolve the declared permission policy. Update the mapped brand artifact
-   only when the effective permission allows it or the user approves an `ask`
-   boundary.
-7. Preserve frontmatter, update its meaningful date, and keep the artifact
-   compact. Record a design decision when the change materially redirects
-   canonical guidance.
-8. Recommend relevant follow-up work, but never start another skill
-   automatically.
+1. Read product and existing brand context before asking consequential questions.
+2. Separate working hypotheses from accepted canonical guidance.
+3. Present tradeoffs and request approval before changing brand.md.
+4. Record material redirections as normal design decisions.
+
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+
+## Done
+
+- Satisfy: audience-named, claims-grounded, visual-changes-proposed-only.
+- Evaluate quality: Guidance is specific enough to guide product and communication choices.
+- Emit a valid `silver/skill-result/v2` record separating execution, acceptance, and downstream readiness.
+- Recommend follow-up skills; never start them automatically.
 
 ## Boundaries
 
-- Do not change tokens, themes, components, or production source as an implied
-  consequence of brand work. Recommend `$theme` when visual expression should
-  change.
-- Do not replace specific product facts with generic brand language.
-- Distinguish a working hypothesis from accepted guidance.
-- Do not create ceremony or require the user to complete every possible brand
-  exercise.
+- Do not silently change themes, tokens, components, or production source.
+- Do not replace product facts with generic brand language.

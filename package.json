@@ -1,6 +1,6 @@
 {
   "name": "silver-design-framework",
-  "version": "0.1.0-alpha.1",
+  "version": "0.2.0",
   "private": true,
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
@@ -30,6 +30,7 @@
     "validate:contracts": "node framework/scripts/validate-contracts.mjs",
     "build": "npm run validate:contracts && npm run build:reference && npm test",
     "build:reference": "node reference-system/packages/tokens/src/build.mjs",
+    "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
     "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs",
     "test:package": "node installer/tests/package-smoke.mjs"
   },

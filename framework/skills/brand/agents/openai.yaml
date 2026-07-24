@@ -1,4 +1,4 @@
 interface:
-  display_name: "Define Brand"
-  short_description: "Define or refine product brand guidance"
-  default_prompt: "Use $brand to define or refine this product’s brand guidance."
+  display_name: Define brand
+  short_description: Define or refine audience-facing brand foundations.
+  default_prompt: Use $brand to define or refine audience-facing brand foundations.

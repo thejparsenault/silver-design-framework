@@ -1,0 +1,105 @@
+schema: silver/skill/v2
+id: voice
+version: 0.2.0
+summary: Define or refine voice, tone, terminology, and content guidance.
+context_budget: small
+inputs:
+  - kind: brand
+    required: false
+    role: canonical
+  - kind: product
+    required: false
+    role: canonical
+  - kind: voice
+    required: false
+    role: canonical
+outputs:
+  - kind: voice
+    scope: product
+    path_pattern: design/voice.md
+    authority: canonical-with-approval
+  - kind: decision
+    scope: product
+    path_pattern: design/decisions/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: canonical-artifact
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/voice.md
+    decision: ask
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - voice-distinct-from-tone
+    - terminology-consistent
+    - examples-contextual
+  quality_criteria:
+    - id: task-quality
+      description: Guidance includes usable examples and context-specific variation
+        without contradiction.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - specify
+      - pitch
+handoffs:
+  - id: voice-to-specify
+    target: specify
+    readiness: specify
+    requires:
+      - voice
+      - decision
+  - id: voice-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - voice
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

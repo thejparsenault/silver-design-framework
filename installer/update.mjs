@@ -27,10 +27,14 @@ async function loadLock(root) {
     throw new Error("Cannot update without .silver/lock.yaml.");
   }
   const lock = parse(await readUtf8(lockPath));
-  const validation = await validateSchema("lock.schema.json", lock);
+  const schemaName =
+    lock.schema === "silver/lock/v2"
+      ? "v2/lock.schema.json"
+      : "lock.schema.json";
+  const validation = await validateSchema(schemaName, lock);
   if (!validation.valid) {
     throw new Error(
-      `.silver/lock.yaml violates the v1 contract: ${validation.errors.join("; ")}`,
+      `.silver/lock.yaml violates its declared contract: ${validation.errors.join("; ")}`,
     );
   }
   return { lock, lockPath };
@@ -60,7 +64,20 @@ export async function updateWorkspace(options = {}) {
       });
       continue;
     }
-    const relativePath = `.skills/${installed.id}`;
+    const relativePath =
+      installed.path ??
+      (installed.type === "skill"
+        ? `.skills/${installed.id}`
+        : installed.type === "reference-system"
+          ? "reference-system"
+          : undefined);
+    if (!relativePath) {
+      conflicts.push({
+        package: installed.id,
+        reason: "The installed package has no managed path.",
+      });
+      continue;
+    }
     const absolute = path.join(root, relativePath);
     if (
       (await exists(absolute)) &&
@@ -88,7 +105,6 @@ export async function updateWorkspace(options = {}) {
     };
   }
 
-  const { skillSourceRoot } = payloadRoots(payloadRoot);
   const updated = [];
   const preserved = [];
   const proposals = [];
@@ -99,17 +115,16 @@ export async function updateWorkspace(options = {}) {
       continue;
     }
     if (installed.ownership === "framework-managed") {
-      if (
-        installed.integrity !== target.integrity ||
-        installed.version !== target.version
-      ) {
+      if (installed.integrity !== target.integrity) {
         await replaceTree(
-          path.join(skillSourceRoot, installed.id),
-          path.join(root, ".skills", installed.id),
+          target.sourcePath,
+          path.join(root, target.path),
         );
-        Object.assign(installed, target);
+        const { sourcePath, ...record } = target;
+        Object.assign(installed, record);
         updated.push(installed.id);
       } else {
+        installed.version = target.version;
         preserved.push(installed.id);
       }
       continue;

@@ -26,9 +26,22 @@ const repositoryRoot = path.resolve(installerRoot, "..");
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
 export const INITIAL_SKILL_IDS = [
   "brand",
+  "product",
+  "voice",
+  "principles",
   "theme",
+  "system",
+  "research",
+  "synthesize",
+  "ideate",
+  "specify",
   "flow",
+  "sketch",
+  "component",
   "prototype",
+  "evaluate",
+  "pitch",
+  "implement",
   "design-check",
 ];
 const allowedBlankEntries = new Set([
@@ -92,6 +105,10 @@ async function readTemplate(relativePath, variables) {
 export function payloadRoots(payloadRoot = repositoryRoot) {
   return {
     skillSourceRoot: path.join(payloadRoot, "framework", "skills"),
+    schemaSourceRoot: path.join(payloadRoot, "framework", "schemas", "v2"),
+    guardrailSourceRoot: path.join(payloadRoot, "framework", "guardrails"),
+    runtimeSourceRoot: path.join(payloadRoot, "framework", "runtime"),
+    playbookSourceRoot: path.join(payloadRoot, "framework", "playbooks"),
     referenceSystemSourceRoot: path.join(payloadRoot, "reference-system"),
   };
 }
@@ -123,8 +140,14 @@ export async function sourcePackages({
   payloadRoot = repositoryRoot,
   skillIds = INITIAL_SKILL_IDS,
 }) {
-  const { skillSourceRoot, referenceSystemSourceRoot } =
-    payloadRoots(payloadRoot);
+  const {
+    skillSourceRoot,
+    schemaSourceRoot,
+    guardrailSourceRoot,
+    runtimeSourceRoot,
+    playbookSourceRoot,
+    referenceSystemSourceRoot,
+  } = payloadRoots(payloadRoot);
   const packages = [];
   for (const id of skillIds) {
     const skill = parse(
@@ -133,14 +156,54 @@ export async function sourcePackages({
     packages.push({
       id,
       type: "skill",
+      path: `.skills/${id}`,
+      sourcePath: path.join(skillSourceRoot, id),
       version: skill.version,
       ownership: "framework-managed",
       integrity: await treeIntegrity(path.join(skillSourceRoot, id)),
     });
   }
+  for (const item of [
+    {
+      id: "schemas-v2",
+      type: "schema-bundle",
+      path: ".silver/schemas/v2",
+      source: schemaSourceRoot,
+    },
+    {
+      id: "guardrails",
+      type: "guardrail-registry",
+      path: ".silver/guardrails",
+      source: guardrailSourceRoot,
+    },
+    {
+      id: "skill-runtime",
+      type: "runtime",
+      path: ".silver/runtime",
+      source: runtimeSourceRoot,
+    },
+    {
+      id: "default-design-loop",
+      type: "playbook",
+      path: ".silver/playbooks",
+      source: playbookSourceRoot,
+    },
+  ]) {
+    packages.push({
+      id: item.id,
+      type: item.type,
+      path: item.path,
+      sourcePath: item.source,
+      version,
+      ownership: "framework-managed",
+      integrity: await treeIntegrity(item.source),
+    });
+  }
   packages.push({
     id: "reference-system",
     type: "reference-system",
+    path: "reference-system",
+    sourcePath: referenceSystemSourceRoot,
     version,
     ownership: "copied-and-owned",
     integrity: await treeIntegrity(referenceSystemSourceRoot),
@@ -155,10 +218,12 @@ async function renderLock({
   agentPointerContent,
   payloadRoot,
 }) {
-  const packages = await sourcePackages({ version, payloadRoot });
+  const packages = (await sourcePackages({ version, payloadRoot })).map(
+    ({ sourcePath, ...record }) => record,
+  );
 
   return stringify({
-    schema: "silver/lock/v1",
+    schema: "silver/lock/v2",
     framework: {
       version,
       source: {
@@ -212,8 +277,14 @@ export async function setupWorkspace(options = {}) {
   const sourceReference =
     options.sourceReference ?? LOCAL_SOURCE_REFERENCE;
   const payloadRoot = options.payloadRoot ?? repositoryRoot;
-  const { skillSourceRoot, referenceSystemSourceRoot } =
-    payloadRoots(payloadRoot);
+  const {
+    skillSourceRoot,
+    schemaSourceRoot,
+    guardrailSourceRoot,
+    runtimeSourceRoot,
+    playbookSourceRoot,
+    referenceSystemSourceRoot,
+  } = payloadRoots(payloadRoot);
 
   let workspaceName;
   let workspaceId;
@@ -297,6 +368,22 @@ export async function setupWorkspace(options = {}) {
       created.push(
         ...copied.map((relativePath) =>
           path.posix.join(".skills", id, relativePath.split(path.sep).join("/")),
+        ),
+      );
+    }
+    for (const [source, destination] of [
+      [schemaSourceRoot, ".silver/schemas/v2"],
+      [guardrailSourceRoot, ".silver/guardrails"],
+      [runtimeSourceRoot, ".silver/runtime"],
+      [playbookSourceRoot, ".silver/playbooks"],
+    ]) {
+      const copied = await copyNewTree(source, path.join(root, destination));
+      created.push(
+        ...copied.map((relativePath) =>
+          path.posix.join(
+            destination,
+            relativePath.split(path.sep).join("/"),
+          ),
         ),
       );
     }

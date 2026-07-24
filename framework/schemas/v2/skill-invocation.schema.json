@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/skill-invocation.schema.json",
+  "title": "Silver guarded skill invocation v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "invocation_id",
+    "skill",
+    "started_at",
+    "inputs",
+    "outputs",
+    "permission_layers",
+    "available_providers",
+    "approvals",
+    "relaxations",
+    "checks",
+    "unresolved_questions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "silver/skill-invocation/v2"
+    },
+    "invocation_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/version"
+        }
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reference", "content"],
+        "properties": {
+          "reference": {
+            "$ref": "common.schema.json#/$defs/artifactReference"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["format", "value"],
+            "properties": {
+              "format": {
+                "enum": ["json", "text"]
+              },
+              "value": {}
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "format": {
+                      "const": "text"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "format": {
+                      "const": "json"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "schema_name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*\\.schema\\.json$"
+          },
+          "expected_integrity": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "permission_layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "permission-policy.schema.json"
+      }
+    },
+    "available_providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "provider", "available"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "provider": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "available": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "action", "path", "approved_by"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "action": {
+            "$ref": "common.schema.json#/$defs/action"
+          },
+          "path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "approved_by": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        }
+      }
+    },
+    "relaxations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "profile", "reason", "decision_reference"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "profile": {
+            "enum": ["prototype-partial", "prototype-suspended"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "decision_reference": {
+            "$ref": "common.schema.json#/$defs/artifactReference"
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "result_path"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["pass", "fail", "not-run"]
+          },
+          "result_path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          }
+        }
+      }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question", "blocks"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["awaiting-review", "accepted", "rejected"]
+        },
+        "reviewer": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

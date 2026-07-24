@@ -1,0 +1,115 @@
+schema: silver/skill/v2
+id: synthesize
+version: 0.2.0
+summary: Turn sanitized evidence into traceable findings and problem frames.
+context_budget: small
+inputs:
+  - kind: evidence
+    required: true
+    role: evidence
+  - kind: product
+    required: false
+    role: canonical
+  - kind: evaluation
+    required: false
+    role: working
+outputs:
+  - kind: finding
+    scope: product
+    path_pattern: design/work/findings/**
+    authority: project-owned
+  - kind: problem-frame
+    scope: product
+    path_pattern: design/work/problem-frames/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional:
+    - capability: research-evidence
+      providers: []
+      fallback: degraded
+      description: Use research-evidence when configured; preserve explicit fallback
+        coverage otherwise.
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/findings/**
+    decision: allow
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/problem-frames/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - privacy-sanitized-evidence
+  - no-fabricated-evidence
+  - provenance-required
+completion:
+  invariants:
+    - sources-pinned
+    - assumptions-labeled
+    - contradictions-retained
+  quality_criteria:
+    - id: task-quality
+      description: Findings separate observation, interpretation, confidence,
+        contradiction, and open question.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - ideate
+      - pitch
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: synthesize-to-ideate
+    target: ideate
+    readiness: ideate
+    requires:
+      - finding
+      - problem-frame
+  - id: synthesize-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - finding
+      - problem-frame
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

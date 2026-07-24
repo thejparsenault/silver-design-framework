@@ -22,6 +22,10 @@ function patternToRegExp(pattern) {
   return new RegExp(`^${escaped}$`);
 }
 
+export function matchesPathPattern(pattern, value) {
+  return patternToRegExp(pattern).test(safeRelativePath(value));
+}
+
 function safeRelativePath(value) {
   if (value === undefined) {
     return undefined;
@@ -104,6 +108,7 @@ export function resolveCapabilities({
   availableProviders = [],
   localCapabilities = [
     "repository",
+    "canonical-artifact",
     "flow",
     "sketch-renderer",
     "prototype-renderer",

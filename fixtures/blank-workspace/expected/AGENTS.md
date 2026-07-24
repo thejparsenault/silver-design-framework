@@ -9,9 +9,22 @@ Project-local design skills are installed under `.skills/`; read the relevant
 Available design skills:
 
 - [brand](.skills/brand/SKILL.md)
+- [product](.skills/product/SKILL.md)
+- [voice](.skills/voice/SKILL.md)
+- [principles](.skills/principles/SKILL.md)
 - [theme](.skills/theme/SKILL.md)
+- [system](.skills/system/SKILL.md)
+- [research](.skills/research/SKILL.md)
+- [synthesize](.skills/synthesize/SKILL.md)
+- [ideate](.skills/ideate/SKILL.md)
+- [specify](.skills/specify/SKILL.md)
 - [flow](.skills/flow/SKILL.md)
+- [sketch](.skills/sketch/SKILL.md)
+- [component](.skills/component/SKILL.md)
 - [prototype](.skills/prototype/SKILL.md)
+- [evaluate](.skills/evaluate/SKILL.md)
+- [pitch](.skills/pitch/SKILL.md)
+- [implement](.skills/implement/SKILL.md)
 - [design-check](.skills/design-check/SKILL.md)
 
 Design-system constraints may only be suspended when the user explicitly

@@ -1,82 +1,143 @@
-schema: silver/skill/v1
+schema: silver/skill/v2
 id: flow
-version: 0.1.0-alpha.1
-summary: Create, render, and revise a portable product or component behavior flow.
+version: 0.2.0
+summary: Create and revise portable, revision-aware behavior graphs.
 context_budget: medium
-requires:
-  artifacts:
-    - kind: product
-      required: true
-      role: canonical
-    - kind: flow
-      required: false
-    - kind: component-catalog
-      required: false
-      role: canonical
-    - kind: research
-      required: false
-    - kind: testing
-      required: false
-  capabilities:
-    - repository
-    - flow
-    - design-file
-access:
-  read:
-    - scope: product
-      paths:
-        - design/**
-    - scope: prototype
-      paths:
-        - prototypes/**
-  write:
-    - scope: product
-      paths:
-        - design/flows/**
-    - scope: prototype
-      paths:
-        - prototypes/**/flows/**
-produces:
+inputs:
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: concept
+    required: false
+    role: working
+  - kind: product
+    required: false
+    role: canonical
+  - kind: component-proposal
+    required: false
+    role: working
+outputs:
   - kind: flow
     scope: product
-    path_pattern: design/flows/*/flow.json
+    path_pattern: design/flows/**
+    authority: project-owned
   - kind: flow
     scope: prototype
-    path_pattern: prototypes/**/flows/*/flow.json
-external_effects:
-  - read-external
-  - modify-external
-requested_permissions:
+    path_pattern: prototypes/**/flows/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - flow
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+permissions:
   - capability: repository
     actions:
       - read
+      - inspect
     paths:
       - design/**
       - prototypes/**
-  - capability: flow
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+  - capability: repository
     actions:
       - create
       - write
       - update
     paths:
       - design/flows/**
-      - prototypes/**/flows/**
-  - capability: design-file
+    decision: allow
+  - capability: repository
     actions:
-      - read
-      - inspect
       - create
+      - write
       - update
+    paths:
+      - prototypes/**/flows/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+completion:
+  invariants:
+    - stable-node-identities
+    - outcomes-reachable
+    - states-covered
+  quality_criteria:
+    - id: task-quality
+      description: The graph exposes decisions, alternate outcomes, system actions,
+        and missing states without depending on one renderer.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: flow-structure
+    required: true
+    blocks: &a1
+      - sketch
+      - prototype
+      - component
+      - implement
+  - id: contract-integrity
+    required: true
+    blocks: *a1
+handoffs:
+  - id: flow-to-sketch
+    target: sketch
+    readiness: sketch
+    requires:
+      - flow
+      - flow
+  - id: flow-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - flow
+      - flow
+  - id: flow-to-component
+    target: component
+    readiness: component
+    requires:
+      - flow
+      - flow
+  - id: flow-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - flow
+      - flow
+external_effects:
+  - none
 scripts:
-  - id: init-flow
-    path: scripts/init-flow.mjs
-    purpose: Create a minimal portable flow without overwriting existing work.
-  - id: render-flow
-    path: scripts/render-flow.mjs
-    purpose: Render a portable flow as a Mermaid text view.
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
   - id: check-flow
     path: scripts/check-flow.mjs
-    purpose: Check graph references, reachability, decisions, and outcomes.
-recommend_after:
-  - flow-structure
-  - prototype
+    purpose: Bundled deterministic flow operation.
+  - id: flow-lib
+    path: scripts/flow-lib.mjs
+    purpose: Bundled deterministic flow operation.
+  - id: init-flow
+    path: scripts/init-flow.mjs
+    purpose: Bundled deterministic flow operation.
+  - id: render-flow
+    path: scripts/render-flow.mjs
+    purpose: Bundled deterministic flow operation.
+recommend_after: *a1

@@ -1,0 +1,38 @@
+import { copyFile, mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+import { setupWorkspace } from "../setup.mjs";
+
+const repositoryRoot = path.resolve(import.meta.dirname, "../..");
+const fixtureRoot = path.join(
+  repositoryRoot,
+  "fixtures/blank-workspace/expected",
+);
+const temporaryRoot = await mkdtemp(
+  path.join(os.tmpdir(), "silver-refresh-fixture-"),
+);
+
+try {
+  await setupWorkspace({
+    root: temporaryRoot,
+    name: "Example Product",
+    id: "example-product",
+    date: "2026-07-23",
+    version: "0.2.0",
+    sourceReference: "framework-development-fixture",
+  });
+  for (const relativePath of [
+    "AGENTS.md",
+    "design/INDEX.md",
+    ".silver/lock.yaml",
+  ]) {
+    await copyFile(
+      path.join(temporaryRoot, relativePath),
+      path.join(fixtureRoot, relativePath),
+    );
+  }
+  console.log("Refreshed generated blank-workspace fixture files.");
+} finally {
+  await rm(temporaryRoot, { force: true, recursive: true });
+}

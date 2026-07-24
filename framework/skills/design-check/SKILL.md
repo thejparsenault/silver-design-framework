@@ -1,48 +1,27 @@
 ---
 name: design-check
-description: Run and summarize the workspace’s independent design-conformance checks without changing the work being checked. Use when a user asks to validate design standards, inspect flow structure or semantic token use, check prototype policy, test accessibility or responsive behavior, review browser coverage, or understand whether an implementation conforms.
+description: Discover and run applicable independent design checks for a declared target and policy, preserve every result, and summarize coverage. Use for conformance, browser, accessibility, responsive, interaction, provenance, asset, presentation, and production readiness checks.
 ---
 
-# Check design conformance
-
-Orchestrate declared checkers; do not embed subjective redesign work in the
-check.
+# Check design
 
 ## Workflow
 
-1. Read `design/manifest.yaml` and select the requested suite. Use `fast` when
-   no suite is specified; use `browser` or `full` only when requested or needed
-   to answer the question.
-2. Run each enabled checker independently using its declared command and policy
-   profile. A failing checker must not prevent unrelated checkers from running.
-   For the bundled first-iteration fast suite, run:
+1. Discover checks applicable to the declared target and policy profile.
+2. Run each checker independently and preserve its normalized result.
+3. Report unavailable required targets or providers as not-run.
+4. Summarize coverage and recommend corrections without performing design work.
 
-   ```sh
-   node .skills/design-check/scripts/run-fast.mjs --root .
-   ```
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
 
-   Each underlying checker can also run separately from the same `scripts/`
-   directory.
-3. Use declared render targets for browser checks. Start only the configured
-   local preview needed for inspection. Do not invent an undeclared production
-   target.
-4. When a checker, render target, browser provider, or required configuration is
-   unavailable, record `not-run`; never count missing coverage as a pass.
-5. Normalize each finding with checker, rule, severity, policy profile,
-   location, message, observed value when useful, and a suggested correction.
-6. Summarize:
-   - overall status and suite;
-   - checks passed, failed, and not run;
-   - highest-impact findings;
-   - coverage gaps;
-   - recommended next actions.
+## Done
+
+- Satisfy: checks-independent, results-preserved, not-run-never-pass.
+- Evaluate quality: The summary names requested, completed, failed, and unavailable coverage without changing the target.
+- Emit a valid `silver/skill-result/v2` record separating execution, acceptance, and downstream readiness.
+- Recommend follow-up skills; never start them automatically.
 
 ## Boundaries
 
-- Remain read-only unless the user separately authorizes persistence of a
-  report.
-- Do not fix findings, alter a prototype profile, or launch another skill
-  automatically.
-- Keep deterministic failures distinct from design recommendations.
-- Browser MCP inspection may support interactive work, but CI coverage should
-  use the configured deterministic browser runner.
+- Do not fix designs or code as part of a check invocation.
+- Never collapse failed or not-run results into a passing suite.
