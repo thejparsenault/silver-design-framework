@@ -2,6 +2,12 @@
 
 This backlog contains functionality intentionally excluded from the first blank-workspace iteration. Priorities describe recommended sequencing, not commitments or mandatory workflow stages.
 
+Silver `0.2.0` promotes a bounded subset of the items below into required
+release scope. `docs/silver-0.2-acceptance.md` is authoritative when an item
+below overlaps an `S02-*` criterion. Existing-codebase adoption, external
+provider adapters, organization inheritance, and ecosystem work remain
+post-`0.2.0` unless the acceptance document says otherwise.
+
 ## P1 — Existing Codebase Adoption
 
 - [ ] Repository discovery

@@ -2,9 +2,22 @@
 
 ## Current Focus
 
-The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1`. The framework's next-generation agentic skill, playbook, completion, guardrail, pitch, and presentation architecture is planned. The immediate implementation milestone remains representative existing-repository adoption.
+The blank-workspace MVP is complete at local prerelease candidate
+`0.1.0-alpha.1`. The next release target is Silver `0.2.0`, the Complete
+Blank-Workspace Suite. It implements the full project-local foundation,
+design-loop, pitch, implementation, and conformance skill catalog together with
+v2 results, guardrails, resumable playbooks, local renderers, and release
+evidence. `docs/silver-0.2-acceptance.md` is the authoritative release gate.
+Existing-codebase adoption follows `0.2.0` except for bounded discovery spikes
+used to test framework neutrality.
 
 ## Recent Progress
+
+- 2026-07-24: Silver 0.2 release boundary
+  - Defined the Complete Blank-Workspace Suite as the next release and moved general existing-codebase adoption after it.
+  - Added stable architecture, skill, and end-to-end requirement IDs plus an evidence-backed release audit rule.
+  - Required every skill to install locally, run independently, emit normalized results, enforce guardrails, and include positive and negative fixture coverage.
+  - Kept external providers, broad recipe coverage, organization inheritance, automated version-control effects, and stakeholder outcomes outside the release gate.
 
 - 2026-07-24: Project renamed to The Silver Design Framework
   - Selected `The Silver Design Framework` as the display name, `Silver` as the short name, and `silver-design-framework` as the repository, folder, and package identity.
@@ -103,9 +116,12 @@ The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1
 
 ## Next 3 Actions
 
-1. Select one representative existing product repository for adoption.
-2. Implement read-only discovery and a reviewable adoption report.
-3. Use adoption findings to draft the v2 skill-result and playbook contracts before implementing the expanded skill catalog.
+1. Implement and fixture-test the v2 skill, result, working-artifact, and
+   guardrail contracts required by `S02-ARC-02` through `S02-ARC-06`.
+2. Implement the playbook contract, resumable state, and default design loop
+   required by `S02-ARC-07` through `S02-ARC-09`.
+3. Implement the required skill catalog and prove the complete packed-release
+   scenario defined by `S02-SKL-*` and `S02-E2E-*`.
 
 ## Blockers
 

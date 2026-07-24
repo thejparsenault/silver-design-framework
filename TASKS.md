@@ -68,7 +68,43 @@
   - context: small
   - notes: Prepared and validated the isolated local tarball candidate at 0.1.0-alpha.1 with exact lock versions. Remote private publication awaits a selected package scope or GitHub release destination.
 
-## Next Milestone
+## Next Release — Silver 0.2 Complete Blank-Workspace Suite
+
+The authoritative requirement list and release evidence rules are in
+`docs/silver-0.2-acceptance.md`. A task is not complete until its corresponding
+`S02-*` criteria have automated evidence.
+
+- [ ] Implement and validate the v2 contract foundation
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Complete `S02-ARC-02` through `S02-ARC-06`, including v1 migration.
+
+- [ ] Implement and validate agentic composition
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Complete `S02-ARC-07` through `S02-ARC-09`, including resumability, invalidation, checkpoints, feedback, and bounded autonomy.
+
+- [ ] Implement the complete required skill catalog
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Complete every criterion from `S02-SKL-01` through `S02-SKL-18`; each skill must install locally, run independently, emit valid results, and include positive and negative fixtures.
+
+- [ ] Complete blank-workspace lifecycle and local baseline support
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Complete `S02-ARC-01` and `S02-ARC-10` through `S02-ARC-14`, including local renderers, the production-capable baseline recipe, shared assets, the presentation kit, independent checks, safe updates, and migrations.
+
+- [ ] Prove the complete blank-workspace release
+  - type: test
+  - priority: high
+  - context: large
+  - notes: Complete `S02-E2E-01` through `S02-E2E-10` against the exact packed candidate and record direct evidence in `docs/silver-0.2-acceptance-audit.md`.
+
+## Following Milestone — Existing Codebase Adoption
 
 - [ ] Adopt one representative existing product repository
   - type: build
@@ -81,26 +117,6 @@
   - priority: high
   - context: medium
   - notes: Map semantically clear existing artifacts, identify ambiguities, and recommend operational summaries for oversized omnibus documents.
-
-## Following Milestone — Agentic Skill Composition
-
-- [ ] Draft and validate v2 skill-result and guardrail contracts
-  - type: design
-  - priority: high
-  - context: medium
-  - notes: Separate execution, acceptance, and downstream readiness; add typed inputs, required/optional capabilities, provider fallbacks, completion invariants, review criteria, and layered guardrail references.
-
-- [ ] Draft and validate the playbook contract
-  - type: design
-  - priority: high
-  - context: medium
-  - notes: Support independent skills, typed handoffs, branches, checkpoints, resumability, stale-reference handling, and explicitly bounded autonomy.
-
-- [ ] Fixture-test the default design loop
-  - type: test
-  - priority: high
-  - context: medium
-  - notes: Validate synthesis → ideation → selection → specification ↔ flow/sketch → prototype → evaluation with optional steps, safe pauses, feedback loops, and no automatic production promotion.
 
 ## Backlog
 

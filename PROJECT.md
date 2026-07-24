@@ -44,11 +44,21 @@ Validate one coherent blank-workspace path:
 - demonstrate setup through brand/theme refinement, tool-neutral flow authoring, prototype rendering from that flow, and static checks;
 - produce recommended next actions without starting them automatically.
 
-Existing-repository adoption is the next milestone, not part of the first vertical slice.
+Existing-repository adoption is not part of the first vertical slice and
+follows the complete blank-workspace suite.
 
 ## Current Phase
 
 validate
+
+## Next Release
+
+Silver `0.2.0`, working name **Complete Blank-Workspace Suite**, is the next
+release target. Its authoritative scope, exclusions, requirement IDs, and
+completion evidence are defined in `docs/silver-0.2-acceptance.md`.
+
+Existing-codebase adoption follows this release except for bounded discovery
+spikes used to pressure-test framework neutrality.
 
 ## Agent Access
 
@@ -83,5 +93,6 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 - `DECISIONS.md` — accepted and superseded decisions
 - `docs/installer-distribution.md` — installer ownership, hosting, release, and configuration recommendation
 - `docs/mvp-acceptance.md` — requirement-by-requirement first-iteration completion evidence
+- `docs/silver-0.2-acceptance.md` — authoritative next-release boundary and completion criteria
 - `docs/agentic-design-workflows.md` — independent skill, artifact handoff, playbook, result, guardrail, and production-boundary plan
 - `docs/pitch-and-presentations.md` — change-case, pitch, presentation-kit, rendering, and presentation-check plan

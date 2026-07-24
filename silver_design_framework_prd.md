@@ -534,6 +534,19 @@ content; presentation outputs are revision-pinned views. See
 
 All excluded functionality is tracked in `BACKLOG.md`.
 
+### 15.3 Next Release
+
+Silver `0.2.0`, working name **Complete Blank-Workspace Suite**, expands the
+validated blank-folder path into the complete project-local foundation,
+design-loop, pitch, implementation, and conformance skill suite. It also adds
+the v2 result, guardrail, playbook, resumability, local-renderer, asset, and
+presentation-kit supports required to compose those skills safely.
+
+`docs/silver-0.2-acceptance.md` is authoritative for the release scope,
+exclusions, stable requirement IDs, and required completion evidence.
+Existing-codebase adoption follows `0.2.0` except for bounded discovery work
+used to pressure-test framework neutrality.
+
 ## 16. Acceptance Criteria
 
 The first iteration is successful when:
