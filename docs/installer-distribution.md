@@ -11,12 +11,15 @@ Keep the installer source in this repository and release it with the framework. 
 Working command shape:
 
 ```sh
-npx --yes @scope/design-practice@0.1.0 setup
-npx --yes @scope/design-practice@0.1.0 update
-npx --yes @scope/design-practice@0.1.0 doctor
+npx --yes @scope/silver@0.1.0 setup
+npx --yes @scope/silver@0.1.0 update
+npx --yes @scope/silver@0.1.0 doctor
 ```
 
-The exact package scope and final repository name should be selected when implementation starts. The current `design-system-base` name should not be published.
+The repository name is `silver-design-framework`, the local package identity is
+`silver-design-framework`, and the executable is `silver`. A future scoped
+publication should use a package such as `@scope/silver`; the exact publishing
+scope remains to be selected.
 
 ## Why This Shape
 
@@ -44,7 +47,7 @@ The npm CLI should contain enough of one framework release to install offline af
 ```text
 package/
   bin/
-    design-practice
+    silver
   installer/
   payload/
     framework/
@@ -114,13 +117,13 @@ The CLI must not:
 Use an XDG-style configuration location:
 
 ```text
-$XDG_CONFIG_HOME/design-practice/config.yaml
+$XDG_CONFIG_HOME/silver/config.yaml
 ```
 
 Fallback:
 
 ```text
-~/.config/design-practice/config.yaml
+~/.config/silver/config.yaml
 ```
 
 This file may contain:
@@ -143,7 +146,7 @@ Authentication stays with the provider, environment, or operating-system credent
 
 ```text
 design/manifest.yaml
-.design-framework/lock.yaml
+.silver/lock.yaml
 ```
 
 The manifest describes the workspace and its logical artifacts. The lock describes the installed framework release, package versions, hashes, and managed-file bases needed for safe updates.

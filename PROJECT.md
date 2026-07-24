@@ -1,17 +1,17 @@
 ---
-name: Design Practice Framework
-slug: design-system-base
+name: The Silver Design Framework
+slug: silver-design-framework
 stage: exploring
-path: /Users/jp/Projects/exploring/design-system-base
-repo:
+path: /Users/jp/Projects/exploring/silver-design-framework
+repo: https://github.com/thejparsenault/silver-design-framework
 visibility: private
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-23
+updated: 2026-07-24
 ---
 
-# Design Practice Framework
+# The Silver Design Framework
 
 ## Purpose
 
@@ -30,6 +30,8 @@ A designer can:
 5. Use configured tools such as Figma or a browser through provider-neutral capabilities and explicit permissions.
 6. Constrain generated work to approved semantic styles and components, with explicit prototype-only suspension when desired.
 7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
+8. Run recognizable design skills independently or compose them through optional, resumable playbooks with inspectable artifact handoffs and checkpoints.
+9. Build evidence-backed change cases and branded presentation views for team decisions without confusing generated output, stakeholder acceptance, and production readiness.
 
 ## First Iteration
 
@@ -66,6 +68,9 @@ validate
 - Design-system constraints are never silently suspended. Suspension is an explicit prototype-only choice by default.
 - Process and lifecycle guidance is recommended, not enforced.
 - External tools may be authoritative for declared artifact kinds, but production use requires a pinned, validated local representation.
+- Skill execution, acceptance, and downstream readiness are separate states.
+- Playbook invocation permits only its declared safe local progression and never broadens external, canonical, production, destructive, or version-control authority.
+- Presentation outputs consume canonical brand and design-system artifacts; reusable presentation templates and components remain a distinct project-owned kit.
 
 ## Historical Work
 
@@ -73,8 +78,10 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 
 ## Primary Documents
 
-- `design_practice_framework_prd.md` — product requirements and first-iteration scope
+- `silver_design_framework_prd.md` — product requirements and first-iteration scope
 - `BACKLOG.md` — prioritized functionality beyond the first iteration
 - `DECISIONS.md` — accepted and superseded decisions
 - `docs/installer-distribution.md` — installer ownership, hosting, release, and configuration recommendation
 - `docs/mvp-acceptance.md` — requirement-by-requirement first-iteration completion evidence
+- `docs/agentic-design-workflows.md` — independent skill, artifact handoff, playbook, result, guardrail, and production-boundary plan
+- `docs/pitch-and-presentations.md` — change-case, pitch, presentation-kit, rendering, and presentation-check plan

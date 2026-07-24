@@ -6,14 +6,14 @@ import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
 
-const usage = `Design Practice Framework
+const usage = `The Silver Design Framework
 
 Usage:
-  design-practice setup [directory] [--name <name>] [--id <id>] [--json]
-  design-practice doctor [directory] [--json]
-  design-practice repair [directory] [--json]
-  design-practice update [directory] [--json]
-  design-practice version
+  silver setup [directory] [--name <name>] [--id <id>] [--json]
+  silver doctor [directory] [--json]
+  silver repair [directory] [--json]
+  silver update [directory] [--json]
+  silver version
 
 Commands:
   setup   Initialize a blank workspace or resume an existing framework setup.

@@ -69,7 +69,7 @@ export async function checkPrototypes(options = {}) {
         }
       }
       if (
-        prototype.schema !== "design-practice/prototype/v1" ||
+        prototype.schema !== "silver/prototype/v1" ||
         !profiles.has(prototype.constraint_profile)
       ) {
         findings.push(

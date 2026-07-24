@@ -1,7 +1,7 @@
 # Check Result Protocol
 
 A checker evaluates one deterministic conformance dimension and returns one
-`design-practice/check-result/v1` object. Checkers do not modify design work.
+`silver/check-result/v1` object. Checkers do not modify design work.
 
 ## Status
 

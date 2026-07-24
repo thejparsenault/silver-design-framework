@@ -73,7 +73,7 @@ export async function initFlow(options) {
   }
 
   const flow = {
-    schema: "design-practice/flow/v1",
+    schema: "silver/flow/v1",
     id,
     title,
     kind,

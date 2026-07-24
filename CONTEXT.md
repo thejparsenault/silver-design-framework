@@ -1,4 +1,4 @@
-# Design Practice Framework
+# The Silver Design Framework
 
 The framework gives designers and agents a shared language for describing design intent, connecting that intent to tools and codebases, and checking that generated work remains coherent.
 
@@ -36,6 +36,14 @@ _Avoid_: Source of truth without naming its scope
 A project-scoped, agent-invoked capability for a designer's recognizable task, with declared inputs, outputs, tools, permissions, and side effects.
 _Avoid_: Command, script
 
+**Playbook**:
+An optional declarative graph that composes independently runnable skills through typed artifact handoffs, readiness conditions, checkpoints, branches, and stopping rules.
+_Avoid_: Pipeline when implying one mandatory order, mega-skill
+
+**Skill result**:
+The normalized record of one invocation's execution, acceptance, and downstream-readiness states, including artifact revisions, degraded capabilities, checks, and unresolved questions.
+_Avoid_: Done flag, success when only file generation completed
+
 **Check**:
 A deterministic evaluation of one conformance dimension that produces normalized findings and never performs design work.
 _Avoid_: Skill when the operation is purely evaluative
@@ -55,6 +63,18 @@ _Avoid_: Default design system when implying it must remain unchanged
 **Prototype**:
 A non-authoritative, open-ended design artifact that may be revised, promoted, retained, or discarded while remaining subject to its explicitly selected constraint profile.
 _Avoid_: Throwaway, production candidate
+
+**Design specification**:
+A living, revisioned contract for one selected direction that records outcomes, scope, requirements, states, accessibility expectations, linked artifacts, success criteria, decisions, and open questions.
+_Avoid_: One-time handoff document, full specification for every idea
+
+**Sketch**:
+An inexpensive, usually noninteractive representation used to explore or review a direction. Its fidelity is declared independently from its artifact type.
+_Avoid_: Low fidelity when referring to role rather than appearance
+
+**Evaluation**:
+A product-judgment activity that defines a question and method, captures sanitized observations, and produces findings or recommendations about whether a design works for its intended purpose.
+_Avoid_: Check when referring to deterministic conformance
 
 **Flow**:
 A tool-neutral directed graph of user intent, interface or component states, decisions, actions, and transitions. A flow is an editable design input that can be rendered into different tools and used as the basis for prototypes, product compositions, or component behavior contracts.
@@ -91,6 +111,22 @@ One normalized failed or unexecuted check observation with a checker, rule,
 severity, policy profile, location, explanation, and suggested correction.
 Passing checks have no findings.
 _Avoid_: Error when the result may be a warning or `not-run`
+
+**Pitch**:
+The cross-cutting skill that assembles accepted evidence and design artifacts into a decision-ready change case and optional presentation views.
+_Avoid_: Report when referring to the task, sales pitch when implying unsupported persuasion
+
+**Change case**:
+A portable, evidence-linked account of a before state, reasons for change, proposed or actual post state, impact, tradeoffs, and explicit decision request. It may operate in opportunity, proposal, or outcome mode.
+_Avoid_: Deck when referring to the underlying case, business case when only financial approval is intended
+
+**Presentation kit**:
+A project-owned, medium-specific projection of brand and design-system semantics containing presentation guidelines, templates, and reusable presentation components.
+_Avoid_: Product component library, second design system
+
+**Presentation view**:
+A rendered deck, document, HTML story, design-tool presentation, or similar output derived from a pinned change case and presentation-kit revision.
+_Avoid_: Change case when referring only to one rendering
 
 **Approved pattern**:
 A reusable, domain-neutral composition with a documented contract, usually owned by one product unless multiple products genuinely share it.

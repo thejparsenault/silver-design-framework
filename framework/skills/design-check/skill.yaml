@@ -1,4 +1,4 @@
-schema: design-practice/skill/v1
+schema: silver/skill/v1
 id: design-check
 version: 0.1.0-alpha.1
 summary: Run independent design checks and summarize normalized findings.
@@ -27,7 +27,7 @@ access:
         - prototypes/**
     - scope: codebase
       paths:
-        - .design-framework/**
+        - .silver/**
   write: []
 produces: []
 external_effects:
@@ -40,7 +40,7 @@ requested_permissions:
       - design/**
       - reference-system/**
       - prototypes/**
-      - .design-framework/**
+      - .silver/**
   - capability: browser
     actions:
       - inspect

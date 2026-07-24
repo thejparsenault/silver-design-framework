@@ -1,4 +1,4 @@
-schema: design-practice/manifest/v1
+schema: silver/manifest/v1
 workspace:
   id: invalid-workspace
   name: Invalid workspace

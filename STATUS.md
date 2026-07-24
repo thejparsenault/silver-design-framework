@@ -2,9 +2,21 @@
 
 ## Current Focus
 
-The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1`. The next milestone is representative existing-repository adoption.
+The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1`. The framework's next-generation agentic skill, playbook, completion, guardrail, pitch, and presentation architecture is planned. The immediate implementation milestone remains representative existing-repository adoption.
 
 ## Recent Progress
+
+- 2026-07-24: Project renamed to The Silver Design Framework
+  - Selected `The Silver Design Framework` as the display name, `Silver` as the short name, and `silver-design-framework` as the repository, folder, and package identity.
+  - Renamed the CLI to `silver`, the contract namespace to `silver/`, and the installed lock directory to `.silver/`.
+  - Updated framework documentation, schemas, fixtures, generated content, tests, and reference-system branding together rather than retaining the prerelease working name.
+
+- 2026-07-24: Agentic design workflow and presentation planning
+  - Recast the broader design practice as independently runnable skills composed through optional, artifact-driven playbooks rather than a fixed lifecycle.
+  - Defined the recommended synthesis → ideation → selection → specification ↔ flow/sketch → prototype → evaluation loop and kept production as an explicit readiness-gated side path.
+  - Separated skill execution, acceptance, and downstream readiness; planned required and optional capabilities, provider fallbacks, shared guardrails, and resumable playbook state.
+  - Added the cross-cutting `pitch` skill concept, portable opportunity/proposal/outcome change cases, branded presentation views, and project-owned presentation kits.
+  - Added P1 contract/playbook work and detailed P2 design-skill, pitch, presentation-template, adapter, and conformance work to the backlog.
 
 - 2026-07-23: Local prerelease and MVP acceptance audit
   - Pinned the framework, project-local skills, reference system, and generated lock state to `0.1.0-alpha.1`.
@@ -58,7 +70,7 @@ The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1
   - Validated all four skill structures with the skill-authoring validator.
 
 - 2026-07-23: Core blank-workspace setup and diagnostics
-  - Added the local `design-practice` executable with `setup`, `doctor`, and `version` commands.
+  - Added the local executable, now named `silver`, with `setup`, `doctor`, and `version` commands.
   - Made setup safe and idempotent: it accepts blank/minimal folders, resumes valid framework workspaces, preserves project edits, and refuses to infer existing-codebase adoption.
   - Added runtime JSON Schema and YAML validation for manifests, artifact frontmatter, permissions, and lock state.
   - Added deterministic index generation plus doctor checks for cross-file metadata agreement, missing artifacts, stale indexes, and managed-file integrity.
@@ -93,7 +105,7 @@ The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1
 
 1. Select one representative existing product repository for adoption.
 2. Implement read-only discovery and a reviewable adoption report.
-3. Decide whether to create a private npm scope or GitHub prerelease destination.
+3. Use adoption findings to draft the v2 skill-result and playbook contracts before implementing the expanded skill catalog.
 
 ## Blockers
 
@@ -101,4 +113,4 @@ The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1
 
 ## Last Updated
 
-2026-07-23
+2026-07-24

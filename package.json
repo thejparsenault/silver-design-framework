@@ -1,11 +1,11 @@
 {
-  "name": "design-practice-framework",
+  "name": "silver-design-framework",
   "version": "0.1.0-alpha.1",
   "private": true,
-  "description": "Agent-neutral framework for design practice across codebases and tools",
+  "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
   "bin": {
-    "design-practice": "./bin/design-practice.mjs"
+    "silver": "./bin/silver.mjs"
   },
   "files": [
     "bin/",

@@ -210,8 +210,8 @@ export async function renderStaticPrototype(options) {
   );
   const flow = JSON.parse(await readFile(flowPath, "utf8"));
   if (
-    metadata.schema !== "design-practice/prototype/v1" ||
-    flow.schema !== "design-practice/flow/v1"
+    metadata.schema !== "silver/prototype/v1" ||
+    flow.schema !== "silver/flow/v1"
   ) {
     throw new Error("Prototype metadata and flow must use the v1 contracts.");
   }

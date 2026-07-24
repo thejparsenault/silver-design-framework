@@ -1,13 +1,13 @@
-# PRD: Design Practice Framework
+# PRD: The Silver Design Framework
 
-**Status:** Draft 1  
-**Owner:** JP Arsenault  
-**Date:** 2026-07-23  
+**Status:** Draft 2
+**Owner:** JP Arsenault
+**Date:** 2026-07-24
 **Primary users:** Product designers, design engineers, frontend engineers, and the agents that support them
 
 ## 1. Executive Summary
 
-The Design Practice Framework is a meta-system for doing design work with code and external tools in a consistent, inspectable way. It supplies artifact contracts, project-scoped skills, deterministic checks, tested implementation recipes, provider adapters, and a small setup/update tool.
+The Silver Design Framework is a meta-system for doing design work with code and external tools in a consistent, inspectable way. It supplies artifact contracts, project-scoped skills, deterministic checks, tested implementation recipes, provider adapters, and a small setup/update tool.
 
 It can initialize a blank workspace or attach to an existing repository. It does not require a particular design system, application framework, agent, design tool, or lifecycle. Instead, it makes a project's own decisions discoverable and gives designers consistent task-level workflows for using them.
 
@@ -43,6 +43,8 @@ The framework must preserve flexibility while making constraints, authority, per
 9. **Provider neutrality.** Skills request capabilities; users choose providers and permission ceilings.
 10. **Stable defaults.** Once a workspace chooses an implementation profile, skills reuse it until the user deliberately adds or changes one.
 11. **Portable design intent.** Flows have a tool-neutral structured representation; visual canvases and diagrams are interchangeable views or explicitly declared authorities.
+12. **Artifact-driven composition.** Skills run independently and compose through typed, revision-pinned artifact handoffs; optional playbooks coordinate them without imposing a universal lifecycle.
+13. **Separate completion from approval.** Skill execution, human or policy acceptance, and readiness for a downstream use are independently visible.
 
 ## 4. Scope Model
 
@@ -143,6 +145,24 @@ Flow editing is non-destructive and iterative. A designer can generate, inspect,
 
 Deterministic flow checks cover schema validity, unique nodes, valid transitions, reachability, start and terminal coverage, and unresolved references. They do not judge whether the product experience is good.
 
+### 5.2 Design Working Artifacts
+
+The broader design practice may use problem frames, concepts, design
+specifications, sketches, prototypes, evaluations, and change cases. These are
+logical artifact kinds rather than mandatory files for every project or every
+design task.
+
+A design specification is a living contract for a selected direction. Flows,
+sketches, and prototypes reference its stable identity and revision rather than
+duplicating its requirements. A sketch is a cheap, usually noninteractive
+representation; a prototype is a testable simulation created to answer a
+declared question. Fidelity is recorded independently from artifact type and
+prototype constraint profile.
+
+Only information needed across skill, session, tool, or review boundaries must
+be persisted. Transient agent reasoning and mechanical intermediate steps do
+not require repository artifacts.
+
 ## 6. Skill Model
 
 A skill is an agent-neutral package for one recognizable design task. It contains:
@@ -162,11 +182,15 @@ The contract declares:
 - external effects;
 - requested permissions;
 - expected context budget;
-- deterministic checks to recommend afterward.
+- deterministic checks to recommend afterward;
+- required and optional capabilities plus degraded fallback behavior;
+- stable completion invariants and unresolved-question policy;
+- quality criteria and required review;
+- possible downstream handoffs.
 
 Invocation grants routine, contract-bounded authority. Crossing into production, changing canonical design-system artifacts, modifying external tools, deleting material work, or creating commits/PRs still follows the resolved permission policy.
 
-Initial task-level skills:
+First-iteration task-level skills:
 
 - **brand** — define or refine audience-facing brand guidance;
 - **theme** — propose, render, apply, and validate visual expression;
@@ -174,7 +198,88 @@ Initial task-level skills:
 - **prototype** — create or revise a prototype, including revision from accepted feedback;
 - **design-check** — orchestrate enabled independent checkers and summarize findings.
 
+The planned general design-practice vocabulary adds:
+
+- **synthesize** — turn evidence and context into findings, problem frames,
+  opportunities, assumptions, and open questions;
+- **ideate** — generate meaningfully different concepts and testable
+  hypotheses;
+- **specify** — create or revise a living design contract for a selected
+  direction;
+- **sketch** — create inexpensive representations for exploration or review;
+- **evaluate** — plan and conduct reviews or tests and produce sanitized
+  findings and recommendations;
+- **pitch** — produce an evidence-backed change case and optional branded
+  presentation views;
+- **implement** — rebuild accepted intent in a codebase binding under
+  production policy.
+
 More granular internal operations do not become separate user-facing skills unless their intent, context, tools, or authority truly differ.
+
+### 6.1 Default Design Loop
+
+The recommended loop is:
+
+```text
+context and evidence
+→ synthesize and frame
+→ ideate
+→ select a direction
+→ specify
+↔ flow and sketch
+→ prototype
+→ evaluate
+→ new evidence
+```
+
+This sequence is guidance, not a validity rule. Flow, sketch, and prototype
+work is optional and may occur in a different order. Specifications, flows,
+and representations can co-evolve. A selection checkpoint prevents every
+lightweight idea from automatically becoming an expensive specification.
+
+Production implementation is an explicit side path from accepted design
+intent. It may use a specification, flow, sketch, prototype, evaluation
+finding, or component contract, but it performs a production-readiness
+assessment first. Prototype code remains reference material by default and is
+not silently promoted.
+
+### 6.2 Playbooks
+
+A playbook is an optional declarative graph that composes leaf skills through
+artifact references. It declares nodes, compatible skill versions, inputs,
+handoffs, conditional or parallel branches, readiness conditions, checkpoints,
+retry edges, stopping conditions, and allowed autonomy.
+
+Invoking one skill runs only that skill and recommends next actions. Invoking a
+playbook authorizes an agent to continue through its declared safe local steps
+until a checkpoint, unmet readiness condition, or unresolved permission
+boundary. Canonical changes, external writes, production changes, destructive
+operations, and version-control effects retain their normal permission
+requirements.
+
+### 6.3 Skill Results and Guardrails
+
+Every skill result distinguishes:
+
+- **execution** — whether the operation ran and produced contract-valid
+  outputs;
+- **acceptance** — whether an authorized person or evaluator accepted the
+  result;
+- **readiness** — which named downstream uses have sufficient information and
+  validation.
+
+Subjective quality criteria may be generated for an invocation, but they must
+be declared before evaluation and versioned if they change. Missing tools or
+render targets produce degraded coverage or `not-run`, never an implicit pass.
+
+Guardrails resolve through framework invariants, user ceilings, organization
+and workspace policy, artifact constraint profiles, skill boundaries, and
+invocation constraints. Each reusable guardrail declares an enforcement type,
+failure behavior, and whether it is relaxable. Privacy, authority, provenance,
+permission, and no-silent-mutation rules are not relaxable.
+
+The detailed composition and result model is in
+`docs/agentic-design-workflows.md`.
 
 ## 7. Tool and Permission Model
 
@@ -208,6 +313,12 @@ Default posture:
 - destructive deletion: denied unless explicitly authorized.
 
 Credentials never belong in repository configuration. Providers use their own authentication, environment references, or an operating-system credential store.
+
+Skills distinguish capabilities required to perform their core task from
+optional capabilities that improve an output. Optional capabilities declare a
+fallback. For example, a pitch may complete a local change case without a
+presentation provider while reporting deck rendering and visual inspection as
+`not-run`.
 
 ## 8. Prototype Policy
 
@@ -314,7 +425,7 @@ framework defaults
 → codebase binding
 ```
 
-The CLI records the exact framework release and installed package versions in `.design-framework/lock.yaml`.
+The CLI records the exact framework release and installed package versions in `.silver/lock.yaml`.
 
 See `docs/installer-distribution.md` for the recommended hosting and release model.
 
@@ -338,7 +449,7 @@ workspace/
     decisions/
   prototypes/
   reference-system/
-  .design-framework/
+  .silver/
     lock.yaml
   .skills/
   AGENTS.md or equivalent pointer
@@ -380,6 +491,21 @@ raw evidence
 ```
 
 Research and testing do not silently rewrite canonical artifacts. The prototype skill may revise prototype files from accepted findings within its declared scope.
+
+The `pitch` skill may assemble accepted evidence and design artifacts into a
+portable **change case** for opportunity, proposal, or outcome communication.
+A change case records audience, requested decision, before state, evidence,
+proposed or actual post state, estimated or measured impact, tradeoffs, risks,
+alternatives, and the explicit ask. It never treats estimates as measurements,
+prototypes as implemented states, or successful generation as stakeholder
+approval.
+
+Change cases may render as Markdown, HTML, decks, design-tool presentations,
+pull-request summaries, or post-launch reports. Decks consume the active brand,
+voice, semantic design-system roles, approved assets, and an optional
+project-owned presentation kit. The change case remains authoritative for its
+content; presentation outputs are revision-pinned views. See
+`docs/pitch-and-presentations.md`.
 
 ## 15. First Iteration
 
@@ -426,7 +552,7 @@ The first iteration is successful when:
 ## 17. Proposed Framework Repository Shape
 
 ```text
-design-practice-framework/
+silver-design-framework/
   framework/
     schemas/
     protocols/
@@ -434,6 +560,7 @@ design-practice-framework/
     permission-model/
   installer/
   skills/
+  playbooks/
   checks/
   recipes/
   adapters/
@@ -463,8 +590,23 @@ Mitigation: lock state, file ownership metadata, three-way updates, migrations, 
 **Skills behave differently across agents.**  
 Mitigation: canonical agent-neutral packages, deterministic scripts, fixtures, and thin discovery wrappers.
 
+**Playbooks become a hidden mandatory lifecycle or authority escalation.**
+Mitigation: independently runnable leaf skills, optional graph nodes, explicit
+checkpoints, resumable state, and unchanged permission resolution at every
+step.
+
+**Agents declare their own work good after producing it.**
+Mitigation: separate execution, acceptance, and readiness; predeclare dynamic
+criteria; and reserve subjective or consequential acceptance for the
+authorized evaluator.
+
 **The reference system is mistaken for a mandate.**  
 Mitigation: label it as editable demonstration output and validate adoption against a non-reference existing system.
 
 **Checks promise more than they can prove.**  
 Mitigation: independent dimensions, explicit coverage, `not-run` status, and clear distinction between static provenance checks and browser observations.
+
+**Presentation views drift from evidence or become a second design system.**
+Mitigation: portable revision-pinned change cases, branded semantic
+presentation roles, a distinct presentation-kit catalog, explicit pattern
+promotion, and no silent reverse synchronization from a rendered deck.

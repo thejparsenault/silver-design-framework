@@ -1,4 +1,4 @@
-schema: design-practice/permission-policy/v1
+schema: silver/permission-policy/v1
 id: repository-policy
 layer: repository-restriction
 rules:

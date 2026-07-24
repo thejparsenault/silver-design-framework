@@ -62,7 +62,7 @@ export async function checkArtifacts(options = {}) {
     }
   }
   if (
-    manifest.schema !== "design-practice/manifest/v1" ||
+    manifest.schema !== "silver/manifest/v1" ||
     !Array.isArray(manifest.artifacts)
   ) {
     findings.push(
@@ -133,7 +133,7 @@ export async function checkArtifacts(options = {}) {
     try {
       if (artifact.kind === "permission-policy") {
         const policy = await readYaml(absolute);
-        if (policy.schema !== "design-practice/permission-policy/v1") {
+        if (policy.schema !== "silver/permission-policy/v1") {
           throw new Error("Permission policy does not declare the v1 schema.");
         }
         continue;
@@ -161,7 +161,7 @@ export async function checkArtifacts(options = {}) {
           );
         }
       }
-      if (metadata.schema !== "design-practice/artifact/v1") {
+      if (metadata.schema !== "silver/artifact/v1") {
         findings.push(
           finding({
             checker,

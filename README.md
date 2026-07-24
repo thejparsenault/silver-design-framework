@@ -1,4 +1,4 @@
-# Design Practice Framework
+# The Silver Design Framework
 
 This repository is being repurposed into a meta-system for designers working across code, design tools, and agent workflows.
 
@@ -6,8 +6,10 @@ It will provide:
 
 - opinionated but adaptable design-artifact contracts;
 - project-scoped task skills;
+- optional artifact-driven playbooks for longer, resumable design loops;
 - deterministic and independently runnable conformance checks;
 - provider-neutral tool integration and permission declarations;
+- evidence-backed change cases and branded presentation views;
 - blank-workspace recipes and existing-codebase adoption;
 - an editable reference design system used for examples and tests.
 
@@ -39,12 +41,12 @@ npm run test:package
 Try the local blank-workspace path:
 
 ```sh
-node bin/design-practice.mjs setup ./my-design-workspace \
+node bin/silver.mjs setup ./my-design-workspace \
   --name "My Product" \
   --id my-product
-node bin/design-practice.mjs doctor ./my-design-workspace
-node bin/design-practice.mjs repair ./my-design-workspace
-node bin/design-practice.mjs update ./my-design-workspace
+node bin/silver.mjs doctor ./my-design-workspace
+node bin/silver.mjs repair ./my-design-workspace
+node bin/silver.mjs update ./my-design-workspace
 
 node ./my-design-workspace/.skills/design-check/scripts/run-fast.mjs \
   --root ./my-design-workspace
@@ -58,7 +60,9 @@ Start with:
 1. [`PROJECT.md`](PROJECT.md)
 2. [`STATUS.md`](STATUS.md)
 3. [`TASKS.md`](TASKS.md)
-4. [`design_practice_framework_prd.md`](design_practice_framework_prd.md)
+4. [`silver_design_framework_prd.md`](silver_design_framework_prd.md)
 5. [`BACKLOG.md`](BACKLOG.md)
+6. [`docs/agentic-design-workflows.md`](docs/agentic-design-workflows.md)
+7. [`docs/pitch-and-presentations.md`](docs/pitch-and-presentations.md)
 
 The previous design-system PRD is retained as historical input in [`portable_design_system_prd.md`](portable_design_system_prd.md).

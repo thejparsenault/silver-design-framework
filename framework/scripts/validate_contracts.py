@@ -119,7 +119,7 @@ def main() -> int:
         str(permission_path.relative_to(ROOT)),
     )
 
-    lock_path = WORKSPACE / ".design-framework" / "lock.yaml"
+    lock_path = WORKSPACE / ".silver" / "lock.yaml"
     lock = load_yaml(lock_path)
     validate(lock, "lock.schema.json", str(lock_path.relative_to(ROOT)))
     for managed in lock["managed_files"]:

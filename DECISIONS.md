@@ -195,3 +195,44 @@ Status: Accepted
 Decision: Represent user, interaction, and component behavior flows as strict tool-neutral graphs with stable node and transition IDs and an integer revision. The first local representation is `flow.json` under a manifest-declared flow root; a bundled renderer produces a revision-stamped Mermaid view. Prototypes and future component contracts pin the flow ID, path, and revision they used. External canvases remain optional adapters or explicitly declared authorities and never silently rewrite derived work.
 Reason: Designers need to generate and tweak flows before choosing a prototype or component implementation, while agents need a compact, inspectable model they can reliably consume. Separating the model from its views avoids coupling the framework to one canvas and makes divergence visible without enforcing a design lifecycle.
 Status: Accepted
+
+## 2026-07-24 - Skills compose through artifact-driven playbooks
+
+Decision: Keep design skills independently runnable and compose them through optional declarative playbooks with typed, revision-pinned artifact handoffs. Recommend synthesis and framing → ideation → direction selection → specification ↔ flow/sketch → prototype → evaluation as a default loop, but allow steps to be skipped, reordered, revised, or invoked directly. Explicit playbook invocation authorizes declared safe local progression until a checkpoint or unresolved boundary; it does not broaden permissions for canonical changes, external writes, production, destructive actions, or version-control effects.
+Reason: A fixed pipeline would make the design process brittle, while informal conversational sequencing would be difficult to resume, inspect, or test. Artifact handoffs preserve flexibility and agent neutrality; playbooks make longer workflows repeatable without turning recommendations into lifecycle enforcement.
+Status: Accepted
+
+## 2026-07-24 - Skill results separate execution, acceptance, and readiness
+
+Decision: Report whether a skill executed successfully, whether its result was accepted, and which downstream uses are ready as independent states. Extend future skill contracts with typed inputs, required and optional capabilities, provider fallbacks, stable completion invariants, quality criteria, review requirements, unresolved-question policy, and downstream handoffs. Layer reusable guardrails by framework, user, organization/workspace, artifact profile, skill, and invocation; keep privacy, authority, provenance, permission, and no-silent-mutation rules non-relaxable.
+Reason: File generation is not equivalent to design quality, stakeholder approval, or production readiness. Separate states prevent agents from treating their own outputs as accepted and let optional tools degrade honestly through `not-run` rather than blocking unrelated work or producing false passes.
+Status: Accepted
+
+## 2026-07-24 - Pitch produces portable change cases and branded presentation views
+
+Decision: Add a cross-cutting `pitch` skill that produces a tool-neutral `change-case` artifact in opportunity, proposal, or outcome mode. The case records its audience, requested decision, before state, evidence, proposed or actual post state, estimated, proxy, or measured impact, tradeoffs, risks, alternatives, contradictions, and explicit ask. Decks, reports, HTML stories, design-tool presentations, and pull-request summaries are revision-pinned views rendered from the case using the active brand, voice, design-system semantics, approved assets, and an optional project-owned presentation kit.
+Reason: Designers need an evidence-backed way to gain team support before and after implementation. Separating the case from its presentation formats preserves claim traceability, enables multiple tools, and prevents presentation edits from silently changing evidence or accepted design intent.
+Status: Accepted
+
+## 2026-07-24 - Presentation kits are medium-specific system projections
+
+Decision: Allow workspaces to store presentation guidelines, semantic presentation roles, templates, and reusable presentation components as a distinct presentation kit. Presentation components may consume shared brand assets and semantic design tokens but do not belong in the product UI component catalog. The pitch skill may create deck-local compositions and propose reusable additions; promotion into the kit is explicit. Add a dedicated `presentation-kit` skill only if maintenance becomes a frequent task with a genuinely distinct authority boundary.
+Reason: Reusable decks should remain visually coherent without becoming a second drifting design system or polluting product component definitions. Explicit promotion controls template sprawl, while a separate kit supports organization-level reuse and product-specific overlays.
+Status: Accepted
+
+## 2026-07-24 - The project is named The Silver Design Framework
+
+Decision: Use `The Silver Design Framework` as the display name and `Silver` as
+the short name. Use `silver-design-framework` for the repository, local folder,
+and unscoped package identity; use `silver` for the CLI and contract namespace;
+and store installed framework state under `.silver/`.
+
+Reason: The straightforward name is easier to understand and remember than an
+invented compound while still supporting a distinctive visual identity. The
+short `silver` namespace keeps commands and machine-readable contracts concise.
+Because the framework is still in prerelease, the old working identifiers do
+not require compatibility aliases. A future visual identity can use a simple
+`Ag` monogram inside a restrained geometric frame without complicating the
+written name.
+
+Status: Accepted

@@ -50,7 +50,7 @@ export async function runFastSuite(options = {}) {
       ? "not-run"
       : "pass";
   return {
-    schema: "design-practice/check-suite-result/v1",
+    schema: "silver/check-suite-result/v1",
     suite: "fast",
     status,
     results,

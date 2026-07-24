@@ -82,12 +82,33 @@
   - context: medium
   - notes: Map semantically clear existing artifacts, identify ambiguities, and recommend operational summaries for oversized omnibus documents.
 
+## Following Milestone — Agentic Skill Composition
+
+- [ ] Draft and validate v2 skill-result and guardrail contracts
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Separate execution, acceptance, and downstream readiness; add typed inputs, required/optional capabilities, provider fallbacks, completion invariants, review criteria, and layered guardrail references.
+
+- [ ] Draft and validate the playbook contract
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Support independent skills, typed handoffs, branches, checkpoints, resumability, stale-reference handling, and explicitly bounded autonomy.
+
+- [ ] Fixture-test the default design loop
+  - type: test
+  - priority: high
+  - context: medium
+  - notes: Validate synthesis → ideation → selection → specification ↔ flow/sketch → prototype → evaluation with optional steps, safe pauses, feedback loops, and no automatic production promotion.
+
 ## Backlog
 
 See `BACKLOG.md` for all functionality intentionally deferred beyond the first iteration.
 
 ## Done
 
+- [x] Name the project The Silver Design Framework and align its repository, package, CLI, schema, lock-directory, fixture, and documentation identities
 - [x] Reframe the product as a design-practice framework rather than a design system
 - [x] Define organization, product, and codebase scopes
 - [x] Set project-local skill installation and project-owned update policy
@@ -98,3 +119,6 @@ See `BACKLOG.md` for all functionality intentionally deferred beyond the first i
 - [x] Separate deterministic checks behind a thin orchestration command
 - [x] Choose blank-workspace validation before existing-codebase adoption
 - [x] Define installer hosting and distribution recommendation
+- [x] Define independently runnable skills and optional artifact-driven playbooks as the general workflow model
+- [x] Separate skill execution, acceptance, and downstream readiness
+- [x] Define pitch, portable change-case, branded presentation-view, and project-owned presentation-kit concepts

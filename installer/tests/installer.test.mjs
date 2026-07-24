@@ -36,13 +36,13 @@ const installedSkillIds = [
 ];
 
 async function temporaryWorkspace(t) {
-  const root = await mkdtemp(path.join(os.tmpdir(), "design-practice-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-"));
   t.after(() => rm(root, { force: true, recursive: true }));
   return root;
 }
 
 async function temporaryPayload(t) {
-  const root = await mkdtemp(path.join(os.tmpdir(), "design-practice-payload-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-payload-"));
   t.after(() => rm(root, { force: true, recursive: true }));
   await mkdir(path.join(root, "framework"), { recursive: true });
   await cp(

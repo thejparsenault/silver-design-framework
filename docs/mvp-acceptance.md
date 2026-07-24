@@ -1,7 +1,7 @@
 # First-iteration acceptance audit
 
 **Candidate:** `0.1.0-alpha.1`  
-**Scope:** Blank-workspace MVP defined in `design_practice_framework_prd.md`
+**Scope:** Blank-workspace MVP defined in `silver_design_framework_prd.md`
 
 ## Acceptance evidence
 

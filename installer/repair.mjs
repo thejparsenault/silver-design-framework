@@ -37,7 +37,7 @@ export async function repairWorkspace(options = {}) {
   );
   const lock = await loadValidatedYaml(
     root,
-    ".design-framework/lock.yaml",
+    ".silver/lock.yaml",
     "lock.schema.json",
   );
   const skillIds = lock.packages
@@ -76,13 +76,13 @@ export async function repairWorkspace(options = {}) {
     }
   }
 
-  const lockPath = path.join(root, ".design-framework", "lock.yaml");
+  const lockPath = path.join(root, ".silver", "lock.yaml");
   const nextLock = stringify(lock);
   if ((await readUtf8(lockPath)) !== nextLock) {
     await writeUtf8(lockPath, nextLock);
-    repaired.push(".design-framework/lock.yaml");
+    repaired.push(".silver/lock.yaml");
   } else {
-    unchanged.push(".design-framework/lock.yaml");
+    unchanged.push(".silver/lock.yaml");
   }
 
   const diagnosis = await doctorWorkspace({ root });

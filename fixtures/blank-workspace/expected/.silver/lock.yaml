@@ -1,4 +1,4 @@
-schema: design-practice/lock/v1
+schema: silver/lock/v1
 framework:
   version: 0.1.0-alpha.1
   source:
@@ -9,38 +9,38 @@ packages:
     type: skill
     version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:7bbfa5695c355eed68bb8fefa24f8581d11966b207a4eaf53ce1be789569d953
+    integrity: sha256:f0c6ab83b717e7f828f6ec84a7a3caaf2d3a43df6e68db53612d03acd42c5b25
   - id: theme
     type: skill
     version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:5c520a919b01f8060d33162fee67854a389b4786a4804d4f0f2dfaa13d9a1e96
+    integrity: sha256:dfc7fca57cde93a23c2c93c863d59da42a73d852c914f2c1eb71867481cfa0db
   - id: flow
     type: skill
     version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:5acc6e6f817c895dcbdc778fe014fad99b5bbfe10a895236d9c6764d05870de9
+    integrity: sha256:78e268ab30711f44ef94528460da459e3cdd4fd52cdfe42ecbde457a3922697e
   - id: prototype
     type: skill
     version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:3d4b24671f3c5e56bc4e5500d7150f81f9763582e85acba16542abf47476649a
+    integrity: sha256:8368b52ef42af6dad08da095b4a50b158fab7563a955a376a122b388e9df69d6
   - id: design-check
     type: skill
     version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:364eba26be2d2dc219cec289ce5f5568577da66a2f053faf290c537fdcf27743
+    integrity: sha256:986122495d188c72c0e5a38fe9a9a50b1748c38dd2059f3f94b6235712dc6e8e
   - id: reference-system
     type: reference-system
     version: 0.1.0-alpha.1
     ownership: copied-and-owned
-    integrity: sha256:5d9bbf0aaa3b2acae294af16ac665e77c4cc3eca1e0a2a671675a7236bebec94
+    integrity: sha256:98882ad5e666033af342d8cc45e5e4d4fe034918935781c7e206a88eebfcdc68
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:cfbc7976b15954e8a984b0e48295dfbbba6f84dcebd6d8a599a46a74be7f63a0
+    base_integrity: sha256:57d7fb518c5a6c4e37cf0c6292e415c00b9618cd39ea03d60960c76faf76b5de
   - path: AGENTS.md
     owner: framework-agent-pointer
     ownership: generated
-    base_integrity: sha256:a63334cabcf53986d8c1461c7a5175a3b0d4938a9da30f649cb1f697a0e307e3
+    base_integrity: sha256:95aeff1f08cf10008273c8afb93d4a73b5399e48e0a798ca228e7734a06fdb62

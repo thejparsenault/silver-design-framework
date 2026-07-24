@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://design-practice.dev/schemas/v1/check-result.schema.json",
-  "title": "Design Practice checker result",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/check-result.schema.json",
+  "title": "Silver checker result",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "design-practice/check-result/v1"
+      "const": "silver/check-result/v1"
     },
     "checker": {
       "$ref": "#/$defs/id"
@@ -57,7 +57,7 @@
     "findings": {
       "type": "array",
       "items": {
-        "$ref": "https://design-practice.dev/schemas/v1/finding.schema.json"
+        "$ref": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/finding.schema.json"
       }
     },
     "extensions": {

@@ -25,6 +25,34 @@ This backlog contains functionality intentionally excluded from the first blank-
 - [ ] Existing-repository fixture matrix
   - Validate adoption against plain HTML/CSS, Tailwind, React, and at least one non-React repository.
 
+## P1 — Agentic Skill Composition
+
+- [ ] Skill contract v2
+  - Add typed input artifacts, required versus optional capabilities, provider fallbacks, completion invariants, quality criteria, unresolved-question policy, review requirements, and downstream handoffs.
+  - Preserve strict versioned boundaries and provide an explicit migration path from the v1 skill contract.
+
+- [ ] Skill-result contract
+  - Report execution, acceptance, and named downstream-readiness states independently.
+  - Record input and output revisions, actual providers used, degraded capabilities, checks, unresolved questions, and recommended next actions without treating `not-run` as pass.
+
+- [ ] Shared guardrail registry
+  - Give reusable guardrails stable IDs, enforcement types, failure behavior, scope, and explicit relaxability metadata.
+  - Keep privacy, authority, provenance, permission, and no-silent-mutation rules non-relaxable while permitting recorded prototype-only exceptions where policy allows.
+
+- [ ] Playbook contract
+  - Define optional skill graphs with pinned compatible versions, typed artifact handoffs, branches, parallel work, readiness conditions, checkpoints, retries, stopping conditions, and allowed autonomy.
+  - Let explicit playbook invocation authorize declared safe local progression without broadening canonical, external, production, destructive, or version-control permissions.
+
+- [ ] Resumable playbook state
+  - Record completed nodes, accepted outputs, current artifact revisions, pending checkpoints, and invalidated downstream work so another compatible agent can safely resume.
+
+- [ ] Default design-loop playbook
+  - Provide a recommended synthesis → ideation → selection → specification ↔ flow/sketch → prototype → evaluation loop while allowing optional steps, reordering, and direct task invocation.
+  - Keep production implementation and pitching as explicit cross-cutting branches rather than automatic terminal stages.
+
+- [ ] Composition fixtures and conformance tests
+  - Test independent skill invocation, multi-step handoff, branching, skipped optional tools, human checkpoints, stale input revisions, feedback loops, resumption, and permission boundaries.
+
 ## P1 — Safe Updates and Ownership
 
 - [ ] Three-way framework updates
@@ -122,8 +150,21 @@ This backlog contains functionality intentionally excluded from the first blank-
 - [ ] Product definition
   - Clarify audience, jobs, outcomes, constraints, and product-specific tone.
 
+- [ ] Synthesis and problem framing
+  - Turn sanitized research, feedback, analytics, briefs, existing artifacts, and explicitly labeled assumptions into findings, problem frames, opportunities, contradictions, and open questions.
+  - Preserve evidence references and never silently rewrite canonical product or design guidance.
+
 - [ ] Ideation
-  - Generate screen and interaction alternatives grounded in canonical artifacts and optionally materialize selected alternatives as portable flows.
+  - Generate meaningfully different concept candidates and testable hypotheses grounded in the problem frame and canonical constraints.
+  - Keep candidates lightweight, support an explicit human or policy-driven selection checkpoint, and avoid producing full specifications for every idea.
+
+- [ ] Design specification
+  - Create and revise a living contract for a selected direction, including outcomes, hypothesis, scope and non-goals, requirements, content and data needs, states, edge cases, accessibility, linked artifact revisions, success criteria, and open questions.
+  - Allow flows, sketches, prototypes, and evaluations to refine the specification without silently overwriting accepted decisions.
+
+- [ ] Sketch
+  - Generate inexpensive, usually noninteractive alternatives for exploration or review from a brief, concept, specification, flow, or existing screen.
+  - Record fidelity independently from artifact type, use active brand and design-system constraints by default, and support optional design-tool or local renderers.
 
 - [ ] Component design
   - Inspect catalog, enumerate states, explore anatomy, prototype behavior, propose contracts, and document accessibility.
@@ -134,8 +175,9 @@ This backlog contains functionality intentionally excluded from the first blank-
 - [ ] Research planning
   - Create questions, methods, participant criteria, scripts, and sanitized evidence plans.
 
-- [ ] Testing session support
-  - Prepare tasks, capture sanitized observations, synthesize findings, and recommend revisions.
+- [ ] Evaluation
+  - Define the question and method, prepare tasks, inspect sketches or prototypes, capture sanitized observations, distinguish observation from interpretation, and produce findings and recommendations.
+  - Keep subjective product evaluation separate from deterministic design conformance checks.
 
 - [ ] Feedback-to-prototype refinement
   - Extend the prototype skill with structured accepted-finding selection, change traceability, and re-checks.
@@ -147,7 +189,8 @@ This backlog contains functionality intentionally excluded from the first blank-
   - Facilitate creation and maintenance of usable decision principles rather than generic values.
 
 - [ ] Production implementation
-  - Implement accepted screens and components in a codebase binding under production policy.
+  - Assess readiness and implement accepted specifications, flows, sketches, prototypes, component contracts, or evaluation findings in a codebase binding under production policy.
+  - Treat prototype code as reference by default and report insufficient design intent rather than inventing requirements.
 
 - [ ] Promotion
   - Rebuild accepted prototype concepts against production contracts and prepare a reviewable change set.
@@ -160,6 +203,40 @@ This backlog contains functionality intentionally excluded from the first blank-
 
 - [ ] CI integration setup
   - Install selected deterministic checks into the repository's existing CI provider without coupling check logic to that provider.
+
+## P2 — Pitch and Presentations
+
+- [ ] Portable change-case contract
+  - Define a revisioned, evidence-linked artifact with opportunity, proposal, and outcome modes.
+  - Record audience, requested decision, before state, findings, proposed or actual post state, estimated, proxy, or measured impact, confidence, timeframe, tradeoffs, risks, alternatives, contradictions, and explicit ask.
+
+- [ ] Pitch skill
+  - Build a decision-ready change case from accepted design and evidence artifacts at any useful point in the design loop.
+  - Keep successful generation separate from stakeholder acceptance and require explicit permission before publishing, sending, or presenting externally.
+
+- [ ] Presentation-kit contract
+  - Define a project-owned catalog for presentation guidelines, semantic presentation roles, templates, and reusable presentation components without mixing them into the product UI component catalog.
+  - Allow organization-level kits and product overlays through the normal pinned inheritance model.
+
+- [ ] Starter presentation templates and components
+  - Provide editable opportunity, proposal, and outcome templates plus title, section, before/after, finding, metric, evidence, comparison, annotated-screen, flow, recommendation, decision, and appendix patterns.
+  - Use canonical brand, voice, semantic design tokens, and approved asset IDs rather than raw presentation styles or copied untracked media.
+
+- [ ] Portable presentation outline and local renderer
+  - Render a change case through a template and component set into a provider-neutral deck structure and a reviewable local HTML baseline.
+  - Pin change-case, template, component, asset, brand, voice, and design-system revisions in generated output metadata.
+
+- [ ] Presentation provider adapters
+  - Support PowerPoint, Google Slides, Figma Slides, Canva, PDF, and other providers through capability-based adapters, beginning only after the portable case and local renderer are stable.
+  - Treat externally edited composition according to declared artifact authority without allowing it to silently rewrite evidence or canonical presentation resources.
+
+- [ ] Presentation pattern promotion
+  - Keep one-off deck compositions local to their output and require an explicit proposal and review before adding a reusable template or component.
+  - Consider a dedicated `presentation-kit` skill only after maintenance proves to be a frequent task with distinct authority and completion needs.
+
+- [ ] Independent presentation checks
+  - Check brand and semantic-style conformance, evidence integrity, estimated-versus-measured labeling, pinned revisions, overflow, clipping, readable type size, contrast, color-independent chart meaning, stale screenshots, image quality, and conceptual-versus-implemented labeling.
+  - Report unavailable provider rendering or visual inspection as `not-run`.
 
 ## P2 — Design-System Operations
 

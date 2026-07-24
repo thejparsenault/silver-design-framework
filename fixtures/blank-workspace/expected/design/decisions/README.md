@@ -1,5 +1,5 @@
 ---
-schema: design-practice/artifact/v1
+schema: silver/artifact/v1
 id: decisions
 kind: decision-log
 scope: product

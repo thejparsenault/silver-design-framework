@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://design-practice.dev/schemas/v1/permission-policy.schema.json",
-  "title": "Design Practice permission policy layer",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/permission-policy.schema.json",
+  "title": "Silver permission policy layer",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "id", "layer", "rules"],
   "properties": {
     "schema": {
-      "const": "design-practice/permission-policy/v1"
+      "const": "silver/permission-policy/v1"
     },
     "id": {
       "$ref": "#/$defs/id"

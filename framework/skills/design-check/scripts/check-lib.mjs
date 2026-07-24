@@ -219,7 +219,7 @@ export function finding({
   status = "fail",
 }) {
   return {
-    schema: "design-practice/finding/v1",
+    schema: "silver/finding/v1",
     checker,
     rule,
     severity,
@@ -252,7 +252,7 @@ export function checkResult({
         ? "fail"
         : "pass";
   return {
-    schema: "design-practice/check-result/v1",
+    schema: "silver/check-result/v1",
     checker,
     suite: "fast",
     policy_profile: policyProfile,

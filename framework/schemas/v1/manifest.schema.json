@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://design-practice.dev/schemas/v1/manifest.schema.json",
-  "title": "Design Practice workspace manifest",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/manifest.schema.json",
+  "title": "Silver workspace manifest",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,7 +14,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "design-practice/manifest/v1"
+      "const": "silver/manifest/v1"
     },
     "workspace": {
       "type": "object",

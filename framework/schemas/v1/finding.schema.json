@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://design-practice.dev/schemas/v1/finding.schema.json",
-  "title": "Design Practice normalized check finding",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/finding.schema.json",
+  "title": "Silver normalized check finding",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "design-practice/finding/v1"
+      "const": "silver/finding/v1"
     },
     "checker": {
       "$ref": "#/$defs/id"

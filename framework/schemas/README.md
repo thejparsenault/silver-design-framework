@@ -1,7 +1,7 @@
 # Framework Contracts
 
-This directory contains the versioned, agent-neutral contracts used by the
-Design Practice Framework. YAML and JSON instances are both supported; JSON
+This directory contains the versioned, agent-neutral contracts used by
+The Silver Design Framework. YAML and JSON instances are both supported; JSON
 Schema is the validation language.
 
 ## V1 Contracts
@@ -21,7 +21,7 @@ Schema is the validation language.
 ## Compatibility Rules
 
 - Contract instances identify their contract with a stable `schema` value such
-  as `design-practice/manifest/v1`.
+  as `silver/manifest/v1`.
 - Unknown top-level fields are rejected. Experimental extensions must be placed
   under `extensions` and use a namespaced key such as `acme.example`.
 - New optional fields may be added within v1. Removing fields, changing their

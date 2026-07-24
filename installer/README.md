@@ -4,15 +4,15 @@ The installer is intentionally narrower than the design workflows it installs.
 This development slice provides four workspace commands:
 
 ```sh
-node bin/design-practice.mjs setup ./path-to-blank-workspace \
+node bin/silver.mjs setup ./path-to-blank-workspace \
   --name "Example Product" \
   --id example-product
 
-node bin/design-practice.mjs doctor ./path-to-blank-workspace
+node bin/silver.mjs doctor ./path-to-blank-workspace
 
-node bin/design-practice.mjs repair ./path-to-blank-workspace
+node bin/silver.mjs repair ./path-to-blank-workspace
 
-node bin/design-practice.mjs update ./path-to-blank-workspace
+node bin/silver.mjs update ./path-to-blank-workspace
 ```
 
 `setup` currently supports an empty or minimal folder and an interrupted

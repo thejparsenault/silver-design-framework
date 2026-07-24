@@ -22,15 +22,15 @@ import {
 } from "./version.mjs";
 
 async function loadLock(root) {
-  const lockPath = path.join(root, ".design-framework", "lock.yaml");
+  const lockPath = path.join(root, ".silver", "lock.yaml");
   if (!(await exists(lockPath))) {
-    throw new Error("Cannot update without .design-framework/lock.yaml.");
+    throw new Error("Cannot update without .silver/lock.yaml.");
   }
   const lock = parse(await readUtf8(lockPath));
   const validation = await validateSchema("lock.schema.json", lock);
   if (!validation.valid) {
     throw new Error(
-      `.design-framework/lock.yaml violates the v1 contract: ${validation.errors.join("; ")}`,
+      `.silver/lock.yaml violates the v1 contract: ${validation.errors.join("; ")}`,
     );
   }
   return { lock, lockPath };

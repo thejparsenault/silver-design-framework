@@ -151,7 +151,7 @@ export async function initPrototype(options) {
     throw new Error("Date must be a valid YYYY-MM-DD value.");
   }
   const metadata = {
-    schema: "design-practice/prototype/v1",
+    schema: "silver/prototype/v1",
     id,
     title,
     status: "active",

@@ -1,5 +1,5 @@
 {
-  "schema": "design-practice/flow/v1",
+  "schema": "silver/flow/v1",
   "id": "campaign-setup",
   "title": "Campaign setup",
   "kind": "user-flow",

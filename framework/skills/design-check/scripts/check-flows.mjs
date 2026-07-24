@@ -75,7 +75,7 @@ export async function checkFlows(options = {}) {
           );
         }
       }
-      if (flow.schema !== "design-practice/flow/v1") {
+      if (flow.schema !== "silver/flow/v1") {
         findings.push(
           finding({
             checker,

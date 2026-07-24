@@ -1,9 +1,9 @@
-schema: design-practice/manifest/v1
+schema: silver/manifest/v1
 workspace:
   id: example-product
   name: Example Product
   scope: product-workspace
-  description: Blank-workspace fixture for the Design Practice Framework.
+  description: Blank-workspace fixture for The Silver Design Framework.
 
 artifacts:
   - id: brand

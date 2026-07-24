@@ -1,5 +1,5 @@
 {
-  "schema": "design-practice/check-result/v1",
+  "schema": "silver/check-result/v1",
   "checker": "artifact-schema",
   "suite": "fast",
   "policy_profile": "prototype",
@@ -10,7 +10,7 @@
   },
   "findings": [
     {
-      "schema": "design-practice/finding/v1",
+      "schema": "silver/finding/v1",
       "checker": "artifact-schema",
       "rule": "manifest.invalid",
       "severity": "error",

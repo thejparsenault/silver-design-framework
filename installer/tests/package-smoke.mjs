@@ -25,7 +25,7 @@ async function command(executable, args, options = {}) {
 }
 
 const temporaryRoot = await mkdtemp(
-  path.join(os.tmpdir(), "design-practice-package-"),
+  path.join(os.tmpdir(), "silver-package-"),
 );
 
 try {
@@ -52,7 +52,7 @@ try {
   assert.equal(packed.version, expectedVersion);
   const packedPaths = new Set(packed.files.map(({ path: file }) => file));
   for (const required of [
-    "bin/design-practice.mjs",
+    "bin/silver.mjs",
     "installer/repair.mjs",
     "installer/update.mjs",
     "framework/skills/design-check/scripts/run-fast.mjs",
@@ -82,9 +82,9 @@ try {
   const packageRoot = path.join(
     consumerRoot,
     "node_modules",
-    "design-practice-framework",
+    "silver-design-framework",
   );
-  const cli = path.join(packageRoot, "bin", "design-practice.mjs");
+  const cli = path.join(packageRoot, "bin", "silver.mjs");
   assert.equal(
     (await command(process.execPath, [cli, "version"], { cwd: consumerRoot }))
       .stdout.trim(),
@@ -121,7 +121,7 @@ try {
   assert.equal(JSON.parse(checkOutput).status, "pass");
   const lock = parse(
     await readFile(
-      path.join(workspaceRoot, ".design-framework", "lock.yaml"),
+      path.join(workspaceRoot, ".silver", "lock.yaml"),
       "utf8",
     ),
   );

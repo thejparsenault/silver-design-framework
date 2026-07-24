@@ -9,7 +9,7 @@ import { parseArguments, workspaceRelative } from "./flow-lib.mjs";
 
 function finding(rule, message, file, observedValue) {
   return {
-    schema: "design-practice/finding/v1",
+    schema: "silver/finding/v1",
     checker: "flow-structure",
     rule,
     severity: "error",
@@ -185,7 +185,7 @@ export function checkResult(flow, findings, file) {
     policy_profile: policyProfile,
   }));
   return {
-    schema: "design-practice/check-result/v1",
+    schema: "silver/check-result/v1",
     checker: "flow-structure",
     suite: "fast",
     policy_profile: policyProfile,

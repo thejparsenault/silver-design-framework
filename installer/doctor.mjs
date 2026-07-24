@@ -198,14 +198,14 @@ export async function doctorWorkspace(options = {}) {
 
   const lock = await loadYaml(
     root,
-    ".design-framework/lock.yaml",
+    ".silver/lock.yaml",
     diagnostics,
   );
   if (lock) {
     const lockValid = await applySchema(
       "lock.schema.json",
       lock,
-      ".design-framework/lock.yaml",
+      ".silver/lock.yaml",
       diagnostics,
     );
     if (lockValid) {

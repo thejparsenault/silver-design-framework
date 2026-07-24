@@ -46,7 +46,7 @@ export async function writeNewFile(filePath, content) {
 
 export async function writeUtf8(filePath, content) {
   await mkdir(path.dirname(filePath), { recursive: true });
-  const temporaryPath = `${filePath}.design-practice-tmp`;
+  const temporaryPath = `${filePath}.silver-tmp`;
   await writeFile(temporaryPath, content, { encoding: "utf8" });
   await rename(temporaryPath, filePath);
 }
