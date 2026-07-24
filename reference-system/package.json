@@ -1,0 +1,12 @@
+{
+  "name": "design-practice-reference-system",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node packages/tokens/src/build.mjs"
+  },
+  "dependencies": {
+    "style-dictionary": "4.4.0"
+  }
+}

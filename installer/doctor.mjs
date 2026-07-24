@@ -2,7 +2,13 @@ import path from "node:path";
 
 import { parse } from "yaml";
 
-import { exists, integrity, readUtf8, resolveInside } from "./lib/files.mjs";
+import {
+  exists,
+  integrity,
+  readUtf8,
+  resolveInside,
+  treeIntegrity,
+} from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
 
@@ -174,20 +180,6 @@ export async function doctorWorkspace(options = {}) {
   }
 
   const indexPath = path.join(root, "design", "INDEX.md");
-  if (await exists(indexPath)) {
-    const expectedIndex = renderIndex(manifest);
-    if ((await readUtf8(indexPath)) !== expectedIndex) {
-      diagnostics.push(
-        diagnostic(
-          "error",
-          "generated-index-stale",
-          "Generated index does not match design/manifest.yaml.",
-          "design/INDEX.md",
-        ),
-      );
-    }
-  }
-
   if (manifest.permission_policy) {
     const permissionPolicy = await loadYaml(
       root,
@@ -217,6 +209,62 @@ export async function doctorWorkspace(options = {}) {
       diagnostics,
     );
     if (lockValid) {
+      const skillIds = lock.packages
+        .filter(({ type }) => type === "skill")
+        .map(({ id }) => id);
+      const expectedIndex = renderIndex(manifest, skillIds);
+      if (
+        (await exists(indexPath)) &&
+        (await readUtf8(indexPath)) !== expectedIndex
+      ) {
+        diagnostics.push(
+          diagnostic(
+            "error",
+            "generated-index-stale",
+            "Generated index does not match the manifest and installed package lock.",
+            "design/INDEX.md",
+          ),
+        );
+      }
+
+      for (const installedPackage of lock.packages) {
+        const packagePath =
+          installedPackage.type === "skill"
+            ? `.skills/${installedPackage.id}`
+            : installedPackage.type === "reference-system"
+              ? "reference-system"
+              : undefined;
+        if (!packagePath) {
+          continue;
+        }
+        const absolute = resolveInside(root, packagePath);
+        if (!(await exists(absolute))) {
+          diagnostics.push(
+            diagnostic(
+              "error",
+              "missing-package",
+              `Installed ${installedPackage.type} package does not exist.`,
+              packagePath,
+            ),
+          );
+          continue;
+        }
+        if (
+          installedPackage.ownership === "framework-managed" &&
+          installedPackage.integrity &&
+          (await treeIntegrity(absolute)) !== installedPackage.integrity
+        ) {
+          diagnostics.push(
+            diagnostic(
+              "error",
+              "managed-package-stale",
+              "Framework-managed package differs from the integrity recorded in the lock.",
+              packagePath,
+            ),
+          );
+        }
+      }
+
       for (const managed of lock.managed_files) {
         let managedPath;
         try {

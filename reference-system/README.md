@@ -12,16 +12,23 @@ It demonstrates:
 - scheme and semantic-mode behavior;
 - a static, renderable example.
 
-From the repository root:
+The compiled CSS and token outputs are included, so the static example works
+immediately after workspace setup:
 
 ```sh
-npm install
-npm run build:reference
 python3 -m http.server 4173 --directory reference-system
 ```
 
 Then open
 `http://localhost:4173/examples/static-html/login-form.html`.
+
+When token sources change, rebuild from the reference-system directory:
+
+```sh
+cd reference-system
+npm install
+npm run build
+```
 
 The system is project-owned when installed into a blank workspace. Brand and
 theme work may deliberately edit or extend it, and meaningful canonical changes

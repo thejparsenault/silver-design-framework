@@ -20,4 +20,4 @@ Default flow view: `mermaid`
 Prototype root: `prototypes/`
 Default constraint profile: `constrained`
 
-Installed project skills: none
+Installed project skills: `brand`, `theme`, `flow`, `prototype`, `design-check`

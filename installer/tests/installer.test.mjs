@@ -15,6 +15,15 @@ const expectedRoot = path.join(
   "blank-workspace",
   "expected",
 );
+const skillSourceRoot = path.join(repositoryRoot, "framework", "skills");
+const referenceSystemSourceRoot = path.join(repositoryRoot, "reference-system");
+const installedSkillIds = [
+  "brand",
+  "theme",
+  "flow",
+  "prototype",
+  "design-check",
+];
 
 async function temporaryWorkspace(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), "design-practice-"));
@@ -26,6 +35,23 @@ function comparableSnapshot(snapshot) {
   return [...snapshot.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([relativePath, content]) => [relativePath, content.toString("utf8")]);
+}
+
+async function expectedBlankWorkspaceSnapshot() {
+  const expected = await snapshotFiles(expectedRoot);
+  for (const id of installedSkillIds) {
+    for (const [relativePath, content] of await snapshotFiles(
+      path.join(skillSourceRoot, id),
+    )) {
+      expected.set(path.join(".skills", id, relativePath), content);
+    }
+  }
+  for (const [relativePath, content] of await snapshotFiles(
+    referenceSystemSourceRoot,
+  )) {
+    expected.set(path.join("reference-system", relativePath), content);
+  }
+  return expected;
 }
 
 test("setup produces the expected blank workspace", async (t) => {
@@ -42,7 +68,7 @@ test("setup produces the expected blank workspace", async (t) => {
   assert.equal(result.mode, "new");
   assert.deepEqual(
     comparableSnapshot(await snapshotFiles(root)),
-    comparableSnapshot(await snapshotFiles(expectedRoot)),
+    comparableSnapshot(await expectedBlankWorkspaceSnapshot()),
   );
   assert.equal((await doctorWorkspace({ root })).ok, true);
 });
@@ -57,8 +83,17 @@ test("setup is idempotent and preserves project edits", async (t) => {
     sourceReference: "framework-development-fixture",
   });
   const brandPath = path.join(root, "design", "brand.md");
+  const referencePath = path.join(
+    root,
+    "reference-system",
+    "examples",
+    "static-html",
+    "login-form.css",
+  );
   const edited = `${await readFile(brandPath, "utf8")}\nProject-owned note.\n`;
+  const editedReference = `${await readFile(referencePath, "utf8")}\n/* Product-owned note. */\n`;
   await writeFile(brandPath, edited);
+  await writeFile(referencePath, editedReference);
   const before = comparableSnapshot(await snapshotFiles(root));
 
   const result = await setupWorkspace({
@@ -72,6 +107,7 @@ test("setup is idempotent and preserves project edits", async (t) => {
   assert.equal(result.created.length, 0);
   assert.deepEqual(comparableSnapshot(await snapshotFiles(root)), before);
   assert.equal(await readFile(brandPath, "utf8"), edited);
+  assert.equal(await readFile(referencePath, "utf8"), editedReference);
 });
 
 test("doctor reports missing artifacts and stale managed files", async (t) => {
@@ -97,6 +133,42 @@ test("doctor reports missing artifacts and stale managed files", async (t) => {
     result.diagnostics.some(
       ({ code, path: target }) =>
         code === "managed-file-stale" && target === "design/INDEX.md",
+    ),
+  );
+});
+
+test("doctor verifies framework-managed skills but permits reference-system edits", async (t) => {
+  const root = await temporaryWorkspace(t);
+  await setupWorkspace({
+    root,
+    name: "Example Product",
+    id: "example-product",
+    date: "2026-07-23",
+  });
+  const referencePath = path.join(
+    root,
+    "reference-system",
+    "examples",
+    "static-html",
+    "login-form.css",
+  );
+  await writeFile(
+    referencePath,
+    `${await readFile(referencePath, "utf8")}\n/* Expected project edit. */\n`,
+  );
+  assert.equal((await doctorWorkspace({ root })).ok, true);
+
+  const skillPath = path.join(root, ".skills", "brand", "SKILL.md");
+  await writeFile(
+    skillPath,
+    `${await readFile(skillPath, "utf8")}\nUnexpected managed edit.\n`,
+  );
+  const result = await doctorWorkspace({ root });
+  assert.equal(result.ok, false);
+  assert.ok(
+    result.diagnostics.some(
+      ({ code, path: target }) =>
+        code === "managed-package-stale" && target === ".skills/brand",
     ),
   );
 });

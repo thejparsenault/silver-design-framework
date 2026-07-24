@@ -2,9 +2,15 @@
 
 ## Current Focus
 
-Bundle the complete initial skill set and editable reference system into the blank-workspace payload. The portable flow milestone is implemented and validated.
+Add safe repair and reviewable update behavior to the now-complete blank-workspace payload.
 
 ## Recent Progress
+
+- 2026-07-23: Complete blank-workspace payload
+  - Setup now installs all five project-local skills, the editable reference system with compiled outputs, and a generated agent discovery pointer.
+  - Lock state records framework-managed skills separately from the copied-and-owned reference system and generated discovery files.
+  - Doctor now verifies installed skill integrity without treating intentional reference-system edits as drift.
+  - Corrected the default render target to the bundled static login example and expanded exact-output and ownership tests.
 
 - 2026-07-23: Shared asset model added to the backlog
   - Separated compact asset catalogs from reusable files, prototype-local experiments, and production projections.
@@ -66,14 +72,14 @@ Bundle the complete initial skill set and editable reference system into the bla
 
 ## Next 3 Actions
 
-1. Bundle the selected skills and editable reference system into setup, with accurate lock ownership and an agent discovery pointer.
-2. Add `repair` for generated indexes.
+1. Add `repair` for generated indexes and agent pointers.
+2. Add reviewable fixture-release update behavior with three-way ownership checks.
 3. Validate the blank-workspace flow end to end.
 
 ## Blockers
 
 - No release destination or package scope has been created yet.
-- Installer ownership/update metadata is shaped by the lock schema but repair and three-way update behavior have not been implemented.
+- Installer ownership/update metadata is now populated, but repair and three-way update behavior have not been implemented.
 
 ## Last Updated
 

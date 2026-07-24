@@ -18,8 +18,9 @@ The framework does **not** impose one design system, one application stack, or o
 The product model and first-iteration plan are documented. V1 contracts cover
 the workspace manifest, artifact metadata, portable flows, prototypes, skill
 declarations, permissions, lock state, findings, and checker results. A local
-development CLI can initialize the core blank-workspace artifacts and diagnose
-their contracts without changing them.
+development CLI initializes the blank-workspace artifacts, five project-local
+skills, a ready-to-render editable reference system, and an agent discovery
+pointer, then diagnoses their contracts without changing them.
 
 The earlier token/CSS/component spike now lives in `reference-system/`. Its
 token build and static light/dark example have been build- and browser-tested.

@@ -119,7 +119,7 @@ checks:
   render_targets:
     - id: reference-system
       profile: reference-system
-      path: /index.html
+      path: /examples/static-html/login-form.html
       start: python3 -m http.server 4173 --directory reference-system
       viewports:
         - width: 375

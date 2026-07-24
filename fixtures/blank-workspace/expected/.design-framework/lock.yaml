@@ -4,9 +4,43 @@ framework:
   source:
     type: local
     reference: framework-development-fixture
-packages: []
+packages:
+  - id: brand
+    type: skill
+    version: 0.1.0-dev
+    ownership: framework-managed
+    integrity: sha256:482f8f22de5fd8ca4ffdb8d2cc0e3698dddedc5b24ebe0ac4fd5f88d813f9ba6
+  - id: theme
+    type: skill
+    version: 0.1.0-dev
+    ownership: framework-managed
+    integrity: sha256:e0a4a6b546c2fe6253e21ff15dc8e1401fbae7b5e53877871332c87a5ad58e9d
+  - id: flow
+    type: skill
+    version: 0.1.0-dev
+    ownership: framework-managed
+    integrity: sha256:084203ba2e840f271b9127713405a79738740bbd1adab8dd8fbd6e81a0e6a3bc
+  - id: prototype
+    type: skill
+    version: 0.1.0-dev
+    ownership: framework-managed
+    integrity: sha256:c23304a80b26de936daee6b4b71fbc5f4049f46a17f58ee4ff703b183f8ef192
+  - id: design-check
+    type: skill
+    version: 0.1.0-dev
+    ownership: framework-managed
+    integrity: sha256:62d00b262b0f7c1d85ea96e0193132336e615d0c2960bc2c8f667f33048dfbeb
+  - id: reference-system
+    type: reference-system
+    version: 0.1.0-dev
+    ownership: copied-and-owned
+    integrity: sha256:c46de2fb0b7fb92a3ece89f09f7644bc2c206fb3f77bcd439257a8dae8fa3693
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:104c37f6316e5ab9ce0012af506d9473b5319494c1368f06bafedcda812c5f8c
+    base_integrity: sha256:cfbc7976b15954e8a984b0e48295dfbbba6f84dcebd6d8a599a46a74be7f63a0
+  - path: AGENTS.md
+    owner: framework-agent-pointer
+    ownership: generated
+    base_integrity: sha256:a63334cabcf53986d8c1461c7a5175a3b0d4938a9da30f649cb1f697a0e307e3
