@@ -1,7 +1,7 @@
 # Local installer
 
 The installer is intentionally narrower than the design workflows it installs.
-This development slice provides two commands:
+This development slice provides four workspace commands:
 
 ```sh
 node bin/design-practice.mjs setup ./path-to-blank-workspace \
@@ -9,6 +9,10 @@ node bin/design-practice.mjs setup ./path-to-blank-workspace \
   --id example-product
 
 node bin/design-practice.mjs doctor ./path-to-blank-workspace
+
+node bin/design-practice.mjs repair ./path-to-blank-workspace
+
+node bin/design-practice.mjs update ./path-to-blank-workspace
 ```
 
 `setup` currently supports an empty or minimal folder and an interrupted
@@ -32,4 +36,15 @@ or repair generated files.
 The command exits nonzero when it finds an error. `--json` returns a stable
 machine-readable result for agents and CI.
 
-The `repair`, `update`, and `migrate` commands remain subsequent milestones.
+`repair` regenerates only the disposable `design/INDEX.md` and agent discovery
+pointer from the canonical manifest and installed package lock. It does not
+repair or alter design work.
+
+`update` replaces a framework-managed skill only when its installed contents
+still match the recorded base. Local edits stop the update as a conflict.
+Copied-and-owned packages such as the reference system are never overwritten;
+a changed release is reported as an available proposal. Repeating the same
+update is idempotent.
+
+Existing-codebase adoption and the `migrate` command remain subsequent
+milestones.

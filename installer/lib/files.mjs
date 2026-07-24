@@ -5,6 +5,8 @@ import {
   mkdir,
   readFile,
   readdir,
+  rename,
+  rm,
   stat,
   writeFile,
 } from "node:fs/promises";
@@ -42,6 +44,13 @@ export async function writeNewFile(filePath, content) {
   await writeFile(filePath, content, { encoding: "utf8", flag: "wx" });
 }
 
+export async function writeUtf8(filePath, content) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const temporaryPath = `${filePath}.design-practice-tmp`;
+  await writeFile(temporaryPath, content, { encoding: "utf8" });
+  await rename(temporaryPath, filePath);
+}
+
 export async function copyNewTree(sourceRoot, destinationRoot) {
   const created = [];
 
@@ -67,6 +76,11 @@ export async function copyNewTree(sourceRoot, destinationRoot) {
 
   await visit(sourceRoot);
   return created;
+}
+
+export async function replaceTree(sourceRoot, destinationRoot) {
+  await rm(destinationRoot, { force: true, recursive: true });
+  return copyNewTree(sourceRoot, destinationRoot);
 }
 
 export async function listTopLevel(root) {

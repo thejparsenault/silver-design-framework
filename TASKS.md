@@ -38,11 +38,11 @@
   - context: small
   - notes: Preserve history, repair paths, then install/build/render before treating it as a valid fixture.
 
-- [ ] Implement a blank-workspace installer fixture
+- [x] Implement a blank-workspace installer fixture
   - type: build
   - priority: high
   - context: small
-  - notes: Exact-output setup, idempotence, project-edit preservation, refusal of inferred existing-codebase adoption, deterministic index generation, and read-only doctor checks now pass. Still install selected project skills/checks, agent pointers, the editable reference system, and repair behavior.
+  - notes: Exact-output setup, idempotence, project-edit preservation, refusal of inferred existing-codebase adoption, project-local skill and reference-system installation, deterministic discovery generation, read-only diagnostics, safe repair, and reviewable updates now pass.
 
 - [x] Implement first task-level skills
   - type: build

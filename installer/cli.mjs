@@ -1,7 +1,9 @@
 import path from "node:path";
 
 import { doctorWorkspace } from "./doctor.mjs";
+import { repairWorkspace } from "./repair.mjs";
 import { setupWorkspace } from "./setup.mjs";
+import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
 
 const usage = `Design Practice Framework
@@ -9,11 +11,15 @@ const usage = `Design Practice Framework
 Usage:
   design-practice setup [directory] [--name <name>] [--id <id>] [--json]
   design-practice doctor [directory] [--json]
+  design-practice repair [directory] [--json]
+  design-practice update [directory] [--json]
   design-practice version
 
 Commands:
   setup   Initialize a blank workspace or resume an existing framework setup.
   doctor  Diagnose workspace contracts and managed files without changing them.
+  repair  Regenerate disposable indexes and agent discovery pointers.
+  update  Update unmodified framework-managed packages; report owned-package proposals.
   version Print the local framework development version.
 `;
 
@@ -79,6 +85,49 @@ function printDoctor(result, write) {
   }
 }
 
+function printRepair(result, write) {
+  write(
+    result.ok
+      ? `Repaired generated workspace files: ${result.root}`
+      : `Repair completed with diagnostics: ${result.root}`,
+  );
+  write(
+    result.repaired.length > 0
+      ? `Repaired: ${result.repaired.join(", ")}`
+      : "No generated files changed.",
+  );
+  for (const item of result.diagnostics) {
+    write(
+      `  ${item.level.toUpperCase()} ${item.code}${item.path ? ` ${item.path}` : ""}: ${item.message}`,
+    );
+  }
+}
+
+function printUpdate(result, write) {
+  if (result.conflicts.length > 0) {
+    write(
+      `Update stopped with ${result.conflicts.length} conflict(s): ${result.root}`,
+    );
+    for (const conflict of result.conflicts) {
+      write(
+        `  CONFLICT ${conflict.package}${conflict.path ? ` ${conflict.path}` : ""}: ${conflict.reason}`,
+      );
+    }
+    return;
+  }
+  write(
+    `Updated framework ${result.fromVersion} → ${result.toVersion}: ${result.root}`,
+  );
+  write(
+    result.updated.length > 0
+      ? `Updated packages: ${result.updated.join(", ")}`
+      : "No framework-managed packages changed.",
+  );
+  for (const proposal of result.proposals) {
+    write(`  AVAILABLE ${proposal.package}: ${proposal.reason}`);
+  }
+}
+
 export async function runCli(
   args,
   {
@@ -97,7 +146,7 @@ export async function runCli(
       stdout(FRAMEWORK_VERSION);
       return 0;
     }
-    if (!["setup", "doctor"].includes(command)) {
+    if (!["setup", "doctor", "repair", "update"].includes(command)) {
       throw new Error(`Unknown command: ${command}`);
     }
     if (positionals.length > 1) {
@@ -117,6 +166,26 @@ export async function runCli(
         printSetup(result, stdout);
       }
       return 0;
+    }
+
+    if (command === "repair") {
+      const result = await repairWorkspace({ root });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else {
+        printRepair(result, stdout);
+      }
+      return result.ok ? 0 : 1;
+    }
+
+    if (command === "update") {
+      const result = await updateWorkspace({ root });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else {
+        printUpdate(result, stdout);
+      }
+      return result.ok ? 0 : 1;
     }
 
     const result = await doctorWorkspace({ root });

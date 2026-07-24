@@ -40,6 +40,8 @@ node bin/design-practice.mjs setup ./my-design-workspace \
   --name "My Product" \
   --id my-product
 node bin/design-practice.mjs doctor ./my-design-workspace
+node bin/design-practice.mjs repair ./my-design-workspace
+node bin/design-practice.mjs update ./my-design-workspace
 ```
 
 See [`installer/README.md`](installer/README.md) for the current command

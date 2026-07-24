@@ -1,12 +1,22 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
 import { doctorWorkspace } from "../doctor.mjs";
 import { snapshotFiles } from "../lib/files.mjs";
+import { repairWorkspace } from "../repair.mjs";
 import { setupWorkspace } from "../setup.mjs";
+import { updateWorkspace } from "../update.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const expectedRoot = path.join(
@@ -28,6 +38,23 @@ const installedSkillIds = [
 async function temporaryWorkspace(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), "design-practice-"));
   t.after(() => rm(root, { force: true, recursive: true }));
+  return root;
+}
+
+async function temporaryPayload(t) {
+  const root = await mkdtemp(path.join(os.tmpdir(), "design-practice-payload-"));
+  t.after(() => rm(root, { force: true, recursive: true }));
+  await mkdir(path.join(root, "framework"), { recursive: true });
+  await cp(
+    path.join(repositoryRoot, "framework", "skills"),
+    path.join(root, "framework", "skills"),
+    { recursive: true },
+  );
+  await cp(
+    path.join(repositoryRoot, "reference-system"),
+    path.join(root, "reference-system"),
+    { recursive: true },
+  );
   return root;
 }
 
@@ -171,6 +198,150 @@ test("doctor verifies framework-managed skills but permits reference-system edit
         code === "managed-package-stale" && target === ".skills/brand",
     ),
   );
+});
+
+test("repair regenerates the index and agent pointer without changing owned files", async (t) => {
+  const root = await temporaryWorkspace(t);
+  await setupWorkspace({
+    root,
+    name: "Example Product",
+    id: "example-product",
+    date: "2026-07-23",
+  });
+  const brandPath = path.join(root, "design", "brand.md");
+  const editedBrand = `${await readFile(brandPath, "utf8")}\nOwned note.\n`;
+  await writeFile(brandPath, editedBrand);
+  await writeFile(path.join(root, "design", "INDEX.md"), "stale index\n");
+  await writeFile(path.join(root, "AGENTS.md"), "stale pointer\n");
+
+  const result = await repairWorkspace({ root });
+
+  assert.equal(result.ok, true);
+  assert.ok(result.repaired.includes("design/INDEX.md"));
+  assert.ok(result.repaired.includes("AGENTS.md"));
+  assert.equal(await readFile(brandPath, "utf8"), editedBrand);
+  assert.equal((await doctorWorkspace({ root })).ok, true);
+});
+
+test("update replaces clean managed skills and only proposes copied-owned changes", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const payloadRoot = await temporaryPayload(t);
+  await setupWorkspace({
+    root,
+    name: "Example Product",
+    id: "example-product",
+    date: "2026-07-23",
+  });
+
+  const brandArtifactPath = path.join(root, "design", "brand.md");
+  const referencePath = path.join(
+    root,
+    "reference-system",
+    "examples",
+    "static-html",
+    "login-form.css",
+  );
+  const editedBrandArtifact = `${await readFile(brandArtifactPath, "utf8")}\nOwned brand note.\n`;
+  const editedReference = `${await readFile(referencePath, "utf8")}\n/* Owned reference edit. */\n`;
+  await writeFile(brandArtifactPath, editedBrandArtifact);
+  await writeFile(referencePath, editedReference);
+
+  const sourceSkillPath = path.join(
+    payloadRoot,
+    "framework",
+    "skills",
+    "brand",
+    "SKILL.md",
+  );
+  await writeFile(
+    sourceSkillPath,
+    `${await readFile(sourceSkillPath, "utf8")}\nFixture release improvement.\n`,
+  );
+  const sourceSkillContractPath = path.join(
+    payloadRoot,
+    "framework",
+    "skills",
+    "brand",
+    "skill.yaml",
+  );
+  await writeFile(
+    sourceSkillContractPath,
+    (await readFile(sourceSkillContractPath, "utf8")).replace(
+      "version: 0.1.0-dev",
+      "version: 0.1.1",
+    ),
+  );
+  const sourceReferenceReadme = path.join(
+    payloadRoot,
+    "reference-system",
+    "README.md",
+  );
+  await writeFile(
+    sourceReferenceReadme,
+    `${await readFile(sourceReferenceReadme, "utf8")}\nFixture-owned reference update.\n`,
+  );
+
+  const result = await updateWorkspace({
+    root,
+    payloadRoot,
+    version: "0.1.1",
+    sourceReference: "fixture-v2",
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.updated, ["brand"]);
+  assert.ok(
+    result.proposals.some(({ package: id }) => id === "reference-system"),
+  );
+  assert.equal(
+    await readFile(path.join(root, ".skills", "brand", "SKILL.md"), "utf8"),
+    await readFile(sourceSkillPath, "utf8"),
+  );
+  assert.equal(await readFile(brandArtifactPath, "utf8"), editedBrandArtifact);
+  assert.equal(await readFile(referencePath, "utf8"), editedReference);
+  assert.equal((await doctorWorkspace({ root })).ok, true);
+
+  const afterFirstUpdate = comparableSnapshot(await snapshotFiles(root));
+  const repeated = await updateWorkspace({
+    root,
+    payloadRoot,
+    version: "0.1.1",
+    sourceReference: "fixture-v2",
+  });
+  assert.equal(repeated.ok, true);
+  assert.deepEqual(repeated.updated, []);
+  assert.deepEqual(
+    comparableSnapshot(await snapshotFiles(root)),
+    afterFirstUpdate,
+  );
+});
+
+test("update stops before changing a locally edited managed skill", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const payloadRoot = await temporaryPayload(t);
+  await setupWorkspace({
+    root,
+    name: "Example Product",
+    id: "example-product",
+    date: "2026-07-23",
+  });
+  const installedSkillPath = path.join(root, ".skills", "brand", "SKILL.md");
+  await writeFile(
+    installedSkillPath,
+    `${await readFile(installedSkillPath, "utf8")}\nLocal edit.\n`,
+  );
+  const before = comparableSnapshot(await snapshotFiles(root));
+
+  const result = await updateWorkspace({
+    root,
+    payloadRoot,
+    version: "0.1.1",
+    sourceReference: "fixture-v2",
+  });
+
+  assert.equal(result.ok, false);
+  assert.ok(result.conflicts.some(({ package: id }) => id === "brand"));
+  assert.deepEqual(comparableSnapshot(await snapshotFiles(root)), before);
 });
 
 test("setup refuses to guess that an existing codebase is blank", async (t) => {

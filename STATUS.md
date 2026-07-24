@@ -2,9 +2,15 @@
 
 ## Current Focus
 
-Add safe repair and reviewable update behavior to the now-complete blank-workspace payload.
+Validate the complete blank-workspace workflow through a constrained static prototype and independent fast checks.
 
 ## Recent Progress
+
+- 2026-07-23: Safe repair and reviewable updates
+  - Added `repair` for the generated design index and agent discovery pointer without modifying canonical design work.
+  - Added preflighted updates for clean framework-managed skills; local skill edits stop the operation as explicit conflicts.
+  - Kept the copied-and-owned reference system untouched and reported changed releases as proposals.
+  - Added fixture-release tests proving update preservation, conflict safety, and idempotence.
 
 - 2026-07-23: Complete blank-workspace payload
   - Setup now installs all five project-local skills, the editable reference system with compiled outputs, and a generated agent discovery pointer.
@@ -72,14 +78,13 @@ Add safe repair and reviewable update behavior to the now-complete blank-workspa
 
 ## Next 3 Actions
 
-1. Add `repair` for generated indexes and agent pointers.
-2. Add reviewable fixture-release update behavior with three-way ownership checks.
-3. Validate the blank-workspace flow end to end.
+1. Implement the independent fast check suite required by the reference workspace.
+2. Add an executable constrained static prototype fixture derived from a pinned flow revision.
+3. Exercise setup through refinement, flow, prototype, conformance, and recommended next actions.
 
 ## Blockers
 
-- No release destination or package scope has been created yet.
-- Installer ownership/update metadata is now populated, but repair and three-way update behavior have not been implemented.
+- No release destination or package scope has been created yet; local tarball validation can proceed without one.
 
 ## Last Updated
 

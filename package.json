@@ -14,8 +14,10 @@
     "installer/cli.mjs",
     "installer/doctor.mjs",
     "installer/lib/",
+    "installer/repair.mjs",
     "installer/setup.mjs",
     "installer/templates/",
+    "installer/update.mjs",
     "installer/version.mjs",
     "reference-system/"
   ],
