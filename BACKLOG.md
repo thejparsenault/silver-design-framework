@@ -187,6 +187,36 @@ This backlog contains functionality intentionally excluded from the first blank-
 - [ ] Deprecation and migration
   - Mark retired tokens/components, suggest replacements, and check remaining use.
 
+## P2 — Shared Asset Management
+
+- [ ] Portable asset catalog contract
+  - Add a compact `design/assets/manifest.yaml` that discovers smaller collection manifests for brand assets, icons, illustrations, photography, fonts, and other reusable media without loading every record into agent context.
+  - Give each asset a stable ID, status, authority, revision or integrity hash, provenance, licensing and usage restrictions, and available renditions. Keep usage-specific accessibility text with the consuming screen or component.
+
+- [ ] Default shared asset layout
+  - Store reusable product-owned files under a top-level `assets/` root, separate from catalog metadata. Let existing repositories map their native asset locations rather than forcing file moves.
+  - Commit ordinary SVGs, icons, illustrations, fonts with distributable licenses, and reasonably sized images by default.
+
+- [ ] Organization and product asset ownership
+  - Keep genuinely shared logos, fonts, and brand media in the organization foundation; pin their versions into product workspaces.
+  - Keep product-specific assets in the product workspace and implementation-specific renditions in the codebase binding.
+
+- [ ] Prototype-local assets and promotion
+  - Allow experiments under `prototypes/<prototype-id>/assets/`, but prevent production from consuming those files directly.
+  - Promote an accepted asset by adding a canonical shared file and catalog record with provenance; do not treat moving or copying a prototype file as sufficient promotion.
+
+- [ ] Production asset projections
+  - Map shared asset IDs and revisions to framework-native locations such as `public/` or `src/assets/`.
+  - Prefer direct shared imports when the codebase supports them; otherwise generate or synchronize derived copies with recorded source integrity and no independent editing.
+
+- [ ] External and large-asset authority
+  - Support DAMs, design tools, Git LFS, or other external authorities for large, proprietary, or restricted masters while retaining approved metadata and pinned local renditions needed for deterministic work.
+  - Default synchronization to `notify`; never rely on mutable external URLs or silently replace repository assets.
+
+- [ ] Independent asset checks
+  - Check missing files, stale renditions, broken references, duplicate IDs, format, dimensions, file weight, provenance, licensing metadata, and prototype-only assets used by production.
+  - Keep asset validation separate from accessibility checks that evaluate the asset in its actual screen or component context.
+
 ## P2 — Implementation Recipes and Adapters
 
 - [ ] Static HTML/CSS recipe

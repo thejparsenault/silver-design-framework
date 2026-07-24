@@ -6,6 +6,11 @@ Bundle the complete initial skill set and editable reference system into the bla
 
 ## Recent Progress
 
+- 2026-07-23: Shared asset model added to the backlog
+  - Separated compact asset catalogs from reusable files, prototype-local experiments, and production projections.
+  - Assigned organization, product, and codebase ownership while retaining external authority for large or restricted masters.
+  - Added promotion, synchronization, provenance, licensing, integrity, and independent conformance work to the P2 backlog.
+
 - 2026-07-23: Portable flow implementation
   - Added the strict v1 JSON graph contract for user, interaction, and component behavior flows.
   - Added a validated project-local `flow` skill with dependency-free initialization, structural checking, and revision-stamped Mermaid rendering.
