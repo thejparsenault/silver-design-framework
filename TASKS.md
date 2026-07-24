@@ -78,7 +78,7 @@ The authoritative requirement list and release evidence rules are in
   - type: design
   - priority: high
   - context: medium
-  - notes: The v2 schemas, shared guardrail registry, permission and provider resolution runtime, normalized result constraints, user tool profile, positive and negative fixtures, and v1 skill-contract migration are implemented. Completion still requires converting every installed skill and proving every invocation uses the result and guardrail contracts, plus the workspace migration under `S02-ARC-10`.
+  - notes: The v2 schemas, shared guardrail registry, permission and provider resolution runtime, normalized result constraints, user tool profile, positive and negative fixtures, v1 skill-contract migration, and reviewable v1 workspace migration are implemented. Completion still requires task-specific invocation evidence for every installed skill and the complete packed loop.
 
 - [ ] Implement and validate agentic composition
   - type: design
@@ -96,7 +96,7 @@ The authoritative requirement list and release evidence rules are in
   - type: build
   - priority: high
   - context: medium
-  - notes: Blank setup now installs the complete v2 skill and framework payload, local flow/sketch/prototype/presentation/production renderers, shared asset model, presentation kit, eleven independent fast checks, and real local Chrome checks under an integrity-tracked v2 lock. Diagnostics, repair, idempotence, update preservation, managed-file conflicts, full build, and exact offline package smoke pass. Completion still requires the reviewable v1 workspace migration and full-loop release evidence.
+  - notes: Blank setup now installs the complete v2 skill and framework payload, local flow/sketch/prototype/presentation/production renderers, shared asset model, presentation kit, eleven independent fast checks, and real local Chrome checks under an integrity-tracked v2 lock. Diagnostics, repair, idempotence, update preservation, managed-file conflicts, and preview/apply/idempotent v1 migration pass in unit and exact packed smoke tests. Completion now depends on full-loop release evidence.
 
 - [ ] Prove the complete blank-workspace release
   - type: test

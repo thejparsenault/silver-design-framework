@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { doctorWorkspace } from "./doctor.mjs";
+import { migrateWorkspace } from "./migrate.mjs";
 import { repairWorkspace } from "./repair.mjs";
 import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
@@ -13,6 +14,7 @@ Usage:
   silver doctor [directory] [--json]
   silver repair [directory] [--json]
   silver update [directory] [--json]
+  silver migrate [directory] [--apply] [--json]
   silver version
 
 Commands:
@@ -20,11 +22,12 @@ Commands:
   doctor  Diagnose workspace contracts and managed files without changing them.
   repair  Regenerate disposable indexes and agent discovery pointers.
   update  Update unmodified framework-managed packages; report owned-package proposals.
+  migrate Preview or explicitly apply the supported v1-to-v2 workspace migration.
   version Print the local framework development version.
 `;
 
 function parseArguments(args) {
-  const supportedFlags = new Set(["help", "id", "json", "name"]);
+  const supportedFlags = new Set(["apply", "help", "id", "json", "name"]);
   const positionals = [];
   const flags = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -37,7 +40,7 @@ function parseArguments(args) {
     if (!supportedFlags.has(key)) {
       throw new Error(`Unknown option: --${key}`);
     }
-    if (key === "json" || key === "help") {
+    if (key === "apply" || key === "json" || key === "help") {
       flags[key] = true;
       continue;
     }
@@ -146,7 +149,7 @@ export async function runCli(
       stdout(FRAMEWORK_VERSION);
       return 0;
     }
-    if (!["setup", "doctor", "repair", "update"].includes(command)) {
+    if (!["setup", "doctor", "repair", "update", "migrate"].includes(command)) {
       throw new Error(`Unknown command: ${command}`);
     }
     if (positionals.length > 1) {
@@ -184,6 +187,29 @@ export async function runCli(
         stdout(JSON.stringify(result, null, 2));
       } else {
         printUpdate(result, stdout);
+      }
+      return result.ok ? 0 : 1;
+    }
+
+    if (command === "migrate") {
+      const result = await migrateWorkspace({ root, apply: flags.apply });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else if (!result.needed) {
+        stdout(`Workspace is already current: ${result.root}`);
+      } else {
+        stdout(
+          `${result.applied ? "Applied" : "Previewed"} migration ${result.fromVersion} → ${result.toVersion}: ${result.root}`,
+        );
+        for (const change of result.changes) {
+          stdout(`  ${change.action.toUpperCase()}${change.package ? ` ${change.package}` : ""} ${change.path}`);
+        }
+        for (const conflict of result.conflicts) {
+          stdout(`  CONFLICT ${conflict.package}${conflict.path ? ` ${conflict.path}` : ""}: ${conflict.reason}`);
+        }
+        if (!result.applied && result.ok) {
+          stdout("Run `silver migrate --apply` after reviewing this plan.");
+        }
       }
       return result.ok ? 0 : 1;
     }

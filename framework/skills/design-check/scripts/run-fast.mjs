@@ -24,7 +24,7 @@ import { checkSemanticStyles } from "./check-semantic-styles.mjs";
 const checkers = [
   ["contract-integrity", checkArtifacts],
   ["flow-structure", checkFlows],
-  ["semantic-style", checkSemanticStyles],
+  ["semantic-styles", checkSemanticStyles],
   ["prototype-policy", checkPrototypes],
   ["evidence-provenance", checkEvidence],
   ["presentation-integrity", checkPresentations],

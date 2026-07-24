@@ -12,7 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
@@ -55,6 +55,7 @@ try {
   for (const required of [
     "bin/silver.mjs",
     "installer/repair.mjs",
+    "installer/migrate.mjs",
     "installer/update.mjs",
     "framework/skills/design-check/scripts/run-fast.mjs",
     "framework/skills/design-check/scripts/run-browser.mjs",
@@ -210,6 +211,76 @@ try {
     lock.packages.every(({ version }) => version === expectedVersion),
     "Every installed package must be pinned to the prerelease version.",
   );
+  const legacyBrand = lock.packages.find(({ id }) => id === "brand");
+  const legacyReference = lock.packages.find(({ id }) => id === "reference-system");
+  await writeFile(
+    path.join(workspaceRoot, ".silver", "lock.yaml"),
+    stringify({
+      schema: "silver/lock/v1",
+      framework: {
+        version: "0.1.0-alpha.1",
+        source: { type: "local", reference: "packed-legacy-fixture" },
+      },
+      packages: [
+        {
+          id: "brand",
+          type: "skill",
+          version: "0.1.0-alpha.1",
+          ownership: "framework-managed",
+          integrity: legacyBrand.integrity,
+        },
+        {
+          id: "reference-system",
+          type: "reference-system",
+          version: "0.1.0-alpha.1",
+          ownership: "copied-and-owned",
+          integrity: legacyReference.integrity,
+        },
+      ],
+      managed_files: lock.managed_files,
+    }),
+    "utf8",
+  );
+  await rm(path.join(workspaceRoot, ".skills", "product"), {
+    recursive: true,
+    force: true,
+  });
+  await rm(path.join(workspaceRoot, ".silver", "playbooks"), {
+    recursive: true,
+    force: true,
+  });
+  const migrationPreview = JSON.parse(
+    (
+      await command(
+        process.execPath,
+        [cli, "migrate", workspaceRoot, "--json"],
+        { cwd: consumerRoot },
+      )
+    ).stdout,
+  );
+  assert.equal(migrationPreview.needed, true);
+  assert.equal(migrationPreview.applied, false);
+  await access(path.join(workspaceRoot, ".skills", "brand"));
+  await assert.rejects(access(path.join(workspaceRoot, ".skills", "product")));
+  const migrationApplied = JSON.parse(
+    (
+      await command(
+        process.execPath,
+        [cli, "migrate", workspaceRoot, "--apply", "--json"],
+        { cwd: consumerRoot },
+      )
+    ).stdout,
+  );
+  assert.equal(migrationApplied.applied, true);
+  const migratedLock = parse(
+    await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
+  );
+  assert.equal(migratedLock.schema, "silver/lock/v2");
+  assert.equal(migratedLock.packages.length, 23);
+  await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
+  await command(process.execPath, [cli, "doctor", workspaceRoot], {
+    cwd: consumerRoot,
+  });
   await access(
     path.join(
       workspaceRoot,

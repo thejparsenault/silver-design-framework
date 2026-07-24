@@ -112,10 +112,10 @@ checks:
   enabled:
     - contract-integrity
     - flow-structure
-    - semantic-style
+    - semantic-styles
     - prototype-policy
     - accessibility
-    - responsive
+    - responsive-behavior
     - evidence-provenance
     - presentation-integrity
     - production-readiness
@@ -125,18 +125,31 @@ checks:
     fast:
       - contract-integrity
       - flow-structure
-      - semantic-style
+      - semantic-styles
       - prototype-policy
+      - evidence-provenance
+      - presentation-integrity
+      - production-readiness
+      - asset-integrity
+      - accessibility
+      - responsive-behavior
+      - critical-interactions
     browser:
       - accessibility
-      - responsive
+      - responsive-behavior
+      - critical-interactions
     full:
       - contract-integrity
       - flow-structure
-      - semantic-style
+      - semantic-styles
       - prototype-policy
+      - evidence-provenance
+      - presentation-integrity
+      - production-readiness
+      - asset-integrity
       - accessibility
-      - responsive
+      - responsive-behavior
+      - critical-interactions
   render_targets:
     - id: reference-system
       profile: reference-system

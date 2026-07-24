@@ -19,6 +19,7 @@
     "installer/cli.mjs",
     "installer/doctor.mjs",
     "installer/lib/",
+    "installer/migrate.mjs",
     "installer/repair.mjs",
     "installer/setup.mjs",
     "installer/templates/",
@@ -31,7 +32,7 @@
     "build": "npm run validate:contracts && npm run build:reference && npm test",
     "build:reference": "node reference-system/packages/tokens/src/build.mjs",
     "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
-    "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs",
+    "test": "node --test --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
     "test:package": "node installer/tests/package-smoke.mjs"
   },
   "engines": {

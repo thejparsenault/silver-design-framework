@@ -141,7 +141,21 @@ class DevTools {
   }
 
   close() {
-    this.socket.close();
+    this.socket.terminate();
+  }
+}
+
+async function stopProcess(processHandle) {
+  if (processHandle.exitCode !== null) return;
+  const exited = new Promise((resolve) => processHandle.once("exit", resolve));
+  processHandle.kill("SIGTERM");
+  const result = await Promise.race([
+    exited.then(() => "exited"),
+    delay(2000).then(() => "timeout"),
+  ]);
+  if (result === "timeout" && processHandle.exitCode === null) {
+    processHandle.kill("SIGKILL");
+    await Promise.race([exited, delay(2000)]);
   }
 }
 
@@ -171,13 +185,17 @@ async function launchChrome(executable) {
     await delay(100);
   }
   if (!version) {
-    processHandle.kill("SIGTERM");
+    await stopProcess(processHandle);
     await rm(profile, { recursive: true, force: true });
     throw new Error("Local Chrome did not expose a DevTools endpoint.");
   }
   const pages = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
   const page = pages.find(({ type }) => type === "page");
-  if (!page) throw new Error("Local Chrome did not create a page target.");
+  if (!page) {
+    await stopProcess(processHandle);
+    await rm(profile, { recursive: true, force: true });
+    throw new Error("Local Chrome did not create a page target.");
+  }
   const devtools = new DevTools(page.webSocketDebuggerUrl);
   await devtools.open();
   await devtools.send("Page.enable");
@@ -187,7 +205,7 @@ async function launchChrome(executable) {
     version: version.Browser,
     close: async () => {
       devtools.close();
-      processHandle.kill("SIGTERM");
+      await stopProcess(processHandle);
       await rm(profile, { recursive: true, force: true });
     },
   };

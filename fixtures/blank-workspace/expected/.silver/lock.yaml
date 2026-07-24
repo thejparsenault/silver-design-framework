@@ -112,7 +112,7 @@ packages:
     path: .skills/design-check
     version: 0.2.0
     ownership: framework-managed
-    integrity: sha256:47f669d120fd51c577675cdf563239c50e1aefa64ee52ec4966775e5c0f245ca
+    integrity: sha256:dedd42034bd10bda055d531438d56ea045382c11d47fa31b29caf6977b4bd998
   - id: schemas-v2
     type: schema-bundle
     path: .silver/schemas/v2

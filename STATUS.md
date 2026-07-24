@@ -13,6 +13,13 @@ used to test framework neutrality.
 
 ## Recent Progress
 
+- 2026-07-24: Reviewable v1 workspace migration
+  - Added `silver migrate` with a read-only default preview and an explicit `--apply` boundary.
+  - Migrated legacy locks, installed the full 0.2 framework-managed payload, added only missing 0.2 project templates, upgraded manifest check discovery, and regenerated disposable pointers.
+  - Preserved project-owned canonical and copied files, detected edited managed packages and generated files before any write, and made already-current workspaces an idempotent no-op.
+  - Added unit fixtures for preview, apply, preservation, conflict safety, and idempotence plus an exact packed-archive migration smoke.
+  - The full build now passes 40 tests and the exact offline `0.2.0` package smoke passes setup, fast checks, real browser checks, independent invocation, migration, and post-migration diagnostics.
+
 - 2026-07-24: Local renderers, shared project resources, and independent checks
   - Added strict v2 contracts and installed blank-workspace templates for a portable asset catalog and a project-owned presentation kit with opportunity, proposal, and outcome templates.
   - Added deterministic semantic-HTML renderers for inexpensive sketches, branded change-case presentations, and one production-capable static HTML/CSS/minimal-JavaScript recipe that refuses incomplete design intent.
@@ -144,10 +151,11 @@ used to test framework neutrality.
 
 1. Add positive and relevant negative or degraded fixtures for every required
    skill, including strict working-artifact payloads and task-specific behavior.
-2. Implement v1 workspace migration and its preview, apply, idempotence,
-   ownership, and conflict fixtures.
-3. Build the complete evidence-to-implementation
+2. Build the complete evidence-to-implementation
    playbook fixture against the exact packed release.
+3. Exercise checkpoint resume, upstream invalidation, accepted prototype
+   refinement, pitch, implementation, and all declared render targets in that
+   packed scenario.
 
 ## Blockers
 
