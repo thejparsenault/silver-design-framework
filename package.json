@@ -13,6 +13,7 @@
     "framework/schemas/v2/",
     "framework/guardrails/",
     "framework/migrations/",
+    "framework/playbooks/",
     "framework/runtime/",
     "framework/skills/",
     "installer/cli.mjs",

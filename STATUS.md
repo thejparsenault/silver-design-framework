@@ -13,6 +13,12 @@ used to test framework neutrality.
 
 ## Recent Progress
 
+- 2026-07-24: Optional resumable playbook foundation
+  - Added strict playbook and playbook-state contracts for version-pinned leaf skills, typed handoffs, optional branches, feedback and retry edges, readiness conditions, stopping rules, checkpoints, and bounded autonomy.
+  - Added the optional default synthesis → ideation → human selection → specification ↔ flow/sketch → prototype → evaluation loop, with explicit pitch and permission-gated implementation branches.
+  - Implemented serializable playbook state, checkpoint resolution, graph validation, and fresh-session resume handling.
+  - Added revision-change detection that preserves recorded inputs and outputs, marks affected nodes stale, and pauses at a visible reconciliation checkpoint instead of silently rewriting derived work.
+
 - 2026-07-24: Silver 0.2 v2 contract foundation
   - Added strict v2 contracts for skills, normalized invocation results, required working-artifact families, guardrail registries, permission layers, capability-resolution evidence, and user-global tool profiles.
   - Implemented reusable contract validation, six-layer permission intersection, provider fallback and degradation reporting, guardrail relaxation enforcement, and a review-required v1 skill-contract migration.
@@ -122,10 +128,10 @@ used to test framework neutrality.
 
 ## Next 3 Actions
 
-1. Implement the playbook contract, resumable state, and default design loop
-   required by `S02-ARC-07` through `S02-ARC-09`.
-2. Convert the five existing skills and build the remaining required skills on
+1. Convert the five existing skills and build the remaining required skills on
    the v2 contract and shared invocation runtime.
+2. Install the guardrails, schemas, playbook, renderers, and complete skill
+   catalog through the blank-workspace lifecycle.
 3. Implement the required skill catalog and prove the complete packed-release
    scenario defined by `S02-SKL-*` and `S02-E2E-*`.
 

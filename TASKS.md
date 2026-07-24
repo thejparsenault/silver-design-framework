@@ -84,7 +84,7 @@ The authoritative requirement list and release evidence rules are in
   - type: design
   - priority: high
   - context: medium
-  - notes: Complete `S02-ARC-07` through `S02-ARC-09`, including resumability, invalidation, checkpoints, feedback, and bounded autonomy.
+  - notes: The playbook and state contracts, default optional loop, bounded-autonomy rules, checkpoint runtime, serialized resume, and revision invalidation behavior are implemented and fixture-tested. Completion still requires installing the playbook in a 0.2 workspace and proving it against real results from the complete skill catalog.
 
 - [ ] Implement the complete required skill catalog
   - type: build

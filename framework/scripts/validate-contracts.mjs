@@ -223,6 +223,7 @@ async function validateV2(validators) {
     ["working-artifact.schema.json", "fixtures/contracts/v2/valid/working-finding.json", "json"],
     ["guardrail-registry.schema.json", "framework/guardrails/registry.yaml", "yaml"],
     ["tool-profile.schema.json", "fixtures/contracts/v2/valid/tool-profile.yaml", "yaml"],
+    ["playbook.schema.json", "framework/playbooks/default-design-loop.yaml", "yaml"],
   ];
   for (const [schemaName, relativePath, format] of positive) {
     assertValid(

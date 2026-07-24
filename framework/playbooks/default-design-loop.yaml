@@ -1,0 +1,277 @@
+schema: silver/playbook/v2
+id: default-design-loop
+version: 0.2.0
+summary: Optional evidence-to-evaluation loop with explicit pitch and implementation branches.
+autonomy:
+  mode: safe-local-until-checkpoint
+  allowed_effects:
+    - read-local
+    - write-working-artifacts
+    - render-local
+    - run-local-checks
+  forbidden_effects:
+    - canonical-write
+    - external-write
+    - production-write
+    - destructive-operation
+    - version-control
+    - publish
+    - present
+    - send
+inputs:
+  - id: seed-evidence
+    kind: evidence
+    required: true
+  - id: product-context
+    kind: product
+    required: false
+entry_nodes:
+  - synthesize
+nodes:
+  - id: synthesize
+    skill:
+      id: synthesize
+      version: 0.2.0
+    optional: false
+    readiness: []
+  - id: ideate
+    skill:
+      id: ideate
+      version: 0.2.0
+    optional: false
+    readiness:
+      - ideation
+    checkpoint:
+      id: select-direction
+      timing: after
+      type: human
+      prompt: Select and accept a concept before specification.
+  - id: specify
+    skill:
+      id: specify
+      version: 0.2.0
+    optional: false
+    readiness:
+      - specification
+  - id: flow
+    skill:
+      id: flow
+      version: 0.2.0
+    optional: true
+    when:
+      type: invocation-option
+      key: include-flow
+      equals: true
+    readiness:
+      - flow
+  - id: sketch
+    skill:
+      id: sketch
+      version: 0.2.0
+    optional: true
+    when:
+      type: invocation-option
+      key: include-sketch
+      equals: true
+    readiness:
+      - sketch
+  - id: prototype
+    skill:
+      id: prototype
+      version: 0.2.0
+    optional: true
+    when:
+      type: invocation-option
+      key: include-prototype
+      equals: true
+    readiness:
+      - prototype
+  - id: evaluate
+    skill:
+      id: evaluate
+      version: 0.2.0
+    optional: false
+    readiness:
+      - evaluation
+    checkpoint:
+      id: accept-evaluation
+      timing: after
+      type: human
+      prompt: Accept the findings that may feed refinement, pitching, or implementation.
+  - id: pitch
+    skill:
+      id: pitch
+      version: 0.2.0
+    optional: true
+    when:
+      type: invocation-option
+      key: include-pitch
+      equals: true
+    readiness:
+      - pitch
+  - id: implement
+    skill:
+      id: implement
+      version: 0.2.0
+    optional: true
+    when:
+      type: invocation-option
+      key: include-implementation
+      equals: true
+    readiness:
+      - production
+    checkpoint:
+      id: authorize-production-write
+      timing: before
+      type: permission
+      prompt: Resolve production-write permission without broadening playbook authority.
+edges:
+  - id: synthesis-to-ideation
+    from: synthesize
+    to: ideate
+    type: handoff
+    artifacts:
+      - finding
+      - problem-frame
+    required: true
+  - id: selection-to-specification
+    from: ideate
+    to: specify
+    type: handoff
+    artifacts:
+      - concept
+      - hypothesis
+      - decision
+    required: true
+  - id: specification-to-flow
+    from: specify
+    to: flow
+    type: branch
+    artifacts:
+      - design-specification
+    required: false
+    condition:
+      type: invocation-option
+      key: include-flow
+      equals: true
+  - id: specification-to-sketch
+    from: specify
+    to: sketch
+    type: branch
+    artifacts:
+      - design-specification
+    required: false
+    condition:
+      type: invocation-option
+      key: include-sketch
+      equals: true
+  - id: specification-to-prototype
+    from: specify
+    to: prototype
+    type: branch
+    artifacts:
+      - design-specification
+    required: false
+    condition:
+      type: invocation-option
+      key: include-prototype
+      equals: true
+  - id: flow-to-prototype
+    from: flow
+    to: prototype
+    type: handoff
+    artifacts:
+      - flow
+    required: false
+  - id: sketch-to-prototype
+    from: sketch
+    to: prototype
+    type: handoff
+    artifacts:
+      - sketch
+    required: false
+  - id: specification-to-evaluation
+    from: specify
+    to: evaluate
+    type: handoff
+    artifacts:
+      - design-specification
+    required: true
+  - id: sketch-to-evaluation
+    from: sketch
+    to: evaluate
+    type: handoff
+    artifacts:
+      - sketch
+    required: false
+  - id: prototype-to-evaluation
+    from: prototype
+    to: evaluate
+    type: handoff
+    artifacts:
+      - prototype
+    required: false
+  - id: evaluation-to-synthesis
+    from: evaluate
+    to: synthesize
+    type: feedback
+    artifacts:
+      - observation
+      - finding
+    required: false
+    max_traversals: 5
+  - id: evaluation-to-prototype
+    from: evaluate
+    to: prototype
+    type: retry
+    artifacts:
+      - finding
+    required: false
+    condition:
+      type: accepted
+      key: prototype-refinement
+      equals: true
+    max_traversals: 5
+  - id: accepted-evidence-to-pitch
+    from: evaluate
+    to: pitch
+    type: branch
+    artifacts:
+      - evaluation
+      - finding
+    required: false
+    condition:
+      type: invocation-option
+      key: include-pitch
+      equals: true
+  - id: accepted-intent-to-implementation
+    from: evaluate
+    to: implement
+    type: branch
+    artifacts:
+      - evaluation
+      - design-specification
+    required: false
+    condition:
+      type: invocation-option
+      key: include-implementation
+      equals: true
+stopping_rules:
+  - id: stop-at-checkpoint
+    when: checkpoint
+    action: pause
+  - id: stop-for-permission
+    when: permission-unresolved
+    action: pause
+  - id: stop-for-capability
+    when: required-capability-missing
+    action: stop
+  - id: stop-for-question
+    when: unresolved-question
+    action: pause
+  - id: stop-at-retry-limit
+    when: max-retries
+    action: stop
+  - id: honor-manual-stop
+    when: manual-stop
+    action: stop
