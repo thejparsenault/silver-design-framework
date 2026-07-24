@@ -2,9 +2,15 @@
 
 ## Current Focus
 
-Package and test the first private/local prerelease, then audit every first-iteration acceptance criterion.
+The blank-workspace MVP is complete at local prerelease candidate `0.1.0-alpha.1`. The next milestone is representative existing-repository adoption.
 
 ## Recent Progress
+
+- 2026-07-23: Local prerelease and MVP acceptance audit
+  - Pinned the framework, project-local skills, reference system, and generated lock state to `0.1.0-alpha.1`.
+  - Added a package smoke test that packs and installs the tarball in an isolated consumer before running setup, doctor, and the installed fast suite.
+  - Audited all ten first-iteration acceptance criteria and recorded direct evidence in `docs/mvp-acceptance.md`.
+  - Added explicit full-suspension coverage alongside constrained-default and partial-override tests.
 
 - 2026-07-23: Complete blank-workspace vertical slice
   - Added four independent, dependency-free fast checkers for artifact contracts, flow structure, semantic style use, and prototype policy.
@@ -85,13 +91,13 @@ Package and test the first private/local prerelease, then audit every first-iter
 
 ## Next 3 Actions
 
-1. Pack the CLI and bundled payload as a local prerelease tarball.
-2. Install and exercise that tarball outside the source tree.
-3. Audit all ten first-iteration acceptance criteria and close any remaining evidence gaps.
+1. Select one representative existing product repository for adoption.
+2. Implement read-only discovery and a reviewable adoption report.
+3. Decide whether to create a private npm scope or GitHub prerelease destination.
 
 ## Blockers
 
-- No release destination or package scope has been created yet; local tarball validation can proceed without one.
+- Private remote publication still needs a package scope or GitHub release destination; the local prerelease is fully validated without it.
 
 ## Last Updated
 

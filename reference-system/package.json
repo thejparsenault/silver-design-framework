@@ -1,6 +1,6 @@
 {
   "name": "design-practice-reference-system",
-  "version": "0.1.0-dev",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "type": "module",
   "scripts": {

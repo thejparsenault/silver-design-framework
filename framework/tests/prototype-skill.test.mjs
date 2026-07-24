@@ -69,6 +69,35 @@ test("prototype initializer records an explicit partial override", async (t) => 
   );
 });
 
+test("prototype initializer records only an explicitly confirmed full suspension", async (t) => {
+  const root = await temporaryWorkspace(t);
+  await assert.rejects(
+    initPrototype({
+      root,
+      id: "unconstrained-exploration",
+      title: "Unconstrained exploration",
+      profile: "suspended",
+      overrideReason: "Explore a deliberately different visual language.",
+    }),
+    /requires --confirm-override/,
+  );
+
+  const { metadata } = await initPrototype({
+    root,
+    id: "unconstrained-exploration",
+    title: "Unconstrained exploration",
+    profile: "suspended",
+    overrideReason: "Explore a deliberately different visual language.",
+    confirmOverride: true,
+    date: "2026-07-23",
+  });
+  assert.deepEqual(metadata.suspended_constraints, ["all"]);
+  assert.equal(
+    (await validateSchema("prototype.schema.json", metadata)).valid,
+    true,
+  );
+});
+
 test("prototype initializer records exact portable flow revisions", async (t) => {
   const root = await temporaryWorkspace(t);
   const { metadata, outputPath } = await initPrototype({

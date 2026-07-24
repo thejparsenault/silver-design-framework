@@ -88,7 +88,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.1.0-dev",
+    version: "0.1.0-alpha.1",
     sourceReference: "framework-development-fixture",
   });
 
@@ -267,7 +267,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.1.0-dev",
+      "version: 0.1.0-alpha.1",
       "version: 0.1.1",
     ),
   );

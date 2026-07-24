@@ -1,6 +1,6 @@
 schema: design-practice/skill/v1
 id: theme
-version: 0.1.0-dev
+version: 0.1.0-alpha.1
 summary: Explore, apply, and validate visual themes without bypassing semantic styles.
 context_budget: medium
 requires:

@@ -33,6 +33,7 @@ Development checks:
 python3 -m pip install -r requirements-dev.txt
 npm install
 npm run build
+npm run test:package
 ```
 
 Try the local blank-workspace path:

@@ -29,7 +29,7 @@ test("blank workspace completes the first-iteration vertical slice", async (t) =
     name: "Campaign Studio",
     id: "campaign-studio",
     date: "2026-07-23",
-    version: "0.1.0-dev",
+    version: "0.1.0-alpha.1",
     sourceReference: "vertical-slice-fixture",
   });
 

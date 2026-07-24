@@ -1,0 +1,150 @@
+import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+
+import { parse } from "yaml";
+
+const run = promisify(execFile);
+const repositoryRoot = path.resolve(import.meta.dirname, "../..");
+const expectedVersion = "0.1.0-alpha.1";
+
+async function command(executable, args, options = {}) {
+  return run(executable, args, {
+    maxBuffer: 10 * 1024 * 1024,
+    ...options,
+  });
+}
+
+const temporaryRoot = await mkdtemp(
+  path.join(os.tmpdir(), "design-practice-package-"),
+);
+
+try {
+  const packRoot = path.join(temporaryRoot, "pack");
+  const npmCache = path.join(temporaryRoot, "npm-cache");
+  const consumerRoot = path.join(temporaryRoot, "consumer");
+  const workspaceRoot = path.join(consumerRoot, "campaign-studio");
+  await mkdir(packRoot, { recursive: true });
+  const { stdout: packOutput } = await command(
+    "npm",
+    [
+      "pack",
+      repositoryRoot,
+      "--ignore-scripts",
+      "--json",
+      "--pack-destination",
+      packRoot,
+      "--cache",
+      npmCache,
+    ],
+    { cwd: repositoryRoot },
+  );
+  const packed = JSON.parse(packOutput)[0];
+  assert.equal(packed.version, expectedVersion);
+  const packedPaths = new Set(packed.files.map(({ path: file }) => file));
+  for (const required of [
+    "bin/design-practice.mjs",
+    "installer/repair.mjs",
+    "installer/update.mjs",
+    "framework/skills/design-check/scripts/run-fast.mjs",
+    "framework/skills/prototype/scripts/render-static-prototype.mjs",
+    "reference-system/packages/css/src/tokens.css",
+  ]) {
+    assert.ok(packedPaths.has(required), `Package is missing ${required}`);
+  }
+
+  const tarball = path.join(packRoot, packed.filename);
+  await command(
+    "npm",
+    [
+      "install",
+      "--offline",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--cache",
+      npmCache,
+      "--prefix",
+      consumerRoot,
+      tarball,
+    ],
+    { cwd: temporaryRoot },
+  );
+  const packageRoot = path.join(
+    consumerRoot,
+    "node_modules",
+    "design-practice-framework",
+  );
+  const cli = path.join(packageRoot, "bin", "design-practice.mjs");
+  assert.equal(
+    (await command(process.execPath, [cli, "version"], { cwd: consumerRoot }))
+      .stdout.trim(),
+    expectedVersion,
+  );
+  await command(
+    process.execPath,
+    [
+      cli,
+      "setup",
+      workspaceRoot,
+      "--name",
+      "Campaign Studio",
+      "--id",
+      "campaign-studio",
+    ],
+    { cwd: consumerRoot },
+  );
+  await command(process.execPath, [cli, "doctor", workspaceRoot], {
+    cwd: consumerRoot,
+  });
+  const fastCheck = path.join(
+    workspaceRoot,
+    ".skills",
+    "design-check",
+    "scripts",
+    "run-fast.mjs",
+  );
+  const { stdout: checkOutput } = await command(
+    process.execPath,
+    [fastCheck, "--root", workspaceRoot],
+    { cwd: workspaceRoot },
+  );
+  assert.equal(JSON.parse(checkOutput).status, "pass");
+  const lock = parse(
+    await readFile(
+      path.join(workspaceRoot, ".design-framework", "lock.yaml"),
+      "utf8",
+    ),
+  );
+  assert.equal(lock.framework.version, expectedVersion);
+  assert.equal(lock.packages.length, 6);
+  assert.ok(
+    lock.packages.every(({ version }) => version === expectedVersion),
+    "Every installed package must be pinned to the prerelease version.",
+  );
+  await access(
+    path.join(
+      workspaceRoot,
+      "reference-system",
+      "packages",
+      "css",
+      "src",
+      "tokens.css",
+    ),
+  );
+
+  process.stdout.write(
+    `Package smoke test passed: ${packed.filename} (${packed.size} bytes, ${packed.files.length} files)\n`,
+  );
+} finally {
+  await rm(temporaryRoot, { force: true, recursive: true });
+}

@@ -178,6 +178,20 @@ For the first iteration:
 - avoid reserving a public npm name until the product name is settled;
 - validate blank setup and update fixtures before creating a public install command.
 
+The first local prerelease candidate is `0.1.0-alpha.1`. Verify the exact packed
+payload and its behavior in an isolated consumer with:
+
+```sh
+npm run build
+npm run test:package
+```
+
+The prerelease tarball bundles the CLI's small runtime dependencies. The smoke
+test therefore installs fully offline using a temporary npm cache and does not
+write a tarball or installed dependencies into the repository. Publishing
+remains deferred until a private package scope or GitHub release destination is
+selected.
+
 When broader use begins, the source repository should ideally be public so users can inspect the code they are executing. If the framework must remain private, use a private npm scope and authenticated GitHub Releases rather than a public bootstrap that fetches private content.
 
 ## Security Basis

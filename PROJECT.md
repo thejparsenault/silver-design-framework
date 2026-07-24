@@ -46,7 +46,7 @@ Existing-repository adoption is the next milestone, not part of the first vertic
 
 ## Current Phase
 
-build
+validate
 
 ## Agent Access
 
@@ -77,3 +77,4 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 - `BACKLOG.md` — prioritized functionality beyond the first iteration
 - `DECISIONS.md` — accepted and superseded decisions
 - `docs/installer-distribution.md` — installer ownership, hosting, release, and configuration recommendation
+- `docs/mvp-acceptance.md` — requirement-by-requirement first-iteration completion evidence

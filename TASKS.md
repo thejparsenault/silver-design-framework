@@ -62,11 +62,11 @@
   - context: medium
   - notes: Verified blank folder → setup → brand refinement → portable flow revision and Mermaid view → constrained static prototype pinned to that flow → four independent fast checks → recommended next actions without automatic execution.
 
-- [ ] Prepare a private prerelease
+- [x] Prepare a private prerelease
   - type: release
   - priority: medium
   - context: small
-  - notes: Publish only after fixture tests pass. Pin exact version in generated lock state.
+  - notes: Prepared and validated the isolated local tarball candidate at 0.1.0-alpha.1 with exact lock versions. Remote private publication awaits a selected package scope or GitHub release destination.
 
 ## Next Milestone
 

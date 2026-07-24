@@ -1,6 +1,6 @@
 schema: design-practice/skill/v1
 id: flow
-version: 0.1.0-dev
+version: 0.1.0-alpha.1
 summary: Create, render, and revise a portable product or component behavior flow.
 context_budget: medium
 requires:

@@ -1,6 +1,6 @@
 schema: design-practice/skill/v1
 id: prototype
-version: 0.1.0-dev
+version: 0.1.0-alpha.1
 summary: Create or revise a prototype under an explicit constraint profile.
 context_budget: medium
 requires:

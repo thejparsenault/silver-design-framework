@@ -1,40 +1,40 @@
 schema: design-practice/lock/v1
 framework:
-  version: 0.1.0-dev
+  version: 0.1.0-alpha.1
   source:
     type: local
     reference: framework-development-fixture
 packages:
   - id: brand
     type: skill
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:482f8f22de5fd8ca4ffdb8d2cc0e3698dddedc5b24ebe0ac4fd5f88d813f9ba6
+    integrity: sha256:7bbfa5695c355eed68bb8fefa24f8581d11966b207a4eaf53ce1be789569d953
   - id: theme
     type: skill
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:e0a4a6b546c2fe6253e21ff15dc8e1401fbae7b5e53877871332c87a5ad58e9d
+    integrity: sha256:5c520a919b01f8060d33162fee67854a389b4786a4804d4f0f2dfaa13d9a1e96
   - id: flow
     type: skill
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:c9ca6debd77ab97c6f6ef323bd5b8346d2d165b018169488a6b4a18e3dedb968
+    integrity: sha256:5acc6e6f817c895dcbdc778fe014fad99b5bbfe10a895236d9c6764d05870de9
   - id: prototype
     type: skill
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:544c0cee730770fb9ec3a7120e82bc6b0173fc167d33d7d235f93eab5174c085
+    integrity: sha256:3d4b24671f3c5e56bc4e5500d7150f81f9763582e85acba16542abf47476649a
   - id: design-check
     type: skill
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: framework-managed
-    integrity: sha256:bde9b3fb09bd2eff18352c35387650407cffea06b2302aa3401cf680977562dd
+    integrity: sha256:364eba26be2d2dc219cec289ce5f5568577da66a2f053faf290c537fdcf27743
   - id: reference-system
     type: reference-system
-    version: 0.1.0-dev
+    version: 0.1.0-alpha.1
     ownership: copied-and-owned
-    integrity: sha256:8335c1a14695911ca0422181650c5b4607781f026c8e54a1655ad524f053325b
+    integrity: sha256:5d9bbf0aaa3b2acae294af16ac665e77c4cc3eca1e0a2a671675a7236bebec94
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer

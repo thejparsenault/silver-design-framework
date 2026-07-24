@@ -1,6 +1,6 @@
 {
   "name": "design-practice-framework",
-  "version": "0.1.0-dev",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "description": "Agent-neutral framework for design practice across codebases and tools",
   "type": "module",
@@ -25,7 +25,8 @@
     "validate:contracts": "python3 framework/scripts/validate_contracts.py",
     "build": "npm run validate:contracts && npm run build:reference && npm test",
     "build:reference": "node reference-system/packages/tokens/src/build.mjs",
-    "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs"
+    "test": "node --test installer/tests/*.test.mjs framework/tests/*.test.mjs",
+    "test:package": "node installer/tests/package-smoke.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -37,5 +38,6 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "yaml": "^2.9.0"
-  }
+  },
+  "bundleDependencies": true
 }
