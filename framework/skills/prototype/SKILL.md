@@ -12,7 +12,7 @@ otherwise.
 ## Workflow
 
 1. Read `design/INDEX.md` and `design/manifest.yaml`. Load only the product,
-   brand, system, component, research, or testing artifacts needed for the
+   brand, flow, system, component, research, or testing artifacts needed for the
    request.
 2. Select the workspace’s existing implementation profile for this output
    class. Reuse it unless the requested output is materially different.
@@ -29,23 +29,28 @@ otherwise.
    node .skills/prototype/scripts/init-prototype.mjs \
      --id campaign-flow \
      --title "Campaign flow" \
-     --question "Can a marketer understand the setup sequence?"
+     --question "Can a marketer understand the setup sequence?" \
+     --flow-ref campaign-setup@2=design/flows/campaign-setup/flow.json
    ```
 
    For `partial`, also pass `--profile partial`, one or more `--suspend`
    values, an `--override-reason`, and `--confirm-override`.
-5. Define the question the prototype should answer, its essential states, and
+5. If the prototype uses a portable flow, record its ID, path, and exact
+   revision. Treat the flow as an input rather than a lifecycle gate. Report
+   later divergence and recommend reconciliation; never silently rewrite one
+   from the other.
+6. Define the question the prototype should answer, its essential states, and
    the shortest useful interaction path. Do not impose a lifecycle stage.
-6. Build inside a declared prototype root. Under `constrained`, reuse semantic
+7. Build inside a declared prototype root. Under `constrained`, reuse semantic
    styles and approved components while allowing local component experiments.
    Under `partial`, suspend only the recorded constraints. Under `suspended`,
    retain semantic HTML, accessibility, privacy, and runtime safety.
-7. When revising from feedback, distinguish observations, interpretations, and
+8. When revising from feedback, distinguish observations, interpretations, and
    accepted changes. Preserve useful prior behavior unless the feedback
    invalidates it.
-8. Run available static and browser checks appropriate to the selected profile.
+9. Run available static and browser checks appropriate to the selected profile.
    Report missing coverage as `not-run`.
-9. Recommend whether to refine, test, retain, discard, or deliberately promote
+10. Recommend whether to refine, test, retain, discard, or deliberately promote
    the work. Never promote or delete it automatically.
 
 ## Boundaries

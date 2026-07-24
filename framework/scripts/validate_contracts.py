@@ -153,6 +153,16 @@ def main() -> int:
     )
     valid_contract_examples += 1
 
+    flow_contract_path = (
+        ROOT / "fixtures" / "contracts" / "valid" / "flow-campaign-setup.json"
+    )
+    validate(
+        load_json(flow_contract_path),
+        "flow.schema.json",
+        str(flow_contract_path.relative_to(ROOT)),
+    )
+    valid_contract_examples += 1
+
     check_result = load_json(
         ROOT
         / "fixtures"

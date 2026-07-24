@@ -72,6 +72,12 @@ implementation_profiles:
     adapters:
       - vanilla-css
 
+flow_policy:
+  roots:
+    - design/flows
+  default_view: mermaid
+  require_revision_links: true
+
 prototype_policy:
   roots:
     - prototypes
@@ -89,6 +95,7 @@ checks:
   policy_profile: prototype
   enabled:
     - artifact-schema
+    - flow-structure
     - semantic-style
     - prototype-policy
     - accessibility
@@ -96,6 +103,7 @@ checks:
   suites:
     fast:
       - artifact-schema
+      - flow-structure
       - semantic-style
       - prototype-policy
     browser:
@@ -103,6 +111,7 @@ checks:
       - responsive
     full:
       - artifact-schema
+      - flow-structure
       - semantic-style
       - prototype-policy
       - accessibility

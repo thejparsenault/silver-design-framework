@@ -69,6 +69,7 @@
         {
           "enum": [
             "repository",
+            "flow",
             "prototype",
             "production-source",
             "canonical-artifact",

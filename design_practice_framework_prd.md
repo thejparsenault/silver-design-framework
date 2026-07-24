@@ -18,6 +18,7 @@ The portable design system already prototyped in this repository becomes the **r
 Design work becomes unreliable when:
 
 - brand, audience, voice, component, and style rules are scattered or implicit;
+- user journeys and component behavior are trapped in screenshots, canvases, or prose that prototypes cannot reliably consume;
 - an agent cannot tell which artifact or external tool is authoritative;
 - every repository exposes a different set of workflows and tool integrations;
 - generated interfaces invent raw values, variants, or components;
@@ -34,13 +35,14 @@ The framework must preserve flexibility while making constraints, authority, per
 1. **Meta-system, not universal design system.** The framework manages a project's design practice and design-system sources of truth.
 2. **Local context, shared protocols.** Skills live at the lowest useful repository scope; cross-project consistency comes from contracts.
 3. **Project ownership.** Installed files are committed, editable, and updated through reviewable diffs.
-4. **Task-level interfaces.** Designers invoke recognizable tasks such as brand, theme, prototype, and check—not internal micro-steps.
+4. **Task-level interfaces.** Designers invoke recognizable tasks such as brand, theme, flow, prototype, and check—not internal micro-steps.
 5. **Explicit authority.** Every canonical artifact declares its scope and authority; external tools never overwrite silently.
 6. **Constraints by default.** Production work uses semantic styles and approved components. Prototype exceptions must be explicit.
 7. **Recommendations over ceremony.** The framework can recommend a lifecycle and next actions but does not enforce process order.
 8. **Deterministic enforcement.** Compliance checks are independent programs that humans, agents, hooks, and CI can run.
 9. **Provider neutrality.** Skills request capabilities; users choose providers and permission ceilings.
 10. **Stable defaults.** Once a workspace chooses an implementation profile, skills reuse it until the user deliberately adds or changes one.
+11. **Portable design intent.** Flows have a tool-neutral structured representation; visual canvases and diagrams are interchangeable views or explicitly declared authorities.
 
 ## 4. Scope Model
 
@@ -103,6 +105,7 @@ design/
   voice.md
   design-principles.md
   system/
+  flows/
   research/
   testing/
   decisions/
@@ -120,6 +123,25 @@ Narrative artifacts use Markdown with frontmatter declaring:
 - authority or external source where applicable.
 
 Machine-enforced contracts use JSON or YAML. Narrative files should normally stay below roughly 2,000 tokens, warn around 3,000, and split by consumption pattern.
+
+### 5.1 Flow Artifacts
+
+A flow is a portable directed graph that describes user intent and observable behavior before committing to a particular prototype or design tool. The minimal contract records:
+
+- identity, purpose, scope, status, and revision;
+- one or more actors and desired outcomes;
+- nodes for screens, component states, user or system actions, decisions, and terminal outcomes;
+- transitions with triggers and optional conditions;
+- references to canonical artifacts, research, existing components, prototype files, or external design-tool objects;
+- optional annotations for unresolved questions, requirements, and edge cases.
+
+Flows may be product-scoped under `design/flows/`, prototype-scoped beside a prototype, or component-scoped when they describe one component's behavior. A product task flow normally informs a prototype or product composition; a component behavior flow may inform a component contract. The framework does not collapse those two levels.
+
+The structured flow is the default portable representation. Mermaid, HTML, SVG, Figma, Paper, and similar canvases are views supplied by adapters. A workspace may instead declare an external tool authoritative, but it still keeps a pinned local representation under the normal synchronization rules.
+
+Flow editing is non-destructive and iterative. A designer can generate, inspect, and tweak a flow before choosing any implementation recipe. Prototype and future component skills accept flow references as inputs and record the flow revision they used. Later flow changes produce a visible stale-reference notification or proposed update; they never silently rewrite derived work.
+
+Deterministic flow checks cover schema validity, unique nodes, valid transitions, reachability, start and terminal coverage, and unresolved references. They do not judge whether the product experience is good.
 
 ## 6. Skill Model
 
@@ -148,6 +170,7 @@ Initial task-level skills:
 
 - **brand** — define or refine audience-facing brand guidance;
 - **theme** — propose, render, apply, and validate visual expression;
+- **flow** — generate, render, and revise a tool-neutral user, interaction, or component behavior flow;
 - **prototype** — create or revise a prototype, including revision from accepted feedback;
 - **design-check** — orchestrate enabled independent checkers and summarize findings.
 
@@ -201,6 +224,8 @@ No profile may be inferred from the work. `partial` and `suspended` require an e
 Even a suspended prototype retains baseline semantic HTML, accessibility, privacy, and runtime-safety checks. Lo-fi and wireframe work uses a predefined restricted subset rather than inventing visual values.
 
 Prototype state lives in a lightweight `prototype.yaml`. Actual changes to canonical design-system artifacts are recorded in the normal decision log. Promotion is explicit and normally regenerates or rebuilds production work against production contracts instead of moving prototype code wholesale.
+
+A prototype may reference one or more flows and the exact revisions used. The flow remains an input, not a lifecycle gate: designers may prototype without one, and they may revise either artifact first. The framework reports divergence and recommends reconciliation rather than enforcing an order.
 
 ## 9. Design-System and Component Policy
 
@@ -307,6 +332,7 @@ workspace/
     voice.md
     design-principles.md
     system/
+    flows/
     research/
     testing/
     decisions/
@@ -359,9 +385,9 @@ Research and testing do not silently rewrite canonical artifacts. The prototype 
 
 ### 15.1 Included
 
-1. V1 manifest, artifact, skill, tool-permission, lock, and finding contracts.
+1. V1 manifest, artifact, flow, prototype, skill, tool-permission, lock, and finding contracts.
 2. Blank-folder setup/update/doctor flow.
-3. Project-local installation of the `brand`, `theme`, `prototype`, and `design-check` skills.
+3. Project-local installation of the `brand`, `theme`, `flow`, `prototype`, and `design-check` skills.
 4. An editable HTML/CSS-first reference system.
 5. Static HTML rendering and the fast check suite.
 6. Generated agent discovery pointers for at least one reference agent, backed by canonical agent-neutral packages.
@@ -391,10 +417,11 @@ The first iteration is successful when:
 3. An update from one fixture release to the next produces a reviewable diff and preserves project-owned edits.
 4. The installed manifest and index make all canonical artifacts discoverable.
 5. Skills are available only within the workspace and declare their capabilities and permissions.
-6. A designer can refine brand guidance, optionally apply a theme proposal, and render a constrained prototype using the reference system.
+6. A designer can refine brand guidance, optionally apply a theme proposal, generate and revise a portable flow, and render a constrained prototype based on that flow using the reference system.
 7. The fast suite rejects raw visual values and malformed framework artifacts with normalized findings.
 8. An explicit partial or suspended prototype profile is recorded and never inferred.
 9. The entire flow works without Figma, a browser MCP, or a global skill installation.
+10. The flow source can be rendered through a bundled text-based view, and derived work records the flow revision it used without being silently rewritten after changes.
 
 ## 17. Proposed Framework Repository Shape
 

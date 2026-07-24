@@ -11,6 +11,7 @@ const schemaNames = [
   "artifact.schema.json",
   "check-result.schema.json",
   "finding.schema.json",
+  "flow.schema.json",
   "lock.schema.json",
   "manifest.schema.json",
   "permission-policy.schema.json",

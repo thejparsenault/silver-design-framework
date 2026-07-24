@@ -12,6 +12,7 @@ Schema is the validation language.
 | `artifact.schema.json` | Frontmatter for narrative Markdown artifacts |
 | `skill.schema.json` | Capabilities, access, effects, and outputs for a project-local skill |
 | `permission-policy.schema.json` | One layer in the permission intersection |
+| `flow.schema.json` | Portable user, interaction, or component behavior graph |
 | `prototype.schema.json` | Prototype identity, state, and explicit constraint profile |
 | `lock.schema.json` | Pinned framework release and installed-file ownership state |
 | `finding.schema.json` | One normalized conformance finding |

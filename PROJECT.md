@@ -26,7 +26,7 @@ A designer can:
 1. Run a setup/update tool in a blank folder or existing repository.
 2. Establish discoverable sources of truth for brand, product, voice, design principles, system rules, research, and decisions.
 3. Install only the skills and deterministic checks appropriate to that repository.
-4. Use agent-supported workflows for brand definition, ideation, theming, prototyping, testing, refinement, and eventual production work.
+4. Use agent-supported workflows for brand definition, ideation, flow authoring, theming, prototyping, testing, refinement, and eventual production work.
 5. Use configured tools such as Figma or a browser through provider-neutral capabilities and explicit permissions.
 6. Constrain generated work to approved semantic styles and components, with explicit prototype-only suspension when desired.
 7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
@@ -37,9 +37,9 @@ Validate one coherent blank-workspace path:
 
 - define the manifest, artifact, skill, tool-permission, and check-result contracts;
 - build a setup/update CLI that installs project-local framework files from a pinned release;
-- install a small initial skill set for brand, theme, prototype, and conformance work;
+- install a small initial skill set for brand, theme, flow, prototype, and conformance work;
 - instantiate an editable reference design system and static HTML example;
-- demonstrate the flow from setup through brand/theme refinement, prototype rendering, and static checks;
+- demonstrate setup through brand/theme refinement, tool-neutral flow authoring, prototype rendering from that flow, and static checks;
 - produce recommended next actions without starting them automatically.
 
 Existing-repository adoption is the next milestone, not part of the first vertical slice.

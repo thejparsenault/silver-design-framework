@@ -194,6 +194,7 @@
             "research",
             "testing",
             "decision-log",
+            "flow",
             "prototype-index",
             "codebase-binding",
             "permission-policy",
@@ -211,6 +212,7 @@
         {
           "enum": [
             "repository",
+            "flow",
             "prototype",
             "production-source",
             "canonical-artifact",

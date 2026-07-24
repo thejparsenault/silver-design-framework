@@ -189,3 +189,9 @@ Status: Accepted
 Decision: The reference Tailwind v4 adapter exposes semantic color roles and approved structural spacing, radius, type-size, and shadow scales. It does not expose primitive color ramps as utility names.
 Reason: Tailwind is implementation syntax, not an exception to the semantic-style boundary. Structural utilities remain practical, while primitive visual utilities would make it easy for production work to bypass design intent.
 Status: Accepted
+
+## 2026-07-23 - Portable flows separate design intent from its views
+
+Decision: Represent user, interaction, and component behavior flows as strict tool-neutral graphs with stable node and transition IDs and an integer revision. The first local representation is `flow.json` under a manifest-declared flow root; a bundled renderer produces a revision-stamped Mermaid view. Prototypes and future component contracts pin the flow ID, path, and revision they used. External canvases remain optional adapters or explicitly declared authorities and never silently rewrite derived work.
+Reason: Designers need to generate and tweak flows before choosing a prototype or component implementation, while agents need a compact, inspectable model they can reliably consume. Separating the model from its views avoids coupling the framework to one canvas and makes divergence visible without enforcing a design lifecycle.
+Status: Accepted

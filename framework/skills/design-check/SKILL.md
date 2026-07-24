@@ -1,6 +1,6 @@
 ---
 name: design-check
-description: Run and summarize the workspace’s independent design-conformance checks without changing the work being checked. Use when a user asks to validate design standards, inspect semantic token use, check prototype policy, test accessibility or responsive behavior, review browser coverage, or understand whether an implementation conforms.
+description: Run and summarize the workspace’s independent design-conformance checks without changing the work being checked. Use when a user asks to validate design standards, inspect flow structure or semantic token use, check prototype policy, test accessibility or responsive behavior, review browser coverage, or understand whether an implementation conforms.
 ---
 
 # Check design conformance

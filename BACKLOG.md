@@ -99,6 +99,9 @@ This backlog contains functionality intentionally excluded from the first blank-
 - [ ] Figma write adapter
   - Push validated tokens or components with explicit external-write approval.
 
+- [ ] Flow canvas round-trip adapters
+  - Render and reconcile portable flow artifacts with Figma, FigJam, Paper, and text-based local design tools while preserving stable node identities and explicit authority.
+
 - [ ] Multiple Figma provider profiles
   - Support different MCP providers optimized for library generation, semantic extraction, or interactive editing.
 
@@ -120,13 +123,13 @@ This backlog contains functionality intentionally excluded from the first blank-
   - Clarify audience, jobs, outcomes, constraints, and product-specific tone.
 
 - [ ] Ideation
-  - Generate screen, flow, and interaction alternatives grounded in canonical artifacts.
+  - Generate screen and interaction alternatives grounded in canonical artifacts and optionally materialize selected alternatives as portable flows.
 
 - [ ] Component design
   - Inspect catalog, enumerate states, explore anatomy, prototype behavior, propose contracts, and document accessibility.
 
-- [ ] Flow and state enumeration
-  - Identify loading, empty, error, success, permission, offline, and edge-case states.
+- [ ] Advanced flow and state coverage
+  - Extend the first flow contract with reusable state libraries, loading, empty, error, success, permission, offline, concurrency, recovery, and cross-channel edge cases.
 
 - [ ] Research planning
   - Create questions, methods, participant criteria, scripts, and sanitized evidence plans.

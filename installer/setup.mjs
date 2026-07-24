@@ -35,6 +35,7 @@ const seededTemplates = [
   "design/voice.md",
   "design/design-principles.md",
   "design/system/README.md",
+  "design/flows/README.md",
   "design/decisions/README.md",
   "design/permissions.yaml",
   "prototypes/README.md",
@@ -229,6 +230,7 @@ export async function setupWorkspace(options = {}) {
     preserved,
     recommendedNextActions: [
       "Review design/product.md and design/brand.md.",
+      "Create or refine a portable flow before prototyping when useful.",
       "Run design-practice doctor to verify the workspace.",
     ],
   };

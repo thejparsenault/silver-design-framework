@@ -68,3 +68,29 @@ test("prototype initializer records an explicit partial override", async (t) => 
     true,
   );
 });
+
+test("prototype initializer records exact portable flow revisions", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const { metadata, outputPath } = await initPrototype({
+    root,
+    id: "campaign-flow",
+    title: "Campaign flow",
+    flowRefs: [
+      "campaign-setup@2=design/flows/campaign-setup/flow.json",
+    ],
+    date: "2026-07-23",
+  });
+
+  assert.deepEqual(metadata.flow_refs, [
+    {
+      id: "campaign-setup",
+      path: "design/flows/campaign-setup/flow.json",
+      revision: 2,
+    },
+  ]);
+  assert.match(await readFile(outputPath, "utf8"), /revision: 2/);
+  assert.equal(
+    (await validateSchema("prototype.schema.json", metadata)).valid,
+    true,
+  );
+});

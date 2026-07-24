@@ -14,6 +14,7 @@ Usage:
 
 Options:
   --question <question>
+  --flow-ref <reference>         Repeat; <id>@<revision>=<workspace-path>
   --prototype-root <path>       Defaults to prototypes
   --profile <profile>           constrained, partial, or suspended
   --suspend <constraint>        Repeat for a partial profile
@@ -47,6 +48,16 @@ function renderMetadata(metadata) {
   if (metadata.question) {
     lines.push(`question: ${quote(metadata.question)}`);
   }
+  if (metadata.flow_refs) {
+    lines.push("flow_refs:");
+    for (const flow of metadata.flow_refs) {
+      lines.push(
+        `  - id: ${flow.id}`,
+        `    path: ${quote(flow.path)}`,
+        `    revision: ${flow.revision}`,
+      );
+    }
+  }
   if (metadata.suspended_constraints) {
     lines.push("suspended_constraints:");
     for (const constraint of metadata.suspended_constraints) {
@@ -60,6 +71,22 @@ function renderMetadata(metadata) {
   return lines.join("\n");
 }
 
+function parseFlowRef(value) {
+  const match = value.match(
+    /^([a-z][a-z0-9]*(?:-[a-z0-9]+)*)@([1-9][0-9]*)=(.+)$/,
+  );
+  if (!match) {
+    throw new Error(
+      "Flow references must use <id>@<revision>=<workspace-path>.",
+    );
+  }
+  return {
+    id: match[1],
+    revision: Number(match[2]),
+    path: safeRelativePath(match[3], "Flow reference path"),
+  };
+}
+
 export async function initPrototype(options) {
   const root = path.resolve(options.root ?? process.cwd());
   const id = options.id;
@@ -70,6 +97,7 @@ export async function initPrototype(options) {
     "Prototype root",
   );
   const suspended = [...new Set(options.suspendedConstraints ?? [])];
+  const flowRefs = (options.flowRefs ?? []).map(parseFlowRef);
 
   if (!idPattern.test(id ?? "")) {
     throw new Error("Prototype id must be lowercase kebab-case.");
@@ -128,6 +156,7 @@ export async function initPrototype(options) {
     status: "active",
     constraint_profile: profile,
     ...(options.question?.trim() ? { question: options.question.trim() } : {}),
+    ...(flowRefs.length > 0 ? { flow_refs: flowRefs } : {}),
     ...(profile === "partial"
       ? { suspended_constraints: suspended }
       : profile === "suspended"
@@ -154,7 +183,7 @@ export async function initPrototype(options) {
 }
 
 function parseArguments(args) {
-  const values = { suspendedConstraints: [] };
+  const values = { flowRefs: [], suspendedConstraints: [] };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--confirm-override") {
@@ -168,6 +197,8 @@ function parseArguments(args) {
     const key = argument.slice(2);
     if (key === "suspend") {
       values.suspendedConstraints.push(next);
+    } else if (key === "flow-ref") {
+      values.flowRefs.push(next);
     } else {
       const mapping = {
         date: "date",

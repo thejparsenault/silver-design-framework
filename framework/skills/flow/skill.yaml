@@ -1,0 +1,82 @@
+schema: design-practice/skill/v1
+id: flow
+version: 0.1.0-dev
+summary: Create, render, and revise a portable product or component behavior flow.
+context_budget: medium
+requires:
+  artifacts:
+    - kind: product
+      required: true
+      role: canonical
+    - kind: flow
+      required: false
+    - kind: component-catalog
+      required: false
+      role: canonical
+    - kind: research
+      required: false
+    - kind: testing
+      required: false
+  capabilities:
+    - repository
+    - flow
+    - design-file
+access:
+  read:
+    - scope: product
+      paths:
+        - design/**
+    - scope: prototype
+      paths:
+        - prototypes/**
+  write:
+    - scope: product
+      paths:
+        - design/flows/**
+    - scope: prototype
+      paths:
+        - prototypes/**/flows/**
+produces:
+  - kind: flow
+    scope: product
+    path_pattern: design/flows/*/flow.json
+  - kind: flow
+    scope: prototype
+    path_pattern: prototypes/**/flows/*/flow.json
+external_effects:
+  - read-external
+  - modify-external
+requested_permissions:
+  - capability: repository
+    actions:
+      - read
+    paths:
+      - design/**
+      - prototypes/**
+  - capability: flow
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/flows/**
+      - prototypes/**/flows/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - create
+      - update
+scripts:
+  - id: init-flow
+    path: scripts/init-flow.mjs
+    purpose: Create a minimal portable flow without overwriting existing work.
+  - id: render-flow
+    path: scripts/render-flow.mjs
+    purpose: Render a portable flow as a Mermaid text view.
+  - id: check-flow
+    path: scripts/check-flow.mjs
+    purpose: Check graph references, reachability, decisions, and outcomes.
+recommend_after:
+  - flow-structure
+  - prototype

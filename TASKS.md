@@ -50,11 +50,17 @@
   - context: medium
   - notes: Added validated `brand`, `theme`, `prototype`, and `design-check` packages. The prototype skill owns its deterministic metadata initializer and explicit-override guard.
 
+- [x] Define and implement portable flow artifacts
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Added a strict JSON graph contract, project-local `flow` skill, dependency-free initializer, revision-stamped Mermaid renderer, normalized structural checker, and exact revision references for prototypes and future component contracts.
+
 - [ ] Validate the first vertical slice
   - type: test
   - priority: high
   - context: medium
-  - notes: Blank folder → setup → brand/theme refinement → constrained static prototype → static conformance result → recommended next actions.
+  - notes: Blank folder → setup → brand/theme refinement → portable flow → constrained static prototype based on the flow → static conformance result → recommended next actions.
 
 - [ ] Prepare a private prerelease
   - type: release

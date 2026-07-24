@@ -11,6 +11,8 @@ requires:
     - kind: design-system
       required: true
       role: canonical
+    - kind: flow
+      required: false
   capabilities:
     - repository
     - browser

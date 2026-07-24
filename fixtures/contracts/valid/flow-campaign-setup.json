@@ -1,0 +1,90 @@
+{
+  "schema": "design-practice/flow/v1",
+  "id": "campaign-setup",
+  "title": "Campaign setup",
+  "kind": "user-flow",
+  "scope": "product",
+  "status": "active",
+  "revision": 2,
+  "purpose": "Describe the shortest understandable path to a reviewable campaign.",
+  "actors": [
+    {
+      "id": "marketer",
+      "name": "Marketer"
+    }
+  ],
+  "desired_outcomes": [
+    "A valid campaign is ready for review"
+  ],
+  "start_nodes": [
+    "campaign-details"
+  ],
+  "nodes": [
+    {
+      "id": "campaign-details",
+      "type": "screen",
+      "title": "Enter campaign details",
+      "actor": "marketer"
+    },
+    {
+      "id": "has-audience",
+      "type": "decision",
+      "title": "Is an audience selected?",
+      "actor": "marketer"
+    },
+    {
+      "id": "select-audience",
+      "type": "screen",
+      "title": "Select an audience",
+      "actor": "marketer"
+    },
+    {
+      "id": "ready-for-review",
+      "type": "outcome",
+      "title": "Campaign ready for review",
+      "actor": "marketer"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "check-audience",
+      "from": "campaign-details",
+      "to": "has-audience",
+      "trigger": "Continue",
+      "actor": "marketer"
+    },
+    {
+      "id": "audience-selected",
+      "from": "has-audience",
+      "to": "ready-for-review",
+      "condition": "Audience selected",
+      "actor": "marketer"
+    },
+    {
+      "id": "audience-missing",
+      "from": "has-audience",
+      "to": "select-audience",
+      "condition": "No audience selected",
+      "actor": "marketer"
+    },
+    {
+      "id": "audience-added",
+      "from": "select-audience",
+      "to": "ready-for-review",
+      "trigger": "Select audience",
+      "actor": "marketer"
+    }
+  ],
+  "references": [
+    {
+      "kind": "artifact",
+      "target": "product",
+      "path": "design/product.md"
+    }
+  ],
+  "open_questions": [
+    "Can an audience be created without leaving this flow?"
+  ],
+  "created": "2026-07-23",
+  "updated": "2026-07-23"
+}

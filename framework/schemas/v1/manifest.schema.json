@@ -8,6 +8,7 @@
     "schema",
     "workspace",
     "artifacts",
+    "flow_policy",
     "prototype_policy",
     "checks"
   ],
@@ -83,6 +84,27 @@
         "$ref": "#/$defs/implementationProfile"
       },
       "default": {}
+    },
+    "flow_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots", "default_view", "require_revision_links"],
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "default_view": {
+          "const": "mermaid"
+        },
+        "require_revision_links": {
+          "const": true
+        }
+      }
     },
     "prototype_policy": {
       "type": "object",
@@ -213,6 +235,7 @@
             "research",
             "testing",
             "decision-log",
+            "flow",
             "prototype-index",
             "codebase-binding",
             "permission-policy",

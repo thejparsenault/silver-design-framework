@@ -6,6 +6,15 @@ rules:
     actions:
       - read
     decision: allow
+  - capability: flow
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/flows/**
+      - prototypes/**/flows/**
+    decision: allow
   - capability: prototype
     actions:
       - create

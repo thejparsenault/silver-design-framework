@@ -14,7 +14,10 @@ Workspace: **Example Product** (`product-workspace`)
 | Decision log | canonical | active | [decisions/README.md](decisions/README.md) |
 | Permission policy | canonical | active | [permissions.yaml](permissions.yaml) |
 
-Prototype root: `prototypes/`  
+Flow root: `design/flows/`
+Default flow view: `mermaid`
+
+Prototype root: `prototypes/`
 Default constraint profile: `constrained`
 
 Installed project skills: none

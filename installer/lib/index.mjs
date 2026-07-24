@@ -22,6 +22,7 @@ export function renderIndex(
     const link = relativeLink(artifact.path);
     return `| ${label} | ${artifact.role} | ${artifact.status} | [${link}](${link}) |`;
   });
+  const flowRoot = manifest.flow_policy.roots[0];
   const prototypeRoot = manifest.prototype_policy.roots[0];
 
   return [
@@ -35,7 +36,10 @@ export function renderIndex(
     "| --- | --- | --- | --- |",
     ...rows,
     "",
-    `Prototype root: \`${prototypeRoot}/\`  `,
+    `Flow root: \`${flowRoot}/\``,
+    `Default flow view: \`${manifest.flow_policy.default_view}\``,
+    "",
+    `Prototype root: \`${prototypeRoot}/\``,
     `Default constraint profile: \`${manifest.prototype_policy.default_profile}\``,
     "",
     skillIds.length > 0

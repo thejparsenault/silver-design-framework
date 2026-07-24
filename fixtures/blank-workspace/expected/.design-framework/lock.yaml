@@ -9,4 +9,4 @@ managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:e56f9e4e9cb0471dc0e2414f0eebe60c39d304edfe05cc3e5fe1096f5df3d7ba
+    base_integrity: sha256:104c37f6316e5ab9ce0012af506d9473b5319494c1368f06bafedcda812c5f8c

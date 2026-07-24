@@ -2,9 +2,22 @@
 
 ## Current Focus
 
-Bundle the first project-local skills and editable reference system into the blank-workspace payload. The skill sources and contracts are now implemented and validated.
+Bundle the complete initial skill set and editable reference system into the blank-workspace payload. The portable flow milestone is implemented and validated.
 
 ## Recent Progress
+
+- 2026-07-23: Portable flow implementation
+  - Added the strict v1 JSON graph contract for user, interaction, and component behavior flows.
+  - Added a validated project-local `flow` skill with dependency-free initialization, structural checking, and revision-stamped Mermaid rendering.
+  - Added stable actor, node, and transition identifiers plus reachability, decision, outcome, and reference checks.
+  - Added manifest-declared flow roots, default flow views, repository permissions, blank-workspace documentation, and fast-suite coverage.
+  - Extended prototype metadata and initialization to pin exact flow IDs, paths, and revisions without making flows mandatory.
+
+- 2026-07-23: Portable flow requirement
+  - Added tool-neutral flows as structured, revisable design inputs for prototypes, product compositions, and component behavior.
+  - Distinguished the portable flow model from generated Mermaid, HTML, Figma, Paper, or other visual views.
+  - Required derived work to record the flow revision it used while keeping process order optional and preventing silent rewrites.
+  - Added a minimal flow contract, skill, renderer, and structural checks to the first vertical slice; deferred rich canvas round trips and advanced state libraries.
 
 - 2026-07-23: First project-local skill packages
   - Added concise, agent-readable `brand`, `theme`, `prototype`, and `design-check` packages with machine-readable authority contracts.

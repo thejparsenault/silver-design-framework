@@ -56,6 +56,14 @@ _Avoid_: Default design system when implying it must remain unchanged
 A non-authoritative, open-ended design artifact that may be revised, promoted, retained, or discarded while remaining subject to its explicitly selected constraint profile.
 _Avoid_: Throwaway, production candidate
 
+**Flow**:
+A tool-neutral directed graph of user intent, interface or component states, decisions, actions, and transitions. A flow is an editable design input that can be rendered into different tools and used as the basis for prototypes, product compositions, or component behavior contracts.
+_Avoid_: Diagram when referring to the underlying design model
+
+**Flow view**:
+A generated or synchronized visual representation of a flow in Mermaid, HTML, Figma, Paper, or another supported tool. A view may be edited through a capable adapter, but it is not automatically authoritative.
+_Avoid_: Flow when referring only to one rendering
+
 **Constraint profile**:
 The explicit degree to which a prototype uses the active design system: `constrained`, `partial`, or `suspended`.
 _Avoid_: Mode, theme

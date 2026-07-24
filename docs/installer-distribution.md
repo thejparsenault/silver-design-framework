@@ -100,7 +100,7 @@ Supported responsibilities:
 
 The CLI must not:
 
-- run brand, theme, research, or prototype exercises;
+- run brand, theme, flow, research, or prototype exercises;
 - silently change production source;
 - install workflow skills globally;
 - select a new application stack after a workspace profile exists;

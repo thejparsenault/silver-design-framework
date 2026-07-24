@@ -4,5 +4,9 @@ title: Campaign flow
 status: active
 constraint_profile: constrained
 question: Can a marketer understand the setup sequence?
+flow_refs:
+  - id: campaign-setup
+    path: design/flows/campaign-setup/flow.json
+    revision: 2
 created: 2026-07-23
 updated: 2026-07-23

@@ -14,6 +14,8 @@ requires:
     - kind: component-catalog
       required: false
       role: canonical
+    - kind: flow
+      required: false
     - kind: research
       required: false
     - kind: testing
@@ -64,6 +66,7 @@ scripts:
     path: scripts/init-prototype.mjs
     purpose: Create prototype metadata while enforcing explicit constraint overrides.
 recommend_after:
+  - flow-structure
   - prototype-policy
   - semantic-style
   - accessibility

@@ -35,5 +35,6 @@ unexecuted check as passed.
 - `full` is the union of enabled fast and browser checks.
 
 Suites select checkers; they do not merge checker implementations. This keeps
-schema, semantic-style, component-contract, prototype-policy, browser,
-accessibility, responsive, and freshness checks replaceable and debuggable.
+schema, flow-structure, semantic-style, component-contract, prototype-policy,
+browser, accessibility, responsive, and freshness checks replaceable and
+debuggable.
