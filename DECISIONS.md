@@ -236,3 +236,41 @@ not require compatibility aliases. A future visual identity can use a simple
 written name.
 
 Status: Accepted
+
+## 2026-07-25 - Every general skill has a portable baseline
+
+Decision: Every generally applicable Silver skill must perform its core task
+through a bundled project-local provider using repository files and packaged
+scripts. Portable artifacts carry accepted meaning; generated local views and
+external tool objects are revision-pinned projections. Prose-first artifacts
+use Markdown with Silver frontmatter, structured contracts use declared JSON or
+YAML, tokens use DTCG JSON, and self-contained semantic HTML is the default
+local visual view. HTML is not a universal canonical format. Inherently
+external or production effects remain explicitly provider- or codebase-bound.
+
+Reason: Designers should be able to use the full practice without installing
+or granting access to a particular hosted tool. Separating portable meaning
+from visual projections keeps skills composable, testable, and provider-neutral
+while still giving visual tasks a common local review surface.
+
+Status: Accepted
+
+## 2026-07-25 - Representation drift uses explicit three-way reconciliation
+
+Decision: Every local or external view binds to an exact portable artifact
+revision and records provider, adapter, mapping, authority, fidelity, and last
+reconciled base. One side is authoritative for an artifact at a time.
+Synchronization compares the shared base, current portable revision, and
+current normalized external snapshot; it emits classified, reviewable change
+proposals and never resolves drift through last-write-wins. Applying a proposal
+requires current revisions, validation, expected integrity, applicable
+acceptance, and permission. Failure or ambiguity leaves accepted work
+unchanged.
+
+Reason: Both an artifact and its Figma or HTML representation can change after
+generation. Defaulting silently to either side would lose work or convert
+presentation details into unintended design requirements. Three-way
+reconciliation preserves provenance and lets designers decide which semantic
+changes belong in which artifact.
+
+Status: Accepted

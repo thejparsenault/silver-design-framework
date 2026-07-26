@@ -51,7 +51,7 @@ export async function renderPresentation({ root = process.cwd(), changeCase, kit
   </style>
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="deck" data-silver-target="presentation" data-case-id="${escapeHtml(change.id)}" data-case-revision="${escapeHtml(change.revision)}" data-kit-id="${escapeHtml(presentationKit.id)}" data-kit-revision="${escapeHtml(presentationKit.revision)}">
+  <main class="deck" data-silver-target="presentation" data-source-id="${escapeHtml(change.id)}" data-source-revision="${escapeHtml(change.revision)}" data-case-id="${escapeHtml(change.id)}" data-case-revision="${escapeHtml(change.revision)}" data-renderer-version="presentation-html@0.3.0" data-assets-revision="r1" data-design-system-revision="${escapeHtml(presentationKit.source_revisions.find(({ kind }) => kind === "design-system")?.revision ?? "unverified")}" data-kit-id="${escapeHtml(presentationKit.id)}" data-kit-revision="${escapeHtml(presentationKit.revision)}">
     <section class="slide"><p class="eyebrow">${escapeHtml(payload.mode)} change case</p><h1>${escapeHtml(change.title)}</h1><p>${escapeHtml(payload.decision_request)}</p></section>
     <section class="slide"><h2>Why change</h2>${list(payload.reasons)}</section>
     <section class="slide"><h2>Before and after</h2><div class="comparison"><article class="card"><h3>Before</h3><p>${escapeHtml(payload.before)}</p></article><article class="card"><h3>After</h3><p>${escapeHtml(payload.after)}</p></article></div></section>

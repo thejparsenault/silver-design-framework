@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: synthesize
-version: 0.2.0
+version: 0.3.0
 summary: Turn sanitized evidence into traceable findings and problem frames.
 context_budget: small
 inputs:

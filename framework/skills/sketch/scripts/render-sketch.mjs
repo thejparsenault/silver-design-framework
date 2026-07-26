@@ -63,7 +63,7 @@ export async function renderSketch({ root = process.cwd(), artifact, output, rep
   </style>
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="sketch-page" data-silver-target="sketch" data-artifact-id="${escapeHtml(sketch.id)}" data-artifact-revision="${escapeHtml(sketch.revision)}">
+  <main class="sketch-page" data-silver-target="sketch" data-source-id="${escapeHtml(sketch.id)}" data-source-revision="${escapeHtml(sketch.revision)}" data-artifact-id="${escapeHtml(sketch.id)}" data-artifact-revision="${escapeHtml(sketch.revision)}" data-renderer-version="sketch-html@0.3.0" data-assets-revision="r1" data-design-system-revision="r1">
     <div class="sketch-shell">
       <p class="sketch-meta">${escapeHtml(fidelity)} · ${escapeHtml(profile)}</p>
       <h1>${escapeHtml(sketch.title)}</h1>

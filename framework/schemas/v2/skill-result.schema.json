@@ -13,6 +13,8 @@
     "inputs",
     "outputs",
     "providers",
+    "representation_coverage",
+    "freshness_blockers",
     "degraded_capabilities",
     "execution",
     "acceptance",
@@ -78,6 +80,34 @@
           "status": {
             "enum": ["used", "fallback", "unavailable", "denied"]
           }
+        }
+      }
+    },
+    "representation_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "status"],
+        "properties": {
+          "role": { "enum": ["portable-artifact", "local-view", "external-view"] },
+          "status": { "enum": ["complete", "degraded", "unavailable", "stale", "unverified"] },
+          "provider": { "$ref": "common.schema.json#/$defs/id" },
+          "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "freshness_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["binding_id", "state", "blocks"],
+        "properties": {
+          "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+          "state": { "enum": ["view-stale", "external-changed", "diverged", "unmapped", "unverified", "conflict"] },
+          "blocks": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/id" } }
         }
       }
     },

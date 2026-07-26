@@ -44,6 +44,14 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       "accessibility",
       "responsive-behavior",
       "critical-interactions",
+      "binding-integrity",
+      "provider-revision-pins",
+      "view-provenance",
+      "synchronization-status",
+      "semantic-mapping",
+      "stale-proposals",
+      "authority",
+      "secret-free-configuration",
     ],
   );
   for (const checkerResult of result.results) {

@@ -1,0 +1,10 @@
+schema: silver/artifact-codec/v1
+id: silver-prose
+version: 0.3.0
+artifact_kinds: [brand, product, voice, design-principles]
+canonical_format: markdown-frontmatter
+view_formats: [markdown, html]
+compatibility: [silver/artifact/v1]
+scripts:
+  read: scripts/portable-artifact.mjs
+  write: scripts/portable-artifact.mjs

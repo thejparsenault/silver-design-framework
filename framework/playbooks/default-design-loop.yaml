@@ -1,6 +1,6 @@
 schema: silver/playbook/v2
 id: default-design-loop
-version: 0.2.0
+version: 0.3.0
 summary: Optional evidence-to-evaluation loop with explicit pitch and implementation branches.
 autonomy:
   mode: safe-local-until-checkpoint
@@ -31,13 +31,13 @@ nodes:
   - id: synthesize
     skill:
       id: synthesize
-      version: 0.2.0
+      version: 0.3.0
     optional: false
     readiness: []
   - id: ideate
     skill:
       id: ideate
-      version: 0.2.0
+      version: 0.3.0
     optional: false
     readiness:
       - ideation
@@ -49,14 +49,14 @@ nodes:
   - id: specify
     skill:
       id: specify
-      version: 0.2.0
+      version: 0.3.0
     optional: false
     readiness:
       - specification
   - id: flow
     skill:
       id: flow
-      version: 0.2.0
+      version: 0.3.0
     optional: true
     when:
       type: invocation-option
@@ -67,7 +67,7 @@ nodes:
   - id: sketch
     skill:
       id: sketch
-      version: 0.2.0
+      version: 0.3.0
     optional: true
     when:
       type: invocation-option
@@ -78,7 +78,7 @@ nodes:
   - id: prototype
     skill:
       id: prototype
-      version: 0.2.0
+      version: 0.3.0
     optional: true
     when:
       type: invocation-option
@@ -89,7 +89,7 @@ nodes:
   - id: evaluate
     skill:
       id: evaluate
-      version: 0.2.0
+      version: 0.3.0
     optional: false
     readiness:
       - evaluation
@@ -101,7 +101,7 @@ nodes:
   - id: pitch
     skill:
       id: pitch
-      version: 0.2.0
+      version: 0.3.0
     optional: true
     when:
       type: invocation-option
@@ -112,7 +112,7 @@ nodes:
   - id: implement
     skill:
       id: implement
-      version: 0.2.0
+      version: 0.3.0
     optional: true
     when:
       type: invocation-option

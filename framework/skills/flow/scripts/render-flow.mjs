@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,6 +43,7 @@ function transitionLabel(transition) {
 
 export function renderFlow(flow) {
   const lines = [
+    `%% silver-view source=${flow.id}@r${flow.revision} renderer=flow-mermaid@0.3.0 assets=project-assets@r1 design-system=design-system@r1`,
     `%% Generated from ${flow.id} revision ${flow.revision}. Edit flow.json, then rerender.`,
     "flowchart TD",
   ];
@@ -58,20 +59,74 @@ export function renderFlow(flow) {
   return lines.join("\n");
 }
 
-export async function renderFlowFile(inputPath, outputPath) {
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+export function renderFlowHtml(flow, options = {}) {
+  const assetRevision = options.assetRevision ?? "r1";
+  const designSystemRevision = options.designSystemRevision ?? "r1";
+  const outgoing = new Map(flow.nodes.map(({ id }) => [id, []]));
+  for (const transition of flow.transitions) outgoing.get(transition.from)?.push(transition);
+  const cards = flow.nodes.map((node) => {
+    const transitions = outgoing.get(node.id) ?? [];
+    const links = transitions.length
+      ? `<ul>${transitions.map((item) => `<li><strong>${escapeHtml(item.trigger ?? "Continue")}</strong> → ${escapeHtml(item.to)}</li>`).join("")}</ul>`
+      : "<p>End state</p>";
+    return `<article class="flow-node" id="${escapeHtml(node.id)}"><p class="kind">${escapeHtml(node.type)}</p><h2>${escapeHtml(node.title)}</h2>${node.description ? `<p>${escapeHtml(node.description)}</p>` : ""}${links}</article>`;
+  }).join("\\n");
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(flow.title)}</title>
+  <style>
+    @layer view {
+      body { margin: var(--ds-space-0); font-family: var(--ds-font-family-sans); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
+      .flow-page { max-width: var(--ds-layout-content-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
+      .flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); }
+      .flow-node { padding: var(--ds-space-20); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); background: var(--ds-surface-raised); }
+      .kind { color: var(--ds-text-muted); text-transform: capitalize; }
+    }
+  </style>
+  <link rel="stylesheet" href="../../../reference-system/packages/css/src/ds.css" />
+</head>
+<body data-scheme="light" data-mode="default">
+  <main class="flow-page" data-silver-target="flow" data-source-id="${escapeHtml(flow.id)}" data-source-revision="r${escapeHtml(flow.revision)}" data-renderer-version="flow-html@0.3.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}">
+    <p class="kind">${escapeHtml(flow.kind)}</p>
+    <h1>${escapeHtml(flow.title)}</h1>
+    <p>${escapeHtml(flow.purpose)}</p>
+    <section class="flow-grid" aria-label="Flow nodes">${cards}</section>
+  </main>
+</body>
+</html>
+`;
+}
+
+export async function renderFlowFile(inputPath, outputPath, options = {}) {
   const absoluteInput = path.resolve(inputPath);
   const flow = JSON.parse(await readFile(absoluteInput, "utf8"));
   const absoluteOutput = path.resolve(
     outputPath ?? path.join(path.dirname(absoluteInput), "flow.mmd"),
   );
   await writeFile(absoluteOutput, renderFlow(flow), "utf8");
-  return { flow, outputPath: absoluteOutput };
+  const htmlOutput = path.resolve(
+    options.htmlOutput ?? path.join(path.dirname(absoluteInput), "index.html"),
+  );
+  await mkdir(path.dirname(htmlOutput), { recursive: true });
+  await writeFile(htmlOutput, renderFlowHtml(flow, options), "utf8");
+  return { flow, outputPath: absoluteOutput, htmlOutput };
 }
 
 async function main() {
   try {
     if (process.argv.slice(2).includes("--help")) {
-      console.log("Usage: render-flow.mjs <flow.json> [--output <flow.mmd>]");
+      console.log("Usage: render-flow.mjs <flow.json> [--output <flow.mmd>] [--html-output <index.html>]");
       return;
     }
     const options = parseArguments(process.argv.slice(2));
@@ -79,15 +134,19 @@ async function main() {
       throw new Error("Provide exactly one flow.json path.");
     }
     for (const key of Object.keys(options)) {
-      if (!["positional", "output"].includes(key)) {
+      if (!["positional", "output", "html-output"].includes(key)) {
         throw new Error(`Unknown option: --${key}`);
       }
     }
     const result = await renderFlowFile(
       options.positional[0],
       options.output,
+      { htmlOutput: options["html-output"] },
     );
-    console.log(path.relative(process.cwd(), result.outputPath));
+    console.log(JSON.stringify({
+      mermaid: path.relative(process.cwd(), result.outputPath),
+      html: path.relative(process.cwd(), result.htmlOutput),
+    }));
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exitCode = 1;

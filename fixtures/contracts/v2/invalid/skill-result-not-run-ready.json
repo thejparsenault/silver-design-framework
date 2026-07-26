@@ -3,7 +3,7 @@
   "invocation_id": "invalid-result-1",
   "skill": {
     "id": "prototype",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "started_at": "2026-07-24T18:00:00Z",
   "completed_at": "2026-07-24T18:00:01Z",

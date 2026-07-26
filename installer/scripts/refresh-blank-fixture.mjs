@@ -19,7 +19,7 @@ try {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.2.0",
+    version: "0.3.0",
     sourceReference: "framework-development-fixture",
   });
   for (const relativePath of [

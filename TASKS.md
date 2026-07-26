@@ -68,7 +68,7 @@
   - context: small
   - notes: Prepared and validated the isolated local tarball candidate at 0.1.0-alpha.1 with exact lock versions. Remote private publication awaits a selected package scope or GitHub release destination.
 
-## Next Release — Silver 0.2 Complete Blank-Workspace Suite
+## Completed Release — Silver 0.2 Complete Blank-Workspace Suite
 
 The authoritative requirement list and release evidence rules are in
 `docs/silver-0.2-acceptance.md`. A task is not complete until its corresponding
@@ -103,6 +103,42 @@ The authoritative requirement list and release evidence rules are in
   - priority: high
   - context: large
   - notes: Complete. `S02-E2E-01` through `S02-E2E-10` and all 32 architecture/skill criteria have direct passing evidence in `docs/silver-0.2-acceptance-audit.md`; final gates are `npm run build` and `npm run test:package`.
+
+## Next Release — Silver 0.3 Portable Tools and Reconciliation
+
+The authoritative requirement list and release evidence rules are in
+`docs/silver-0.3-acceptance.md`. A task is not complete until its corresponding
+`S03-*` criteria have direct automated evidence.
+
+- [x] Implement registered portable providers and lifecycle migration
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Complete. Provider discovery is package-driven, the portable and Figma providers install and lock independently, and source plus exact-archive tests prove reviewable, idempotent 0.2-to-0.3 migration and conflict preservation.
+
+- [x] Implement portable format and representation-binding contracts
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Complete. Registered codecs cover every skill output, local views carry exact provenance, and strict secret-free bindings record authority, fidelity, provider revisions, and the shared reconciliation base.
+
+- [x] Implement drift detection and safe reconciliation
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Complete. All seven synchronization states, shared-base comparison, typed semantic routing, persisted proposals, accepted-operation apply, freshness checks, atomic writes, rollback, and failure preservation have direct tests.
+
+- [x] Implement the first Figma adapter
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Complete. The real adapter normalizes captured variables, styles, components, and selected nodes, preserves semantic identity and provider revisions, classifies changes, and guards a narrow semantic-token write with preview, approval, permission, and freshness.
+
+- [x] Prove the packed 0.3 release
+  - type: test
+  - priority: high
+  - context: large
+  - notes: Complete. All 22 `S03-*` criteria have direct passing evidence in `docs/silver-0.3-acceptance-audit.md`; the final gates are `npm run build` and `npm run test:package`.
 
 ## Following Milestone — Existing Codebase Adoption
 

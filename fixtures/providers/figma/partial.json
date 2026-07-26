@@ -1,0 +1,14 @@
+{
+  "file": { "id": "file-123", "revision": "v20" },
+  "variables": [],
+  "styles": [],
+  "components": [],
+  "selected_nodes": [],
+  "unresolved": [
+    {
+      "provider_path": "nodes/N:9/pluginData",
+      "reason": "Plugin-specific binary data has no portable semantic mapping.",
+      "raw_type": "BLOB"
+    }
+  ]
+}

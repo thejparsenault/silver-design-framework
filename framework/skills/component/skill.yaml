@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: component
-version: 0.2.0
+version: 0.3.0
 summary: Explore and specify accessible component anatomy and behavior.
 context_budget: small
 inputs:

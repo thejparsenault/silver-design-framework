@@ -146,10 +146,19 @@ Authentication stays with the provider, environment, or operating-system credent
 
 ```text
 design/manifest.yaml
+design/integrations/<binding-id>.yaml
 .silver/lock.yaml
+.silver/providers/<provider-id>/
+.silver/results/reconciliation/
 ```
 
-The manifest describes the workspace and its logical artifacts. The lock describes the installed framework release, package versions, hashes, and managed-file bases needed for safe updates.
+The manifest describes the workspace and its logical artifacts. Project-owned
+integration bindings declare external object IDs, authority, mapping profiles,
+and synchronization policy without storing credentials. Installed provider
+packages are framework-managed. Reconciliation results are generated,
+reviewable records rather than canonical artifacts. The lock describes the
+installed framework release, package versions, hashes, and managed-file bases
+needed for safe updates.
 
 ### Organization Configuration
 

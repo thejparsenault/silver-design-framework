@@ -1,4 +1,4 @@
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -60,6 +60,7 @@ export const SEEDED_TEMPLATES = [
   "design/system/README.md",
   "design/flows/README.md",
   "design/decisions/README.md",
+  "design/integrations/README.md",
   "design/permissions.yaml",
   "design/assets/catalog.json",
   "design/assets/README.md",
@@ -119,6 +120,7 @@ export function payloadRoots(payloadRoot = repositoryRoot) {
     guardrailSourceRoot: path.join(payloadRoot, "framework", "guardrails"),
     runtimeSourceRoot: path.join(payloadRoot, "framework", "runtime"),
     playbookSourceRoot: path.join(payloadRoot, "framework", "playbooks"),
+    providerSourceRoot: path.join(payloadRoot, "framework", "providers"),
     referenceSystemSourceRoot: path.join(payloadRoot, "reference-system"),
   };
 }
@@ -156,6 +158,7 @@ export async function sourcePackages({
     guardrailSourceRoot,
     runtimeSourceRoot,
     playbookSourceRoot,
+    providerSourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
   const packages = [];
@@ -171,6 +174,22 @@ export async function sourcePackages({
       version: skill.version,
       ownership: "framework-managed",
       integrity: await treeIntegrity(path.join(skillSourceRoot, id)),
+    });
+  }
+  const providerEntries = (await readdir(providerSourceRoot, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name));
+  for (const entry of providerEntries) {
+    const sourcePath = path.join(providerSourceRoot, entry.name);
+    const manifest = parse(await readUtf8(path.join(sourcePath, "provider.yaml")));
+    packages.push({
+      id: manifest.id,
+      type: "provider",
+      path: `.silver/providers/${manifest.id}`,
+      sourcePath,
+      version: manifest.version,
+      ownership: "framework-managed",
+      integrity: await treeIntegrity(sourcePath),
     });
   }
   for (const item of [
@@ -293,6 +312,7 @@ export async function setupWorkspace(options = {}) {
     guardrailSourceRoot,
     runtimeSourceRoot,
     playbookSourceRoot,
+    providerSourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
 
@@ -386,6 +406,7 @@ export async function setupWorkspace(options = {}) {
       [guardrailSourceRoot, ".silver/guardrails"],
       [runtimeSourceRoot, ".silver/runtime"],
       [playbookSourceRoot, ".silver/playbooks"],
+      [providerSourceRoot, ".silver/providers"],
     ]) {
       const copied = await copyNewTree(source, path.join(root, destination));
       created.push(

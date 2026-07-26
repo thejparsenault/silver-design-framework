@@ -2,13 +2,49 @@
 
 ## Current Focus
 
-Silver `0.2.0`, the Complete Blank-Workspace Suite, is complete and validated
-as an exact offline archive. All 42 required criteria pass with direct evidence
-in `docs/silver-0.2-acceptance-audit.md`. The next product milestone is
-representative existing-codebase adoption: discovering and binding to an
-existing repository without reorganizing or silently rewriting it.
+Silver `0.3.0`, Portable Tools and Reconciliation, is complete and validated
+from source and as an exact offline archive. All eighteen general skills have a
+registered portable baseline; representation authority, provenance, drift,
+three-way reconciliation, safe apply, and the fixture-testable Figma adapter
+have direct evidence for all 22 release criteria. The next milestone is
+existing-codebase adoption after selecting a representative product repository.
 
 ## Recent Progress
+
+- 2026-07-25: Silver 0.3 Portable Tools and Reconciliation accepted
+  - Added installed, versioned `silver-portable` and Figma provider packages,
+    registered artifact codecs, and package-driven capability resolution.
+  - Added strict binding, provider-operation, external-snapshot, change-set,
+    and reconciliation-result contracts with explicit authority and revision
+    provenance.
+  - Implemented all seven synchronization states, shared-base three-way
+    comparison, typed semantic change routing, persisted review proposals, and
+    atomic expected-integrity apply with freshness and permission gates.
+  - Added a real fixture-testable Figma adapter for variables, styles,
+    components, selected nodes, and a narrow previewable semantic-token write.
+  - Added portable Mermaid and semantic-HTML views, eight independently
+    runnable representation checks, reviewable 0.2-to-0.3 migration, and an
+    exact packed reconciliation scenario.
+  - Recorded direct passing evidence for all 22 criteria in
+    `docs/silver-0.3-acceptance-audit.md`; the source gate passes 56 tests and
+    the exact offline `0.3.0` archive passes setup, migration, all-skill,
+    reconciliation, provenance, and independent-check smoke evidence.
+
+- 2026-07-25: Silver 0.3 Portable Tools and Reconciliation boundary
+  - Defined portable artifacts, generated local views, and external views as
+    distinct representation roles with explicit formats, authority, provenance,
+    and revisions.
+  - Required every generally applicable skill to retain a bundled repository-
+    only baseline while treating external or production effects as separately
+    permissioned capabilities.
+  - Specified binding states, base-pinned three-way comparison, typed semantic
+    change routing, reviewable reconciliation proposals, expected-integrity
+    apply, and failure-safe behavior.
+  - Made a fixture-testable Figma read and narrow semantic-token write adapter
+    the first external integration without requiring live credentials for the
+    deterministic release gate.
+  - Added `docs/silver-0.3-acceptance.md` with an exact goal-pass objective and
+    22 required architecture and end-to-end criteria.
 
 - 2026-07-24: Silver 0.2 Complete Blank-Workspace Suite accepted
   - Added a packaged complete-loop scenario that invokes all eighteen skills independently, records a positive result and relevant boundary or degraded result for each, and verifies recommended-only follow-ups.
@@ -155,10 +191,11 @@ existing repository without reorganizing or silently rewriting it.
 
 1. Select one representative existing product repository for the adoption
    milestone.
-2. Implement read-only discovery of its design docs, tokens, components,
-   source roots, commands, and agent pointers.
-3. Produce a reviewable adoption report and proposed binding without changing
-   production source.
+2. Implement read-only repository discovery and an ambiguity report without
+   reorganizing or rewriting the selected codebase.
+3. Generate and validate a reviewable adoption plan covering native design
+   artifacts, tokens, utilities, components, source roots, commands, and agent
+   instruction files.
 
 ## Blockers
 
@@ -166,4 +203,4 @@ existing repository without reorganizing or silently rewriting it.
 
 ## Last Updated
 
-2026-07-24
+2026-07-25

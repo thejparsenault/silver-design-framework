@@ -8,7 +8,7 @@ visibility: private
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-24
+updated: 2026-07-25
 ---
 
 # The Silver Design Framework
@@ -32,6 +32,7 @@ A designer can:
 7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
 8. Run recognizable design skills independently or compose them through optional, resumable playbooks with inspectable artifact handoffs and checkpoints.
 9. Build evidence-backed change cases and branded presentation views for team decisions without confusing generated output, stakeholder acceptance, and production readiness.
+10. Complete every general design task through a portable project-local baseline, then optionally bind, render, or synchronize the same revisioned intent through external tools without silent drift.
 
 ## First Iteration
 
@@ -49,16 +50,19 @@ follows the complete blank-workspace suite.
 
 ## Current Phase
 
-validate
+build
 
-## Next Release
+## Latest Release
 
-Silver `0.2.0`, working name **Complete Blank-Workspace Suite**, is the next
-release target. Its authoritative scope, exclusions, requirement IDs, and
-completion evidence are defined in `docs/silver-0.2-acceptance.md`.
+Silver `0.3.0`, **Portable Tools and Reconciliation**, is complete. Its
+authoritative scope and requirement IDs are defined in
+`docs/silver-0.3-acceptance.md`; direct passing evidence for all 22 criteria is
+recorded in `docs/silver-0.3-acceptance-audit.md`.
 
-Existing-codebase adoption follows this release except for bounded discovery
-spikes used to pressure-test framework neutrality.
+The release formalizes bundled portable providers, canonical artifact and view
+roles, revision-aware three-way reconciliation, and the first Figma adapter.
+The following milestone is existing-codebase adoption; a representative
+production repository still needs to be selected.
 
 ## Agent Access
 
@@ -78,6 +82,8 @@ spikes used to pressure-test framework neutrality.
 - Design-system constraints are never silently suspended. Suspension is an explicit prototype-only choice by default.
 - Process and lifecycle guidance is recommended, not enforced.
 - External tools may be authoritative for declared artifact kinds, but production use requires a pinned, validated local representation.
+- Every generally applicable skill has a useful bundled portable baseline; an external integration adds capability and never silently becomes a prerequisite for unrelated work.
+- Canonical artifacts, generated local views, and external views have distinct roles, authority, provenance, and revisions. Drift is reconciled against a shared base rather than resolved by last-write-wins.
 - Skill execution, acceptance, and downstream readiness are separate states.
 - Playbook invocation permits only its declared safe local progression and never broadens external, canonical, production, destructive, or version-control authority.
 - Presentation outputs consume canonical brand and design-system artifacts; reusable presentation templates and components remain a distinct project-owned kit.
@@ -93,6 +99,9 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 - `DECISIONS.md` — accepted and superseded decisions
 - `docs/installer-distribution.md` — installer ownership, hosting, release, and configuration recommendation
 - `docs/mvp-acceptance.md` — requirement-by-requirement first-iteration completion evidence
-- `docs/silver-0.2-acceptance.md` — authoritative next-release boundary and completion criteria
+- `docs/silver-0.2-acceptance.md` — completed Complete Blank-Workspace Suite boundary and evidence criteria
+- `docs/silver-0.3-acceptance.md` — authoritative Portable Tools and Reconciliation release boundary and completion criteria
+- `docs/silver-0.3-acceptance-audit.md` — direct evidence for all 22 Portable Tools and Reconciliation criteria
+- `docs/tool-representations-and-reconciliation.md` — portable provider, representation, authority, drift, and reconciliation specification
 - `docs/agentic-design-workflows.md` — independent skill, artifact handoff, playbook, result, guardrail, and production-boundary plan
 - `docs/pitch-and-presentations.md` — change-case, pitch, presentation-kit, rendering, and presentation-check plan

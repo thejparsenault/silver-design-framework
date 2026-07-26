@@ -1,0 +1,11 @@
+schema: silver/artifact-codec/v1
+id: silver-flow-graph
+version: 0.3.0
+artifact_kinds: [flow]
+canonical_format: json
+view_formats: [mermaid, html]
+compatibility: [silver/flow/v1]
+scripts:
+  read: scripts/portable-artifact.mjs
+  write: scripts/portable-artifact.mjs
+  render: scripts/portable-artifact.mjs

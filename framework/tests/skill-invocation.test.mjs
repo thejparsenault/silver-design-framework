@@ -84,7 +84,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.2.0" },
+    skill: { id: "synthesize", version: "0.3.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -172,7 +172,7 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.2.0" },
+    skill: { id: "brand", version: "0.3.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -253,14 +253,14 @@ test("existing outputs require matching integrity and remain unchanged on stale 
   assert.equal(await readFile(artifactPath, "utf8"), before);
 });
 
-test("missing required production capability is not-run and writes nothing", async () => {
+test("registered portable production capability is selected but empty output still writes nothing", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-not-run-"),
   );
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.2.0" },
+    skill: { id: "implement", version: "0.3.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -288,11 +288,13 @@ test("missing required production capability is not-run and writes nothing", asy
     request,
     completedAt,
   });
-  assert.equal(result.execution.status, "not-run");
+  assert.equal(result.execution.status, "blocked");
   assert.ok(
-    result.degraded_capabilities.some(
-      ({ capability, coverage }) =>
-        capability === "production-source" && coverage === "not-run",
+    result.providers.some(
+      ({ capability, provider, status }) =>
+        capability === "production-source" &&
+        provider === "silver-portable" &&
+        status === "used",
     ),
   );
   assert.deepEqual(result.outputs, []);

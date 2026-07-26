@@ -1,7 +1,7 @@
 # Agentic Design Workflows
 
-**Status:** Accepted direction; implementation planned
-**Date:** 2026-07-24
+**Status:** Accepted and implemented through the Silver 0.2 local baseline
+**Date:** 2026-07-25
 
 ## Purpose
 
@@ -82,6 +82,27 @@ design-system operations remain independently invokable inputs to the loop.
 
 Internal operations do not become separate user-facing skills unless they have
 a recognizably different intent, context, authority boundary, or output.
+
+## Portable Baselines and Tool Projections
+
+Every generally applicable skill has a bundled project-local baseline for its
+core task. Prose-first work uses Markdown with structured metadata; graphs,
+catalogs, tokens, policies, and state use their declared JSON or YAML
+contracts. Visual skills use self-contained semantic HTML as the default local
+review surface, while flows also provide a compact Mermaid view.
+
+External providers are optional projections or explicitly declared
+authorities. A missing optional provider does not invalidate otherwise complete
+portable work, but provider-specific rendering or inspection remains degraded
+or `not-run`. A task that explicitly requests an external or production effect
+still requires that provider or codebase and the applicable permission.
+
+Playbooks exchange portable artifact references rather than provider objects.
+Local and external views pin their source revisions and become stale or
+diverged visibly. Reconciliation uses the last shared base, the current
+portable artifact, and the current normalized provider snapshot; it never
+silently chooses the newest representation. See
+`docs/tool-representations-and-reconciliation.md`.
 
 ## Artifact Handoffs
 

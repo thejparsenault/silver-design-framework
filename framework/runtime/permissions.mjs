@@ -105,23 +105,23 @@ export function resolvePermissions({ layers, requests }) {
 
 export function resolveCapabilities({
   contract,
+  registeredProviders = [],
   availableProviders = [],
-  localCapabilities = [
-    "repository",
-    "canonical-artifact",
-    "flow",
-    "sketch-renderer",
-    "prototype-renderer",
-    "presentation-renderer",
-  ],
 }) {
   const byCapability = new Map();
+  for (const provider of registeredProviders) {
+    if (!provider.available) continue;
+    for (const capability of provider.capabilities) {
+      if (!byCapability.has(capability)) {
+        byCapability.set(capability, provider.id);
+      }
+    }
+  }
   for (const provider of availableProviders) {
     if (provider.available && !byCapability.has(provider.capability)) {
       byCapability.set(provider.capability, provider.provider);
     }
   }
-  const local = new Set(localCapabilities);
   const providers = [];
   const degradedCapabilities = [];
 
@@ -130,12 +130,6 @@ export function resolveCapabilities({
       providers.push({
         capability,
         provider: byCapability.get(capability),
-        status: "selected",
-      });
-    } else if (local.has(capability)) {
-      providers.push({
-        capability,
-        provider: "silver-local",
         status: "selected",
       });
     } else {
@@ -158,10 +152,10 @@ export function resolveCapabilities({
       });
       continue;
     }
-    if (optional.fallback === "local" && local.has(capability)) {
+    if (optional.fallback === "local" && byCapability.has(capability)) {
       providers.push({
         capability,
-        provider: "silver-local",
+        provider: byCapability.get(capability),
         status: "local-fallback",
       });
       degradedCapabilities.push({

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/external-snapshot.schema.json",
+  "title": "Silver normalized external snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "provider", "object_id", "revision", "captured_at", "adapter", "binding_id", "completeness", "variables", "styles", "components", "nodes", "unresolved"],
+  "properties": {
+    "schema": { "const": "silver/external-snapshot/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "provider": { "$ref": "common.schema.json#/$defs/id" },
+    "object_id": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "adapter": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version"],
+      "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } }
+    },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "completeness": { "enum": ["complete", "partial", "invalid"] },
+    "variables": { "$ref": "#/$defs/entities" },
+    "styles": { "$ref": "#/$defs/entities" },
+    "components": { "$ref": "#/$defs/entities" },
+    "nodes": { "$ref": "#/$defs/entities" },
+    "unresolved": { "type": "array", "items": { "type": "object", "required": ["provider_path", "reason"], "properties": { "provider_path": { "type": "string" }, "reason": { "type": "string" }, "raw_type": { "type": "string" } }, "additionalProperties": false } }
+  },
+  "$defs": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "name", "semantic_type", "data"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "semantic_type": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "data": {},
+          "semantic_name": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    }
+  }
+}

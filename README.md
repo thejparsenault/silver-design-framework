@@ -1,8 +1,9 @@
 # The Silver Design Framework
 
-This repository is being repurposed into a meta-system for designers working across code, design tools, and agent workflows.
+This repository contains a meta-system for designers working across code,
+design tools, and agent workflows.
 
-It will provide:
+It provides:
 
 - opinionated but adaptable design-artifact contracts;
 - project-scoped task skills;
@@ -17,14 +18,20 @@ The framework does **not** impose one design system, one application stack, or o
 
 ## Current State
 
-The product model and first-iteration plan are documented. V1 contracts cover
-the workspace manifest, artifact metadata, portable flows, prototypes, skill
-declarations, permissions, lock state, findings, and checker results. A local
-development CLI initializes the blank-workspace artifacts, five project-local
-skills, a ready-to-render editable reference system, and an agent discovery
-pointer, then diagnoses their contracts without changing them. The installed
-skills can author portable flows, render constrained static walkthroughs from
-exact flow revisions, and run four independent dependency-free fast checks.
+Silver `0.3.0`, Portable Tools and Reconciliation, is implemented and
+validated from source and as an exact offline archive. The setup/update CLI
+installs eighteen project-local skills, registered portable and Figma provider
+packages, strict artifact and reconciliation contracts, an editable reference
+system, optional resumable playbooks, local semantic-HTML renderers, and
+independent deterministic checks.
+
+Every general skill has a repository-only baseline. Portable artifacts, local
+views, and external views carry explicit authority and revision provenance;
+the Figma adapter can normalize captured provider state, classify drift, stage
+three-way reconciliation proposals, and apply only explicitly accepted and
+permissioned changes. All 22 release criteria have direct evidence in
+[`docs/silver-0.3-acceptance-audit.md`](docs/silver-0.3-acceptance-audit.md).
+Existing-codebase adoption is the next milestone.
 
 The earlier token/CSS/component spike now lives in `reference-system/`. Its
 token build and static light/dark example have been build- and browser-tested.
@@ -64,5 +71,6 @@ Start with:
 5. [`BACKLOG.md`](BACKLOG.md)
 6. [`docs/agentic-design-workflows.md`](docs/agentic-design-workflows.md)
 7. [`docs/pitch-and-presentations.md`](docs/pitch-and-presentations.md)
+8. [`docs/silver-0.3-acceptance.md`](docs/silver-0.3-acceptance.md)
 
 The previous design-system PRD is retained as historical input in [`portable_design_system_prd.md`](portable_design_system_prd.md).

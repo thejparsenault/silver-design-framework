@@ -23,6 +23,8 @@ import { renderPresentation } from "../skills/pitch/scripts/render-presentation.
 import { initPrototype } from "../skills/prototype/scripts/init-prototype.mjs";
 import { renderStaticPrototype } from "../skills/prototype/scripts/render-static-prototype.mjs";
 import { renderSketch } from "../skills/sketch/scripts/render-sketch.mjs";
+import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
+import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
 
 const time = "2026-07-24T20:00:00Z";
 const completed = "2026-07-24T20:00:01Z";
@@ -161,7 +163,7 @@ async function invokeCase({ root, id, inputs = [], outputs = [], checkEvidence, 
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.2.0" },
+    skill: { id, version: "0.3.0" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -276,6 +278,7 @@ export async function runCompleteBlankScenario(options = {}) {
   for (const [id, inputs, outputs] of canonicalCases) {
     results.set(id, await invokeCase({ root, id, inputs, outputs, checkEvidence }));
   }
+  await renderSystemCatalog({ root });
 
   const research = ref("setup-research-plan", "research-plan", "r1", "design/research/setup-plan.json");
   results.set("research", await invokeCase({
@@ -392,6 +395,10 @@ export async function runCompleteBlankScenario(options = {}) {
     outputs: [textOutput(refs.flow, JSON.stringify(flowValue, null, 2))],
     checkEvidence,
   }));
+  await renderFlowFile(
+    path.join(root, refs.flow.path),
+    path.join(root, "design/flows/guided-setup/flow.mmd"),
+  );
 
   results.set("sketch", await invokeCase({
     root,
@@ -504,7 +511,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.2.0" },
+      skill: { id: "prototype", version: "0.3.0" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -538,7 +545,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.2.0" },
+      skill: { id: "evaluate", version: "0.3.0" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
@@ -613,7 +620,7 @@ export async function runCompleteBlankScenario(options = {}) {
       }, null, 2)),
     ],
     checkEvidence,
-    providers: [{ capability: "production-source", provider: "silver-local", available: true }],
+    providers: [],
   }));
   await renderStaticImplementation({ root, handoff: refs.handoff.path, output: "production/guided-setup" });
 
@@ -677,11 +684,27 @@ export async function runCompleteBlankScenario(options = {}) {
     schema: "silver/complete-blank-scenario/v1",
     status: "pass",
     skills: [...results.keys()],
+    portable_baselines: Object.fromEntries(
+      [...results].map(([id, result]) => [
+        id,
+        result.representation_coverage.find(
+          ({ role }) => role === "portable-artifact",
+        )?.provider,
+      ]),
+    ),
     positive_results: [...results.values()].map(({ invocation_id }) => invocation_id),
     boundary_results: [...results.keys()].filter((id) => id !== "design-check").map((id) => `${id}-boundary`),
     refinement_results: [refinedResult.invocation_id, secondEvalResult.invocation_id],
     fast: fast.status,
     browser: browser.status,
+    local_views: {
+      flow_mermaid: "design/flows/guided-setup/flow.mmd",
+      flow_html: "design/flows/guided-setup/index.html",
+      system_catalog: "design/system/catalog.html",
+      sketch_html: "design/work/sketches/guided-setup/index.html",
+      prototype_html: "prototypes/guided-setup/index.html",
+      pitch_html: "presentations/guided-setup/index.html",
+    },
     playbook: { paused: true, resumed: true, invalidated: true },
   };
 }

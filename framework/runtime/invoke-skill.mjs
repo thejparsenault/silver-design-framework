@@ -13,6 +13,7 @@ import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
+import { discoverProviders } from "./providers.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
@@ -145,6 +146,8 @@ function blockedResult({
             ? "fallback"
             : "unavailable",
     })),
+    representation_coverage: representationCoverage(providers),
+    freshness_blockers: freshnessBlockers(request),
     degraded_capabilities: degradedCapabilities.map((item) => ({
       capability: item.capability,
       reason: item.reason,
@@ -164,6 +167,55 @@ function blockedResult({
     unresolved_questions: request.unresolved_questions,
     recommended_next_actions: [],
   };
+}
+
+function representationCoverage(providers) {
+  const used = providers.filter(({ status }) =>
+    ["selected", "local-fallback"].includes(status),
+  );
+  const portable = used.find(({ provider }) => provider === "silver-portable");
+  const external = used.find(({ provider }) => provider !== "silver-portable");
+  const localView = used.find(({ capability }) =>
+    ["sketch-renderer", "prototype-renderer", "presentation-renderer"].includes(
+      capability,
+    ),
+  );
+  return [
+    {
+      role: "portable-artifact",
+      status: portable ? "complete" : "unavailable",
+      ...(portable
+        ? { provider: portable.provider }
+        : { reason: "No registered portable provider was selected." }),
+    },
+    {
+      role: "local-view",
+      status: localView ? "complete" : "unavailable",
+      ...(localView
+        ? { provider: localView.provider }
+        : { reason: "This invocation did not declare a local visual renderer." }),
+    },
+    {
+      role: "external-view",
+      status: external ? "complete" : "unavailable",
+      ...(external
+        ? { provider: external.provider }
+        : { reason: "No external projection provider was used." }),
+    },
+  ];
+}
+
+function freshnessBlockers(request) {
+  return (request.binding_states ?? [])
+    .filter(
+      ({ authority, state, freshness_sensitive_readiness: readiness }) =>
+        authority === "external" && state !== "current" && readiness.length > 0,
+    )
+    .map(({ binding_id: bindingId, state, freshness_sensitive_readiness: blocks }) => ({
+      binding_id: bindingId,
+      state,
+      blocks,
+    }));
 }
 
 export async function invokeSkill({
@@ -227,8 +279,10 @@ export async function invokeSkill({
     return recordResult(workspaceRoot, result);
   }
 
+  const registeredProviders = await discoverProviders({ root: workspaceRoot });
   const capabilityResolution = resolveCapabilities({
     contract,
+    registeredProviders,
     availableProviders: request.available_providers,
   });
   if (
@@ -363,12 +417,14 @@ export async function invokeSkill({
   const questionBlocked =
     contract.completion.unresolved_questions.startsWith("block") &&
     request.unresolved_questions.length > 0;
+  const bindingBlockers = freshnessBlockers(request);
   const acceptance =
     contract.completion.review.required
       ? request.acceptance ?? { status: "awaiting-review" }
       : { status: "not-required" };
   const accepted = ["accepted", "not-required"].includes(acceptance.status);
-  const ready = !checkBlocked && !questionBlocked && accepted;
+  const ready =
+    !checkBlocked && !questionBlocked && bindingBlockers.length === 0 && accepted;
   const result = {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
@@ -387,6 +443,10 @@ export async function invokeSkill({
             ? "fallback"
             : "unavailable",
     })),
+    representation_coverage: representationCoverage(
+      capabilityResolution.providers,
+    ),
+    freshness_blockers: bindingBlockers,
     degraded_capabilities: capabilityResolution.degradedCapabilities.map(
       (item) => ({
         capability: item.capability,
@@ -418,6 +478,9 @@ export async function invokeSkill({
               ...(!accepted ? ["Human acceptance is unresolved."] : []),
               ...(checkBlocked ? ["One or more required checks did not pass."] : []),
               ...(questionBlocked ? ["Unresolved questions block this handoff."] : []),
+              ...(bindingBlockers.length
+                ? ["Externally authoritative input freshness is unresolved."]
+                : []),
             ],
           })),
     checks: request.checks,

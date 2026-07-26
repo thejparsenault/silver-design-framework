@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: ideate
-version: 0.2.0
+version: 0.3.0
 summary: Generate distinct concepts and testable hypotheses.
 context_budget: small
 inputs:

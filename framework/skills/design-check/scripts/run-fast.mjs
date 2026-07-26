@@ -20,6 +20,14 @@ import { checkProduction } from "./check-production.mjs";
 import { checkResponsive } from "./check-responsive.mjs";
 import { checkInteractions } from "./check-interactions.mjs";
 import { checkSemanticStyles } from "./check-semantic-styles.mjs";
+import { checkAuthority } from "./check-authority.mjs";
+import { checkBindingIntegrity } from "./check-binding-integrity.mjs";
+import { checkProviderRevisionPins } from "./check-provider-revision-pins.mjs";
+import { checkSecretFreeConfiguration } from "./check-secret-free-configuration.mjs";
+import { checkSemanticMapping } from "./check-semantic-mapping.mjs";
+import { checkStaleProposals } from "./check-stale-proposals.mjs";
+import { checkSynchronizationStatus } from "./check-synchronization-status.mjs";
+import { checkViewProvenance } from "./check-view-provenance.mjs";
 
 const checkers = [
   ["contract-integrity", checkArtifacts],
@@ -33,6 +41,14 @@ const checkers = [
   ["accessibility", checkAccessibility],
   ["responsive-behavior", checkResponsive],
   ["critical-interactions", checkInteractions],
+  ["binding-integrity", checkBindingIntegrity],
+  ["provider-revision-pins", checkProviderRevisionPins],
+  ["view-provenance", checkViewProvenance],
+  ["synchronization-status", checkSynchronizationStatus],
+  ["semantic-mapping", checkSemanticMapping],
+  ["stale-proposals", checkStaleProposals],
+  ["authority", checkAuthority],
+  ["secret-free-configuration", checkSecretFreeConfiguration],
 ];
 
 export async function runFastSuite(options = {}) {

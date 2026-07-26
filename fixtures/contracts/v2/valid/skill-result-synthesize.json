@@ -3,7 +3,7 @@
   "invocation_id": "synthesize-fixture-1",
   "skill": {
     "id": "synthesize",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "started_at": "2026-07-24T18:00:00Z",
   "completed_at": "2026-07-24T18:00:01Z",
@@ -32,6 +32,24 @@
       "status": "used"
     }
   ],
+  "representation_coverage": [
+    {
+      "role": "portable-artifact",
+      "status": "complete",
+      "provider": "silver-portable"
+    },
+    {
+      "role": "local-view",
+      "status": "unavailable",
+      "reason": "This invocation did not declare a local visual renderer."
+    },
+    {
+      "role": "external-view",
+      "status": "unavailable",
+      "reason": "No external projection provider was used."
+    }
+  ],
+  "freshness_blockers": [],
   "degraded_capabilities": [
     {
       "capability": "research-evidence",

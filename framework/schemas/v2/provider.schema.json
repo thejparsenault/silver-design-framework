@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/provider.schema.json",
+  "title": "Silver provider package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "version", "kind", "capabilities", "availability", "permissions", "operations"],
+  "properties": {
+    "schema": { "const": "silver/provider/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "version": { "$ref": "common.schema.json#/$defs/version" },
+    "kind": { "enum": ["portable", "external"] },
+    "capabilities": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/capability" }
+    },
+    "availability": {
+      "type": "object", "additionalProperties": false, "required": ["script"],
+      "properties": { "script": { "$ref": "common.schema.json#/$defs/relativePath" } }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["capability", "actions", "default"],
+        "properties": {
+          "capability": { "$ref": "common.schema.json#/$defs/capability" },
+          "actions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/action" } },
+          "default": { "enum": ["allow", "ask", "deny"] }
+        }
+      }
+    },
+    "supported_artifact_kinds": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/artifactKind" }
+    },
+    "directions": {
+      "type": "array", "uniqueItems": true,
+      "items": { "enum": ["portable", "read", "write-preview", "write"] }
+    },
+    "fidelity": { "enum": ["lossless", "semantic", "partial"] },
+    "codecs": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/relativePath" }
+    },
+    "operations": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "script", "effect"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "script": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "effect": { "enum": ["read", "inspect", "render", "preview-write", "write"] }
+        }
+      }
+    },
+    "adapter": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "script"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "version": { "$ref": "common.schema.json#/$defs/version" },
+        "script": { "$ref": "common.schema.json#/$defs/relativePath" }
+      }
+    }
+  }
+}

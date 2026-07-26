@@ -16,7 +16,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.2.0";
+const expectedVersion = "0.3.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -64,6 +64,11 @@ try {
     "framework/schemas/v2/skill-result.schema.json",
     "framework/playbooks/default-design-loop.yaml",
     "framework/scenarios/complete-blank.mjs",
+    "framework/scenarios/portable-reconciliation.mjs",
+    "framework/providers/figma/adapter.mjs",
+    "framework/providers/silver-portable/provider.yaml",
+    "framework/schemas/v2/representation-binding.schema.json",
+    "framework/runtime/reconciliation.mjs",
     "reference-system/packages/css/src/tokens.css",
   ]) {
     assert.ok(packedPaths.has(required), `Package is missing ${required}`);
@@ -203,7 +208,7 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 23);
+  assert.equal(lock.packages.length, 25);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
     18,
@@ -212,6 +217,45 @@ try {
     lock.packages.every(({ version }) => version === expectedVersion),
     "Every installed package must be pinned to the prerelease version.",
   );
+  const v2MigrationRoot = path.join(consumerRoot, "silver-02-migration");
+  await command(
+    process.execPath,
+    [cli, "setup", v2MigrationRoot, "--name", "Silver 0.2 Migration", "--id", "silver-02-migration"],
+    { cwd: consumerRoot },
+  );
+  const v2LockPath = path.join(v2MigrationRoot, ".silver", "lock.yaml");
+  const v2Lock = parse(await readFile(v2LockPath, "utf8"));
+  v2Lock.framework.version = "0.2.0";
+  v2Lock.framework.source.reference = "packed-0.2-fixture";
+  v2Lock.packages = v2Lock.packages
+    .filter(({ type }) => type !== "provider")
+    .map((record) =>
+      record.ownership === "framework-managed"
+        ? { ...record, version: "0.2.0" }
+        : record,
+    );
+  await writeFile(v2LockPath, stringify(v2Lock), "utf8");
+  await rm(path.join(v2MigrationRoot, ".silver", "providers"), { recursive: true, force: true });
+  const v2BrandPath = path.join(v2MigrationRoot, "design", "brand.md");
+  const v2OwnedBrand = `${await readFile(v2BrandPath, "utf8")}\nPacked project-owned 0.2 note.\n`;
+  await writeFile(v2BrandPath, v2OwnedBrand, "utf8");
+  const v2Preview = JSON.parse(
+    (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--json"], { cwd: consumerRoot })).stdout,
+  );
+  assert.equal(v2Preview.needed, true);
+  assert.equal(v2Preview.applied, false);
+  assert.ok(v2Preview.changes.some(({ package: id }) => id === "figma"));
+  assert.ok(v2Preview.changes.some(({ package: id }) => id === "silver-portable"));
+  const v2Applied = JSON.parse(
+    (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--apply", "--json"], { cwd: consumerRoot })).stdout,
+  );
+  assert.equal(v2Applied.applied, true);
+  assert.equal(await readFile(v2BrandPath, "utf8"), v2OwnedBrand);
+  const v2Repeated = JSON.parse(
+    (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--apply", "--json"], { cwd: consumerRoot })).stdout,
+  );
+  assert.equal(v2Repeated.needed, false);
+  await command(process.execPath, [cli, "doctor", v2MigrationRoot], { cwd: consumerRoot });
   const legacyBrand = lock.packages.find(({ id }) => id === "brand");
   const legacyReference = lock.packages.find(({ id }) => id === "reference-system");
   await writeFile(
@@ -277,7 +321,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 23);
+  assert.equal(migratedLock.packages.length, 25);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
@@ -323,8 +367,79 @@ try {
   );
   assert.equal(completeResult.status, "pass");
   assert.equal(completeResult.skills.length, 18);
+  assert.deepEqual(
+    Object.keys(completeResult.portable_baselines).sort(),
+    [...completeResult.skills].sort(),
+  );
+  assert.ok(
+    Object.values(completeResult.portable_baselines).every(
+      (provider) => provider === "silver-portable",
+    ),
+  );
   assert.equal(completeResult.fast, "pass");
   assert.equal(completeResult.browser, "pass");
+  for (const [kind, relativePath] of Object.entries(completeResult.local_views)) {
+    const content = await readFile(path.join(completeRoot, relativePath), "utf8");
+    assert.ok(content.length > 0, `${kind} is empty`);
+    if (relativePath.endsWith(".html")) {
+      assert.match(content, /data-source-revision=/, `${kind} lacks source provenance`);
+      assert.match(content, /data-renderer-version=/, `${kind} lacks renderer provenance`);
+      assert.match(content, /data-design-system-revision=/, `${kind} lacks design-system provenance`);
+    }
+  }
+
+  const reconciliationRoot = path.join(consumerRoot, "portable-reconciliation");
+  await command(
+    process.execPath,
+    [cli, "setup", reconciliationRoot, "--name", "Portable Reconciliation", "--id", "portable-reconciliation"],
+    { cwd: consumerRoot },
+  );
+  const reconciliationScenario = path.join(packageRoot, "framework", "scenarios", "portable-reconciliation.mjs");
+  const reconciliationResult = JSON.parse(
+    (await command(process.execPath, [reconciliationScenario, "--root", reconciliationRoot], { cwd: reconciliationRoot })).stdout,
+  );
+  assert.equal(reconciliationResult.status, "pass");
+  assert.equal(reconciliationResult.provider_operation, "previewed");
+  assert.equal(reconciliationResult.provider_operation_expected_revision, "v18");
+  assert.deepEqual(reconciliationResult.bindings, ["guided-flow-html", "guided-figma"]);
+  assert.equal(reconciliationResult.local_authority, "external-changed");
+  assert.equal(reconciliationResult.applied, "applied");
+  assert.deepEqual(reconciliationResult.behavioral_proposals, ["flow", "specification"]);
+  assert.ok(reconciliationResult.unknown_findings > 0);
+  assert.equal(reconciliationResult.divergence, "diverged");
+  assert.equal(reconciliationResult.external_authority_unavailable, "unverified");
+  await access(path.join(reconciliationRoot, reconciliationResult.prototype));
+  await access(path.join(reconciliationRoot, ".silver/results/reconciliation/operations/guided-figma-token-preview.json"));
+  await access(path.join(reconciliationRoot, ".silver/results/reconciliation/snapshots/guided-figma-current.json"));
+  const representationCheckRunner = path.join(
+    reconciliationRoot,
+    ".skills/design-check/scripts/run-representation-check.mjs",
+  );
+  for (const checker of [
+    "binding-integrity",
+    "provider-revision-pins",
+    "view-provenance",
+    "synchronization-status",
+    "semantic-mapping",
+    "stale-proposals",
+    "authority",
+    "secret-free-configuration",
+  ]) {
+    const checkResult = JSON.parse(
+      (
+        await command(
+          process.execPath,
+          [representationCheckRunner, "--checker", checker, "--root", reconciliationRoot],
+          { cwd: reconciliationRoot },
+        )
+      ).stdout,
+    );
+    assert.equal(
+      checkResult.status,
+      "pass",
+      `${checker} did not pass against packed reconciliation records`,
+    );
+  }
 
   process.stdout.write(
     `Package smoke test passed: ${packed.filename} (${packed.size} bytes, ${packed.files.length} files)\n`,

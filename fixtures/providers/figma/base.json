@@ -1,0 +1,42 @@
+{
+  "file": { "id": "file-123", "revision": "v18" },
+  "variables": [
+    {
+      "id": "VariableID:1",
+      "name": "Surface/Canvas",
+      "semantic_name": "surface.canvas",
+      "resolved_type": "COLOR",
+      "values_by_mode": { "light": "#ffffff" }
+    }
+  ],
+  "styles": [
+    {
+      "id": "S:1",
+      "name": "Text/Primary",
+      "semantic_name": "text.primary",
+      "style_type": "FILL",
+      "value": "#161616"
+    }
+  ],
+  "components": [
+    {
+      "id": "C:1",
+      "name": "Button",
+      "semantic_name": "button",
+      "description": "Approved action primitive",
+      "properties": { "variant": ["primary", "secondary"] }
+    }
+  ],
+  "selected_nodes": [
+    {
+      "id": "N:1",
+      "name": "Review setup",
+      "type": "FRAME",
+      "layout": { "direction": "vertical", "gap": "space.16" },
+      "styles": { "fill": "surface.canvas", "text": "text.primary" },
+      "text": "Review and finish setup",
+      "interactions": [{ "trigger": "click", "action": "navigate", "target": "N:2" }]
+    }
+  ],
+  "unresolved": []
+}

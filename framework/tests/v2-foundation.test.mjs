@@ -12,6 +12,7 @@ import {
   resolveCapabilities,
   resolvePermissions,
 } from "../runtime/permissions.mjs";
+import { discoverProviders } from "../runtime/providers.mjs";
 import { migrateSkillContractV1 } from "../migrations/v1-to-v2/skill.mjs";
 
 const root = path.resolve(
@@ -99,7 +100,7 @@ test("v1 skill contracts migrate to strict reviewable v2 contracts", async () =>
   const migrated = migrateSkillContractV1(legacy);
   await assertV2("skill.schema.json", migrated);
   assert.equal(migrated.schema, "silver/skill/v2");
-  assert.equal(migrated.version, "0.2.0");
+  assert.equal(migrated.version, "0.3.0");
   assert.equal(migrated.completion.review.required, true);
   assert.equal(
     migrated.extensions["silver.migration"].review_required,
@@ -173,18 +174,19 @@ test("permission resolution uses the strictest decision across every layer", asy
   );
 });
 
-test("missing optional providers degrade explicitly and required local capabilities remain usable", async () => {
+test("registered portable provider covers required capabilities while optional providers degrade", async () => {
   const contract = await yaml(
     "fixtures/contracts/v2/valid/skill-synthesize.yaml",
   );
   const resolution = resolveCapabilities({
     contract,
+    registeredProviders: await discoverProviders({ root }),
     availableProviders: [],
   });
   assert.deepEqual(resolution.providers, [
     {
       capability: "repository",
-      provider: "silver-local",
+      provider: "silver-portable",
       status: "selected",
     },
     {

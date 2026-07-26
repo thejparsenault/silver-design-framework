@@ -1,0 +1,69 @@
+schema: silver/provider/v1
+id: silver-portable
+version: 0.3.0
+kind: portable
+capabilities:
+  - repository
+  - canonical-artifact
+  - flow
+  - sketch-renderer
+  - prototype-renderer
+  - presentation-renderer
+  - production-source
+  - artifact-codec
+  - representation-sync
+availability:
+  script: scripts/health.mjs
+permissions:
+  - capability: repository
+    actions: [read, inspect, execute, create, write, update]
+    default: allow
+  - capability: canonical-artifact
+    actions: [read, inspect, create, write, update]
+    default: ask
+  - capability: production-source
+    actions: [read, inspect, create, write, update]
+    default: ask
+supported_artifact_kinds:
+  - brand
+  - product
+  - voice
+  - design-principles
+  - design-system
+  - token-source
+  - component-catalog
+  - research-plan
+  - evidence
+  - problem-frame
+  - finding
+  - concept
+  - hypothesis
+  - design-specification
+  - flow
+  - sketch
+  - evaluation
+  - observation
+  - component-proposal
+  - decision
+  - prototype
+  - change-case
+  - presentation-view
+  - implementation-handoff
+  - implementation
+  - asset-catalog
+  - presentation-kit
+  - x-prototype-render
+directions: [portable]
+fidelity: semantic
+codecs:
+  - codecs/prose.yaml
+  - codecs/graph.yaml
+  - codecs/structured.yaml
+  - codecs/tokens.yaml
+operations:
+  - id: portable-health
+    script: scripts/health.mjs
+    effect: inspect
+  - id: portable-artifact
+    script: scripts/portable-artifact.mjs
+    effect: read

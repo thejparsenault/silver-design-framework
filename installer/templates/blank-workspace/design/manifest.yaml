@@ -121,6 +121,14 @@ checks:
     - production-readiness
     - asset-integrity
     - critical-interactions
+    - binding-integrity
+    - provider-revision-pins
+    - view-provenance
+    - synchronization-status
+    - semantic-mapping
+    - stale-proposals
+    - authority
+    - secret-free-configuration
   suites:
     fast:
       - contract-integrity
@@ -134,10 +142,26 @@ checks:
       - accessibility
       - responsive-behavior
       - critical-interactions
+      - binding-integrity
+      - provider-revision-pins
+      - view-provenance
+      - synchronization-status
+      - semantic-mapping
+      - stale-proposals
+      - authority
+      - secret-free-configuration
     browser:
       - accessibility
       - responsive-behavior
       - critical-interactions
+      - binding-integrity
+      - provider-revision-pins
+      - view-provenance
+      - synchronization-status
+      - semantic-mapping
+      - stale-proposals
+      - authority
+      - secret-free-configuration
     full:
       - contract-integrity
       - flow-structure

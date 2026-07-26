@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: principles
-version: 0.2.0
+version: 0.3.0
 summary: Create concrete design principles and decision tests.
 context_budget: small
 inputs:

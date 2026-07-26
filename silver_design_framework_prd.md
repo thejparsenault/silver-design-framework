@@ -45,6 +45,8 @@ The framework must preserve flexibility while making constraints, authority, per
 11. **Portable design intent.** Flows have a tool-neutral structured representation; visual canvases and diagrams are interchangeable views or explicitly declared authorities.
 12. **Artifact-driven composition.** Skills run independently and compose through typed, revision-pinned artifact handoffs; optional playbooks coordinate them without imposing a universal lifecycle.
 13. **Separate completion from approval.** Skill execution, human or policy acceptance, and readiness for a downstream use are independently visible.
+14. **Portable baseline.** Every generally applicable skill performs its core task with project-local files and bundled providers; external tools add capabilities without becoming silent prerequisites.
+15. **Reconcile, never guess.** Canonical artifacts, local views, and external views carry explicit authority and revision provenance. Drift is compared against a shared base and proposed for review rather than resolved by last-write-wins.
 
 ## 4. Scope Model
 
@@ -163,6 +165,30 @@ Only information needed across skill, session, tool, or review boundaries must
 be persisted. Transient agent reasoning and mechanical intermediate steps do
 not require repository artifacts.
 
+### 5.3 Portable Artifacts and Views
+
+Silver separates three representation roles:
+
+- a **portable artifact** carries accepted design meaning and is the unit used
+  by skill handoffs and playbooks;
+- a **local view** is a generated, disposable projection for review,
+  inspection, or interaction; and
+- an **external view** is a provider object bound to an exact portable
+  revision through an adapter.
+
+Prose-first portable artifacts use Markdown with Silver frontmatter. Graphs,
+catalogs, findings, policies, and other machine-enforced structures use their
+declared JSON or YAML contracts. Tokens use DTCG JSON. Self-contained semantic
+HTML is the default local visual view for sketches, prototypes, presentations,
+and catalogs; flows provide both Mermaid and HTML views from one structured
+graph. HTML is not a universal canonical format.
+
+A generated view records all portable, renderer, design-system, asset, and
+provider revisions it uses. Editing a view does not silently update its
+portable artifact. Imported edits become normalized reconciliation proposals.
+The detailed format, provenance, and reconciliation model is in
+`docs/tool-representations-and-reconciliation.md`.
+
 ## 6. Skill Model
 
 A skill is an agent-neutral package for one recognizable design task. It contains:
@@ -184,6 +210,8 @@ The contract declares:
 - expected context budget;
 - deterministic checks to recommend afterward;
 - required and optional capabilities plus degraded fallback behavior;
+- its bundled portable baseline provider and the external effects that cannot
+  be performed by that baseline;
 - stable completion invariants and unresolved-question policy;
 - quality criteria and required review;
 - possible downstream handoffs.
@@ -320,6 +348,14 @@ fallback. For example, a pitch may complete a local change case without a
 presentation provider while reporting deck rendering and visual inspection as
 `not-run`.
 
+Every generally applicable skill has a registered bundled baseline provider
+that uses repository files and packaged scripts. Baseline providers are
+installed packages discovered through provider contracts, not a hard-coded
+runtime list. A skill result distinguishes complete portable work from
+unavailable optional projections or inspections. A task that is inherently
+external or production-bound must still require that provider or codebase and
+must not claim the baseline performed the effect.
+
 ## 8. Prototype Policy
 
 Prototypes are open-ended and non-authoritative. They may introduce new component structures and behaviors and may later be promoted, retained, archived, or discarded.
@@ -360,9 +396,17 @@ Tailwind and similar utilities are implementation syntax. Structural utilities m
 
 ## 10. External Authority and Synchronization
 
-Authority is declared per artifact kind. Figma, another design tool, or code may be authoritative depending on the team.
+Authority is declared per artifact or artifact kind. A binding has one
+authoritative side: the portable local artifact or a named external provider.
+Multiple authoring surfaces do not imply equal bidirectional authority. Figma,
+another design tool, or code may be authoritative depending on the team.
 
 Any artifact consumed by production requires a pinned and validated local representation so agents, builds, and CI can operate deterministically.
+
+Each local or external view records the portable artifact and revision used,
+provider object and revision, adapter and version, mapping profile, authority,
+round-trip fidelity, and last reconciled base. Credentials never appear in a
+binding.
 
 Synchronization policies:
 
@@ -371,6 +415,26 @@ Synchronization policies:
 - `propose` — fetch, validate, and prepare a reviewable diff or PR.
 
 No policy silently overwrites the canonical local or external artifact. Freshness begins as a warning; repositories may promote critical artifacts to CI errors.
+
+Synchronization states are `current`, `view-stale`, `external-changed`,
+`diverged`, `unmapped`, `unverified`, and `conflict`. Reconciliation compares
+the last reconciled portable base, current portable revision, and current
+normalized external snapshot. Adapters emit typed change proposals classified
+by design meaning. They do not update canonical artifacts during inspection,
+infer cross-artifact changes, invent styles or components, or resolve
+concurrent changes by last-write-wins.
+
+Applying an accepted proposal revalidates local and external revisions,
+permissions, schemas, and required checks. Local writes are atomic and
+expected-integrity guarded; external writes require separate approval. Failure,
+partial extraction, denial, or a stale proposal leaves accepted work
+unchanged.
+
+A local baseline does not bypass external authority. When an externally
+authoritative artifact cannot be refreshed, the last validated local pin may
+support inspection or drafting, but freshness-sensitive readiness remains
+blocked. The complete model is defined in
+`docs/tool-representations-and-reconciliation.md`.
 
 ## 11. Checks
 
@@ -534,18 +598,22 @@ content; presentation outputs are revision-pinned views. See
 
 All excluded functionality is tracked in `BACKLOG.md`.
 
-### 15.3 Next Release
+### 15.3 Latest Release
 
-Silver `0.2.0`, working name **Complete Blank-Workspace Suite**, expands the
-validated blank-folder path into the complete project-local foundation,
-design-loop, pitch, implementation, and conformance skill suite. It also adds
-the v2 result, guardrail, playbook, resumability, local-renderer, asset, and
-presentation-kit supports required to compose those skills safely.
+Silver `0.3.0`, **Portable Tools and Reconciliation**, is complete. It
+formalizes the portable baseline already demonstrated by `0.2.0`, replaces hard-coded
+local capability knowledge with registered provider packages, separates
+canonical artifacts from local and external views, implements base-pinned
+three-way drift detection and safe reconciliation, and proves the contract
+through the first Figma adapter.
 
-`docs/silver-0.2-acceptance.md` is authoritative for the release scope,
-exclusions, stable requirement IDs, and required completion evidence.
-Existing-codebase adoption follows `0.2.0` except for bounded discovery work
-used to pressure-test framework neutrality.
+`docs/silver-0.3-acceptance.md` is authoritative for the release scope,
+exclusions, and stable requirement IDs.
+`docs/silver-0.3-acceptance-audit.md` records direct passing evidence for all
+22 required criteria.
+`docs/tool-representations-and-reconciliation.md` is the supporting
+architecture specification. Existing-codebase adoption follows `0.3.0`
+because no representative production repository is currently available.
 
 ## 16. Acceptance Criteria
 

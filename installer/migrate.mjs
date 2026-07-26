@@ -29,6 +29,7 @@ import {
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
 const newProjectFiles = [
+  "design/integrations/README.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
   "design/presentation-kit/kit.json",
@@ -52,6 +53,14 @@ const independentChecks = [
   "accessibility",
   "responsive-behavior",
   "critical-interactions",
+  "binding-integrity",
+  "provider-revision-pins",
+  "view-provenance",
+  "synchronization-status",
+  "semantic-mapping",
+  "stale-proposals",
+  "authority",
+  "secret-free-configuration",
 ];
 
 function clone(value) {
@@ -121,7 +130,13 @@ async function loadWorkspace(root) {
   if (lock.schema === "silver/lock/v2") {
     const validation = await validateSchema("v2/lock.schema.json", lock);
     if (!validation.valid) throw new Error(`Current lock is invalid: ${validation.errors.join("; ")}`);
-    return { manifest, manifestPath, lock, lockPath, current: true };
+    return {
+      manifest,
+      manifestPath,
+      lock,
+      lockPath,
+      current: lock.framework.version === FRAMEWORK_VERSION,
+    };
   }
   const validation = await validateSchema("lock.schema.json", lock);
   if (!validation.valid) throw new Error(`Legacy lock is invalid: ${validation.errors.join("; ")}`);
@@ -142,7 +157,7 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       conflicts.push({
         package: installed.id,
         path: legacyPath(installed),
-        reason: "Legacy framework-managed package has no 0.2 migration target.",
+        reason: "Installed framework-managed package has no migration target.",
       });
       continue;
     }
@@ -151,7 +166,7 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       conflicts.push({
         package: installed.id,
         path: relative,
-        reason: "Recorded legacy framework-managed package is missing.",
+        reason: "Recorded framework-managed package is missing.",
       });
       continue;
     }
@@ -162,7 +177,7 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       conflicts.push({
         package: installed.id,
         path: relative,
-        reason: "Local edits differ from the legacy installed base.",
+        reason: "Local edits differ from the installed base.",
       });
     }
   }
@@ -196,7 +211,7 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       continue;
     }
     if (observed === target.integrity) {
-      preserved.push({ package: target.id, path: target.path, reason: "Already matches 0.2." });
+      preserved.push({ package: target.id, path: target.path, reason: "Already matches the target release." });
       continue;
     }
     const installed = installedById.get(target.id);

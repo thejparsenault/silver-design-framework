@@ -1,6 +1,6 @@
 {
   "name": "silver-design-framework",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
@@ -14,6 +14,7 @@
     "framework/guardrails/",
     "framework/migrations/",
     "framework/playbooks/",
+    "framework/providers/",
     "framework/runtime/",
     "framework/scenarios/",
     "framework/skills/",

@@ -1,0 +1,63 @@
+{
+  "file": { "id": "file-123", "revision": "v19" },
+  "variables": [
+    {
+      "id": "VariableID:1",
+      "name": "Surface/Canvas",
+      "semantic_name": "surface.canvas",
+      "resolved_type": "COLOR",
+      "values_by_mode": { "light": "#f7f7f7" }
+    },
+    {
+      "id": "VariableID:2",
+      "name": "Experiment/Purple",
+      "resolved_type": "COLOR",
+      "values_by_mode": { "light": "#6f42c1" }
+    }
+  ],
+  "styles": [
+    {
+      "id": "S:1",
+      "name": "Text/Primary",
+      "semantic_name": "text.primary",
+      "style_type": "FILL",
+      "value": "#222222"
+    },
+    {
+      "id": "S:2",
+      "name": "One-off glow",
+      "style_type": "EFFECT",
+      "value": "provider-specific"
+    }
+  ],
+  "components": [
+    {
+      "id": "C:1",
+      "name": "Button",
+      "semantic_name": "button",
+      "description": "Approved action primitive",
+      "properties": { "variant": ["primary", "secondary"] }
+    },
+    {
+      "id": "C:2",
+      "name": "Setup celebration",
+      "description": "Unregistered product composition",
+      "properties": {}
+    }
+  ],
+  "selected_nodes": [
+    {
+      "id": "N:1",
+      "name": "Review setup",
+      "type": "FRAME",
+      "layout": { "direction": "horizontal", "gap": "space.20" },
+      "styles": { "fill": "surface.canvas", "text": "text.primary" },
+      "text": "Review what will be saved",
+      "interactions": [
+        { "trigger": "click", "action": "navigate", "target": "N:3" },
+        { "trigger": "click", "action": "close", "target": "N:4" }
+      ]
+    }
+  ],
+  "unresolved": []
+}

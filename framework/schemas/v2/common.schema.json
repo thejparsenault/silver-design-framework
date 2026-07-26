@@ -64,6 +64,10 @@
             "implementation",
             "asset-catalog",
             "presentation-kit"
+            ,"representation-binding"
+            ,"external-snapshot"
+            ,"change-set"
+            ,"reconciliation-result"
           ]
         },
         {
@@ -88,6 +92,8 @@
             "design-file",
             "external-artifact",
             "version-control"
+            ,"artifact-codec"
+            ,"representation-sync"
           ]
         },
         {

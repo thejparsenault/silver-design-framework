@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: brand
-version: 0.2.0
+version: 0.3.0
 summary: Define or refine audience-facing brand foundations.
 context_budget: small
 inputs:

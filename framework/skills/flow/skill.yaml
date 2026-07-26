@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: flow
-version: 0.2.0
+version: 0.3.0
 summary: Create and revise portable, revision-aware behavior graphs.
 context_budget: medium
 inputs:

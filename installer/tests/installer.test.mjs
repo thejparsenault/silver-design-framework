@@ -52,6 +52,7 @@ const managedPayloads = [
   ["framework/guardrails", ".silver/guardrails"],
   ["framework/runtime", ".silver/runtime"],
   ["framework/playbooks", ".silver/playbooks"],
+  ["framework/providers", ".silver/providers"],
 ];
 
 async function temporaryWorkspace(t) {
@@ -74,6 +75,7 @@ async function temporaryPayload(t) {
     "guardrails",
     "runtime",
     "playbooks",
+    "providers",
   ]) {
     await cp(
       path.join(repositoryRoot, "framework", relativePath),
@@ -126,7 +128,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.2.0",
+    version: "0.3.0",
     sourceReference: "framework-development-fixture",
   });
 
@@ -305,7 +307,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.2.0",
+      "version: 0.3.0",
       "version: 0.2.1",
     ),
   );
