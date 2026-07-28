@@ -11,6 +11,15 @@ existing-codebase adoption after selecting a representative product repository.
 
 ## Recent Progress
 
+- 2026-07-26: Newcomer-first README
+  - Replaced historical project framing with a practical explanation of
+    Silver's agent-first workspace model and portable, local, and external
+    representation roles.
+  - Added exact source installation and blank-workspace setup commands,
+    starter prompts, the optional design loop, the complete skill catalog,
+    checks, workspace anatomy, maintenance commands, safety rules, and current
+    limitations.
+
 - 2026-07-25: Silver 0.3 Portable Tools and Reconciliation accepted
   - Added installed, versioned `silver-portable` and Figma provider packages,
     registered artifact codecs, and package-driven capability resolution.
@@ -203,4 +212,4 @@ existing-codebase adoption after selecting a representative product repository.
 
 ## Last Updated
 
-2026-07-25
+2026-07-26
