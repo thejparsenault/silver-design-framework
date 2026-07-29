@@ -84,7 +84,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.3.0" },
+    skill: { id: "synthesize", version: "0.4.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -172,7 +172,7 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.3.0" },
+    skill: { id: "brand", version: "0.4.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -260,7 +260,7 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.3.0" },
+    skill: { id: "implement", version: "0.4.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -327,4 +327,38 @@ test("non-relaxable guardrails block before writes", async () => {
   });
   assert.equal(result.execution.status, "blocked");
   assert.match(result.execution.summary, /non-relaxable/);
+});
+
+test("undeclared recommendations block before durable outputs are written", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-recommendation-"),
+  );
+  const request = synthesizeRequest({
+    invocation_id: "synthesize-bad-recommendation",
+    recommended_next_actions: [
+      {
+        action: "delete-workspace",
+        reason: "This action is outside the synthesize contract.",
+        automatic: false,
+      },
+    ],
+  });
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.equal(result.execution.status, "blocked");
+  assert.deepEqual(result.outputs, []);
+  assert.deepEqual(result.recommended_next_actions, []);
+  await assert.rejects(
+    readFile(
+      path.join(
+        workspace,
+        "design/work/findings/campaign-finding.json",
+      ),
+    ),
+    /ENOENT/,
+  );
 });

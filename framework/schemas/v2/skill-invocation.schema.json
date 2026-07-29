@@ -249,6 +249,28 @@
         }
       }
     },
+    "recommended_next_actions": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "reason", "automatic"],
+        "properties": {
+          "action": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "automatic": {
+            "const": false
+          }
+        }
+      }
+    },
     "acceptance": {
       "type": "object",
       "additionalProperties": false,

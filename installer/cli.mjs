@@ -1,11 +1,13 @@
 import path from "node:path";
 
+import { renderBrandMark } from "./brand.mjs";
 import { doctorWorkspace } from "./doctor.mjs";
 import { migrateWorkspace } from "./migrate.mjs";
 import { repairWorkspace } from "./repair.mjs";
 import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
+import { runWhatNowAfterSetup } from "./what-now.mjs";
 
 const usage = `The Silver Design Framework
 
@@ -66,10 +68,13 @@ function printSetup(result, write) {
   if (result.preserved.length > 0) {
     write(`Preserved ${result.preserved.length} existing files.`);
   }
-  write("Recommended next actions:");
-  for (const action of result.recommendedNextActions) {
-    write(`  - ${action}`);
+  write("What Now recommends:");
+  for (const recommendation of result.whatNow.analysis.recommendations) {
+    write(
+      `  ${recommendation.rank}. ${recommendation.title}: ${recommendation.reason}`,
+    );
   }
+  write("No recommendation was started automatically.");
 }
 
 function printDoctor(result, write) {
@@ -136,6 +141,15 @@ export async function runCli(
   {
     stdout = (message) => console.log(message),
     stderr = (message) => console.error(message),
+    terminal = {
+      isTTY: Boolean(process.stdout.isTTY),
+      colorDepth:
+        typeof process.stdout.getColorDepth === "function"
+          ? process.stdout.getColorDepth()
+          : 0,
+    },
+    env = process.env,
+    now = () => new Date(),
   } = {},
 ) {
   try {
@@ -158,11 +172,16 @@ export async function runCli(
     const root = path.resolve(positionals[0] ?? process.cwd());
 
     if (command === "setup") {
-      const result = await setupWorkspace({
+      if (!flags.json) {
+        stdout(await renderBrandMark({ terminal, env }));
+      }
+      const setup = await setupWorkspace({
         root,
         name: flags.name,
         id: flags.id,
       });
+      const whatNow = await runWhatNowAfterSetup({ root, now: now() });
+      const result = { ...setup, whatNow };
       if (flags.json) {
         stdout(JSON.stringify(result, null, 2));
       } else {

@@ -22,4 +22,4 @@ Default flow view: `mermaid`
 Prototype root: `prototypes/`
 Default constraint profile: `constrained`
 
-Installed project skills: `brand`, `product`, `voice`, `principles`, `theme`, `system`, `research`, `synthesize`, `ideate`, `specify`, `flow`, `sketch`, `component`, `prototype`, `evaluate`, `pitch`, `implement`, `design-check`
+Installed project skills: `what-now`, `brand`, `product`, `voice`, `principles`, `theme`, `system`, `research`, `synthesize`, `ideate`, `specify`, `flow`, `sketch`, `component`, `prototype`, `evaluate`, `pitch`, `implement`, `design-check`

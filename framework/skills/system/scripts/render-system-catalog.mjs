@@ -55,7 +55,7 @@ export async function renderSystemCatalog({
 <link rel="stylesheet" href="../../reference-system/packages/css/src/ds.css" /><style>
 .catalog { max-width: var(--ds-layout-content-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
 table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: var(--ds-space-12); border-bottom: var(--ds-field-input-border-width) solid var(--ds-border-subtle); }
-</style></head><body data-scheme="light" data-mode="default"><main class="catalog" data-silver-target="system-catalog" data-source-id="design-system" data-source-revision="${escapeHtml(sourceRevision)}" data-renderer-version="system-catalog-html@0.3.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}"><h1>Design system catalog</h1><p>Portable semantic token inventory.</p><table><thead><tr><th>Token</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></main></body></html>`;
+</style></head><body data-scheme="light" data-mode="default"><main class="catalog" data-silver-target="system-catalog" data-source-id="design-system" data-source-revision="${escapeHtml(sourceRevision)}" data-renderer-version="system-catalog-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}"><h1>Design system catalog</h1><p>Portable semantic token inventory.</p><table><thead><tr><th>Token</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></main></body></html>`;
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, html, "utf8");
   return { outputPath, tokenCount: leaves(tokenSource).length };

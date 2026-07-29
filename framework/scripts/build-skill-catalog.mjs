@@ -99,7 +99,13 @@ for (const skill of catalog.skills) {
     id: skill.id,
     version: catalog.version,
     summary: skill.summary,
-    context_budget: ["flow", "prototype", "implement", "pitch", "evaluate"].includes(skill.id) ? "medium" : "small",
+    context_budget:
+      skill.context_budget ??
+      (["flow", "prototype", "implement", "pitch", "evaluate"].includes(
+        skill.id,
+      )
+        ? "medium"
+        : "small"),
     inputs: skill.inputs.map(parseInput),
     outputs,
     capabilities: {
@@ -115,7 +121,16 @@ for (const skill of catalog.skills) {
       {
         capability: "repository",
         actions: ["read", "inspect"],
-        paths: ["design/**", "prototypes/**", "presentations/**", "production/**", "reference-system/**", ".silver/**"],
+        paths:
+          skill.read_paths ??
+          [
+            "design/**",
+            "prototypes/**",
+            "presentations/**",
+            "production/**",
+            "reference-system/**",
+            ".silver/**",
+          ],
         decision: "allow",
       },
       ...outputs.map(permissionFor),
@@ -126,13 +141,25 @@ for (const skill of catalog.skills) {
       quality_criteria: [{
         id: "task-quality",
         description: skill.quality,
-        evaluation: skill.id === "design-check" ? "deterministic" : "human",
+        evaluation:
+          skill.quality_evaluation ??
+          (skill.id === "design-check" ? "deterministic" : "human"),
       }],
-      unresolved_questions: ["design-check", "research"].includes(skill.id) ? "warn" : "block-handoff",
+      unresolved_questions:
+        skill.unresolved_questions ??
+        (["design-check", "research"].includes(skill.id)
+          ? "warn"
+          : "block-handoff"),
       review: {
-        required: skill.id !== "design-check",
-        reviewer: skill.id === "design-check" ? "none" : "human",
-        checkpoint: skill.id === "design-check" ? "Review findings when any check fails or is not-run." : "Review and accept the result before a readiness-gated handoff.",
+        required: skill.review?.required ?? skill.id !== "design-check",
+        reviewer:
+          skill.review?.reviewer ??
+          (skill.id === "design-check" ? "none" : "human"),
+        checkpoint:
+          skill.review?.checkpoint ??
+          (skill.id === "design-check"
+            ? "Review findings when any check fails or is not-run."
+            : "Review and accept the result before a readiness-gated handoff."),
       },
     },
     checks: skill.checks.map((id) => ({ id, required: true, blocks: skill.handoffs })),
@@ -142,7 +169,11 @@ for (const skill of catalog.skills) {
       readiness: target === "implement" ? "production" : target,
       requires: outputs.map(({ kind }) => kind),
     })),
-    external_effects: skill.capabilities.some((value) => value.includes("external")) ? ["read-external"] : ["none"],
+    external_effects:
+      skill.external_effects ??
+      (skill.capabilities.some((value) => value.includes("external"))
+        ? ["read-external"]
+        : ["none"]),
     scripts: [
       { id: "invoke", path: "scripts/invoke.mjs", purpose: "Run this skill through the shared guarded invocation runtime." },
       ...existingScripts.map((name) => ({
@@ -151,7 +182,7 @@ for (const skill of catalog.skills) {
         purpose: `Bundled deterministic ${skill.id} operation.`,
       })),
     ],
-    recommend_after: skill.handoffs,
+    recommend_after: skill.recommend_after ?? skill.handoffs,
   };
   const body = [
     "---",
@@ -165,7 +196,8 @@ for (const skill of catalog.skills) {
     "",
     ...skill.workflow.map((step, index) => `${index + 1}. ${step}`),
     "",
-    "Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.",
+    skill.invocation_instruction ??
+      "Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.",
     "",
     "## Done",
     "",

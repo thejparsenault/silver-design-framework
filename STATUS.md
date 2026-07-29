@@ -2,14 +2,39 @@
 
 ## Current Focus
 
-Silver `0.3.0`, Portable Tools and Reconciliation, is complete and validated
-from source and as an exact offline archive. All eighteen general skills have a
-registered portable baseline; representation authority, provenance, drift,
-three-way reconciliation, safe apply, and the fixture-testable Figma adapter
-have direct evidence for all 22 release criteria. The next milestone is
-existing-codebase adoption after selecting a representative product repository.
+Silver `0.4.0`, What Now, is complete and validated from source and as an exact
+offline archive. All nineteen project-local skills run independently; the new
+read-only orientation skill ranks evidence-linked next actions without starting
+them. Contract-bounded dynamic recommendations and reviewable 0.3-to-0.4
+migration have direct evidence for all ten release criteria. The next milestone
+is existing-codebase adoption after selecting a representative product
+repository.
 
 ## Recent Progress
+
+- 2026-07-28: Branded setup handoff
+  - Added the authoritative Ag terminal mark to human-facing `silver setup`
+    output with dark, light, unknown-ground, reduced-colour, `NO_COLOR`, and
+    non-interactive handling.
+  - Setup now finishes by analyzing the initialized workspace and recording one
+    guarded `what-now` invocation before printing its ranked, non-automatic
+    recommendations.
+  - Added source and exact-package coverage for the mark, packed brand asset,
+    persisted invocation, and post-setup recommendations.
+
+- 2026-07-28: Silver 0.4 What Now accepted
+  - Added the generated `what-now` skill and deterministic read-only workspace
+    analyzer with status-first ranking, semantic timestamp tie-breaking,
+    filesystem-time fallback, and explicit evidence for three to five choices.
+  - Extended guarded invocations with optional ranked recommendations that are
+    accepted only from the skill contract allowlist and discarded on blocked
+    execution; existing skills retain static follow-ups.
+  - Added non-mutation and symlink-safety coverage, representative workspace
+    state fixtures, a reviewable 0.3-to-0.4 migration, nineteen-skill complete
+    loop evidence, and exact offline archive coverage.
+  - Recorded direct evidence for all ten criteria in
+    `docs/silver-0.4-acceptance-audit.md`; `npm run build` passes 67 tests and
+    `npm run test:package` passes for the 1,030-file `0.4.0` archive.
 
 - 2026-07-26: Newcomer-first README
   - Replaced historical project framing with a practical explanation of

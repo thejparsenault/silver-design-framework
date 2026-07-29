@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: system
-version: 0.3.0
+version: 0.4.0
 summary: Maintain semantic tokens, registries, deprecations, and migrations.
 context_budget: small
 inputs:
@@ -135,5 +135,5 @@ scripts:
     purpose: Run this skill through the shared guarded invocation runtime.
   - id: render-system-catalog
     path: scripts/render-system-catalog.mjs
-    purpose: Render the portable design-system and token sources as semantic HTML.
+    purpose: Bundled deterministic system operation.
 recommend_after: *a1

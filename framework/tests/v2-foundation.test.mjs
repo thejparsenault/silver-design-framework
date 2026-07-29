@@ -100,7 +100,7 @@ test("v1 skill contracts migrate to strict reviewable v2 contracts", async () =>
   const migrated = migrateSkillContractV1(legacy);
   await assertV2("skill.schema.json", migrated);
   assert.equal(migrated.schema, "silver/skill/v2");
-  assert.equal(migrated.version, "0.3.0");
+  assert.equal(migrated.version, "0.4.0");
   assert.equal(migrated.completion.review.required, true);
   assert.equal(
     migrated.extensions["silver.migration"].review_required,

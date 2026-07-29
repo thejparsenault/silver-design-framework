@@ -3,7 +3,7 @@
   "invocation_id": "synthesize-fixture-1",
   "skill": {
     "id": "synthesize",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "started_at": "2026-07-24T18:00:00Z",
   "completed_at": "2026-07-24T18:00:01Z",

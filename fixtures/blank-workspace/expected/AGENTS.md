@@ -8,6 +8,7 @@ Project-local design skills are installed under `.skills/`; read the relevant
 
 Available design skills:
 
+- [what-now](.skills/what-now/SKILL.md)
 - [brand](.skills/brand/SKILL.md)
 - [product](.skills/product/SKILL.md)
 - [voice](.skills/voice/SKILL.md)

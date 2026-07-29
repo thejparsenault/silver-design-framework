@@ -140,6 +140,35 @@ The authoritative requirement list and release evidence rules are in
   - context: large
   - notes: Complete. All 22 `S03-*` criteria have direct passing evidence in `docs/silver-0.3-acceptance-audit.md`; the final gates are `npm run build` and `npm run test:package`.
 
+## Completed Release — Silver 0.4 What Now
+
+The authoritative requirement list and release evidence rules are in
+`docs/silver-0.4-acceptance.md`.
+
+- [x] Implement evidence-ranked workspace orientation
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Complete. The nineteenth project-local skill inspects manifest, lock, results, playbooks, freshness, and artifact state; ranks three to five evidence-linked options; and never starts them.
+
+- [x] Implement contract-bounded dynamic recommendations
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Complete. Successful invocations may preserve caller ranking only for contract-allowlisted actions, while blocked results emit no recommendations and existing skills retain static defaults.
+
+- [x] Prove source, migration, and exact-package behavior
+  - type: test
+  - priority: high
+  - context: medium
+  - notes: Complete. All ten `S04-*` criteria have direct evidence; `npm run build` passes 67 tests and `npm run test:package` passes with reviewable 0.3-to-0.4 migration and all nineteen skills.
+
+- [x] Connect setup to branded orientation
+  - type: build
+  - priority: medium
+  - context: small
+  - notes: Complete. Human-facing setup displays the authoritative Ag terminal mark in a contrast-aware silver tone, then runs and records one guarded `what-now` invocation; JSON and non-interactive output remain escape-safe.
+
 ## Following Milestone — Existing Codebase Adoption
 
 - [ ] Adopt one representative existing product repository

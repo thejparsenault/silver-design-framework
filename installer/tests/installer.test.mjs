@@ -28,6 +28,7 @@ const expectedRoot = path.join(
 const skillSourceRoot = path.join(repositoryRoot, "framework", "skills");
 const referenceSystemSourceRoot = path.join(repositoryRoot, "reference-system");
 const installedSkillIds = [
+  "what-now",
   "brand",
   "product",
   "voice",
@@ -128,7 +129,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.3.0",
+    version: "0.4.0",
     sourceReference: "framework-development-fixture",
   });
 
@@ -307,7 +308,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.3.0",
+      "version: 0.4.0",
       "version: 0.2.1",
     ),
   );

@@ -5,7 +5,10 @@ This backlog contains functionality intentionally excluded from the first blank-
 Silver `0.2.0` completed the blank-workspace skill suite and local baseline.
 Silver `0.3.0` completed portable-provider registration, representation
 bindings, three-way reconciliation, and the first Figma adapter.
-`docs/silver-0.3-acceptance-audit.md` records the direct passing evidence.
+Silver `0.4.0` added the project-local `what-now` orientation skill and
+contract-bounded ranked recommendations.
+`docs/silver-0.4-acceptance-audit.md` records the latest direct passing
+evidence.
 Existing-codebase adoption is the next recommended milestone.
 
 ## P1 — Portable Tools and Reconciliation — Silver 0.3

@@ -25,6 +25,7 @@ import { renderStaticPrototype } from "../skills/prototype/scripts/render-static
 import { renderSketch } from "../skills/sketch/scripts/render-sketch.mjs";
 import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
 import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
+import { inspectWorkspace } from "../skills/what-now/scripts/analyze-workspace.mjs";
 
 const time = "2026-07-24T20:00:00Z";
 const completed = "2026-07-24T20:00:01Z";
@@ -140,7 +141,15 @@ function checksFor(contract, evidence) {
     });
 }
 
-async function invokeCase({ root, id, inputs = [], outputs = [], checkEvidence, providers = [] }) {
+async function invokeCase({
+  root,
+  id,
+  inputs = [],
+  outputs = [],
+  checkEvidence,
+  providers = [],
+  recommendedNextActions,
+}) {
   const skillDirectory = path.join(root, ".skills", id);
   const contract = parse(await readFile(path.join(skillDirectory, "skill.yaml"), "utf8"));
   const positiveOutputs = await prepareOutputs(root, outputs);
@@ -163,7 +172,7 @@ async function invokeCase({ root, id, inputs = [], outputs = [], checkEvidence, 
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.3.0" },
+    skill: { id, version: "0.4.0" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -173,20 +182,31 @@ async function invokeCase({ root, id, inputs = [], outputs = [], checkEvidence, 
     relaxations: [],
     checks: checksFor(contract, checkEvidence),
     unresolved_questions: [],
+    ...(recommendedNextActions
+      ? { recommended_next_actions: recommendedNextActions }
+      : {}),
     ...(contract.completion.review.required
       ? { acceptance: { status: "accepted", reviewer: "release-fixture-reviewer", recorded_at: completed } }
       : {}),
   };
 
-  if (id === "design-check") {
+  if (["design-check", "what-now"].includes(id)) {
     const result = await invokeSkill({
       root,
       skillDirectory,
-      request: { ...base, invocation_id: "design-check-local-degraded" },
+      request: {
+        ...base,
+        invocation_id:
+          id === "design-check"
+            ? "design-check-local-degraded"
+            : "what-now-positive",
+      },
       completedAt: completed,
     });
     assert.ok(["complete", "complete-with-findings"].includes(result.execution.status));
-    assert.ok(result.degraded_capabilities.some(({ capability }) => capability === "browser"));
+    if (id === "design-check") {
+      assert.ok(result.degraded_capabilities.some(({ capability }) => capability === "browser"));
+    }
     return result;
   }
 
@@ -511,7 +531,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.3.0" },
+      skill: { id: "prototype", version: "0.4.0" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -545,7 +565,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.3.0" },
+      skill: { id: "evaluate", version: "0.4.0" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
@@ -625,6 +645,16 @@ export async function runCompleteBlankScenario(options = {}) {
   await renderStaticImplementation({ root, handoff: refs.handoff.path, output: "production/guided-setup" });
 
   results.set("design-check", await invokeCase({ root, id: "design-check", checkEvidence }));
+  const whatNowAnalysis = await inspectWorkspace(root, new Date(completed));
+  results.set(
+    "what-now",
+    await invokeCase({
+      root,
+      id: "what-now",
+      checkEvidence,
+      recommendedNextActions: whatNowAnalysis.invocation_recommendations,
+    }),
+  );
 
   const manifestPath = path.join(root, "design/manifest.yaml");
   const manifest = parse(await readFile(manifestPath, "utf8"));
@@ -693,7 +723,9 @@ export async function runCompleteBlankScenario(options = {}) {
       ]),
     ),
     positive_results: [...results.values()].map(({ invocation_id }) => invocation_id),
-    boundary_results: [...results.keys()].filter((id) => id !== "design-check").map((id) => `${id}-boundary`),
+    boundary_results: [...results.keys()]
+      .filter((id) => !["design-check", "what-now"].includes(id))
+      .map((id) => `${id}-boundary`),
     refinement_results: [refinedResult.invocation_id, secondEvalResult.invocation_id],
     fast: fast.status,
     browser: browser.status,

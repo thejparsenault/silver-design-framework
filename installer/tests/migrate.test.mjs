@@ -19,7 +19,7 @@ async function legacyWorkspace(t) {
     name: "Legacy Product",
     id: "legacy-product",
     date: "2026-07-23",
-    version: "0.3.0",
+    version: "0.4.0",
     sourceReference: "migration-fixture-source",
   });
   const lockPath = path.join(root, ".silver", "lock.yaml");
@@ -123,9 +123,9 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.3.0");
-  assert.equal(lock.packages.length, 25);
-  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 18);
+  assert.equal(lock.framework.version, "0.4.0");
+  assert.equal(lock.packages.length, 26);
+  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 19);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "presentation-kit"));
@@ -149,7 +149,61 @@ test("migration stops before all writes when a managed legacy skill was edited",
   assert.deepEqual(comparable(await snapshotFiles(root)), before);
 });
 
-test("0.2 v2 workspace previews, applies, and reruns the 0.3 provider migration idempotently", async (t) => {
+test("0.3 workspace previews and applies the 0.4 what-now installation idempotently", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-03-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Silver 0.3 workspace",
+    id: "silver-03-workspace",
+    date: "2026-07-25",
+  });
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.3.0";
+  lock.framework.source.reference = "silver-0.3-fixture";
+  lock.packages = lock.packages
+    .filter(({ id }) => id !== "what-now")
+    .map((record) =>
+      record.ownership === "framework-managed"
+        ? { ...record, version: "0.3.0" }
+        : record,
+    );
+  await writeFile(lockPath, stringify(lock), "utf8");
+  await rm(path.join(root, ".skills", "what-now"), {
+    recursive: true,
+    force: true,
+  });
+  const brandPath = path.join(root, "design", "brand.md");
+  const ownedBrand = `${await readFile(brandPath, "utf8")}\nProject-owned 0.3 content.\n`;
+  await writeFile(brandPath, ownedBrand, "utf8");
+
+  const before = comparable(await snapshotFiles(root));
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.ok, true);
+  assert.equal(preview.needed, true);
+  assert.equal(preview.applied, false);
+  assert.ok(
+    preview.changes.some(
+      ({ package: id, action }) =>
+        id === "what-now" && action === "install",
+    ),
+  );
+  assert.deepEqual(comparable(await snapshotFiles(root)), before);
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.ok, true);
+  assert.equal(applied.applied, true);
+  assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
+  await readFile(path.join(root, ".skills", "what-now", "SKILL.md"), "utf8");
+  assert.equal((await doctorWorkspace({ root })).ok, true);
+
+  const repeated = await migrateWorkspace({ root, apply: true });
+  assert.equal(repeated.needed, false);
+  assert.equal(repeated.applied, false);
+});
+
+test("0.2 v2 workspace previews, applies, and reruns the 0.4 migration idempotently", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -189,7 +243,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.3 provider migration 
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.3.0");
+  assert.equal(migrated.framework.version, "0.4.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma", "silver-portable"],
@@ -201,7 +255,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.3 provider migration 
   assert.equal(repeated.applied, false);
 });
 
-test("0.2-to-0.3 migration surfaces edited managed packages without writing", async (t) => {
+test("0.2-to-0.4 migration surfaces edited managed packages without writing", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-conflict-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({ root, name: "Edited 0.2", id: "edited-02", date: "2026-07-24" });

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { assertV2 } from "../../runtime/contracts.mjs";
 
-export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.3.0" };
+export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.4.0" };
 
 const digest = (value) =>
   `sha256:${createHash("sha256").update(`${JSON.stringify(value, null, 2)}\\n`).digest("hex")}`;

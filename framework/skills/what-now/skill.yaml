@@ -1,0 +1,82 @@
+schema: silver/skill/v2
+id: what-now
+version: 0.4.0
+summary: Recommend next actions from current workspace evidence.
+context_budget: small
+inputs: []
+outputs: []
+capabilities:
+  required:
+    - repository
+  optional: []
+permissions:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+    decision: allow
+guardrails:
+  - authority-respected
+  - permission-bounded
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - workspace-state-inspected
+    - recommendations-evidence-linked
+    - structured-state-prioritized
+    - no-action-started
+  quality_criteria:
+    - id: task-quality
+      description: Recommendations are ranked, actionable, traceable to current
+        workspace evidence, and never substitute timestamps for readiness or
+        acceptance.
+      evaluation: deterministic
+  unresolved_questions: warn
+  review:
+    required: false
+    reviewer: none
+    checkpoint: Review the ranked options before choosing a separate skill or
+      administrative action.
+checks: []
+handoffs: []
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+  - id: analyze-workspace
+    path: scripts/analyze-workspace.mjs
+    purpose: Bundled deterministic what-now operation.
+recommend_after:
+  - repair-workspace
+  - resume-playbook
+  - reconcile
+  - review-result
+  - design-check
+  - brand
+  - product
+  - voice
+  - principles
+  - theme
+  - system
+  - research
+  - synthesize
+  - ideate
+  - specify
+  - flow
+  - sketch
+  - component
+  - prototype
+  - evaluate
+  - pitch
+  - implement

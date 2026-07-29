@@ -218,6 +218,25 @@ function freshnessBlockers(request) {
     }));
 }
 
+function recommendedNextActions(contract, request) {
+  if (!request.recommended_next_actions) {
+    return contract.recommend_after.map((action) => ({
+      action,
+      reason: `Consider ${action} when its declared inputs and permissions are ready.`,
+      automatic: false,
+    }));
+  }
+  const allowed = new Set(contract.recommend_after);
+  for (const recommendation of request.recommended_next_actions) {
+    if (!allowed.has(recommendation.action)) {
+      throw new Error(
+        `Skill ${contract.id} cannot recommend undeclared action ${recommendation.action}.`,
+      );
+    }
+  }
+  return request.recommended_next_actions;
+}
+
 export async function invokeSkill({
   root,
   skillDirectory,
@@ -317,7 +336,9 @@ export async function invokeSkill({
   }
 
   const prepared = [];
+  let recommendations;
   try {
+    recommendations = recommendedNextActions(contract, request);
     for (const input of contract.inputs.filter(({ required }) => required)) {
       if (!request.inputs.some(({ kind }) => kind === input.kind)) {
         throw new Error(`Missing required ${input.kind} input.`);
@@ -486,11 +507,7 @@ export async function invokeSkill({
     checks: request.checks,
     guardrails,
     unresolved_questions: request.unresolved_questions,
-    recommended_next_actions: contract.recommend_after.map((action) => ({
-      action,
-      reason: `Consider ${action} when its declared inputs and permissions are ready.`,
-      automatic: false,
-    })),
+    recommended_next_actions: recommendations,
   };
   return recordResult(workspaceRoot, result);
 }

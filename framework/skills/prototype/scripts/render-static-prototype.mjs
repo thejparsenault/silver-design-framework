@@ -108,7 +108,7 @@ function renderHtml(prototype, flow) {
   <link rel="stylesheet" href="./prototype.css" />
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="prototype-page" data-silver-target="prototype" data-source-id="${escapeHtml(prototype.id)}" data-source-revision="flow-${escapeHtml(flow.id)}@r${escapeHtml(flow.revision)}" data-renderer-version="prototype-html@0.3.0" data-assets-revision="r1" data-design-system-revision="r1" data-start-node="${escapeHtml(start)}">
+  <main class="prototype-page" data-silver-target="prototype" data-source-id="${escapeHtml(prototype.id)}" data-source-revision="flow-${escapeHtml(flow.id)}@r${escapeHtml(flow.revision)}" data-renderer-version="prototype-html@0.4.0" data-assets-revision="r1" data-design-system-revision="r1" data-start-node="${escapeHtml(start)}">
     <article class="prototype-shell">
       <header class="prototype-header">
         <p class="prototype-eyebrow">Flow prototype · revision ${flow.revision}</p>

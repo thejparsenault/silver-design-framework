@@ -98,13 +98,13 @@ export async function runPortableReconciliationScenario({ root }) {
     schema: "silver/representation-binding/v1",
     id: "guided-flow-html",
     artifact: { id: "guided-flow", kind: "flow", revision: "r1", path: paths.flow },
-    view: { role: "local-view", format: "html", path: "design/flows/guided/index.html", revision: "0.3.0" },
-    provider: { id: "silver-portable", object_id: "design/flows/guided/index.html", revision: "0.3.0" },
-    adapter: { id: "flow-html", version: "0.3.0" },
+    view: { role: "local-view", format: "html", path: "design/flows/guided/index.html", revision: "0.4.0" },
+    provider: { id: "silver-portable", object_id: "design/flows/guided/index.html", revision: "0.4.0" },
+    adapter: { id: "flow-html", version: "0.4.0" },
     mapping_profile: "product-web", authority: "local", round_trip: "read-only", sync_policy: "notify",
     last_reconciled: {
       portable_revision: "r1", portable_integrity: writes.flow.integrity,
-      external_revision: "0.3.0", snapshot_integrity: contentIntegrity(flowHtml), at: time,
+      external_revision: "0.4.0", snapshot_integrity: contentIntegrity(flowHtml), at: time,
     },
   };
   await writeBinding({ root: workspace, binding: localBinding });
@@ -114,7 +114,7 @@ export async function runPortableReconciliationScenario({ root }) {
     artifact: { id: "guided-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
     provider: { id: "figma", object_id: "file-123", revision: "v18" },
-    adapter: { id: "silver-figma", version: "0.3.0" },
+    adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web", authority: "local", round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
       portable_revision: "r1", portable_integrity: writes.flow.integrity,

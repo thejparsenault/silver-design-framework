@@ -1,6 +1,35 @@
 schema: silver/skill-catalog/v2
-version: 0.3.0
+version: 0.4.0
 skills:
+  - id: what-now
+    title: Decide what to do next
+    description: Inspect a Silver workspace and recommend several evidence-based next actions without starting them. Use when work is resuming, context is missing, priorities are unclear, or the user asks what to do next.
+    summary: Recommend next actions from current workspace evidence.
+    inputs: []
+    outputs: []
+    capabilities: [repository]
+    invariants: [workspace-state-inspected, recommendations-evidence-linked, structured-state-prioritized, no-action-started]
+    quality: Recommendations are ranked, actionable, traceable to current workspace evidence, and never substitute timestamps for readiness or acceptance.
+    quality_evaluation: deterministic
+    unresolved_questions: warn
+    review:
+      required: false
+      reviewer: none
+      checkpoint: Review the ranked options before choosing a separate skill or administrative action.
+    checks: []
+    handoffs: []
+    recommend_after: [repair-workspace, resume-playbook, reconcile, review-result, design-check, brand, product, voice, principles, theme, system, research, synthesize, ideate, specify, flow, sketch, component, prototype, evaluate, pitch, implement]
+    read_paths: [design/**, prototypes/**, presentations/**, production/**, reference-system/**, .silver/**]
+    external_effects: [none]
+    invocation_instruction: Run `node scripts/analyze-workspace.mjs --root <workspace> --now <iso-time>` first. Copy its `invocation_recommendations` into a guarded invocation request as `recommended_next_actions`, then run `node scripts/invoke.mjs <request.json> --root <workspace>` to persist the normalized read-only result.
+    workflow:
+      - Inspect the manifest, lock, skill and check results, playbook runs, bindings, reconciliation records, and declared artifact paths.
+      - Prefer invalid or incomplete workspace state, pending checkpoints, failures, stale work, and freshness blockers over new work.
+      - Use semantic timestamps only to order otherwise equivalent choices; use filesystem modification time only when structured time is unavailable.
+      - Present three to five ranked choices with evidence and leave selection to the user.
+    boundaries:
+      - Do not edit workspace files, repair state, resume a playbook, reconcile artifacts, run checks, or start another skill.
+      - Do not infer readiness from file recency when acceptance, checks, or freshness say otherwise.
   - id: brand
     title: Define brand
     description: Define, refine, or review audience-facing brand foundations and explicitly approved visual implications. Use for brand promise, desired feeling, attributes, anti-attributes, positioning evidence, or canonical brand guidance.

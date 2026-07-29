@@ -600,20 +600,17 @@ All excluded functionality is tracked in `BACKLOG.md`.
 
 ### 15.3 Latest Release
 
-Silver `0.3.0`, **Portable Tools and Reconciliation**, is complete. It
-formalizes the portable baseline already demonstrated by `0.2.0`, replaces hard-coded
-local capability knowledge with registered provider packages, separates
-canonical artifacts from local and external views, implements base-pinned
-three-way drift detection and safe reconciliation, and proves the contract
-through the first Figma adapter.
+Silver `0.4.0`, **What Now**, is complete. It adds the nineteenth project-local
+skill: a read-only analyzer that recovers current workspace context and ranks
+several evidence-linked next actions without starting them. The guarded
+invocation contract now supports caller-ranked recommendations only within a
+skill-declared allowlist, while existing skills retain their static follow-ups.
 
-`docs/silver-0.3-acceptance.md` is authoritative for the release scope,
-exclusions, and stable requirement IDs.
-`docs/silver-0.3-acceptance-audit.md` records direct passing evidence for all
-22 required criteria.
-`docs/tool-representations-and-reconciliation.md` is the supporting
-architecture specification. Existing-codebase adoption follows `0.3.0`
-because no representative production repository is currently available.
+`docs/silver-0.4-acceptance.md` is authoritative for the release scope and
+stable requirement IDs. `docs/silver-0.4-acceptance-audit.md` records direct
+passing evidence for all ten required criteria. Existing-codebase adoption
+follows `0.4.0` because no representative production repository is currently
+available.
 
 ## 16. Acceptance Criteria
 

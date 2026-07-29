@@ -25,6 +25,7 @@ const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(installerRoot, "..");
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
 export const INITIAL_SKILL_IDS = [
+  "what-now",
   "brand",
   "product",
   "voice",

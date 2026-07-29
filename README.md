@@ -71,13 +71,15 @@ node bin/silver.mjs setup ../my-product-design \
 node bin/silver.mjs doctor ../my-product-design
 ```
 
-The workspace ID must use lowercase kebab-case.
+The workspace ID must use lowercase kebab-case. Setup finishes by running the
+installed `what-now` skill once, so its terminal output already includes
+evidence-ranked options for the next step; it does not start any option
+automatically.
 
 Now open `../my-product-design` in your agent. Start with:
 
-> Read `AGENTS.md` and `design/INDEX.md`. Explain the current design context,
-> installed skills, and which foundational artifacts are still drafts. Do not
-> change anything yet.
+> Use `what-now` to inspect this Silver workspace and recommend what I should
+> do next. Do not start any recommendation.
 
 You do not normally need to create skill-invocation JSON by hand. Tell the
 agent which project-local skill to use. The agent should read that skill's
@@ -166,10 +168,11 @@ constraint suspension.
 
 ## Other skills
 
-The installed catalog contains eighteen independently runnable skills:
+The installed catalog contains nineteen independently runnable skills:
 
 | Area | Skills |
 | --- | --- |
+| Orientation | `what-now` |
 | Foundations | `product`, `brand`, `voice`, `principles`, `theme`, `system` |
 | Discovery | `research`, `synthesize`, `ideate` |
 | Definition | `specify`, `flow`, `component` |
@@ -179,6 +182,11 @@ The installed catalog contains eighteen independently runnable skills:
 Use `pitch` to create an opportunity, proposal, or outcome case for team
 buy-in. It can generate a branded local presentation view while keeping
 estimated impact distinct from measured results.
+
+Use `what-now` when returning to a workspace or when the next useful move is
+unclear. It ranks several choices from manifest status, review checkpoints,
+check results, freshness blockers, accepted handoffs, and timestamps without
+starting any of them.
 
 Use `implement` only after the relevant design inputs are accepted and
 production readiness is satisfied. Prototype code is evidence and reference
@@ -279,7 +287,7 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.3.0` is validated for the blank-workspace path.
+Silver `0.4.0` is validated for the blank-workspace path.
 
 - Automatic adoption of an arbitrary existing codebase is the next milestone.
   Until then, create a Silver workspace beside existing product repositories.

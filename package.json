@@ -1,6 +1,6 @@
 {
   "name": "silver-design-framework",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "files": [
     "bin/",
+    "docs/brand/ag-mark.txt",
     "framework/schemas/v1/",
     "framework/schemas/v2/",
     "framework/guardrails/",
@@ -19,6 +20,7 @@
     "framework/scenarios/",
     "framework/skills/",
     "installer/cli.mjs",
+    "installer/brand.mjs",
     "installer/doctor.mjs",
     "installer/lib/",
     "installer/migrate.mjs",
@@ -27,6 +29,7 @@
     "installer/templates/",
     "installer/update.mjs",
     "installer/version.mjs",
+    "installer/what-now.mjs",
     "reference-system/"
   ],
   "scripts": {
@@ -41,7 +44,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "style-dictionary": "^4.3.0"
+    "style-dictionary": "^5.5.0"
   },
   "dependencies": {
     "ajv": "^8.20.0",

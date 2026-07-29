@@ -1,5 +1,5 @@
 schema: silver/guardrail-registry/v2
-version: 0.3.0
+version: 0.4.0
 guardrails:
   - id: privacy-sanitized-evidence
     summary: Store only sanitized observations and evidence appropriate for the repository.
@@ -102,7 +102,7 @@ guardrails:
       - skill
     relaxable: false
   - id: followups-recommended-only
-    summary: A leaf skill may recommend undeclared next actions but never starts them automatically.
+    summary: A leaf skill may recommend contract-declared next actions but never starts them automatically.
     enforcement: deterministic-check
     failure:
       behavior: stop-execution

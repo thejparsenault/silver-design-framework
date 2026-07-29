@@ -8,7 +8,7 @@ visibility: private
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-25
+updated: 2026-07-28
 ---
 
 # The Silver Design Framework
@@ -54,15 +54,16 @@ build
 
 ## Latest Release
 
-Silver `0.3.0`, **Portable Tools and Reconciliation**, is complete. Its
-authoritative scope and requirement IDs are defined in
-`docs/silver-0.3-acceptance.md`; direct passing evidence for all 22 criteria is
-recorded in `docs/silver-0.3-acceptance-audit.md`.
+Silver `0.4.0`, **What Now**, is complete. Its authoritative scope and
+requirement IDs are defined in `docs/silver-0.4-acceptance.md`; direct passing
+evidence for all ten criteria is recorded in
+`docs/silver-0.4-acceptance-audit.md`.
 
-The release formalizes bundled portable providers, canonical artifact and view
-roles, revision-aware three-way reconciliation, and the first Figma adapter.
-The following milestone is existing-codebase adoption; a representative
-production repository still needs to be selected.
+The release adds the nineteenth project-local skill: a read-only,
+evidence-ranked workspace orientation capability with contract-bounded dynamic
+recommendations and reviewable 0.3-to-0.4 migration. The following milestone
+remains existing-codebase adoption; a representative production repository
+still needs to be selected.
 
 ## Agent Access
 

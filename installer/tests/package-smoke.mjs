@@ -5,6 +5,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -16,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.3.0";
+const expectedVersion = "0.4.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -54,9 +55,12 @@ try {
   const packedPaths = new Set(packed.files.map(({ path: file }) => file));
   for (const required of [
     "bin/silver.mjs",
+    "docs/brand/ag-mark.txt",
+    "installer/brand.mjs",
     "installer/repair.mjs",
     "installer/migrate.mjs",
     "installer/update.mjs",
+    "installer/what-now.mjs",
     "framework/skills/design-check/scripts/run-fast.mjs",
     "framework/skills/design-check/scripts/run-browser.mjs",
     "framework/skills/prototype/scripts/render-static-prototype.mjs",
@@ -102,7 +106,7 @@ try {
       .stdout.trim(),
     expectedVersion,
   );
-  await command(
+  const { stdout: setupOutput } = await command(
     process.execPath,
     [
       cli,
@@ -115,6 +119,27 @@ try {
     ],
     { cwd: consumerRoot },
   );
+  assert.match(setupOutput, /^\*%{44}\*/);
+  assert.match(setupOutput, /What Now recommends:/);
+  assert.match(setupOutput, /No recommendation was started automatically\./);
+  const setupResultFiles = await readdir(
+    path.join(workspaceRoot, ".silver", "results", "skills"),
+  );
+  assert.equal(setupResultFiles.length, 1);
+  const setupResult = JSON.parse(
+    await readFile(
+      path.join(
+        workspaceRoot,
+        ".silver",
+        "results",
+        "skills",
+        setupResultFiles[0],
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(setupResult.skill.id, "what-now");
+  assert.equal(setupResult.execution.status, "complete");
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
   });
@@ -208,49 +233,52 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 25);
+  assert.equal(lock.packages.length, 26);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
-    18,
+    19,
   );
   assert.ok(
     lock.packages.every(({ version }) => version === expectedVersion),
     "Every installed package must be pinned to the prerelease version.",
   );
-  const v2MigrationRoot = path.join(consumerRoot, "silver-02-migration");
+  const v2MigrationRoot = path.join(consumerRoot, "silver-03-migration");
   await command(
     process.execPath,
-    [cli, "setup", v2MigrationRoot, "--name", "Silver 0.2 Migration", "--id", "silver-02-migration"],
+    [cli, "setup", v2MigrationRoot, "--name", "Silver 0.3 Migration", "--id", "silver-03-migration"],
     { cwd: consumerRoot },
   );
   const v2LockPath = path.join(v2MigrationRoot, ".silver", "lock.yaml");
   const v2Lock = parse(await readFile(v2LockPath, "utf8"));
-  v2Lock.framework.version = "0.2.0";
-  v2Lock.framework.source.reference = "packed-0.2-fixture";
+  v2Lock.framework.version = "0.3.0";
+  v2Lock.framework.source.reference = "packed-0.3-fixture";
   v2Lock.packages = v2Lock.packages
-    .filter(({ type }) => type !== "provider")
+    .filter(({ id }) => id !== "what-now")
     .map((record) =>
       record.ownership === "framework-managed"
-        ? { ...record, version: "0.2.0" }
+        ? { ...record, version: "0.3.0" }
         : record,
     );
   await writeFile(v2LockPath, stringify(v2Lock), "utf8");
-  await rm(path.join(v2MigrationRoot, ".silver", "providers"), { recursive: true, force: true });
+  await rm(path.join(v2MigrationRoot, ".skills", "what-now"), {
+    recursive: true,
+    force: true,
+  });
   const v2BrandPath = path.join(v2MigrationRoot, "design", "brand.md");
-  const v2OwnedBrand = `${await readFile(v2BrandPath, "utf8")}\nPacked project-owned 0.2 note.\n`;
+  const v2OwnedBrand = `${await readFile(v2BrandPath, "utf8")}\nPacked project-owned 0.3 note.\n`;
   await writeFile(v2BrandPath, v2OwnedBrand, "utf8");
   const v2Preview = JSON.parse(
     (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--json"], { cwd: consumerRoot })).stdout,
   );
   assert.equal(v2Preview.needed, true);
   assert.equal(v2Preview.applied, false);
-  assert.ok(v2Preview.changes.some(({ package: id }) => id === "figma"));
-  assert.ok(v2Preview.changes.some(({ package: id }) => id === "silver-portable"));
+  assert.ok(v2Preview.changes.some(({ package: id }) => id === "what-now"));
   const v2Applied = JSON.parse(
     (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--apply", "--json"], { cwd: consumerRoot })).stdout,
   );
   assert.equal(v2Applied.applied, true);
   assert.equal(await readFile(v2BrandPath, "utf8"), v2OwnedBrand);
+  await access(path.join(v2MigrationRoot, ".skills", "what-now", "SKILL.md"));
   const v2Repeated = JSON.parse(
     (await command(process.execPath, [cli, "migrate", v2MigrationRoot, "--apply", "--json"], { cwd: consumerRoot })).stdout,
   );
@@ -321,7 +349,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 25);
+  assert.equal(migratedLock.packages.length, 26);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
@@ -366,7 +394,7 @@ try {
     ).stdout,
   );
   assert.equal(completeResult.status, "pass");
-  assert.equal(completeResult.skills.length, 18);
+  assert.equal(completeResult.skills.length, 19);
   assert.deepEqual(
     Object.keys(completeResult.portable_baselines).sort(),
     [...completeResult.skills].sort(),

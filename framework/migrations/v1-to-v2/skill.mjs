@@ -29,7 +29,7 @@ export function migrateSkillContractV1(input) {
   return {
     schema: "silver/skill/v2",
     id: input.id,
-    version: "0.3.0",
+    version: "0.4.0",
     summary: input.summary,
     context_budget: input.context_budget,
     inputs: input.requires.artifacts.map((artifact) => ({

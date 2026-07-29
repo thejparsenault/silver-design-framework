@@ -17,10 +17,15 @@ node bin/silver.mjs update ./path-to-blank-workspace
 
 `setup` currently supports an empty or minimal folder and an interrupted
 framework setup. It refuses to infer an adoption plan for an existing codebase.
-It installs the five initial project-local skills, a ready-to-render editable
+It displays the Silver terminal mark using a contrast-aware silver tone,
+installs all nineteen project-local skills, a ready-to-render editable
 reference system, a generated agent discovery pointer, and the canonical design
 artifacts. It creates missing files but does not overwrite project-owned files
-or repair generated files.
+or repair generated files. After installation it runs the project-local
+`what-now` analyzer through Silver's guarded runtime, records that result under
+`.silver/results/skills/`, and prints its ranked recommendations without
+starting any of them. `--json` omits the decorative mark and returns the setup,
+analysis, and invocation result as one machine-readable value.
 
 `doctor` is read-only. It validates:
 

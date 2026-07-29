@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: design-check
-version: 0.3.0
+version: 0.4.0
 summary: Run applicable independent checks without performing design work.
 context_budget: small
 inputs:
@@ -80,6 +80,12 @@ scripts:
   - id: check-assets
     path: scripts/check-assets.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-authority
+    path: scripts/check-authority.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-binding-integrity
+    path: scripts/check-binding-integrity.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-evidence
     path: scripts/check-evidence.mjs
     purpose: Bundled deterministic design-check operation.
@@ -101,11 +107,32 @@ scripts:
   - id: check-prototypes
     path: scripts/check-prototypes.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-provider-revision-pins
+    path: scripts/check-provider-revision-pins.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-representation-lib
+    path: scripts/check-representation-lib.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-responsive
     path: scripts/check-responsive.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-secret-free-configuration
+    path: scripts/check-secret-free-configuration.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-semantic-mapping
+    path: scripts/check-semantic-mapping.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-semantic-styles
     path: scripts/check-semantic-styles.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-stale-proposals
+    path: scripts/check-stale-proposals.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-synchronization-status
+    path: scripts/check-synchronization-status.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-view-provenance
+    path: scripts/check-view-provenance.mjs
     purpose: Bundled deterministic design-check operation.
   - id: run-browser
     path: scripts/run-browser.mjs
@@ -113,34 +140,7 @@ scripts:
   - id: run-fast
     path: scripts/run-fast.mjs
     purpose: Bundled deterministic design-check operation.
-  - id: check-representation-lib
-    path: scripts/check-representation-lib.mjs
-    purpose: Shared deterministic representation check support.
-  - id: check-binding-integrity
-    path: scripts/check-binding-integrity.mjs
-    purpose: Validate representation binding contracts independently.
-  - id: check-provider-revision-pins
-    path: scripts/check-provider-revision-pins.mjs
-    purpose: Validate provider and portable revision pins independently.
-  - id: check-view-provenance
-    path: scripts/check-view-provenance.mjs
-    purpose: Validate generated view provenance independently.
-  - id: check-synchronization-status
-    path: scripts/check-synchronization-status.mjs
-    purpose: Validate synchronization status independently.
-  - id: check-semantic-mapping
-    path: scripts/check-semantic-mapping.mjs
-    purpose: Validate semantic mapping independently.
-  - id: check-stale-proposals
-    path: scripts/check-stale-proposals.mjs
-    purpose: Detect stale reconciliation proposals independently.
-  - id: check-authority
-    path: scripts/check-authority.mjs
-    purpose: Validate explicit binding authority independently.
-  - id: check-secret-free-configuration
-    path: scripts/check-secret-free-configuration.mjs
-    purpose: Validate that project configuration is secret-free independently.
   - id: run-representation-check
     path: scripts/run-representation-check.mjs
-    purpose: Invoke exactly one representation check and emit its independent result.
+    purpose: Bundled deterministic design-check operation.
 recommend_after: []

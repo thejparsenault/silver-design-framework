@@ -115,7 +115,7 @@ async function reconciliationFixture(t, authority = "local") {
     artifact: { id: "guided-setup-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
     provider: { id: "figma", object_id: "file-123", revision: "v18" },
-    adapter: { id: "silver-figma", version: "0.3.0" },
+    adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web",
     authority,
     ...(authority === "external" ? { authority_provider: "figma" } : {}),
@@ -189,7 +189,7 @@ test("binding and user-profile contracts enforce authority, provenance, permissi
     artifact: { id: "example-flow", kind: "flow", revision: "r1", path: "design/flows/example/flow.json" },
     view: { role: "external-view", format: "figma" },
     provider: { id: "figma", object_id: "file-1", revision: "v1" },
-    adapter: { id: "silver-figma", version: "0.3.0" },
+    adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web", authority: "external", authority_provider: "figma",
     round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
@@ -220,14 +220,14 @@ test("flow and system renderers produce portable semantic HTML with exact proven
   const flowPath = "design/flows/catalog-flow/flow.json";
   await writeJson(root, flowPath, source);
   const rendered = await renderFlowFile(path.join(root, flowPath), path.join(root, "design/flows/catalog-flow/flow.mmd"));
-  assert.match(await readFile(rendered.outputPath, "utf8"), /source=catalog-flow@r1 renderer=flow-mermaid@0.3.0/);
+  assert.match(await readFile(rendered.outputPath, "utf8"), /source=catalog-flow@r1 renderer=flow-mermaid@0.4.0/);
   const html = await readFile(rendered.htmlOutput, "utf8");
   for (const value of [
-    'data-source-revision="r1"', 'data-renderer-version="flow-html@0.3.0"',
+    'data-source-revision="r1"', 'data-renderer-version="flow-html@0.4.0"',
     'data-assets-revision="r1"', 'data-design-system-revision="r1"',
   ]) assert.ok(html.includes(value));
   await renderSystemCatalog({ root });
-  assert.match(await readFile(path.join(root, "design/system/catalog.html"), "utf8"), /system-catalog-html@0.3.0/);
+  assert.match(await readFile(path.join(root, "design/system/catalog.html"), "utf8"), /system-catalog-html@0.4.0/);
   assert.equal((await runFastSuite({ root })).status, "pass");
 });
 
@@ -375,7 +375,7 @@ test("authority reversal blocks externally authoritative freshness when unavaila
   );
   const request = {
     schema: "silver/skill-invocation/v2", invocation_id: "external-freshness",
-    skill: { id: "design-check", version: "0.3.0" }, started_at: fixedTime,
+    skill: { id: "design-check", version: "0.4.0" }, started_at: fixedTime,
     inputs: [], outputs: [],
     permission_layers: [{
       schema: "silver/permission-policy/v2", id: "fixture-policy", layer: "framework-default",
