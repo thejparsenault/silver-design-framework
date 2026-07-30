@@ -36,6 +36,10 @@ try {
   const consumerRoot = path.join(temporaryRoot, "consumer");
   const workspaceRoot = path.join(consumerRoot, "campaign-studio");
   await mkdir(packRoot, { recursive: true });
+  // Create the consumer explicitly rather than relying on `npm install --prefix`
+  // to do it. That only holds outside an npm lifecycle script; nested under one,
+  // inherited npm config leaves the directory uncreated and the install fails.
+  await mkdir(consumerRoot, { recursive: true });
   const { stdout: packOutput } = await command(
     "npm",
     [

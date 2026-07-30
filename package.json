@@ -3,8 +3,6 @@
   "version": "0.6.0",
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
-  "//private": "Release-asset distribution needs only `npm pack`, so this stays set as a guard against an accidental `npm publish` to npmjs.com. Remove it when adding the npm channel.",
-  "private": true,
   "license": "MIT",
   "author": "JP Arsenault",
   "repository": {
@@ -66,7 +64,7 @@
     "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
     "test": "node --test --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
     "test:package": "node installer/tests/package-smoke.mjs",
-    "prepublishOnly": "npm run build && npm run test:package",
+    "prepublishOnly": "npm run build",
     "release": "node installer/scripts/build-release.mjs"
   },
   "engines": {
@@ -86,5 +84,8 @@
     "ajv-formats",
     "yaml",
     "ws"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

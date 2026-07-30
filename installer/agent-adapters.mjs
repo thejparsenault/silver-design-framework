@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { copyNewTree, exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
-import { RELEASE_TARBALL_URL } from "./version.mjs";
+import { PACKAGE_SPEC } from "./version.mjs";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,10 +31,11 @@ export function isEphemeralInstall(entryPoint = silverEntryPoint()) {
 }
 
 function launcherCommand(entryPoint, quote = (value) => `"${value}"`) {
-  // An npx install has no durable path, so pin the exact release artifact this
-  // version came from. It stays resolvable after npm prunes its cache.
+  // An npx install has no durable path, so pin the exact published version this
+  // workspace was created with. It stays resolvable after npm prunes its cache,
+  // and the registry checks integrity on every re-fetch.
   return isEphemeralInstall(entryPoint)
-    ? `npx --yes ${RELEASE_TARBALL_URL}`
+    ? `npx --yes ${PACKAGE_SPEC}`
     : `node ${quote(entryPoint)}`;
 }
 

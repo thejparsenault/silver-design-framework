@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 
 import {
   FRAMEWORK_VERSION,
+  PACKAGE_SPEC,
   RELEASE_TAG,
   RELEASE_TARBALL_NAME,
   RELEASE_TARBALL_URL,
@@ -76,13 +77,18 @@ Artifact
   ${packed.files.length} files, ${packed.size} bytes
   sha256:${digest}
 
-Publish
+Publish — npm (primary channel; the launcher resolves through it)
+  npm publish --access public
+  # from CI with OIDC, add --provenance
+
+Publish — GitHub release (auth-free fallback and provenance anchor)
   git tag -a ${RELEASE_TAG} -m "Silver ${FRAMEWORK_VERSION}"
   git push origin ${RELEASE_TAG}
   gh release create ${RELEASE_TAG} \\
     dist/${packed.filename} dist/${packed.filename}.sha256 \\
     --title "Silver ${FRAMEWORK_VERSION}" --notes-file docs/release-notes/${RELEASE_TAG}.md
 
-Verify (must work with no npm account and no token)
+Verify both, in a shell with no npm login
+  npx --yes ${PACKAGE_SPEC} version
   npx --yes ${RELEASE_TARBALL_URL} version
 `);

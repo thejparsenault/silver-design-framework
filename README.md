@@ -67,7 +67,7 @@ Open your product folder in a file-capable chat agent and paste this:
 >
 > using this if `silver` is not on my PATH:
 >
->     npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+>     npx --yes silver-design-framework@0.6.0 setup inspect . --json
 >
 > Do not run `npx silver`; that is an unrelated package. Show me the recommended
 > repository topology, its reasons, and every unresolved question. Ask me those
@@ -96,9 +96,14 @@ separate discipline ownership, or independent design history. It recommends
 integration for a solo or small shared team with one codebase and lifecycle.
 The recommendation is never applied until the plan is reviewed.
 
-No npm account, login, or token is needed: npm accepts a remote tarball as a
-package spec, and the release asset on a public repository downloads
-anonymously.
+No npm account, login, or token is needed to install.
+
+If your network cannot reach the npm registry, every release is also attached to
+its GitHub release, and npm accepts a remote tarball as a package spec:
+
+```sh
+npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+```
 
 ### If you are installing from source
 
