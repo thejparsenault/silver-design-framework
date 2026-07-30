@@ -33,8 +33,20 @@ Status: Accepted
 ## 2026-07-30 - A standalone Bun binary is deferred behind a payload refactor
 
 Decision: Do not ship a compiled `silver` binary in 0.6. Keep npm and GitHub Releases as the distribution channels. Revisit after the payload layer can serve files from an embedded manifest.
-Reason: Spike with Bun 1.3.14. Interpreted execution works completely — `bun bin/silver.mjs` runs setup and guarded invocation, so ajv's runtime code generation survives Bun. `bun build --compile` produces a 61 MB binary that fails on two counts. First, the payload: 254 files must be embedded and 42 schemas are `readdir`ed from real paths at runtime, so `setup` fails at `ENOENT: /$bunfs/docs/brand/ag-mark.txt`; `copyNewTree`, `replaceTree`, `snapshotFiles`, and `treeIntegrity` all walk real directories, and `treeIntegrity` produces the integrity values `doctor` and `update` compare against, so its behaviour cannot change. Second, module identity: 28 modules guard their CLI entry with `process.argv[1] === fileURLToPath(import.meta.url)`, and bundling collapses those paths so `silver version` spuriously ran a full `what-now` analysis. Release engineering adds a five-platform matrix, macOS signing and notarization, self-owned checksums and provenance that npm supplies today, and a third release gate. Routing execution through the CLI first makes the eventual swap a packaging change.
+Reason: The blocker is release engineering, not the code. A five-platform build matrix, macOS signing and notarization, and self-owned checksums and provenance that npm supplies today all remain, and `npx` delivers most of the same one-command ergonomics first. Routing execution through the CLI in 0.6 makes the eventual swap a packaging change.
 Status: Accepted; binary tracked in BACKLOG.md
+
+Spike findings (Bun 1.3.14), recorded so they are not re-derived:
+
+- Interpreted execution works completely. `bun bin/silver.mjs` runs setup and guarded invocation, so ajv's runtime code generation survives Bun.
+- `bun build --compile` produces a 61 MB binary.
+- Embedded assets **are** readable through `node:fs`. A file imported with `import p from "./x" with { type: "file" }` resolves to a `/$bunfs/...` path that `readFile` reads correctly from any working directory. The payload does not need to live outside the binary.
+- `readdir` on `$bunfs` fails with `ENOENT`. **Directory enumeration is the only payload blocker**, and it affects four sites: `readdir(providerSourceRoot)` in `installer/setup.mjs`, the schema loaders in `installer/lib/schemas.mjs` and `framework/runtime/contracts.mjs`, and the `copyNewTree`/`snapshotFiles` pair in `installer/lib/files.mjs` when called against payload sources rather than a workspace.
+- Embedded paths are content-mangled (`asset-trr4r78r.txt`), so they cannot be computed. A build-generated manifest module mapping logical path to imported reference is required.
+- `import.meta.main` is correct in a compiled binary. It fixes the 28 modules whose `process.argv[1] === fileURLToPath(import.meta.url)` guard collapses under bundling, where `silver version` spuriously ran a full `what-now` analysis. Node added `import.meta.main` in v24, so a guard of the form `import.meta.main ?? <existing check>` keeps Node 20–23 working.
+- The trust-critical constraint: `treeIntegrity` produces the `sha256:` values in every `.silver/lock.yaml` that `doctor` and `update` compare against. Any payload-source abstraction must produce byte-identical results from both the filesystem and the embedded manifest, or every existing lock breaks.
+
+Estimated shape when it is time: a generated payload manifest, a small source abstraction behind those four enumeration sites, and the `import.meta.main` guard change. Materially smaller than a payload-layer rewrite.
 
 ---
 

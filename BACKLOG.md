@@ -123,8 +123,9 @@ are the next recommended milestones.
   - Depends on the Node-free output path; without it a Cowork session can read and edit artifacts but cannot record a checked result.
 
 - [ ] Standalone binary distribution
-  - Drops the Git + Node + `npm install` prerequisite chain for a designer audience.
-  - Blocked on a payload layer that serves 254 embedded files and 42 schemas without `readdir` over real directories, keeping `treeIntegrity` behaviour identical, plus an audit of 28 modules whose CLI main-guard collapses under bundling. Spike recorded in `DECISIONS.md`.
+  - Drops the Git + Node + `npm install` prerequisite chain for a designer audience. Publish to npm first; `npx` delivers most of the same ergonomics for a fraction of the cost.
+  - Code work, scoped by the spike in `DECISIONS.md`: a build-generated payload manifest, a source abstraction behind the four sites that enumerate the installation's own payload, and an `import.meta.main ?? <existing check>` guard in 28 modules. `treeIntegrity` must produce byte-identical results from filesystem and embedded sources or every existing lock breaks.
+  - Real cost is release engineering, not code: five-platform matrix, macOS signing and notarization, self-owned checksums and provenance, and a third release gate so binaries are never shipped untested. Do this when committing to ship binaries, not before.
 
 ## P1 — Agentic Skill Composition
 

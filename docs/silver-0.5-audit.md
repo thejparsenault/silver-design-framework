@@ -153,21 +153,36 @@ A Bun-compiled `silver` would drop the Git + Node + `npm install` prerequisite
 chain, which matters for a designer audience. The spike found it compiles
 (61 MB, Bun 1.3.14) and runs correctly *interpreted* — `bun bin/silver.mjs`
 completes setup and guarded invocation, so ajv's runtime codegen survives Bun.
-The compiled binary fails on two counts:
+The compiled binary fails on two counts, both narrower than they first appear:
 
-1. **Payload.** 254 files must be embedded, and 42 schemas are `readdir`ed from
-   real paths at runtime. `silver setup` fails at
-   `ENOENT: /$bunfs/docs/brand/ag-mark.txt`. `copyNewTree`, `replaceTree`,
-   `treeIntegrity`, and `snapshotFiles` all walk real directories, and
-   `treeIntegrity` produces the `sha256:` values `doctor` and `update` compare
-   against, so it cannot change behaviour.
+1. **Directory enumeration, not the payload.** Embedded assets *are* readable
+   through `node:fs`: a file imported with `with { type: "file" }` resolves to a
+   `/$bunfs/...` path that `readFile` reads from any working directory. But
+   `readdir` on `$bunfs` returns `ENOENT`. Only four sites enumerate the
+   installation's own payload — `readdir(providerSourceRoot)` in
+   `installer/setup.mjs`, the schema loaders in `installer/lib/schemas.mjs` and
+   `framework/runtime/contracts.mjs`, and the `copyNewTree`/`snapshotFiles` pair
+   in `installer/lib/files.mjs` when called against payload sources. Everything
+   else enumerates the workspace, which is a real directory. Embedded paths are
+   content-mangled, so a build-generated manifest is required. The binding
+   constraint is that `treeIntegrity` produces the `sha256:` values in every
+   `.silver/lock.yaml`, so both sources must yield byte-identical results.
 2. **Module identity.** 28 modules guard their CLI entry with
-   `process.argv[1] === fileURLToPath(import.meta.url)`. Bundling collapses those
-   paths, so `silver version` spuriously executed a full `what-now` analysis and
-   printed 96 lines of JSON before its answer.
+   `realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))`.
+   Bundling collapses those paths, so `silver version` spuriously executed a
+   full `what-now` analysis and printed 96 lines of JSON before its answer.
+   `import.meta.main` is correct in a compiled binary and was added to Node in
+   v24, so `import.meta.main ?? <existing check>` fixes it while keeping Node
+   20–23 working.
 
-Neither is fatal, but together they are a payload-layer refactor plus a
-main-guard audit — sequenced after this release, not into it.
+That guard is symlink-safe as written, so the `.claude/skills/` links added in
+0.6 do not break it; running a check script through the symlinked path was
+verified to work. The issue is specific to bundling.
+
+Neither blocker is fatal and the combined fix is smaller than a payload-layer
+rewrite. It is deferred because the release engineering — five platforms,
+signing and notarization, self-owned provenance, a third gate — is the dominant
+cost and is unchanged by the code work.
 
 ## Verification
 
