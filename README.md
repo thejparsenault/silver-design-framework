@@ -69,7 +69,8 @@ Open your product folder in a file-capable chat agent and paste this:
 >     silver setup inspect . --json
 >
 > using `npx --yes silver-design-framework@0.6.0 setup inspect . --json` if
-> `silver` is not on my PATH. Show me the recommended repository topology, its
+> `silver` is not on my PATH. Do not run `npx silver`; that is an unrelated
+> package. Show me the recommended repository topology, its
 > reasons, and every unresolved question. Ask me those questions. Do not apply
 > anything yet.
 >
