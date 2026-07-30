@@ -12,7 +12,7 @@ description: Create, revise, validate, and render portable user, interaction, an
 3. Cover start states, decisions, alternate paths, failures, and outcomes.
 4. Validate the graph and render a revision-stamped local view.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

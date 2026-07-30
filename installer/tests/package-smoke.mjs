@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.4.0";
+const expectedVersion = "0.5.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -233,10 +233,10 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 26);
+  assert.equal(lock.packages.length, 28);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
-    19,
+    21,
   );
   assert.ok(
     lock.packages.every(({ version }) => version === expectedVersion),
@@ -349,7 +349,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 26);
+  assert.equal(migratedLock.packages.length, 28);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
@@ -394,7 +394,7 @@ try {
     ).stdout,
   );
   assert.equal(completeResult.status, "pass");
-  assert.equal(completeResult.skills.length, 19);
+  assert.equal(completeResult.skills.length, 21);
   assert.deepEqual(
     Object.keys(completeResult.portable_baselines).sort(),
     [...completeResult.skills].sort(),
@@ -406,6 +406,19 @@ try {
   );
   assert.equal(completeResult.fast, "pass");
   assert.equal(completeResult.browser, "pass");
+  assert.equal(completeResult.trace_chain.map, "guided-setup-journey");
+  assert.equal(completeResult.trace_chain.practice.revision, "r1");
+  assert.equal(
+    completeResult.trace_chain.guidance[0].id,
+    "fixture-design-guidance",
+  );
+  assert.deepEqual(completeResult.trace_chain.external_bindings, [
+    "guided-map-figma",
+  ]);
+  assert.equal(
+    completeResult.trace_chain.implementation_checkpoint.status,
+    "committed",
+  );
   for (const [kind, relativePath] of Object.entries(completeResult.local_views)) {
     const content = await readFile(path.join(completeRoot, relativePath), "utf8");
     assert.ok(content.length > 0, `${kind} is empty`);

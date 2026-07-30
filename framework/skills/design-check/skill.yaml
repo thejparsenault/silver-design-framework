@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: design-check
-version: 0.4.0
+version: 0.5.0
 summary: Run applicable independent checks without performing design work.
 context_budget: small
 inputs:
@@ -29,7 +29,7 @@ capabilities:
       fallback: degraded
       description: Use browser when configured; preserve explicit fallback coverage
         otherwise.
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -41,10 +41,9 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

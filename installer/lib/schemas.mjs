@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,11 +18,6 @@ const v1SchemaNames = [
   "prototype.schema.json",
   "skill.schema.json",
 ];
-const v2SchemaNames = [
-  "common.schema.json",
-  "lock.schema.json",
-];
-
 let validatorPromise;
 
 function formatAjvErrors(errors = []) {
@@ -39,6 +34,9 @@ async function createValidators() {
   });
   addFormats(ajv);
 
+  const v2SchemaNames = (await readdir(path.join(schemaRoot, "v2")))
+    .filter((name) => name.endsWith(".schema.json"))
+    .sort();
   const entries = [
     ...v1SchemaNames.map((name) => ({
       key: name,

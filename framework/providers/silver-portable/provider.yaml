@@ -1,12 +1,13 @@
 schema: silver/provider/v1
 id: silver-portable
-version: 0.4.0
+version: 0.5.0
 kind: portable
 capabilities:
   - repository
   - canonical-artifact
   - flow
   - sketch-renderer
+  - map-renderer
   - prototype-renderer
   - presentation-renderer
   - production-source
@@ -52,6 +53,10 @@ supported_artifact_kinds:
   - implementation
   - asset-catalog
   - presentation-kit
+  - map
+  - practice-change
+  - design-context
+  - component-expression
   - x-prototype-render
 directions: [portable]
 fidelity: semantic

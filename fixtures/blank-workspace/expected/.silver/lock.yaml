@@ -1,6 +1,6 @@
 schema: silver/lock/v2
 framework:
-  version: 0.4.0
+  version: 0.5.0
   source:
     type: local
     reference: framework-development-fixture
@@ -8,165 +8,177 @@ packages:
   - id: what-now
     type: skill
     path: .skills/what-now
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:1e842eaa7d3aa07c0d3e8478a30cb3d501610d42f06eedfbf535105ba23d1144
+    integrity: sha256:1e28af9648407d54f5d638be5a48dc6bbd64ea6c0f62896eb3c68408b7712307
   - id: brand
     type: skill
     path: .skills/brand
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:1291a1cfdd936d130298a78b4d5223c51fe9bca62ecfad6742510d59d9cf8382
+    integrity: sha256:a6344172f7b2f7e2d3a85b519cf517a52795c50c5a8bfd026505d3533a317a31
   - id: product
     type: skill
     path: .skills/product
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:50a72f42bcd9adfcec062536c520d18d02f99bbc556000fff99ef57bd2d6c2a7
+    integrity: sha256:2ad55d5b68b1bcc96f58f672181aa308837afb4d3a30a36533b7aec9d65f2901
   - id: voice
     type: skill
     path: .skills/voice
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:f8262094292ab82cd0c7e58c2dfafbe3628b2fa3b42a80713476eae76d29f534
+    integrity: sha256:e4035dd4778d9534c63148e25c5b36d3be8ea1a034f8c82e4c19223e49bd8cc9
   - id: principles
     type: skill
     path: .skills/principles
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:72570f774f0005808057c0cbd3e991cf08968140b2b06aa72e717a32fd4d8f40
+    integrity: sha256:fb019ee34f5b843cf9a7c40798928af3daa285370307a5ff3c34ba67102776ee
   - id: theme
     type: skill
     path: .skills/theme
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:d81976e641ad7e0fcc53edc0ebeeebf634f3e23f0d8bc5cedcb67b0c64e59466
+    integrity: sha256:f75f52d43b607f686016a9a3cf08b8082beae4cfaba271bd490052b66ac4d4c5
   - id: system
     type: skill
     path: .skills/system
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:6135d478b4339731afa198e71047df4cecd26f71e1a641b77b92f569efa19db8
+    integrity: sha256:e1c7fce11f822448d875541ff6b1c66a983b3a0b4b43bc6dd0fce5094ca701b5
   - id: research
     type: skill
     path: .skills/research
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:53b4288278aa4cbbe68ac74b882e703087f52da594f5a53852b243b598b057b4
+    integrity: sha256:040ff778973ae54f63e081e44d3dab218be5866159e5568eefba189777772234
   - id: synthesize
     type: skill
     path: .skills/synthesize
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:38e695c83f25bdd5d2945ae03d146aab5c7f0092ef163baa69af1c351e4e733c
+    integrity: sha256:dba3114a57d6f0f48c209679ebe77e09c8836cead28dd7ce17882525679f70f4
   - id: ideate
     type: skill
     path: .skills/ideate
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:479a7e435ff3789a1bbda49c68d5beabcb1878ad2e353737bc04f7b2170a2477
+    integrity: sha256:582e68280ec3bd445137292b882ad15861dbc16b2a65ec357eff9f980078c7b7
   - id: specify
     type: skill
     path: .skills/specify
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:ede22a42f66352722c520b261c7e7f2b2ca3b4b477d57807e5134c6d19d3a112
+    integrity: sha256:7584c7ae1320f53eb5905415db4a8f2c2d0bc4cb6c717346fc0fb92f8efeee66
   - id: flow
     type: skill
     path: .skills/flow
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:bdd7ea2ca0d86d31a69267128fac20ffa42ad81b2b6c1877398106381717cd74
+    integrity: sha256:5b25cd75bea3b61f63df55886dd534b8fee450e62e0f4bba7c18d1ca817e3080
   - id: sketch
     type: skill
     path: .skills/sketch
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:9e9f2b85fedc84ad0f66598525eff74d368b4fdfdeaf70d8a96261bf7f5dc073
+    integrity: sha256:6508f3cc5840abaf635bdc774a6cba260bb2f327461273a603bb7cd73fe4ad58
   - id: component
     type: skill
     path: .skills/component
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:b11bbda4b9da37476a05fb418814b64b6a3e85b11220015395d59d327e3cdc4c
+    integrity: sha256:b5dd974dfffcd9c4a7c22f2c2200e73d26aa8e58af89e6211ca911b8765f13ff
   - id: prototype
     type: skill
     path: .skills/prototype
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:94d0fd941505581dbeb2e66956e7670d8ff7be5502cd2351e807b5fff1da9a44
+    integrity: sha256:8915076072a4518c3ca65f769711ad0ca3f3bb8017bb3bc1d8bdb469cd7138e7
   - id: evaluate
     type: skill
     path: .skills/evaluate
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:0e15a56e5d683e0628f12f6417a5bc9e4b13336f31ff8ef699272bde3a2c9d0e
+    integrity: sha256:fe86c87beb94c6d632121c5ca468c58e2d844243677e7f24017713c3a8caf5a5
   - id: pitch
     type: skill
     path: .skills/pitch
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:9bc843f4ba520ca01cb58ce6097c0ed55f45a24872ad5aa4e0291123e3c8a521
+    integrity: sha256:bb406db63d2f6ddb6c46fb90936bc52747d513a358b0bb0c0e19b35f8abbe518
   - id: implement
     type: skill
     path: .skills/implement
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:bcfaefa5ec95f6c93d0ac4547d83158e49cea15c96a6571ad657e8c13afe600b
+    integrity: sha256:f7f9a9d27415fca10a23c115e843b40606957cd4c41c41baeabccdde48b82fb1
+  - id: map
+    type: skill
+    path: .skills/map
+    version: 0.5.0
+    ownership: framework-managed
+    integrity: sha256:1f50ea7e19c047341bec4498d9883c3d27adfd9eb913ebd54e5c21756ad69169
+  - id: practice-review
+    type: skill
+    path: .skills/practice-review
+    version: 0.5.0
+    ownership: framework-managed
+    integrity: sha256:a3053c95b6e1b0a31f3547833701050628ad7cf6c211dc154857837893dc55f4
   - id: design-check
     type: skill
     path: .skills/design-check
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:d21b4a94ae1f40dd448d3151a65ccef724bf14fdd8b31d3b2703de07abd0f8c4
+    integrity: sha256:4c419c6752852d774f00d85b763d698eb3b01cb467deec8365581276a416bef4
   - id: figma
     type: provider
     path: .silver/providers/figma
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:a365f925643e694b496e687acff596be16a651b8f3f9ab3ee5a54cb89aa291a8
+    integrity: sha256:dab7274b38599e96c203d534ffd9658f20f71db34fc2bf0c5fb769e2c96d5d24
   - id: silver-portable
     type: provider
     path: .silver/providers/silver-portable
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:e202434d8ba057ee42ef262ddd77c78e057963fa59e7523520a8907350052973
+    integrity: sha256:8e7a6a7494317dd70e7489beaeeaf44551a9804d40c57fa69c25292844a64c53
   - id: schemas-v2
     type: schema-bundle
     path: .silver/schemas/v2
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:c9531fe1247ebb5408cc1033877a27cdd46e85896293437e32e361668b182d72
+    integrity: sha256:b8a69b850933b880e0733da792c94781625ad5ab4b96555298fa23fa4ec6560b
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:320000035d0733a2a8f12111d9d0347e7ac537e6fd987592b3678dc420cc1444
+    integrity: sha256:91a34a8be1d618cb152f4200992a03bcd9e3fff109ad1c509fc86afcc2fb8b61
   - id: skill-runtime
     type: runtime
     path: .silver/runtime
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:8a699d729ca431a33181ccd2d6b1cab257a8030b7dd1687a97220adc11e9fb88
+    integrity: sha256:19a090f573e642ee60ec5e3c2965885e4a6604c20f91859b0be6b422d726001e
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
-    version: 0.4.0
+    version: 0.5.0
     ownership: framework-managed
-    integrity: sha256:25842062119e0db88a636f80095d966c846708714b2a852f3106077c5c8d5e4a
+    integrity: sha256:c68d46436c3bbbe4c0a5e0cad8f0b2aa40005ddc02339a5a503729d70195101e
   - id: reference-system
     type: reference-system
     path: reference-system
-    version: 0.4.0
+    version: 0.5.0
     ownership: copied-and-owned
     integrity: sha256:7e708964c9e779006e41eae2faeaf58e7e349c045f435ebf545448091adbcd6f
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:972b428268e501bb1c98d08ed49d71229204e8d89c868fe0af96bd7eeb43abca
+    base_integrity: sha256:972fdb7a015c0113d6237cdafe7e821d279165e8fb0fc0f4558d51928cb882ba
   - path: AGENTS.md
     owner: framework-agent-pointer
     ownership: generated
-    base_integrity: sha256:c42af1f9c5dbfbbcc45b80499c331e74eed524f2abd2d7818f04528b10742410
+    base_integrity: sha256:32e39f9fe9466999b23f425a23d5db36aed4236c231c9f8b2e68ee6179f8f08e

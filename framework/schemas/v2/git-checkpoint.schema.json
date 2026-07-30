@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/git-checkpoint.schema.json",
+  "title": "Silver accepted Git checkpoint v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "reason", "created_at", "paths", "status", "commit", "pushes", "pull_requests", "merges"],
+  "properties": {
+    "schema": { "const": "silver/git-checkpoint/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "reason": { "enum": ["accepted-artifact", "implementation-handoff", "workspace-configuration", "practice-change", "guidance-change", "design-context-change", "topology-change"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "paths": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/relativePath" }, "uniqueItems": true },
+    "status": { "enum": ["committed", "blocked", "not-a-repository", "no-change"] },
+    "commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{7,64}$" },
+    "branch": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "pushes": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "pull_requests": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1000 } },
+    "merges": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "message": { "type": "string", "maxLength": 500 }
+  }
+}

@@ -12,7 +12,7 @@ description: Define, refine, or review audience-facing brand foundations and exp
 3. Present tradeoffs and request approval before changing brand.md.
 4. Record material redirections as normal design decisions.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: component
-version: 0.4.0
+version: 0.5.0
 summary: Explore and specify accessible component anatomy and behavior.
 context_budget: small
 inputs:
@@ -35,7 +35,7 @@ capabilities:
       fallback: degraded
       description: Use design-file when configured; preserve explicit fallback
         coverage otherwise.
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -47,7 +47,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -55,7 +54,6 @@ permissions:
       - update
     paths:
       - design/work/components/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -63,10 +61,9 @@ permissions:
       - update
     paths:
       - design/flows/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

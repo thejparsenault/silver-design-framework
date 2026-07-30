@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/practice-change.schema.json",
+  "title": "Silver reviewed My Practice change v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "kind", "revision", "expected_practice_revision", "summary", "reason", "updates", "sanitization", "provenance"],
+  "properties": {
+    "schema": { "const": "silver/practice-change/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "kind": { "const": "practice-change" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "expected_practice_revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "updates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["section", "content"],
+        "properties": {
+          "section": { "enum": ["tools", "process", "quality", "boundaries", "method"] },
+          "content": { "type": "string", "minLength": 1, "maxLength": 2000 }
+        }
+      }
+    },
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewed", "removed"],
+      "properties": {
+        "reviewed": { "type": "boolean" },
+        "removed": { "type": "array", "items": { "type": "string", "maxLength": 300 } }
+      }
+    },
+    "provenance": { "$ref": "provenance.schema.json" }
+  }
+}

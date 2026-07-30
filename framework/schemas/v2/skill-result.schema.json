@@ -24,7 +24,7 @@
     "unresolved_questions",
     "recommended_next_actions"
   ],
-  "properties": {
+    "properties": {
     "schema": {
       "const": "silver/skill-result/v2"
     },
@@ -43,6 +43,32 @@
           "$ref": "common.schema.json#/$defs/version"
         }
       }
+    },
+    "provenance": {
+      "$ref": "provenance.schema.json"
+    },
+    "declared_effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    },
+    "observed_effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    },
+    "effect_findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "git_checkpoint": {
+      "$ref": "git-checkpoint.schema.json"
     },
     "started_at": {
       "type": "string",
@@ -280,6 +306,28 @@
           "automatic": {
             "const": false
           }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "action"],
+      "properties": {
+        "capability": {
+          "$ref": "common.schema.json#/$defs/capability"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "path": {
+          "$ref": "common.schema.json#/$defs/relativePath"
+        },
+        "reference": {
+          "type": "string",
+          "maxLength": 500
         }
       }
     }

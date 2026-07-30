@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: voice
-version: 0.4.0
+version: 0.5.0
 summary: Define or refine voice, tone, terminology, and content guidance.
 context_budget: small
 inputs:
@@ -27,7 +27,7 @@ capabilities:
     - repository
     - canonical-artifact
   optional: []
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -39,7 +39,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: canonical-artifact
     actions:
       - create
@@ -47,7 +46,6 @@ permissions:
       - update
     paths:
       - design/voice.md
-    decision: ask
   - capability: repository
     actions:
       - create
@@ -55,10 +53,9 @@ permissions:
       - update
     paths:
       - design/decisions/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

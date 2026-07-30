@@ -26,6 +26,8 @@ Available design skills:
 - [evaluate](.skills/evaluate/SKILL.md)
 - [pitch](.skills/pitch/SKILL.md)
 - [implement](.skills/implement/SKILL.md)
+- [map](.skills/map/SKILL.md)
+- [practice-review](.skills/practice-review/SKILL.md)
 - [design-check](.skills/design-check/SKILL.md)
 
 Design-system constraints may only be suspended when the user explicitly

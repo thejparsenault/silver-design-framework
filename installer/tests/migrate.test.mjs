@@ -72,6 +72,21 @@ async function legacyWorkspace(t) {
   manifest.artifacts = manifest.artifacts.filter(
     ({ id }) => !["project-assets", "presentation-kit"].includes(id),
   );
+  manifest.artifacts.push({
+    id: "permissions",
+    kind: "permission-policy",
+    path: "design/permissions.yaml",
+    scope: "codebase",
+    role: "canonical",
+    status: "active",
+    authority: { type: "local" },
+  });
+  manifest.permission_policy = "design/permissions.yaml";
+  await writeFile(
+    path.join(root, "design", "permissions.yaml"),
+    "schema: silver/permission-policy/v1\nid: legacy-policy\ndefault_decision: ask\nrules: []\n",
+    "utf8",
+  );
   manifest.checks.enabled = [
     "artifact-schema",
     "flow-structure",
@@ -123,12 +138,29 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.4.0");
-  assert.equal(lock.packages.length, 26);
-  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 19);
+  assert.equal(lock.framework.version, "0.5.0");
+  assert.equal(lock.packages.length, 28);
+  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "presentation-kit"));
+  assert.ok(manifest.artifacts.some(({ id }) => id === "default-design-context"));
+  assert.ok(manifest.artifacts.some(({ id }) => id === "component-catalog"));
+  assert.ok(!manifest.artifacts.some(({ kind }) => kind === "permission-policy"));
+  assert.equal(manifest.permission_policy, undefined);
+  assert.equal(applied.inactiveArtifacts[0].path, "design/permissions.yaml");
+  await readFile(path.join(root, "design", "permissions.yaml"), "utf8");
+  const bootstrap = JSON.parse(
+    await readFile(
+      path.join(root, ".silver", "provenance", "legacy-artifacts.json"),
+      "utf8",
+    ),
+  );
+  assert.equal(bootstrap.schema, "silver/provenance-bootstrap/v1");
+  assert.equal(
+    bootstrap.artifacts.find(({ id }) => id === "brand").origin,
+    "legacy",
+  );
   assert.ok(manifest.checks.enabled.includes("critical-interactions"));
   assert.equal((await doctorWorkspace({ root })).ok, true);
 
@@ -149,7 +181,73 @@ test("migration stops before all writes when a managed legacy skill was edited",
   assert.deepEqual(comparable(await snapshotFiles(root)), before);
 });
 
-test("0.3 workspace previews and applies the 0.4 what-now installation idempotently", async (t) => {
+test("0.4-to-0.5 migration preserves an edited legacy policy as inactive and bootstraps provenance", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-04-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Silver 0.4 workspace",
+    id: "silver-04-workspace",
+    date: "2026-07-30",
+  });
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.4.0";
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  const manifest = parse(await readFile(manifestPath, "utf8"));
+  manifest.artifacts.push({
+    id: "permissions",
+    kind: "permission-policy",
+    path: "design/permissions.yaml",
+    scope: "codebase",
+    role: "canonical",
+    status: "active",
+    authority: { type: "local" },
+  });
+  manifest.permission_policy = "design/permissions.yaml";
+  await writeFile(manifestPath, stringify(manifest), "utf8");
+  const editedPolicy = "Project-owned legacy policy notes.\n";
+  await writeFile(path.join(root, "design", "permissions.yaml"), editedPolicy);
+  await writeFile(
+    path.join(root, "design", "work", "legacy-note.md"),
+    "Legacy working artifact.\n",
+  );
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.fromVersion, "0.4.0");
+  assert.equal(preview.toVersion, "0.5.0");
+  assert.ok(
+    preview.changes.some(({ action }) => action === "bootstrap-provenance"),
+  );
+  assert.equal(preview.inactiveArtifacts[0].path, "design/permissions.yaml");
+
+  const applied = await migrateWorkspace({
+    root,
+    apply: true,
+    date: "2026-07-30",
+  });
+  assert.equal(applied.applied, true);
+  assert.equal(
+    await readFile(path.join(root, "design", "permissions.yaml"), "utf8"),
+    editedPolicy,
+  );
+  const bootstrap = JSON.parse(
+    await readFile(
+      path.join(root, ".silver", "provenance", "legacy-artifacts.json"),
+      "utf8",
+    ),
+  );
+  assert.ok(
+    bootstrap.artifacts.some(
+      ({ path: artifactPath }) =>
+        artifactPath === "design/work/legacy-note.md",
+    ),
+  );
+});
+
+test("0.3 workspace previews and applies the 0.5 installation idempotently", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-03-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -203,7 +301,7 @@ test("0.3 workspace previews and applies the 0.4 what-now installation idempoten
   assert.equal(repeated.applied, false);
 });
 
-test("0.2 v2 workspace previews, applies, and reruns the 0.4 migration idempotently", async (t) => {
+test("0.2 v2 workspace previews, applies, and reruns the 0.5 migration idempotently", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -243,7 +341,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.4 migration idempoten
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.4.0");
+  assert.equal(migrated.framework.version, "0.5.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma", "silver-portable"],
@@ -255,7 +353,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.4 migration idempoten
   assert.equal(repeated.applied, false);
 });
 
-test("0.2-to-0.4 migration surfaces edited managed packages without writing", async (t) => {
+test("0.2-to-0.5 migration surfaces edited managed packages without writing", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-conflict-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({ root, name: "Edited 0.2", id: "edited-02", date: "2026-07-24" });

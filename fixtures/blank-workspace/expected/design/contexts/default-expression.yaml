@@ -1,0 +1,31 @@
+schema: silver/component-expression/v1
+id: default-component-expression
+revision: r1
+component_catalog:
+  id: component-catalog
+  kind: component-catalog
+  revision: r1
+  path: reference-system/html-contracts
+design_system:
+  id: design-system
+  kind: design-system
+  revision: r1
+  path: design/system/README.md
+mode: identity
+roles:
+  - component_role: action.background
+    system_role: action.background
+  - component_role: action.text
+    system_role: action.text
+  - component_role: field.border
+    system_role: field.border
+provenance:
+  schema: silver/provenance/v1
+  origin: generated
+  recorded_at: "2026-07-23T00:00:00Z"
+  sources: []
+  guidance: []
+  design_contexts: []
+  change:
+    reason: Created by Silver setup.
+  acceptance: awaiting-review

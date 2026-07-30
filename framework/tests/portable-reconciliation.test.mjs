@@ -375,7 +375,7 @@ test("authority reversal blocks externally authoritative freshness when unavaila
   );
   const request = {
     schema: "silver/skill-invocation/v2", invocation_id: "external-freshness",
-    skill: { id: "design-check", version: "0.4.0" }, started_at: fixedTime,
+    skill: { id: "design-check", version: "0.5.0" }, started_at: fixedTime,
     inputs: [], outputs: [],
     permission_layers: [{
       schema: "silver/permission-policy/v2", id: "fixture-policy", layer: "framework-default",

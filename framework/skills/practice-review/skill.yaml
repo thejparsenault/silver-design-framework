@@ -1,0 +1,69 @@
+schema: silver/skill/v2
+id: practice-review
+version: 0.5.0
+summary: Propose a sanitized, reusable improvement to My Practice.
+context_budget: small
+inputs:
+  - kind: evaluation
+    required: false
+    role: working
+  - kind: finding
+    required: false
+    role: working
+  - kind: decision
+    required: false
+    role: working
+outputs:
+  - kind: practice-change
+    scope: product
+    path_pattern: design/work/practice-changes/**
+    authority: project-owned
+capabilities:
+  required: [repository]
+  optional: []
+effects:
+  - capability: repository
+    actions: [read, inspect]
+    paths: [design/**, .silver/results/**]
+  - capability: repository
+    actions: [create, write, update]
+    paths: [design/work/practice-changes/**]
+guardrails:
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+  - privacy-sanitized-evidence
+completion:
+  invariants:
+    - lesson-generalized
+    - company-specific-content-removed
+    - practice-change-reviewable
+  quality_criteria:
+    - id: task-quality
+      description: The proposal is reusable across products and does not copy confidential project knowledge into personal practice.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Approve the sanitized proposal before applying it to My Practice.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &apply [practice-apply]
+  - id: evidence-provenance
+    required: true
+    blocks: *apply
+handoffs:
+  - id: practice-review-to-apply
+    target: practice-apply
+    readiness: practice-apply
+    requires: [practice-change]
+external_effects: [none]
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Persist the reviewed proposal without modifying My Practice.
+recommend_after: *apply

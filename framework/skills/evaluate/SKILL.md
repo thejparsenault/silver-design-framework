@@ -12,7 +12,7 @@ description: Define an evaluation question and method, prepare tasks, inspect a 
 3. Separate observed behavior from interpretation and deterministic check findings.
 4. Produce evidence-linked findings and recommendations for explicit acceptance.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

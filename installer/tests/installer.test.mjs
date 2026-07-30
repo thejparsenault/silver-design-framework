@@ -46,6 +46,8 @@ const installedSkillIds = [
   "evaluate",
   "pitch",
   "implement",
+  "map",
+  "practice-review",
   "design-check",
 ];
 const managedPayloads = [
@@ -129,7 +131,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.4.0",
+    version: "0.5.0",
     sourceReference: "framework-development-fixture",
   });
 
@@ -308,7 +310,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.4.0",
+      "version: 0.5.0",
       "version: 0.2.1",
     ),
   );

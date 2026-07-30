@@ -12,7 +12,7 @@ description: Generate meaningfully distinct concepts and testable hypotheses gro
 3. Express a falsifiable hypothesis and cheapest useful test for each.
 4. Pause for explicit selection; record the choice and rejected tradeoffs.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

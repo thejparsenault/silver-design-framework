@@ -12,7 +12,7 @@ description: Convert sanitized evidence, feedback, analytics, briefs, and labele
 3. Cluster evidence without erasing contradictions or minority signals.
 4. Produce traceable findings and an actionable problem frame.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

@@ -31,6 +31,10 @@ async function validateV2(name, value) {
   }
   const expected = {
     "asset-catalog.schema.json": "silver/asset-catalog/v2",
+    "component-expression.schema.json": "silver/component-expression/v1",
+    "design-context.schema.json": "silver/design-context/v1",
+    "guidance-source.schema.json": "silver/guidance-source/v1",
+    "linked-source.schema.json": "silver/linked-source/v1",
     "presentation-kit.schema.json": "silver/presentation-kit/v2",
     "working-artifact.schema.json": "silver/working-artifact/v2",
   }[name];
@@ -38,7 +42,11 @@ async function validateV2(name, value) {
     !expected ||
     value?.schema !== expected ||
     typeof value.id !== "string" ||
-    (name !== "presentation-kit.schema.json" &&
+    (![
+      "guidance-source.schema.json",
+      "linked-source.schema.json",
+      "presentation-kit.schema.json",
+    ].includes(name) &&
       typeof value.revision !== "string")
   ) {
     throw new Error(`${name} structural validation failed in dependency-free installation.`);
@@ -180,6 +188,51 @@ export async function checkArtifacts(options = {}) {
         await validateV2("presentation-kit.schema.json", kit);
         if (artifact.id !== "presentation-kit") {
           throw new Error("Presentation kit manifest identity is invalid.");
+        }
+        continue;
+      }
+      if (artifact.kind === "component-catalog") {
+        continue;
+      }
+      if (artifact.kind === "x-component-expression") {
+        const expression = await readYaml(absolute);
+        await validateV2("component-expression.schema.json", expression);
+        if (expression.id !== artifact.id) {
+          throw new Error("Component expression ID does not match its manifest mapping.");
+        }
+        continue;
+      }
+      if (artifact.kind === "x-design-context") {
+        const context = await readYaml(absolute);
+        await validateV2("design-context.schema.json", context);
+        if (context.id !== artifact.id) {
+          throw new Error("Design context ID does not match its manifest mapping.");
+        }
+        continue;
+      }
+      if (artifact.kind === "x-guidance-source") {
+        const registry = await readYaml(absolute);
+        if (
+          registry.schema !== "silver/guidance-registry/v1" ||
+          !Array.isArray(registry.sources)
+        ) {
+          throw new Error("Guidance registry does not declare the v1 schema.");
+        }
+        for (const source of registry.sources) {
+          await validateV2("guidance-source.schema.json", source);
+        }
+        continue;
+      }
+      if (artifact.kind === "x-linked-source") {
+        const registry = await readYaml(absolute);
+        if (
+          registry.schema !== "silver/source-registry/v1" ||
+          !Array.isArray(registry.sources)
+        ) {
+          throw new Error("Linked source registry does not declare the v1 schema.");
+        }
+        for (const source of registry.sources) {
+          await validateV2("linked-source.schema.json", source);
         }
         continue;
       }

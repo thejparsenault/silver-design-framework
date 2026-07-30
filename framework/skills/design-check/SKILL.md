@@ -12,7 +12,7 @@ description: Discover and run applicable independent design checks for a declare
 3. Report unavailable required targets or providers as not-run.
 4. Summarize coverage and recommend corrections without performing design work.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

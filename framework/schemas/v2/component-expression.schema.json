@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/component-expression.schema.json",
+  "title": "Silver component expression mapping v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "revision", "component_catalog", "design_system", "mode", "roles", "provenance"],
+  "properties": {
+    "schema": { "const": "silver/component-expression/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "component_catalog": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "design_system": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "mode": { "enum": ["identity", "mapped"] },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component_role", "system_role"],
+        "properties": {
+          "component_role": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "system_role": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      }
+    },
+    "provenance": { "$ref": "provenance.schema.json" }
+  }
+}

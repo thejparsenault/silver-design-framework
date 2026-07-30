@@ -9,6 +9,7 @@ import { checkAccessibility } from "./check-accessibility.mjs";
 import { checkAssets } from "./check-assets.mjs";
 import { checkEvidence } from "./check-evidence.mjs";
 import { checkFlows } from "./check-flows.mjs";
+import { checkMaps } from "./check-maps.mjs";
 import {
   checkResult,
   finding,
@@ -32,6 +33,7 @@ import { checkViewProvenance } from "./check-view-provenance.mjs";
 const checkers = [
   ["contract-integrity", checkArtifacts],
   ["flow-structure", checkFlows],
+  ["map-structure", checkMaps],
   ["semantic-styles", checkSemanticStyles],
   ["prototype-policy", checkPrototypes],
   ["evidence-provenance", checkEvidence],

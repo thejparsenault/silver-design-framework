@@ -13,8 +13,24 @@ test("complete blank workspace invokes every skill and passes the full local loo
   await setupWorkspace({ root, name: "Complete fixture", id: "complete-fixture", date: "2026-07-24" });
   const result = await runCompleteBlankScenario({ root });
   assert.equal(result.status, "pass");
-  assert.equal(result.skills.length, 19);
-  assert.equal(result.positive_results.length, 19);
-  assert.equal(result.boundary_results.length, 17);
+  assert.equal(result.skills.length, 21);
+  assert.equal(result.positive_results.length, 21);
+  assert.equal(result.boundary_results.length, 19);
   assert.deepEqual(result.playbook, { paused: true, resumed: true, invalidated: true });
+  assert.equal(result.trace_chain.map, "guided-setup-journey");
+  assert.equal(result.trace_chain.practice.revision, "r1");
+  assert.equal(result.trace_chain.guidance[0].id, "fixture-design-guidance");
+  assert.equal(
+    result.trace_chain.design_contexts[0].id,
+    "default-design-context",
+  );
+  assert.ok(result.trace_chain.sources.length >= 2);
+  assert.deepEqual(result.trace_chain.external_bindings, [
+    "guided-map-figma",
+  ]);
+  assert.equal(
+    result.trace_chain.implementation_checkpoint.status,
+    "committed",
+  );
+  assert.equal(result.trace_chain.qa_result, "design-check-local-degraded");
 });

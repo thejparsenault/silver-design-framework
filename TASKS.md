@@ -169,6 +169,42 @@ The authoritative requirement list and release evidence rules are in
   - context: small
   - notes: Complete. Human-facing setup displays the authoritative Ag terminal mark in a contrast-aware silver tone, then runs and records one guarded `what-now` invocation; JSON and non-interactive output remain escape-safe.
 
+## Completed Release — Silver 0.5 Traceable Practice and Context
+
+The authoritative requirements and evidence are in
+`docs/silver-0.5-acceptance.md` and
+`docs/silver-0.5-acceptance-audit.md`.
+
+- [x] Implement agent-led guided setup and repository topology
+  - type: build
+  - priority: high
+  - context: large
+  - notes: `setup inspect` returns a revisioned, state-locked recommendation and `setup apply` idempotently applies only the reviewed integrated or separate plan.
+
+- [x] Implement My Practice and manually linked guidance
+  - type: build
+  - priority: high
+  - context: large
+  - notes: My Practice is a visible local Git workspace; sanitized practice changes and selected local-guidance snapshots are revisioned without copying private paths into product results.
+
+- [x] Implement multi-context design work and portable maps
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Design contexts compose brands, systems, shared catalogs, expression mappings, surfaces, assets, presentation kits, and codebases; the map skill validates and renders journeys and service blueprints.
+
+- [x] Implement universal provenance, effects, and Git checkpoints
+  - type: design
+  - priority: high
+  - context: large
+  - notes: Durable results pin practice, guidance, context, and sources; `silver trace` renders the chain; effects replace active Silver permission intersection; accepted changes checkpoint only their own paths and never push.
+
+- [x] Implement and prove reviewable 0.4-to-0.5 migration
+  - type: test
+  - priority: high
+  - context: large
+  - notes: Migration preserves project work and edited legacy policies, bootstraps unknown legacy provenance by exact integrity, installs 21 skills, and passes source and exact-package gates.
+
 ## Following Milestone — Existing Codebase Adoption
 
 - [ ] Adopt one representative existing product repository

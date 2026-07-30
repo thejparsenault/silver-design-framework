@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/map.schema.json",
+  "title": "Silver portable experience and service map v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "kind", "revision", "title", "map_type", "state", "question", "actors", "stages", "lanes", "items", "connections", "design_contexts", "primary_context", "provenance"],
+  "properties": {
+    "schema": { "const": "silver/map/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "kind": { "const": "map" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "map_type": { "enum": ["journey", "service-blueprint", "experience", "ecosystem"] },
+    "state": { "enum": ["current", "future", "hybrid"] },
+    "question": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "actors": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "#/$defs/named" }
+    },
+    "stages": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "#/$defs/named" }
+    },
+    "lanes": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "title", "kind"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "kind": { "enum": ["actor-action", "touchpoint", "thought", "emotion", "frontstage", "backstage", "support", "system", "evidence", "opportunity", "stakeholder"] }
+        }
+      }
+    },
+    "items": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "stage", "lane", "title", "evidence", "assumption", "pain_points", "opportunities"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "stage": { "$ref": "common.schema.json#/$defs/id" },
+          "lane": { "$ref": "common.schema.json#/$defs/id" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "actor": { "$ref": "common.schema.json#/$defs/id" },
+          "evidence": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/artifactReference" } },
+          "assumption": { "type": "boolean" },
+          "pain_points": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
+          "opportunities": { "type": "array", "items": { "type": "string", "maxLength": 500 } }
+        }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["from", "to", "relationship"],
+        "properties": {
+          "from": { "$ref": "common.schema.json#/$defs/id" },
+          "to": { "$ref": "common.schema.json#/$defs/id" },
+          "relationship": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    "design_contexts": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
+    },
+    "primary_context": { "$ref": "common.schema.json#/$defs/id" },
+    "provenance": { "$ref": "provenance.schema.json" }
+  },
+  "$defs": {
+    "named": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 }
+      }
+    }
+  }
+}

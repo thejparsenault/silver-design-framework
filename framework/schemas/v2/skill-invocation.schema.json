@@ -11,7 +11,6 @@
     "started_at",
     "inputs",
     "outputs",
-    "permission_layers",
     "available_providers",
     "approvals",
     "relaxations",
@@ -41,6 +40,9 @@
     "started_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "provenance.schema.json"
     },
     "inputs": {
       "type": "array",
@@ -178,6 +180,29 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 120
+          }
+        }
+      }
+    },
+    "observed_effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "action"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "action": {
+            "$ref": "common.schema.json#/$defs/action"
+          },
+          "path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 500
           }
         }
       }

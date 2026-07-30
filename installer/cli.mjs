@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 
 import { renderBrandMark } from "./brand.mjs";
 import { doctorWorkspace } from "./doctor.mjs";
@@ -8,11 +9,18 @@ import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
 import { runWhatNowAfterSetup } from "./what-now.mjs";
+import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
+import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
+import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
 
 const usage = `The Silver Design Framework
 
 Usage:
+  silver setup inspect [directory] [--answers <answers.json>] [--json]
+  silver setup apply <plan.json> [--allow-unresolved] [--json]
   silver setup [directory] [--name <name>] [--id <id>] [--json]
+  silver practice apply <proposal.json> [--practice <directory>] [--json]
+  silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
   silver repair [directory] [--json]
   silver update [directory] [--json]
@@ -20,16 +28,25 @@ Usage:
   silver version
 
 Commands:
-  setup   Initialize a blank workspace or resume an existing framework setup.
+  setup   Inspect and apply a reviewed workspace plan; direct setup remains a compatibility path.
   doctor  Diagnose workspace contracts and managed files without changing them.
   repair  Regenerate disposable indexes and agent discovery pointers.
   update  Update unmodified framework-managed packages; report owned-package proposals.
-  migrate Preview or explicitly apply the supported v1-to-v2 workspace migration.
+  migrate Preview or explicitly apply a supported workspace migration.
   version Print the local framework development version.
 `;
 
 function parseArguments(args) {
-  const supportedFlags = new Set(["apply", "help", "id", "json", "name"]);
+  const supportedFlags = new Set([
+    "allow-unresolved",
+    "answers",
+    "apply",
+    "help",
+    "id",
+    "json",
+    "name",
+    "practice",
+  ]);
   const positionals = [];
   const flags = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -42,7 +59,7 @@ function parseArguments(args) {
     if (!supportedFlags.has(key)) {
       throw new Error(`Unknown option: --${key}`);
     }
-    if (key === "apply" || key === "json" || key === "help") {
+    if (["allow-unresolved", "apply", "json", "help"].includes(key)) {
       flags[key] = true;
       continue;
     }
@@ -154,6 +171,67 @@ export async function runCli(
 ) {
   try {
     const command = args[0];
+    if (command === "setup" && ["inspect", "apply"].includes(args[1])) {
+      const operation = args[1];
+      const { positionals, flags } = parseArguments(args.slice(2));
+      if (operation === "inspect") {
+        if (positionals.length > 1) throw new Error("setup inspect accepts at most one directory.");
+        const answers = flags.answers
+          ? JSON.parse(
+              flags.answers.trimStart().startsWith("{")
+                ? flags.answers
+                : await readFile(path.resolve(flags.answers), "utf8"),
+            )
+          : {};
+        const result = await inspectSetup({
+          target: path.resolve(positionals[0] ?? process.cwd()),
+          answers,
+          now: now().toISOString(),
+        });
+        stdout(flags.json ? JSON.stringify(result, null, 2) : JSON.stringify(result, null, 2));
+        return 0;
+      }
+      if (positionals.length !== 1) throw new Error("setup apply requires one plan JSON file.");
+      const plan = JSON.parse(await readFile(path.resolve(positionals[0]), "utf8"));
+      const result = await applySetupPlan({
+        plan,
+        allowUnresolved: Boolean(flags["allow-unresolved"]),
+      });
+      stdout(flags.json ? JSON.stringify(result, null, 2) : `Applied ${result.plan} at ${result.workspace.root}`);
+      return 0;
+    }
+    if (command === "practice" && args[1] === "apply") {
+      const { positionals, flags } = parseArguments(args.slice(2));
+      if (positionals.length !== 1) throw new Error("practice apply requires one proposal JSON file.");
+      const proposal = JSON.parse(await readFile(path.resolve(positionals[0]), "utf8"));
+      const result = await applyPracticeChange({
+        root: path.resolve(flags.practice ?? defaultPracticeRoot()),
+        proposal,
+        now: now().toISOString(),
+      });
+      stdout(flags.json ? JSON.stringify(result, null, 2) : `Updated My Practice to ${result.revision}.`);
+      return 0;
+    }
+    if (command === "trace") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (positionals.length < 1 || positionals.length > 2) {
+        throw new Error("trace requires an artifact id or path and accepts an optional workspace directory.");
+      }
+      const result = await traceArtifact({
+        target: positionals[0],
+        root: path.resolve(positionals[1] ?? process.cwd()),
+      });
+      const traceView = await writeTraceView({
+        root: path.resolve(positionals[1] ?? process.cwd()),
+        trace: result,
+      });
+      stdout(
+        flags.json
+          ? JSON.stringify({ ...result, trace_view: traceView }, null, 2)
+          : `${renderTrace(result)}\nTrace view: ${traceView}`,
+      );
+      return 0;
+    }
     const { positionals, flags } = parseArguments(args.slice(1));
     if (!command || flags.help || command === "help" || command === "--help") {
       stdout(usage);

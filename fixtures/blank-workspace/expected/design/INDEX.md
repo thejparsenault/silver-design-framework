@@ -11,8 +11,12 @@ Workspace: **Example Product** (`product-workspace`)
 | Voice | canonical | draft | [voice.md](voice.md) |
 | Design principles | canonical | draft | [design-principles.md](design-principles.md) |
 | Design system | canonical | draft | [system/README.md](system/README.md) |
+| Component catalog | canonical | active | [../reference-system/html-contracts](../reference-system/html-contracts) |
+| X component expression | canonical | active | [contexts/default-expression.yaml](contexts/default-expression.yaml) |
+| X design context | canonical | active | [contexts/default.yaml](contexts/default.yaml) |
+| X guidance source | supporting | active | [guidance/sources.yaml](guidance/sources.yaml) |
+| X linked source | supporting | active | [sources/sources.yaml](sources/sources.yaml) |
 | Decision log | canonical | active | [decisions/README.md](decisions/README.md) |
-| Permission policy | canonical | active | [permissions.yaml](permissions.yaml) |
 | Asset catalog | canonical | active | [assets/catalog.json](assets/catalog.json) |
 | Presentation kit | canonical | active | [presentation-kit/kit.json](presentation-kit/kit.json) |
 
@@ -22,4 +26,4 @@ Default flow view: `mermaid`
 Prototype root: `prototypes/`
 Default constraint profile: `constrained`
 
-Installed project skills: `what-now`, `brand`, `product`, `voice`, `principles`, `theme`, `system`, `research`, `synthesize`, `ideate`, `specify`, `flow`, `sketch`, `component`, `prototype`, `evaluate`, `pitch`, `implement`, `design-check`
+Installed project skills: `what-now`, `brand`, `product`, `voice`, `principles`, `theme`, `system`, `research`, `synthesize`, `ideate`, `specify`, `flow`, `sketch`, `component`, `prototype`, `evaluate`, `pitch`, `implement`, `map`, `practice-review`, `design-check`

@@ -1,6 +1,6 @@
 schema: silver/provider/v1
 id: figma
-version: 0.4.0
+version: 0.5.0
 kind: external
 capabilities: [design-file, external-artifact, representation-sync]
 availability:

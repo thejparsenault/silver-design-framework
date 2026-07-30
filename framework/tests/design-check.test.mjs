@@ -35,6 +35,7 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
     [
       "contract-integrity",
       "flow-structure",
+      "map-structure",
       "semantic-styles",
       "prototype-policy",
       "evidence-provenance",

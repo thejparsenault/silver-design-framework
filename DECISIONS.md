@@ -130,6 +130,106 @@ Decision: Repurpose this repository into an agent-neutral framework for design w
 Reason: Teams need consistent ways to describe intent, invoke common design tasks, integrate tools, and enforce constraints across both blank and existing repositories. Shipping one starter design system does not solve that broader problem and incorrectly assumes the same system should begin every project.
 Status: Accepted
 
+## 2026-07-30 - Guided setup separates recommendation from application
+
+Decision: Make chat the primary setup interface. `silver setup inspect` returns
+a revisioned, state-locked plan containing discovered state, topology
+recommendation, intended writes, Git actions, linked guidance, codebases,
+tools, design contexts, unresolved questions, and external actions.
+`silver setup apply` applies only that reviewed plan and is idempotent.
+Recommend a separate design repository for multiple codebases, separate
+discipline ownership, or independent design history; recommend integration for
+one small shared team, codebase, and lifecycle.
+
+Reason: Designers should make a small number of understandable choices without
+having to manage Git mechanics or infer repository architecture from CLI
+flags. Separating inspection from application keeps the agent useful while
+making consequential setup auditable.
+
+Status: Accepted
+
+## 2026-07-30 - My Practice is personal, readable, and non-executable
+
+Decision: Store personal practice by default in the visible
+`~/Silver/My Practice` folder with readable methods, playbooks, rubrics, and
+decisions plus implicit local Git history. Product work records only the
+practice identity, revision, and applied method IDs. Method overlays may refine
+questions, techniques, quality emphasis, and exclusions but cannot relax
+project facts, safety invariants, or required linked guidance. Executable
+third-party skill-pack distribution is deferred.
+
+Reason: Designers need portable learning across companies and products without
+injecting a global workflow into every repository or copying confidential
+company context into a personal repository.
+
+Status: Accepted
+
+## 2026-07-30 - Institutional guidance is linked manually and pinned
+
+Decision: Never discover or activate company guidance automatically. A
+designer or project owner manually links selected local or Git sources and
+declares their scope and influence as reference, preferred, or required. Git
+links pin commits and paths; non-Git links snapshot only reviewed selected
+files. Drift produces a reviewable re-pin proposal and stale dependents, never
+an automatic semantic update.
+
+Reason: Institutional knowledge should constrain work when intentionally
+connected, but automatic discovery would be surprising, privacy-sensitive, and
+ambiguous about authority.
+
+Status: Accepted
+
+## 2026-07-30 - Design context composes product expression
+
+Decision: Treat brand, design system, component catalog, component-expression
+mapping, optional assets and presentation kit, surfaces, and codebase binding
+as one revisioned design context. One component catalog may participate in
+multiple contexts through explicit identity or transformation mappings.
+Durable visual outputs pin the exact resolved context revision and declare one
+primary context when several participate.
+
+Reason: A design team may reuse semantic components across products, brands,
+themes, surfaces, and codebases. Explicit composition makes those variations
+compatible and traceable without duplicating the shared component library.
+
+Status: Accepted
+
+## 2026-07-30 - Repository authority is native; Silver audits effects
+
+Decision: Replace active Silver repository permission intersection with
+declared and observed effects. Filesystem access, Git/GitHub permissions,
+branch protection, repository instructions, and the agent host determine
+authorization. Undeclared effects become findings rather than Silver denials.
+Keep hard protections for path escape, stale overwrite, secrets, fabricated
+evidence, destructive ambiguity, silent mutation, and misleading readiness.
+Explicit acceptance and handoff create path-isolated local Git checkpoints but
+never push automatically.
+
+Reason: A second permission system makes chat workflows harder to understand
+and can conflict with the repository controls teams already use. Effect
+declarations retain preview and auditability without pretending to grant or
+withhold authority Git already governs.
+
+Status: Accepted
+
+## 2026-07-30 - General external synchronization remains one generic workflow
+
+Decision: Silver 0.5 manually registers and exactly pins local or Git guidance,
+design-system, component-catalog, and codebase sources with declared authority
+and selected paths. It reports availability, freshness, drift, and actual
+stale dependents, and supports reviewed re-pinning. It does not add
+artifact-specific push/pull commands. Future bidirectional work will use one
+`reconcile` skill and generic `silver sync status`, `inspect`, and `apply`
+commands that route by artifact kind. Preserve the existing 0.3 three-way
+reconciliation and narrow Figma token-write foundation.
+
+Reason: Components, systems, decisions, maps, flows, prototypes, and
+presentations share revision, authority, proposal, and conflict concerns.
+Building separate sync commands now would duplicate policy before the source
+and privacy model is mature.
+
+Status: Accepted
+
 ## 2026-07-23 - Use explicit organization, product, and codebase scopes
 
 Decision: Model shared organization foundations, product design workspaces, and application codebase bindings as separate logical scopes. Repositories may combine scopes when small. Multi-repository setups use manifests and pinned versions rather than symlinks.

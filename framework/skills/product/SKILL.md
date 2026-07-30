@@ -12,7 +12,7 @@ description: Define or revise product audience, jobs, desired outcomes, constrai
 3. Label assumptions and unresolved product questions.
 4. Request approval before changing product.md.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

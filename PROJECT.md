@@ -8,7 +8,7 @@ visibility: private
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-28
+updated: 2026-07-30
 ---
 
 # The Silver Design Framework
@@ -23,16 +23,21 @@ The framework is a meta-system. It defines how a design system and design practi
 
 A designer can:
 
-1. Run a setup/update tool in a blank folder or existing repository.
+1. Ask a chat agent to inspect and apply a reviewable setup plan in a blank
+   folder, existing repository, or separate design repository.
 2. Establish discoverable sources of truth for brand, product, voice, design principles, system rules, research, and decisions.
 3. Install only the skills and deterministic checks appropriate to that repository.
 4. Use agent-supported workflows for brand definition, ideation, flow authoring, theming, prototyping, testing, refinement, and eventual production work.
-5. Use configured tools such as Figma or a browser through provider-neutral capabilities and explicit permissions.
+5. Use configured tools such as Figma or a browser through provider-neutral capabilities and environment-governed authority.
 6. Constrain generated work to approved semantic styles and components, with explicit prototype-only suspension when desired.
 7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
 8. Run recognizable design skills independently or compose them through optional, resumable playbooks with inspectable artifact handoffs and checkpoints.
 9. Build evidence-backed change cases and branded presentation views for team decisions without confusing generated output, stakeholder acceptance, and production readiness.
 10. Complete every general design task through a portable project-local baseline, then optionally bind, render, or synchronize the same revisioned intent through external tools without silent drift.
+11. Improve a visible personal practice across products without copying private
+    personal paths or overriding required product and company guidance.
+12. Trace durable work through its evidence, practice methods, linked guidance,
+    design context, external views, acceptance, and local Git checkpoint.
 
 ## First Iteration
 
@@ -54,16 +59,15 @@ build
 
 ## Latest Release
 
-Silver `0.4.0`, **What Now**, is complete. Its authoritative scope and
-requirement IDs are defined in `docs/silver-0.4-acceptance.md`; direct passing
-evidence for all ten criteria is recorded in
-`docs/silver-0.4-acceptance-audit.md`.
+Silver `0.5.0`, **Traceable Practice and Context**, is complete. Its
+authoritative scope is defined in `docs/silver-0.5-acceptance.md`; direct
+passing evidence is recorded in `docs/silver-0.5-acceptance-audit.md`.
 
-The release adds the nineteenth project-local skill: a read-only,
-evidence-ranked workspace orientation capability with contract-bounded dynamic
-recommendations and reviewable 0.3-to-0.4 migration. The following milestone
-remains existing-codebase adoption; a representative production repository
-still needs to be selected.
+The release adds agent-led setup, My Practice, manually linked guidance,
+revisioned multi-product design contexts, component-expression mappings,
+portable maps, universal provenance, trace views, effects-based authority, and
+local Git checkpoints. Generalized external synchronization and deep
+existing-codebase adoption remain following milestones.
 
 ## Agent Access
 
@@ -76,13 +80,18 @@ still needs to be selected.
 ## Key Constraints
 
 - Project workflow skills are installed at the lowest useful repository scope, never globally by default.
-- User-global configuration contains tool-provider preferences and permission ceilings only; it does not inject workflow context.
+- My Practice is a visible, personal, tool-neutral local Git workspace containing readable overlays and playbooks, not automatically trusted executable skill packages.
 - Installed project files are committed and project-owned. Updates arrive as reviewable diffs.
 - Daily design work belongs in skills. The CLI is limited to setup, update, repair, migration, and diagnostics.
 - Markdown records intent and judgment; structured files define enforceable contracts.
 - Design-system constraints are never silently suspended. Suspension is an explicit prototype-only choice by default.
 - Process and lifecycle guidance is recommended, not enforced.
 - External tools may be authoritative for declared artifact kinds, but production use requires a pinned, validated local representation.
+- Company or team guidance is linked manually and never discovered or activated automatically.
+- Git/GitHub permissions, repository instructions, branch protection, and the
+  agent host determine repository authority; Silver effects support preview and
+  audit rather than a second permission intersection.
+- Durable visual work pins one or more exact design-context revisions.
 - Every generally applicable skill has a useful bundled portable baseline; an external integration adds capability and never silently becomes a prerequisite for unrelated work.
 - Canonical artifacts, generated local views, and external views have distinct roles, authority, provenance, and revisions. Drift is reconciled against a shared base rather than resolved by last-write-wins.
 - Skill execution, acceptance, and downstream readiness are separate states.
@@ -103,6 +112,11 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 - `docs/silver-0.2-acceptance.md` — completed Complete Blank-Workspace Suite boundary and evidence criteria
 - `docs/silver-0.3-acceptance.md` — authoritative Portable Tools and Reconciliation release boundary and completion criteria
 - `docs/silver-0.3-acceptance-audit.md` — direct evidence for all 22 Portable Tools and Reconciliation criteria
+- `docs/traceable-practice-and-context.md` — Silver 0.5 architecture,
+  ownership, versioning, backup, authority, and synchronization boundary
+- `docs/silver-0.5-acceptance.md` — authoritative Traceable Practice and
+  Context release boundary and completion criteria
+- `docs/silver-0.5-acceptance-audit.md` — direct Silver 0.5 evidence map
 - `docs/tool-representations-and-reconciliation.md` — portable provider, representation, authority, drift, and reconciliation specification
 - `docs/agentic-design-workflows.md` — independent skill, artifact handoff, playbook, result, guardrail, and production-boundary plan
 - `docs/pitch-and-presentations.md` — change-case, pitch, presentation-kit, rendering, and presentation-check plan

@@ -10,9 +10,11 @@ description: Assess production readiness and rebuild accepted design intent into
 1. Assess readiness from accepted, revision-pinned intent and list missing or conflicting requirements.
 2. Stop with findings rather than inventing intent when readiness is incomplete.
 3. Rebuild against the static production recipe, semantic styles, and approved component contracts.
-4. Run all production-required checks and present a reviewable implementation handoff.
+4. Run all production-required checks and present a reviewable implementation
+   handoff. Default the proposed engineering handoff to a draft branch or pull
+   request when the repository host supports it.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 
@@ -24,4 +26,8 @@ Run the guarded file operation with `node scripts/invoke.mjs <request.json>` whe
 ## Boundaries
 
 - Do not copy prototype code into production by default.
-- Do not commit, push, open a pull request, or deploy automatically.
+- The accepted local checkpoint does not push or open a pull request.
+- An explicitly requested commit, push, draft pull request, merge, or other
+  Git/GitHub action may proceed when repository instructions, branch
+  protection, permissions, and the agent host allow it.
+- Do not deploy automatically.

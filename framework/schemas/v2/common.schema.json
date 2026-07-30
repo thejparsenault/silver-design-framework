@@ -64,6 +64,13 @@
             "implementation",
             "asset-catalog",
             "presentation-kit"
+            ,"map"
+            ,"practice-change"
+            ,"design-context"
+            ,"component-expression"
+            ,"guidance-source"
+            ,"provenance-record"
+            ,"git-checkpoint"
             ,"representation-binding"
             ,"external-snapshot"
             ,"change-set"
@@ -85,6 +92,7 @@
             "research-evidence",
             "flow",
             "sketch-renderer",
+            "map-renderer",
             "prototype-renderer",
             "presentation-renderer",
             "production-source",

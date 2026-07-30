@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -107,20 +107,27 @@ async function validateV1(validators) {
   const artifactIds = new Set();
   for (const mapping of manifest.artifacts) {
     const artifactPath = path.join(workspaceRoot, mapping.path);
-    const content = await readFile(artifactPath, "utf8");
+    const fileMetadata =
+      mapping.kind === "component-catalog"
+        ? null
+        : await stat(artifactPath);
+    const content = fileMetadata?.isFile()
+      ? await readFile(artifactPath, "utf8")
+      : null;
     if (
       mapping.kind !== "permission-policy" &&
-      mapping.path.endsWith(".md")
+      mapping.path.endsWith(".md") &&
+      content !== null
     ) {
-      const metadata = frontmatter(content, mapping.path);
+      const artifactMetadata = frontmatter(content, mapping.path);
       assertValid(
         validators,
         "artifact.schema.json",
-        metadata,
+        artifactMetadata,
         mapping.path,
       );
       for (const field of ["id", "kind", "scope", "status"]) {
-        if (metadata[field] !== mapping[field]) {
+        if (artifactMetadata[field] !== mapping[field]) {
           throw new Error(`${mapping.path} ${field} disagrees with manifest`);
         }
       }
@@ -131,17 +138,19 @@ async function validateV1(validators) {
     artifactIds.add(mapping.id);
   }
 
-  assertValid(
-    validators,
-    "permission-policy.schema.json",
-    parse(
-      await readFile(
-        path.join(workspaceRoot, manifest.permission_policy),
-        "utf8",
+  if (manifest.permission_policy) {
+    assertValid(
+      validators,
+      "permission-policy.schema.json",
+      parse(
+        await readFile(
+          path.join(workspaceRoot, manifest.permission_policy),
+          "utf8",
+        ),
       ),
-    ),
-    manifest.permission_policy,
-  );
+      manifest.permission_policy,
+    );
+  }
 
   const lock = await yaml("fixtures/contracts/valid/lock-v1.yaml");
   assertValid(validators, "lock.schema.json", lock, "legacy v1 lock fixture");

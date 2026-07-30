@@ -12,7 +12,7 @@ description: Generate, compare, apply, or revise semantic themes, modes, and map
 3. Run applicable contrast checks before proposing application.
 4. Apply canonical changes only after approval and record the decision.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 
@@ -24,4 +24,4 @@ Run the guarded file operation with `node scripts/invoke.mjs <request.json>` whe
 ## Boundaries
 
 - Do not introduce raw style values directly into product or prototype code.
-- Do not infer permission to create a new mode or canonical palette.
+- Do not infer authority to create a new mode or canonical palette.

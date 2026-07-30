@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import { invokeSkill } from "../runtime/invoke-skill.mjs";
+
+const run = promisify(execFile);
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -38,6 +42,26 @@ function permissionLayers(capability, actions, paths) {
       },
     ],
   }));
+}
+
+function provenance(sources = []) {
+  return {
+    schema: "silver/provenance/v1",
+    origin: "agent-assisted",
+    recorded_at: startedAt,
+    contributors: [{ kind: "agent", id: "fixture-agent" }],
+    sources,
+    practice: {
+      id: "my-practice",
+      revision: "r1",
+      methods: [],
+    },
+    guidance: [],
+    design_contexts: [],
+    change: { reason: "Created by a guarded invocation fixture." },
+    acceptance: "accepted",
+    external_bindings: [],
+  };
 }
 
 function findingOutput() {
@@ -84,7 +108,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.4.0" },
+    skill: { id: "synthesize", version: "0.5.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -94,6 +118,14 @@ function synthesizeRequest(overrides = {}) {
         "design/evidence/seed-feedback.json",
       ),
     ],
+    provenance: provenance([
+      reference(
+        "seed-feedback",
+        "evidence",
+        "r1",
+        "design/evidence/seed-feedback.json",
+      ),
+    ]),
     outputs: [findingOutput()],
     permission_layers: permissionLayers(
       "repository",
@@ -163,16 +195,50 @@ test("guarded invocation writes a valid artifact and normalized accepted result"
   );
   assert.deepEqual(recorded, result);
   assert.equal(result.degraded_capabilities[0].coverage, "degraded");
+  assert.equal(result.git_checkpoint.status, "not-a-repository");
 });
 
-test("canonical writes stop at an unresolved ask boundary", async () => {
+test("accepted outputs create a local Git checkpoint without pushing", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-git-"),
+  );
+  await run("git", ["-C", workspace, "init"]);
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: synthesizeRequest({ invocation_id: "synthesize-git-1" }),
+    completedAt,
+  });
+  assert.equal(result.git_checkpoint.status, "committed");
+  assert.deepEqual(result.git_checkpoint.pushes, []);
+  assert.deepEqual(result.git_checkpoint.pull_requests, []);
+  assert.deepEqual(result.git_checkpoint.merges, []);
+  assert.deepEqual(result.git_checkpoint.paths, [
+    "design/work/findings/campaign-finding.json",
+  ]);
+  assert.equal(
+    (
+      await run("git", [
+        "-C",
+        workspace,
+        "show",
+        "--pretty=format:",
+        "--name-only",
+        "HEAD",
+      ])
+    ).stdout.trim(),
+    "design/work/findings/campaign-finding.json",
+  );
+});
+
+test("legacy Silver ask rules no longer deny repository writes", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-canonical-"),
   );
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.4.0" },
+    skill: { id: "brand", version: "0.5.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -189,6 +255,7 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
         },
       },
     ],
+    provenance: provenance(),
     permission_layers: permissionLayers(
       "canonical-artifact",
       ["create", "write", "update"],
@@ -206,8 +273,9 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
     request,
     completedAt,
   });
-  assert.equal(result.execution.status, "blocked");
-  assert.match(result.execution.summary, /Approval required/);
+  assert.equal(result.execution.status, "complete-with-findings");
+  assert.equal(result.observed_effects[0].path, "design/brand.md");
+  assert.deepEqual(result.effect_findings, []);
   assert.deepEqual(
     JSON.parse(
       await readFile(
@@ -217,8 +285,90 @@ test("canonical writes stop at an unresolved ask boundary", async () => {
     ),
     result,
   );
+  assert.equal(
+    await readFile(path.join(workspace, "design/brand.md"), "utf8"),
+    "---\\nschema: silver/artifact/v1\\nid: brand\\n---\\n# Brand\n",
+  );
+});
+
+test("durable output without provenance is blocked before writing", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-no-provenance-"),
+  );
+  const request = synthesizeRequest();
+  delete request.provenance;
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.equal(result.execution.status, "blocked");
+  assert.match(result.execution.summary, /provenance envelope/);
+  assert.equal(result.provenance.origin, "generated");
   await assert.rejects(
-    readFile(path.join(workspace, "design/brand.md")),
+    readFile(
+      path.join(workspace, "design/work/findings/campaign-finding.json"),
+      "utf8",
+    ),
+    /ENOENT/,
+  );
+});
+
+test("visual durable output without a design-context pin is blocked", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-no-context-"),
+  );
+  const sketch = reference(
+    "contextless-sketch",
+    "sketch",
+    "r1",
+    "design/work/sketches/contextless.json",
+  );
+  const request = {
+    schema: "silver/skill-invocation/v2",
+    invocation_id: "sketch-no-context",
+    skill: { id: "sketch", version: "0.5.0" },
+    started_at: startedAt,
+    inputs: [],
+    outputs: [
+      {
+        reference: sketch,
+        content: {
+          format: "json",
+          value: {
+            id: sketch.id,
+            kind: sketch.kind,
+            revision: sketch.revision,
+          },
+        },
+      },
+    ],
+    provenance: provenance(),
+    permission_layers: permissionLayers(
+      "repository",
+      ["read", "inspect", "create", "write", "update"],
+      ["design/**"],
+    ),
+    available_providers: [],
+    approvals: [],
+    relaxations: [],
+    checks: [],
+    unresolved_questions: [],
+  };
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/sketch"),
+    request,
+    completedAt,
+  });
+  assert.equal(result.execution.status, "blocked");
+  assert.match(result.execution.summary, /design-context revision/);
+  await assert.rejects(
+    readFile(
+      path.join(workspace, "design/work/sketches/contextless.json"),
+      "utf8",
+    ),
     /ENOENT/,
   );
 });
@@ -260,7 +410,7 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.4.0" },
+    skill: { id: "implement", version: "0.5.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -307,9 +457,9 @@ test("non-relaxable guardrails block before writes", async () => {
   const request = synthesizeRequest({
     relaxations: [
       {
-        id: "permission-bounded",
+        id: "effects-declared",
         profile: "prototype-suspended",
-        reason: "Attempted permission bypass.",
+        reason: "Attempted to suppress an observed effect.",
         decision_reference: reference(
           "bad-relaxation",
           "decision",

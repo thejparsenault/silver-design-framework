@@ -8,11 +8,11 @@ description: Create or revise a testable simulation for a declared question, con
 ## Workflow
 
 1. Declare the test question, fidelity, constraint profile, and pinned inputs.
-2. Default to constrained; require explicit recorded permission for partial or suspended profiles.
+2. Default to constrained; require explicit recorded approval for partial or suspended profiles.
 3. Implement only the behavior and states needed to answer the question.
 4. Revise only from explicitly accepted findings and rerun applicable checks.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

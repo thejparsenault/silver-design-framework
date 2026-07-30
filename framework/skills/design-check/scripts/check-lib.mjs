@@ -31,6 +31,8 @@ function scalar(value) {
   if (trimmed === "null" || trimmed === "~") return null;
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
+  if (trimmed === "[]") return [];
+  if (trimmed === "{}") return {};
   if (/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(trimmed)) {
     return Number(trimmed);
   }

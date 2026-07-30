@@ -1,6 +1,6 @@
 schema: silver/artifact-codec/v1
 id: silver-structured
-version: 0.4.0
+version: 0.5.0
 artifact_kinds:
   - design-system
   - component-catalog
@@ -23,10 +23,13 @@ artifact_kinds:
   - implementation
   - asset-catalog
   - presentation-kit
+  - practice-change
+  - design-context
+  - component-expression
   - x-prototype-render
 canonical_format: json
 view_formats: [markdown, html, runnable-html]
-compatibility: [silver/working-artifact/v2]
+compatibility: [silver/working-artifact/v2, silver/map/v1, silver/design-context/v1]
 scripts:
   read: scripts/portable-artifact.mjs
   write: scripts/portable-artifact.mjs

@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +11,7 @@ import {
   integrity,
   readUtf8,
   replaceTree,
+  snapshotFiles,
   treeIntegrity,
   writeNewFile,
   writeUtf8,
@@ -29,7 +31,16 @@ import {
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
 const newProjectFiles = [
+  "design/TRACE.md",
+  "design/contexts/README.md",
+  "design/contexts/default-expression.yaml",
+  "design/contexts/default.yaml",
+  "design/guidance/README.md",
+  "design/guidance/sources.yaml",
+  "design/sources/README.md",
+  "design/sources/sources.yaml",
   "design/integrations/README.md",
+  "design/maps/README.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
   "design/presentation-kit/kit.json",
@@ -44,6 +55,7 @@ const newProjectFiles = [
 const independentChecks = [
   "contract-integrity",
   "flow-structure",
+  "map-structure",
   "semantic-styles",
   "prototype-policy",
   "evidence-provenance",
@@ -76,9 +88,63 @@ function renderTemplate(content, variables) {
 
 function migrateManifest(manifest) {
   const next = clone(manifest);
+  next.artifacts = next.artifacts.filter(
+    ({ kind }) => kind !== "permission-policy",
+  );
+  delete next.permission_policy;
   const mappings = new Map(next.artifacts.map((artifact) => [artifact.id, artifact]));
+  function ensureArtifact(artifact) {
+    if (mappings.has(artifact.id)) return;
+    next.artifacts.push(artifact);
+    mappings.set(artifact.id, artifact);
+  }
+  ensureArtifact({
+    id: "component-catalog",
+    kind: "component-catalog",
+    path: "reference-system/html-contracts",
+    scope: "product",
+    role: "canonical",
+    status: "active",
+    authority: { type: "local" },
+  });
+  ensureArtifact({
+    id: "default-component-expression",
+    kind: "x-component-expression",
+    path: "design/contexts/default-expression.yaml",
+    scope: "product",
+    role: "canonical",
+    status: "active",
+    authority: { type: "local" },
+  });
+  ensureArtifact({
+    id: "default-design-context",
+    kind: "x-design-context",
+    path: "design/contexts/default.yaml",
+    scope: "product",
+    role: "canonical",
+    status: "active",
+    authority: { type: "local" },
+  });
+  ensureArtifact({
+    id: "guidance-sources",
+    kind: "x-guidance-source",
+    path: "design/guidance/sources.yaml",
+    scope: "product",
+    role: "supporting",
+    status: "active",
+    authority: { type: "local" },
+  });
+  ensureArtifact({
+    id: "linked-sources",
+    kind: "x-linked-source",
+    path: "design/sources/sources.yaml",
+    scope: "product",
+    role: "supporting",
+    status: "active",
+    authority: { type: "local" },
+  });
   if (!mappings.has("project-assets")) {
-    next.artifacts.push({
+    ensureArtifact({
       id: "project-assets",
       kind: "asset-catalog",
       path: "design/assets/catalog.json",
@@ -89,7 +155,7 @@ function migrateManifest(manifest) {
     });
   }
   if (!mappings.has("presentation-kit")) {
-    next.artifacts.push({
+    ensureArtifact({
       id: "presentation-kit",
       kind: "presentation-kit",
       path: "design/presentation-kit/kit.json",
@@ -106,6 +172,74 @@ function migrateManifest(manifest) {
     full: [...independentChecks],
   };
   return next;
+}
+
+function bootstrapId(relativePath) {
+  const digest = createHash("sha256").update(relativePath).digest("hex").slice(0, 8);
+  const stem = relativePath
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/^[^a-z]+/, "")
+    .slice(0, 48) || "legacy-artifact";
+  return `${stem}-${digest}`;
+}
+
+async function exactIntegrity(absolute) {
+  return (await stat(absolute)).isDirectory()
+    ? treeIntegrity(absolute)
+    : integrity(await readFile(absolute));
+}
+
+async function provenanceBootstrap(root, manifest, createdAt) {
+  const byPath = new Map();
+  for (const artifact of manifest.artifacts) {
+    if (artifact.kind === "permission-policy") continue;
+    const absolute = path.join(root, artifact.path);
+    if (!(await exists(absolute))) continue;
+    byPath.set(artifact.path, {
+      id: artifact.id,
+      kind: artifact.kind,
+      path: artifact.path,
+      integrity: await exactIntegrity(absolute),
+      origin: "legacy",
+      source_revision: null,
+      source_origin: null,
+    });
+  }
+  for (const relativeRoot of [
+    "design/work",
+    "design/flows",
+    "design/maps",
+    "design/pitches",
+    "design/evidence",
+    "prototypes",
+    "presentations",
+    "production",
+  ]) {
+    const absoluteRoot = path.join(root, relativeRoot);
+    if (!(await exists(absoluteRoot))) continue;
+    for (const [relativeFile, content] of await snapshotFiles(absoluteRoot)) {
+      const relativePath = path.join(relativeRoot, relativeFile).split(path.sep).join("/");
+      if (byPath.has(relativePath)) continue;
+      byPath.set(relativePath, {
+        id: bootstrapId(relativePath),
+        kind: "x-legacy-artifact",
+        path: relativePath,
+        integrity: integrity(content),
+        origin: "legacy",
+        source_revision: null,
+        source_origin: null,
+      });
+    }
+  }
+  return {
+    schema: "silver/provenance-bootstrap/v1",
+    created_at: `${createdAt}T00:00:00Z`,
+    artifacts: [...byPath.values()].sort((left, right) =>
+      left.path.localeCompare(right.path),
+    ),
+  };
 }
 
 function legacyPath(installed) {
@@ -150,6 +284,13 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
   const changes = [];
   const preserved = [];
   const conflicts = [];
+  const inactiveArtifacts = manifest.artifacts
+    .filter(({ kind }) => kind === "permission-policy")
+    .map(({ id, path: artifactPath }) => ({
+      id,
+      path: artifactPath,
+      reason: "Legacy Silver permission policy is preserved but inactive in 0.5.",
+    }));
 
   for (const installed of lock.packages) {
     if (installed.ownership !== "framework-managed") continue;
@@ -237,11 +378,33 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       changes.push({ action: "seed-project-file", path: relative });
     }
   }
+  if (await exists(path.join(root, ".silver", "provenance", "legacy-artifacts.json"))) {
+    preserved.push({
+      path: ".silver/provenance/legacy-artifacts.json",
+      reason: "Existing provenance bootstrap index is preserved.",
+    });
+  } else {
+    changes.push({
+      action: "bootstrap-provenance",
+      path: ".silver/provenance/legacy-artifacts.json",
+    });
+  }
+  preserved.push(...inactiveArtifacts.map((artifact) => ({
+    path: artifact.path,
+    reason: artifact.reason,
+  })));
   changes.push({ action: "upgrade-lock", path: ".silver/lock.yaml" });
   changes.push({ action: "regenerate", path: "design/INDEX.md" });
   changes.push({ action: "regenerate", path: "AGENTS.md" });
 
-  return { packages, changes, preserved, conflicts, nextManifest };
+  return {
+    packages,
+    changes,
+    preserved,
+    conflicts,
+    inactiveArtifacts,
+    nextManifest,
+  };
 }
 
 export async function migrateWorkspace(options = {}) {
@@ -260,6 +423,7 @@ export async function migrateWorkspace(options = {}) {
       changes: [],
       preserved: [],
       conflicts: [],
+      inactiveArtifacts: [],
     };
   }
   const plan = await buildPlan({
@@ -279,6 +443,7 @@ export async function migrateWorkspace(options = {}) {
     changes: plan.changes,
     preserved: plan.preserved,
     conflicts: plan.conflicts,
+    inactiveArtifacts: plan.inactiveArtifacts,
   };
   if (!options.apply || plan.conflicts.length) return base;
 
@@ -287,6 +452,29 @@ export async function migrateWorkspace(options = {}) {
     WORKSPACE_ID: workspace.manifest.workspace.id,
     WORKSPACE_NAME: workspace.manifest.workspace.name,
   };
+  const bootstrap = await provenanceBootstrap(
+    root,
+    workspace.manifest,
+    variables.DATE,
+  );
+  const bootstrapPath = path.join(
+    root,
+    ".silver",
+    "provenance",
+    "legacy-artifacts.json",
+  );
+  if (!(await exists(bootstrapPath))) {
+    const validation = await validateSchema(
+      "v2/provenance-bootstrap.schema.json",
+      bootstrap,
+    );
+    if (!validation.valid) {
+      throw new Error(
+        `Generated provenance bootstrap is invalid: ${validation.errors.join("; ")}`,
+      );
+    }
+    await writeNewFile(bootstrapPath, `${JSON.stringify(bootstrap, null, 2)}\n`);
+  }
   for (const relative of newProjectFiles) {
     const destination = path.join(root, relative);
     if (await exists(destination)) continue;

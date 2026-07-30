@@ -11,9 +11,9 @@ Keep the installer source in this repository and release it with the framework. 
 Working command shape:
 
 ```sh
-npx --yes @scope/silver@0.1.0 setup
-npx --yes @scope/silver@0.1.0 update
-npx --yes @scope/silver@0.1.0 doctor
+npx --yes @scope/silver@0.5.0 setup inspect . --answers ./answers.json --json
+npx --yes @scope/silver@0.5.0 setup apply ./setup-plan.json --json
+npx --yes @scope/silver@0.5.0 doctor .
 ```
 
 The repository name is `silver-design-framework`, the local package identity is
@@ -94,7 +94,12 @@ The project lock records the exact installed version, not `latest`.
 
 Supported responsibilities:
 
-- `setup` — initialize or adopt a workspace and select project packages;
+- `setup inspect` — discover state and produce a reviewable, state-locked
+  integrated or separate repository plan;
+- `setup apply` — initialize or adopt a workspace from that approved plan;
+- `practice apply` — apply an approved sanitized My Practice proposal and
+  create its local revision;
+- `trace` — render durable artifact provenance;
 - `update` — compare a pinned installed base with a newer release and prepare reviewable changes;
 - `doctor` — diagnose malformed config, missing files, incompatible packages, and stale generated indexes;
 - `repair` — regenerate derived files and safe pointers;
@@ -129,7 +134,7 @@ Fallback:
 This file may contain:
 
 - capability-to-provider preferences;
-- default permission ceilings;
+- provider and interaction preferences;
 - non-secret provider identifiers;
 - display and interaction preferences.
 
@@ -147,6 +152,8 @@ Authentication stays with the provider, environment, or operating-system credent
 ```text
 design/manifest.yaml
 design/integrations/<binding-id>.yaml
+design/guidance/sources.yaml
+design/sources/sources.yaml
 .silver/lock.yaml
 .silver/providers/<provider-id>/
 .silver/results/reconciliation/
@@ -162,7 +169,11 @@ needed for safe updates.
 
 ### Organization Configuration
 
-Organization defaults are distributed as a pinned foundation package or referenced manifest. They do not silently modify user-global configuration.
+Company or team guidance is manually linked to a workspace from selected paths
+in a local folder or Git repository. Silver never discovers or activates it
+automatically. Git sources pin a commit; non-Git sources snapshot only reviewed
+files. Influence is declared as `reference`, `preferred`, or `required`, and
+updates are reviewable re-pin proposals rather than semantic synchronization.
 
 ## Update Behavior
 
@@ -190,8 +201,8 @@ For the first iteration:
 - avoid reserving a public npm name until the product name is settled;
 - validate blank setup and update fixtures before creating a public install command.
 
-The first local prerelease candidate is `0.1.0-alpha.1`. Verify the exact packed
-payload and its behavior in an isolated consumer with:
+Verify the exact `0.5.0` packed payload and its behavior in an isolated consumer
+with:
 
 ```sh
 npm run build

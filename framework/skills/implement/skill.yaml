@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: implement
-version: 0.4.0
+version: 0.5.0
 summary: Rebuild accepted design intent in the local production recipe.
 context_budget: medium
 inputs:
@@ -17,6 +17,9 @@ inputs:
     required: false
     role: working
   - kind: prototype
+    required: false
+    role: working
+  - kind: map
     required: false
     role: working
 outputs:
@@ -38,7 +41,12 @@ capabilities:
       fallback: degraded
       description: Use browser when configured; preserve explicit fallback coverage
         otherwise.
-permissions:
+    - capability: version-control
+      providers: []
+      fallback: degraded
+      description: Prepare a draft branch or pull request when explicitly requested
+        and allowed by the repository environment.
+effects:
   - capability: repository
     actions:
       - read
@@ -50,7 +58,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -58,7 +65,6 @@ permissions:
       - update
     paths:
       - design/work/implementation-handoffs/**
-    decision: allow
   - capability: production-source
     actions:
       - create
@@ -66,10 +72,18 @@ permissions:
       - update
     paths:
       - production/**
-    decision: ask
+  - capability: version-control
+    actions:
+      - commit
+      - push
+      - open-pr
+    paths:
+      - design/work/implementation-handoffs/**
+      - production/**
+    external: true
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only
@@ -127,7 +141,7 @@ handoffs:
       - implementation-handoff
       - implementation
 external_effects:
-  - none
+  - version-control
 scripts:
   - id: invoke
     path: scripts/invoke.mjs

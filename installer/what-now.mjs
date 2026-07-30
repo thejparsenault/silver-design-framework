@@ -14,22 +14,6 @@ function invocationId(date) {
   return `what-now-after-setup-${timestamp}`;
 }
 
-function invocationPolicy(contract) {
-  return {
-    schema: "silver/permission-policy/v2",
-    id: "setup-what-now",
-    layer: "invocation-constraint",
-    rules: contract.permissions.map(
-      ({ capability, actions, paths, decision }) => ({
-        capability,
-        actions,
-        ...(paths ? { paths } : {}),
-        decision,
-      }),
-    ),
-  };
-}
-
 export async function runWhatNowAfterSetup({
   root,
   now = new Date(),
@@ -58,12 +42,18 @@ export async function runWhatNowAfterSetup({
       started_at: timestamp,
       inputs: [],
       outputs: [],
-      permission_layers: [invocationPolicy(contract)],
       available_providers: [],
       approvals: [],
       relaxations: [],
       checks: [],
       unresolved_questions: [],
+      observed_effects: [
+        {
+          capability: "repository",
+          action: "inspect",
+          reference: "current workspace state",
+        },
+      ],
       recommended_next_actions: analysis.invocation_recommendations,
     },
   });

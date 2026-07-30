@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: what-now
-version: 0.4.0
+version: 0.5.0
 summary: Recommend next actions from current workspace evidence.
 context_budget: small
 inputs: []
@@ -9,7 +9,7 @@ capabilities:
   required:
     - repository
   optional: []
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -21,10 +21,9 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

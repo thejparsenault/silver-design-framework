@@ -46,18 +46,50 @@ artifacts:
     status: draft
     authority:
       type: local
-  - id: decisions
-    kind: decision-log
-    path: design/decisions/README.md
+  - id: component-catalog
+    kind: component-catalog
+    path: reference-system/html-contracts
     scope: product
     role: canonical
     status: active
     authority:
       type: local
-  - id: permissions
-    kind: permission-policy
-    path: design/permissions.yaml
-    scope: codebase
+  - id: default-component-expression
+    kind: x-component-expression
+    path: design/contexts/default-expression.yaml
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+  - id: default-design-context
+    kind: x-design-context
+    path: design/contexts/default.yaml
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+  - id: guidance-sources
+    kind: x-guidance-source
+    path: design/guidance/sources.yaml
+    scope: product
+    role: supporting
+    status: active
+    authority:
+      type: local
+  - id: linked-sources
+    kind: x-linked-source
+    path: design/sources/sources.yaml
+    scope: product
+    role: supporting
+    status: active
+    authority:
+      type: local
+  - id: decisions
+    kind: decision-log
+    path: design/decisions/README.md
+    scope: product
     role: canonical
     status: active
     authority:
@@ -112,6 +144,7 @@ checks:
   enabled:
     - contract-integrity
     - flow-structure
+    - map-structure
     - semantic-styles
     - prototype-policy
     - accessibility
@@ -133,6 +166,7 @@ checks:
     fast:
       - contract-integrity
       - flow-structure
+      - map-structure
       - semantic-styles
       - prototype-policy
       - evidence-provenance
@@ -165,6 +199,7 @@ checks:
     full:
       - contract-integrity
       - flow-structure
+      - map-structure
       - semantic-styles
       - prototype-policy
       - evidence-provenance
@@ -184,5 +219,3 @@ checks:
           height: 812
         - width: 1440
           height: 900
-
-permission_policy: design/permissions.yaml

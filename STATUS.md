@@ -2,15 +2,39 @@
 
 ## Current Focus
 
-Silver `0.4.0`, What Now, is complete and validated from source and as an exact
-offline archive. All nineteen project-local skills run independently; the new
-read-only orientation skill ranks evidence-linked next actions without starting
-them. Contract-bounded dynamic recommendations and reviewable 0.3-to-0.4
-migration have direct evidence for all ten release criteria. The next milestone
-is existing-codebase adoption after selecting a representative product
-repository.
+Silver `0.5.0`, Traceable Practice and Context, is implemented and validated
+from source and as an exact offline archive. All twenty-one project-local skills
+run independently. Guided setup recommends integrated or separate repositories,
+creates or connects My Practice, pins manually linked guidance and design
+contexts, and applies only the reviewed plan. Maps, practice review, provenance
+tracing, effects-based repository authority, and isolated local Git checkpoints
+have direct release evidence. The next milestones are external-source
+synchronization and deep existing-codebase adoption.
 
 ## Recent Progress
+
+- 2026-07-30: Silver 0.5 Traceable Practice and Context
+  - Added revisioned contracts and runtime support for setup plans, My Practice,
+    method overlays, practice changes, guidance links, component expressions,
+    design contexts, maps, provenance, migration bootstrap records, effects,
+    and Git checkpoints.
+  - Added agent-led `setup inspect`/`setup apply`, local-Git My Practice,
+    reviewed practice application, local and Git guidance freshness inspection,
+    exact-pinned design-system/component/codebase source inspection,
+    multi-context resolution, portable journey/service maps, and `silver trace`.
+  - Replaced active Silver permission intersection with declared/observed effect
+    findings while preserving path escape, stale overwrite, secret, fabricated
+    evidence, destructive ambiguity, and no-silent-mutation protections.
+  - Added reviewable 0.4-to-0.5 migration that preserves edited legacy policy
+    files as inactive and indexes existing artifacts by exact integrity without
+    rewriting them.
+  - Expanded the complete offline loop to all twenty-one skills and added
+    context-pinned map → pitch → implementation → QA provenance plus setup,
+    guidance drift, practice revision, multi-context, checkpoint, and migration
+    fixtures.
+  - Recorded direct evidence in `docs/silver-0.5-acceptance-audit.md`;
+    `npm run build` passes all 82 source tests and `npm run test:package`
+    passes for the 1,071-file, 608,354-byte exact offline archive.
 
 - 2026-07-28: Branded setup handoff
   - Added the authoritative Ag terminal mark to human-facing `silver setup`

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -101,4 +101,60 @@ test("setup displays the mark and completes a guarded what-now invocation", asyn
   const jsonResult = JSON.parse(jsonStdout[0]);
   assert.equal(jsonResult.whatNow.result.skill.id, "what-now");
   assert.equal(jsonResult.whatNow.analysis.schema, "silver/what-now-analysis/v1");
+});
+
+test("chat-facing setup inspect/apply and trace commands use reviewed JSON plans", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-cli-guided-"));
+  const practice = await mkdtemp(path.join(os.tmpdir(), "silver-cli-practice-"));
+  t.after(() => rm(root, { force: true, recursive: true }));
+  t.after(() => rm(practice, { force: true, recursive: true }));
+  const answersPath = path.join(root, "answers.json");
+  await writeFile(
+    answersPath,
+    JSON.stringify({
+      name: "Guided Product",
+      id: "guided-product",
+      team_shape: "solo",
+      topology: "integrated",
+      codebases: [root],
+      practice_root: practice,
+    }),
+  );
+  const inspection = [];
+  const inspectCode = await runCli(
+    ["setup", "inspect", root, "--answers", answersPath, "--json"],
+    {
+      stdout: (message) => inspection.push(message),
+      now: () => new Date("2026-07-30T18:00:00.000Z"),
+    },
+  );
+  assert.equal(inspectCode, 0);
+  const plan = JSON.parse(inspection[0]);
+  assert.equal(plan.schema, "silver/setup-plan/v1");
+  assert.equal(plan.topology.recommended, "integrated");
+  assert.deepEqual(plan.unresolved_questions, []);
+
+  const planPath = path.join(practice, "setup-plan.json");
+  await writeFile(planPath, JSON.stringify(plan));
+  const application = [];
+  const applyCode = await runCli(
+    ["setup", "apply", planPath, "--json"],
+    { stdout: (message) => application.push(message) },
+  );
+  assert.equal(applyCode, 0);
+  assert.equal(JSON.parse(application[0]).plan, "setup-guided-product");
+  await readFile(path.join(practice, "PRACTICE.md"), "utf8");
+
+  const trace = [];
+  const traceCode = await runCli(
+    ["trace", "default-design-context", root, "--json"],
+    { stdout: (message) => trace.push(message) },
+  );
+  assert.equal(traceCode, 0);
+  const traceResult = JSON.parse(trace[0]);
+  assert.equal(traceResult.target.revision, "r1");
+  assert.equal(
+    traceResult.trace_view,
+    ".silver/results/traces/default-design-context.md",
+  );
 });

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: synthesize
-version: 0.4.0
+version: 0.5.0
 summary: Turn sanitized evidence into traceable findings and problem frames.
 context_budget: small
 inputs:
@@ -11,6 +11,9 @@ inputs:
     required: false
     role: canonical
   - kind: evaluation
+    required: false
+    role: working
+  - kind: map
     required: false
     role: working
 outputs:
@@ -31,7 +34,7 @@ capabilities:
       fallback: degraded
       description: Use research-evidence when configured; preserve explicit fallback
         coverage otherwise.
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -43,7 +46,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -51,7 +53,6 @@ permissions:
       - update
     paths:
       - design/work/findings/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -59,10 +60,9 @@ permissions:
       - update
     paths:
       - design/work/problem-frames/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

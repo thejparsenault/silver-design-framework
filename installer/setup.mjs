@@ -43,6 +43,8 @@ export const INITIAL_SKILL_IDS = [
   "evaluate",
   "pitch",
   "implement",
+  "map",
+  "practice-review",
   "design-check",
 ];
 const allowedBlankEntries = new Set([
@@ -62,7 +64,15 @@ export const SEEDED_TEMPLATES = [
   "design/flows/README.md",
   "design/decisions/README.md",
   "design/integrations/README.md",
-  "design/permissions.yaml",
+  "design/guidance/README.md",
+  "design/guidance/sources.yaml",
+  "design/sources/README.md",
+  "design/sources/sources.yaml",
+  "design/contexts/README.md",
+  "design/contexts/default.yaml",
+  "design/contexts/default-expression.yaml",
+  "design/maps/README.md",
+  "design/TRACE.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
   "design/presentation-kit/kit.json",
@@ -279,7 +289,7 @@ async function renderLock({
   });
 }
 
-async function assertSetupTarget(root) {
+async function assertSetupTarget(root, { allowExistingCodebase = false } = {}) {
   const manifestPath = path.join(root, "design", "manifest.yaml");
   if (await exists(manifestPath)) {
     return "existing";
@@ -289,6 +299,9 @@ async function assertSetupTarget(root) {
     (entry) => !allowedBlankEntries.has(entry),
   );
   if (unexpected.length > 0) {
+    if (allowExistingCodebase) {
+      return "new";
+    }
     throw new Error(
       "This folder is not blank and does not contain design/manifest.yaml. " +
         "Existing-codebase adoption is not implemented yet. " +
@@ -301,7 +314,9 @@ async function assertSetupTarget(root) {
 export async function setupWorkspace(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   await mkdir(root, { recursive: true });
-  const mode = await assertSetupTarget(root);
+  const mode = await assertSetupTarget(root, {
+    allowExistingCodebase: options.allowExistingCodebase,
+  });
   const date = options.date ?? todayUtc();
   const version = options.version ?? FRAMEWORK_VERSION;
   const sourceReference =

@@ -47,6 +47,15 @@ The framework must preserve flexibility while making constraints, authority, per
 13. **Separate completion from approval.** Skill execution, human or policy acceptance, and readiness for a downstream use are independently visible.
 14. **Portable baseline.** Every generally applicable skill performs its core task with project-local files and bundled providers; external tools add capabilities without becoming silent prerequisites.
 15. **Reconcile, never guess.** Canonical artifacts, local views, and external views carry explicit authority and revision provenance. Drift is compared against a shared base and proposed for review rather than resolved by last-write-wins.
+16. **Practice without leakage.** Personal methods improve across projects
+without copying company knowledge, private paths, or executable packages into
+product workspaces.
+17. **Context is compositional.** Visual work resolves and pins a revisioned
+combination of brand, system, component catalog, expression mapping, surface,
+assets, presentation kit, and codebase.
+18. **Native repository authority.** Git/GitHub permissions, branch protection,
+repository instructions, and the agent host authorize repository operations;
+Silver declares and audits effects.
 
 ## 4. Scope Model
 
@@ -189,6 +198,41 @@ portable artifact. Imported edits become normalized reconciliation proposals.
 The detailed format, provenance, and reconciliation model is in
 `docs/tool-representations-and-reconciliation.md`.
 
+### 5.4 Practice, Guidance, Context, Maps, and Provenance
+
+My Practice lives outside product repositories by default at
+`~/Silver/My Practice`. It is a visible local Git workspace with readable
+methods, playbooks, rubrics, and decisions. Method overlays refine core skills
+but cannot relax project facts, safety invariants, or required guidance.
+`practice-review` turns accepted work into a sanitized proposal;
+`silver practice apply` changes My Practice only after approval.
+
+Company and team guidance is never discovered automatically. A designer or
+project owner manually links selected paths from a local folder or Git
+repository and declares reference, preferred, or required influence. Git
+sources pin commits. Non-Git sources snapshot only reviewed selected files.
+Freshness checks report drift and produce reviewable re-pin proposals without
+performing semantic synchronization.
+
+A design context composes a product or brand, design system, component catalog,
+component-expression mapping, optional assets and presentation kit, surface,
+and codebase binding. One catalog may participate in multiple contexts.
+Defaults resolve by product and surface; ambiguity pauses for a choice.
+Durable visual work pins the exact resolved context revision.
+
+The map artifact supports journey maps, service blueprints, experience maps,
+and ecosystem/stakeholder maps. It records current/future/hybrid state, actors,
+stages, lanes, items, connections, evidence, assumptions, pain points,
+opportunities, provenance, and design-context revisions. Semantic HTML is the
+portable local view.
+
+Every new durable artifact receives a provenance envelope recording stable
+identity and revision, origin, contributors, source revisions, My Practice
+revision and applied methods, linked guidance, design contexts, change reason,
+superseded revision, acceptance, and external bindings. Provenance excludes
+private reasoning, discarded transient work, secrets, and unsanitized research.
+`silver trace` generates a readable view of this chain.
+
 ## 6. Skill Model
 
 A skill is an agent-neutral package for one recognizable design task. It contains:
@@ -206,7 +250,7 @@ The contract declares:
 - files and scopes it may write;
 - artifacts it may produce;
 - external effects;
-- requested permissions;
+- expected repository, external, and Git/GitHub effects;
 - expected context budget;
 - deterministic checks to recommend afterward;
 - required and optional capabilities plus degraded fallback behavior;
@@ -216,7 +260,10 @@ The contract declares:
 - quality criteria and required review;
 - possible downstream handoffs.
 
-Invocation grants routine, contract-bounded authority. Crossing into production, changing canonical design-system artifacts, modifying external tools, deleting material work, or creating commits/PRs still follows the resolved permission policy.
+Invocation never grants authority the environment does not already provide.
+Repository instructions, filesystem access, Git/GitHub permissions, branch
+protection, and the agent host remain authoritative. Undeclared observed
+effects become findings.
 
 First-iteration task-level skills:
 
@@ -237,6 +284,10 @@ The planned general design-practice vocabulary adds:
 - **sketch** — create inexpensive representations for exploration or review;
 - **evaluate** — plan and conduct reviews or tests and produce sanitized
   findings and recommendations;
+- **map** — create revisioned journey maps, service blueprints, experience maps,
+  and ecosystem maps with evidence and assumptions;
+- **practice-review** — generalize accepted work into a sanitized personal
+  practice-change proposal;
 - **pitch** — produce an evidence-backed change case and optional branded
   presentation views;
 - **implement** — rebuild accepted intent in a codebase binding under
@@ -280,10 +331,10 @@ retry edges, stopping conditions, and allowed autonomy.
 
 Invoking one skill runs only that skill and recommends next actions. Invoking a
 playbook authorizes an agent to continue through its declared safe local steps
-until a checkpoint, unmet readiness condition, or unresolved permission
+until a checkpoint, unmet readiness condition, or unresolved authority
 boundary. Canonical changes, external writes, production changes, destructive
-operations, and version-control effects retain their normal permission
-requirements.
+operations, and version-control effects remain subject to the environment and
+repository's native controls.
 
 ### 6.3 Skill Results and Guardrails
 
@@ -300,16 +351,16 @@ Subjective quality criteria may be generated for an invocation, but they must
 be declared before evaluation and versioned if they change. Missing tools or
 render targets produce degraded coverage or `not-run`, never an implicit pass.
 
-Guardrails resolve through framework invariants, user ceilings, organization
-and workspace policy, artifact constraint profiles, skill boundaries, and
+Guardrails resolve through framework invariants, linked required guidance,
+workspace policy, artifact constraint profiles, skill boundaries, and
 invocation constraints. Each reusable guardrail declares an enforcement type,
 failure behavior, and whether it is relaxable. Privacy, authority, provenance,
-permission, and no-silent-mutation rules are not relaxable.
+effects, and no-silent-mutation rules are not relaxable.
 
 The detailed composition and result model is in
 `docs/agentic-design-workflows.md`.
 
-## 7. Tool and Permission Model
+## 7. Tool, Effect, and Repository Authority Model
 
 Skills request abstract capabilities such as:
 
@@ -322,23 +373,21 @@ Skills request abstract capabilities such as:
 - create external artifact;
 - commit, push, or open PR.
 
-A user-level **tool profile** selects providers and sets permission ceilings. Organization and repository configuration may only tighten those ceilings. A skill's effective permissions are the intersection of:
+A user-level **tool profile** selects providers and records preferences. Skill
+contracts declare expected reads, writes, external changes, and Git/GitHub
+actions for preview and audit. Actual effects are recorded in skill results.
+An undeclared effect produces a finding, not a Silver authorization denial.
 
-```text
-framework default
-∩ user ceiling
-∩ organization/repository restriction
-∩ skill request
-```
+Filesystem access, Git/GitHub permissions, branch protection, repository
+instructions, and the agent host decide what is authorized. Silver still
+blocks path escape, stale overwrites, secret exposure, fabricated evidence,
+destructive ambiguity, silent mutation, and misleading acceptance/readiness
+claims.
 
-Default posture:
-
-- local and external reads: allowed when declared;
-- browser inspection: allowed when declared;
-- local writes inside the invoked skill's non-production scope: allowed;
-- canonical design-system or production writes: ask when crossing the skill's ordinary boundary;
-- external modifications, commits, pushes, and PRs: ask;
-- destructive deletion: denied unless explicitly authorized.
+Explicit acceptance, implementation handoff, and material context, guidance,
+or topology changes create path-isolated local Git checkpoints where a
+repository exists. Silver records the branch and commit, preserves unrelated
+work, pauses on overlapping staged changes, and never pushes automatically.
 
 Credentials never belong in repository configuration. Providers use their own authentication, environment references, or an operating-system credential store.
 
@@ -471,21 +520,51 @@ When a required target or provider does not exist, the result is `not-run`, neve
 
 The CLI exists only to:
 
-- set up a blank or existing workspace;
+- inspect a target and produce a reviewable, state-locked setup plan;
+- apply an approved setup plan to a blank, integrated, or separate design
+  repository;
+- initialize and revise My Practice after explicit approval;
+- link, inspect, and re-pin reviewed guidance sources;
+- trace durable artifacts and their provenance;
 - install or remove selected project-local framework packages;
 - update installed packages through reviewable diffs;
 - repair generated indexes and agent pointers;
 - run migrations and diagnostics.
 
-It does not conduct brand exercises, build prototypes, or start other skills automatically. Setup finishes with recommended next actions.
+The primary agent interface is:
 
-Configuration layers:
+```sh
+silver setup inspect [target] --answers <json> --json
+silver setup apply <plan.json> --json
+```
+
+Inspection discovers state, recommends integrated or separate repository
+topology, explains the recommendation, and lists intended writes, Git actions,
+guidance links, codebase bindings, design contexts, unresolved questions, and
+external actions. Apply verifies the inspected state is unchanged and performs
+only that plan. It is idempotent.
+
+A separate repository is recommended for multiple codebases, separate
+discipline ownership or access, or independent design history. Integration is
+recommended for one codebase and a solo or small team with a shared lifecycle.
+The recommendation is never silently applied. Optional GitHub repository
+creation remains agent-mediated: Silver previews the proposed private
+repository and records and verifies a remote created with the agent host's
+available GitHub access.
+
+The CLI does not conduct brand exercises, build prototypes, synchronize
+semantic changes, or start other skills automatically. Setup finishes with
+recommended next actions.
+
+Configuration and influence layers:
 
 ```text
 framework defaults
 → user tool profile
-→ organization practices
+→ My Practice method overlays
+→ manually linked guidance
 → product workspace
+→ resolved design context
 → codebase binding
 ```
 
@@ -502,12 +581,21 @@ workspace/
   design/
     manifest.yaml
     INDEX.md
+    TRACE.md
     brand.md
     product.md
     voice.md
     design-principles.md
+    contexts/
+      default.yaml
+      default-expression.yaml
+    guidance/
+      sources.yaml
+    sources/
+      sources.yaml
     system/
     flows/
+    maps/
     research/
     testing/
     decisions/
@@ -600,17 +688,18 @@ All excluded functionality is tracked in `BACKLOG.md`.
 
 ### 15.3 Latest Release
 
-Silver `0.4.0`, **What Now**, is complete. It adds the nineteenth project-local
-skill: a read-only analyzer that recovers current workspace context and ranks
-several evidence-linked next actions without starting them. The guarded
-invocation contract now supports caller-ranked recommendations only within a
-skill-declared allowlist, while existing skills retain their static follow-ups.
+Silver `0.5.0`, **Traceable Practice and Context**, is complete. It adds
+agent-led setup planning, visible My Practice history, manually linked
+guidance, revisioned multi-system design contexts, component-expression
+mappings, portable maps, universal provenance and trace views, effects-based
+repository authority, and isolated local Git checkpoints.
 
-`docs/silver-0.4-acceptance.md` is authoritative for the release scope and
-stable requirement IDs. `docs/silver-0.4-acceptance-audit.md` records direct
-passing evidence for all ten required criteria. Existing-codebase adoption
-follows `0.4.0` because no representative production repository is currently
-available.
+`docs/silver-0.5-acceptance.md` is authoritative for the release scope and
+stable requirement IDs. `docs/silver-0.5-acceptance-audit.md` records direct
+evidence. Silver 0.5 preserves the 0.3 representation, reconciliation, and
+narrow Figma semantic-token path but intentionally limits newly linked sources
+to read-only freshness, drift, and reviewed re-pinning. Generalized
+bidirectional synchronization is the next P1 synchronization milestone.
 
 ## 16. Acceptance Criteria
 
@@ -620,7 +709,8 @@ The first iteration is successful when:
 2. Re-running setup makes no unintended changes.
 3. An update from one fixture release to the next produces a reviewable diff and preserves project-owned edits.
 4. The installed manifest and index make all canonical artifacts discoverable.
-5. Skills are available only within the workspace and declare their capabilities and permissions.
+5. Skills are available only within the workspace and declare their
+   capabilities and expected effects.
 6. A designer can refine brand guidance, optionally apply a theme proposal, generate and revise a portable flow, and render a constrained prototype based on that flow using the reference system.
 7. The fast suite rejects raw visual values and malformed framework artifacts with normalized findings.
 8. An explicit partial or suspended prototype profile is recorded and never inferred.
@@ -635,7 +725,8 @@ silver-design-framework/
     schemas/
     protocols/
     artifact-types/
-    permission-model/
+    effects/
+    provenance/
   installer/
   skills/
   playbooks/
@@ -670,8 +761,8 @@ Mitigation: canonical agent-neutral packages, deterministic scripts, fixtures, a
 
 **Playbooks become a hidden mandatory lifecycle or authority escalation.**
 Mitigation: independently runnable leaf skills, optional graph nodes, explicit
-checkpoints, resumable state, and unchanged permission resolution at every
-step.
+checkpoints, resumable state, and unchanged environment and repository
+authority at every step.
 
 **Agents declare their own work good after producing it.**
 Mitigation: separate execution, acceptance, and readiness; predeclare dynamic

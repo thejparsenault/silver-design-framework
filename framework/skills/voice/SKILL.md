@@ -12,7 +12,7 @@ description: Define or revise product tone, voice, terminology, and context-spec
 3. Establish preferred terms, avoided terms, and representative examples.
 4. Request approval before changing voice.md.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

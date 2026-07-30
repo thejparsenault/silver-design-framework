@@ -12,12 +12,12 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
+import { checkpointAcceptedOutputs } from "./checkpoints.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
 import { discoverProviders } from "./providers.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
-  resolvePermissions,
 } from "./permissions.mjs";
 
 const runtimeRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -59,7 +59,16 @@ function outputRule(contract, reference) {
   );
 }
 
-function permissionRequest(rule, action, outputPath) {
+const contextPinnedOutputKinds = new Set([
+  "map",
+  "sketch",
+  "prototype",
+  "presentation-view",
+  "implementation-handoff",
+  "implementation",
+]);
+
+function effectForOutput(rule, action, outputPath) {
   const capability =
     rule.authority === "canonical-with-approval"
       ? "canonical-artifact"
@@ -69,26 +78,43 @@ function permissionRequest(rule, action, outputPath) {
   return { capability, action, path: outputPath };
 }
 
-function hasApproval(approvals, request) {
-  return approvals.some(
-    (approval) =>
-      approval.capability === request.capability &&
-      approval.action === request.action &&
-      approval.path === request.path,
+function declaredEffects(contract) {
+  return (contract.effects ?? contract.permissions ?? []).flatMap((effect) =>
+    effect.actions.map((action) => ({
+      capability: effect.capability,
+      action,
+      ...(effect.paths ? { paths: effect.paths } : {}),
+    })),
   );
 }
 
-function skillLayer(contract) {
+function effectIsDeclared(declared, observed) {
+  return declared.some(
+    (effect) =>
+      effect.capability === observed.capability &&
+      effect.action === observed.action &&
+      (!observed.path ||
+        !effect.paths ||
+        effect.paths.length === 0 ||
+        effect.paths.some((pattern) =>
+          matchesPathPattern(pattern, observed.path),
+        )),
+  );
+}
+
+function effectAudit(contract, observed) {
+  const declared = declaredEffects(contract);
   return {
-    schema: "silver/permission-policy/v2",
-    id: `${contract.id}-skill-request`,
-    layer: "skill-request",
-    rules: contract.permissions.map((permission) => ({
-      capability: permission.capability,
-      actions: permission.actions,
-      decision: permission.decision ?? "ask",
-      ...(permission.paths ? { paths: permission.paths } : {}),
+    declared: declared.map(({ paths, ...effect }) => ({
+      ...effect,
+      ...(paths?.length === 1 ? { path: paths[0] } : {}),
     })),
+    findings: observed
+      .filter((effect) => !effectIsDeclared(declared, effect))
+      .map(
+        (effect) =>
+          `Observed undeclared effect ${effect.capability}:${effect.action}${effect.path ? `:${effect.path}` : ""}.`,
+      ),
   };
 }
 
@@ -128,10 +154,27 @@ function blockedResult({
   guardrails,
   outputs = [],
 }) {
+  const observed = request.observed_effects ?? [];
+  const audit = effectAudit(contract, observed);
+  const provenance = request.provenance ?? {
+    schema: "silver/provenance/v1",
+    origin: "generated",
+    recorded_at: completedAt,
+    sources: request.inputs,
+    guidance: [],
+    design_contexts: [],
+    change: { reason: `Recorded blocked ${contract.id} invocation: ${summary}` },
+    acceptance: "not-required",
+    external_bindings: [],
+  };
   return {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
     skill: { id: contract.id, version: contract.version },
+    provenance,
+    declared_effects: audit.declared,
+    observed_effects: observed,
+    effect_findings: audit.findings,
     started_at: request.started_at,
     completed_at: completedAt,
     inputs: request.inputs,
@@ -222,7 +265,7 @@ function recommendedNextActions(contract, request) {
   if (!request.recommended_next_actions) {
     return contract.recommend_after.map((action) => ({
       action,
-      reason: `Consider ${action} when its declared inputs and permissions are ready.`,
+      reason: `Consider ${action} when its declared inputs and operating conditions are ready.`,
       automatic: false,
     }));
   }
@@ -344,6 +387,23 @@ export async function invokeSkill({
         throw new Error(`Missing required ${input.kind} input.`);
       }
     }
+    if (request.outputs.length > 0 && !request.provenance) {
+      throw new Error(
+        `Skill ${contract.id} cannot create durable output without a provenance envelope.`,
+      );
+    }
+    if (
+      request.outputs.length > 0 &&
+      (contract.id === "design-check" ||
+        request.outputs.some(({ reference }) =>
+          contextPinnedOutputKinds.has(reference.kind),
+        )) &&
+      (request.provenance?.design_contexts?.length ?? 0) === 0
+    ) {
+      throw new Error(
+        `Skill ${contract.id} cannot create visual or QA output without an exact design-context revision.`,
+      );
+    }
     if (contract.outputs.length > 0 && request.outputs.length === 0) {
       throw new Error(`Skill ${contract.id} requires at least one declared output.`);
     }
@@ -357,28 +417,11 @@ export async function invokeSkill({
       const absolute = inside(workspaceRoot, output.reference.path);
       const present = await exists(absolute);
       const action = present ? "update" : "create";
-      const permissionRequestValue = permissionRequest(
+      const effect = effectForOutput(
         { ...rule, kind: output.reference.kind },
         action,
         output.reference.path,
       );
-      const resolution = resolvePermissions({
-        layers: [...request.permission_layers, skillLayer(contract)],
-        requests: [permissionRequestValue],
-      }).decisions[0];
-      if (resolution.decision === "deny") {
-        throw new Error(
-          `Permission denied for ${permissionRequestValue.capability}:${action}:${output.reference.path}.`,
-        );
-      }
-      if (
-        resolution.decision === "ask" &&
-        !hasApproval(request.approvals, permissionRequestValue)
-      ) {
-        throw new Error(
-          `Approval required for ${permissionRequestValue.capability}:${action}:${output.reference.path}.`,
-        );
-      }
       if (present) {
         const observed = integrity(await readFile(absolute));
         if (!output.expected_integrity) {
@@ -410,6 +453,7 @@ export async function invokeSkill({
         absolute,
         content: renderOutput(output),
         reference: output.reference,
+        effect,
       });
     }
   } catch (error) {
@@ -428,6 +472,11 @@ export async function invokeSkill({
   for (const output of prepared) {
     await atomicWrite(output.absolute, output.content);
   }
+  const observedEffects = [
+    ...(request.observed_effects ?? []),
+    ...prepared.map(({ effect }) => effect),
+  ];
+  const audit = effectAudit(contract, observedEffects);
   const requiredCheckIds = contract.checks
     .filter(({ required }) => required)
     .map(({ id }) => id);
@@ -444,12 +493,48 @@ export async function invokeSkill({
       ? request.acceptance ?? { status: "awaiting-review" }
       : { status: "not-required" };
   const accepted = ["accepted", "not-required"].includes(acceptance.status);
+  const gitCheckpoint =
+    acceptance.status === "accepted" && prepared.length > 0
+      ? await checkpointAcceptedOutputs({
+          root: workspaceRoot,
+          invocationId: request.invocation_id,
+          outputs: prepared.map(({ reference }) => reference),
+          now: completedAt,
+        })
+      : null;
+  const checkpointFindings =
+    gitCheckpoint?.status === "blocked"
+      ? [gitCheckpoint.message]
+      : [];
+  const effectFindings = [...audit.findings, ...checkpointFindings];
   const ready =
-    !checkBlocked && !questionBlocked && bindingBlockers.length === 0 && accepted;
+    !checkBlocked &&
+    !questionBlocked &&
+    bindingBlockers.length === 0 &&
+    checkpointFindings.length === 0 &&
+    accepted;
   const result = {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
     skill: { id: contract.id, version: contract.version },
+    provenance:
+      request.provenance ?? {
+        schema: "silver/provenance/v1",
+        origin: "generated",
+        recorded_at: completedAt,
+        sources: request.inputs,
+        guidance: [],
+        design_contexts: [],
+        change: {
+          reason: `Recorded read-only ${contract.id} invocation.`,
+        },
+        acceptance: "not-required",
+        external_bindings: [],
+      },
+    declared_effects: audit.declared,
+    observed_effects: observedEffects,
+    effect_findings: effectFindings,
+    ...(gitCheckpoint ? { git_checkpoint: gitCheckpoint } : {}),
     started_at: request.started_at,
     completed_at: completedAt,
     inputs: request.inputs,
@@ -477,7 +562,7 @@ export async function invokeSkill({
     ),
     execution: {
       status:
-        checkBlocked || questionBlocked
+        checkBlocked || questionBlocked || effectFindings.length > 0
           ? "complete-with-findings"
           : "complete",
       summary: `Completed ${contract.id} with ${prepared.length} durable output(s).`,
@@ -501,6 +586,9 @@ export async function invokeSkill({
               ...(questionBlocked ? ["Unresolved questions block this handoff."] : []),
               ...(bindingBlockers.length
                 ? ["Externally authoritative input freshness is unresolved."]
+                : []),
+              ...(checkpointFindings.length
+                ? ["The accepted local Git checkpoint is blocked."]
                 : []),
             ],
           })),

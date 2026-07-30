@@ -12,7 +12,7 @@ description: Define research questions and methods, participant criteria, script
 3. Define consent, minimization, sanitation, retention, and evidence labeling.
 4. Mark the artifact as a plan until observed evidence is actually captured.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

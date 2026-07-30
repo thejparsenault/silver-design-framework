@@ -13,7 +13,6 @@
     "inputs",
     "outputs",
     "capabilities",
-    "permissions",
     "guardrails",
     "completion",
     "checks",
@@ -152,6 +151,37 @@
           "decision": {
             "enum": ["allow", "ask", "deny"],
             "default": "ask"
+          }
+        }
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common.schema.json#/$defs/action"
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/relativePath"
+            }
+          },
+          "external": {
+            "type": "boolean",
+            "default": false
           }
         }
       }

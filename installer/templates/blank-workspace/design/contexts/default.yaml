@@ -1,0 +1,54 @@
+schema: silver/design-context/v1
+id: default-design-context
+title: Default product surface
+revision: r1
+status: active
+default: true
+products:
+  - "{{WORKSPACE_ID}}"
+surfaces:
+  - web
+brand:
+  id: brand
+  kind: brand
+  revision: r1
+  path: design/brand.md
+design_system:
+  id: design-system
+  kind: design-system
+  revision: r1
+  path: design/system/README.md
+component_catalog:
+  id: component-catalog
+  kind: component-catalog
+  revision: r1
+  path: reference-system/html-contracts
+component_expression:
+  id: default-component-expression
+  kind: x-component-expression
+  revision: r1
+  path: design/contexts/default-expression.yaml
+asset_catalog:
+  id: project-assets
+  kind: asset-catalog
+  revision: r1
+  path: design/assets/catalog.json
+presentation_kit:
+  id: presentation-kit
+  kind: presentation-kit
+  revision: r1
+  path: design/presentation-kit/kit.json
+codebase:
+  id: primary-codebase
+  repository: .
+  branch: main
+provenance:
+  schema: silver/provenance/v1
+  origin: generated
+  recorded_at: "{{DATE}}T00:00:00Z"
+  sources: []
+  guidance: []
+  design_contexts: []
+  change:
+    reason: Created by Silver setup.
+  acceptance: awaiting-review

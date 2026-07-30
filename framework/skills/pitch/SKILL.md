@@ -12,7 +12,7 @@ description: Produce an evidence-linked opportunity, proposal, or outcome change
 3. Label impact as estimated, proxy, or measured with its source and confidence.
 4. Optionally render a branded local HTML view from the pinned presentation kit.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 
@@ -23,5 +23,5 @@ Run the guarded file operation with `node scripts/invoke.mjs <request.json>` whe
 
 ## Boundaries
 
-- Do not publish, present, or send without separate permission.
+- Do not publish, present, or send without separate approval and environment authority.
 - Do not imply stakeholder acceptance, measured impact, or production deployment.

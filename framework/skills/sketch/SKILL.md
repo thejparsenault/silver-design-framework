@@ -12,7 +12,7 @@ description: Generate inexpensive alternatives from a brief, concept, specificat
 3. Render locally with semantic styles or the declared constrained subset.
 4. Record tradeoffs and request lightweight human review.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 

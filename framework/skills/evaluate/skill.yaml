@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: evaluate
-version: 0.4.0
+version: 0.5.0
 summary: Evaluate a design and produce sanitized product findings.
 context_budget: medium
 inputs:
@@ -11,6 +11,9 @@ inputs:
     required: false
     role: working
   - kind: design-specification
+    required: false
+    role: working
+  - kind: map
     required: false
     role: working
 outputs:
@@ -40,7 +43,7 @@ capabilities:
       fallback: degraded
       description: Use research-evidence when configured; preserve explicit fallback
         coverage otherwise.
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -52,7 +55,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -60,7 +62,6 @@ permissions:
       - update
     paths:
       - design/work/evaluations/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -68,7 +69,6 @@ permissions:
       - update
     paths:
       - design/evidence/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -76,10 +76,9 @@ permissions:
       - update
     paths:
       - design/work/findings/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

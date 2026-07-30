@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: pitch
-version: 0.4.0
+version: 0.5.0
 summary: Build an evidence-linked, branded change case.
 context_budget: medium
 inputs:
@@ -17,6 +17,9 @@ inputs:
     required: false
     role: working
   - kind: implementation
+    required: false
+    role: working
+  - kind: map
     required: false
     role: working
 outputs:
@@ -38,7 +41,7 @@ capabilities:
       fallback: degraded
       description: Use external-artifact when configured; preserve explicit fallback
         coverage otherwise.
-permissions:
+effects:
   - capability: repository
     actions:
       - read
@@ -50,7 +53,6 @@ permissions:
       - production/**
       - reference-system/**
       - .silver/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -58,7 +60,6 @@ permissions:
       - update
     paths:
       - design/pitches/**
-    decision: allow
   - capability: repository
     actions:
       - create
@@ -66,10 +67,9 @@ permissions:
       - update
     paths:
       - presentations/**
-    decision: allow
 guardrails:
   - authority-respected
-  - permission-bounded
+  - effects-declared
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only

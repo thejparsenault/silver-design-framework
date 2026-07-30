@@ -1,5 +1,5 @@
 schema: silver/guardrail-registry/v2
-version: 0.4.0
+version: 0.5.0
 guardrails:
   - id: privacy-sanitized-evidence
     summary: Store only sanitized observations and evidence appropriate for the repository.
@@ -45,14 +45,25 @@ guardrails:
       - skill
     relaxable: false
   - id: permission-bounded
-    summary: Effective actions never exceed the strictest applicable permission layer.
+    summary: Legacy alias for effects-declared; repository authorization belongs to the environment.
     enforcement: deterministic-check
     failure:
-      behavior: stop-execution
+      behavior: block-handoff
       blocks:
-        - write
-        - external-effect
-        - version-control
+        - unreviewed-effect
+    scope:
+      - framework
+      - workspace
+      - skill
+      - invocation
+    relaxable: false
+  - id: effects-declared
+    summary: Durable results compare declared effects with the paths and external operations actually observed.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - unreviewed-effect
     scope:
       - framework
       - workspace

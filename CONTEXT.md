@@ -33,7 +33,8 @@ The artifact currently authorized to define a particular kind of design intent o
 _Avoid_: Source of truth without naming its scope
 
 **Skill**:
-A project-scoped, agent-invoked capability for a designer's recognizable task, with declared inputs, outputs, tools, permissions, and side effects.
+A project-scoped, agent-invoked capability for a designer's recognizable task,
+with declared inputs, outputs, tools, expected effects, and handoffs.
 _Avoid_: Command, script
 
 **Playbook**:
@@ -101,10 +102,73 @@ A user's provider preferences and permission ceilings for tool capabilities, sto
 _Avoid_: Global skills
 
 **Permission layer**:
-One independently declared set of capability/action decisions participating in
-the effective-permission intersection. `deny` is stricter than `ask`, which is
-stricter than `allow`.
-_Avoid_: Grant when the layer only requests or restricts authority
+The inactive pre-0.5 Silver contract that intersected capability/action
+decisions. It remains readable for migration and external-provider
+compatibility, but it no longer authorizes or denies repository operations.
+_Avoid_: Current repository authority
+
+**My Practice**:
+A visible, tool-neutral personal workspace containing readable method overlays,
+playbooks, rubrics, and decisions with local Git history. Product results pin
+its identity and revision without copying its private path or contents.
+_Avoid_: Global skills, company foundation
+
+**Method overlay**:
+A non-executable personal refinement to one or more core skills that can add
+preferred questions, techniques, quality emphasis, and exclusions without
+relaxing project facts, safety invariants, or required guidance.
+_Avoid_: Skill fork, hidden prompt
+
+**Guidance source**:
+A manually linked local or Git source of institutional knowledge with selected
+paths, exact revision and integrity, scope, and reference/preferred/required
+influence.
+_Avoid_: Automatically discovered company foundation
+
+**Linked source**:
+A manually registered local or Git design-system, component-catalog, or
+codebase source with declared authority, selected paths, and an exact revision
+or integrity pin. Availability, drift, and stale dependents are inspected
+without importing or semantically synchronizing the source.
+_Avoid_: Live dependency, automatic pull
+
+**Design context**:
+A revisioned composition of product or brand, design system, component catalog,
+component-expression mapping, optional assets and presentation kit, surfaces,
+and codebase binding used to resolve a visual output.
+_Avoid_: Theme when the composition includes more than visual tokens
+
+**Component-expression mapping**:
+The explicit identity or transformation mapping that proves how shared
+component semantic roles resolve through one design context's system tokens,
+themes, assets, and implementation conventions.
+_Avoid_: Implicit theme switch
+
+**Map**:
+A portable, evidence-aware structured model for a journey, service blueprint,
+experience map, or ecosystem/stakeholder map. It records state, actors, stages,
+lanes, items, connections, evidence, assumptions, pain points, opportunities,
+and exact design-context revisions.
+_Avoid_: Canvas when referring to the underlying model
+
+**Provenance envelope**:
+The durable record of an artifact's identity, origin, contributors, sources,
+My Practice revision and methods, linked guidance, linked sources, design
+contexts, change reason, superseded revision, acceptance, and external
+bindings.
+_Avoid_: Private reasoning log
+
+**Effect**:
+An expected or observed read, write, external change, or Git/GitHub action
+recorded for preview and audit. An undeclared effect is a finding, not an
+authorization decision.
+_Avoid_: Permission grant
+
+**Git checkpoint**:
+A path-isolated local commit created for explicit acceptance, implementation
+handoff, or material practice/workspace configuration. It records its branch
+and commit and never implies a push.
+_Avoid_: Backup when no remote is verified
 
 **Finding**:
 One normalized failed or unexecuted check observation with a checker, rule,

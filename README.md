@@ -22,13 +22,13 @@ into a longer, resumable design loop.
 
 ## How Silver works
 
-Silver is currently agent-first rather than a graphical application:
+Silver is agent-first rather than a graphical application:
 
-1. Run the Silver CLI once to initialize a blank workspace.
-2. Open that workspace in Codex or another agent that reads `AGENTS.md`.
-3. Ask the agent to use one of the project-local skills in `.skills/`.
-4. Review and approve consequential changes before they become canonical.
-5. Run deterministic checks against the resulting artifacts and views.
+1. Ask a file-capable chat agent to inspect setup for a product or repository.
+2. Review its recommendation for an integrated or separate design repository.
+3. Let the agent apply the exact reviewed plan.
+4. Ask it to use project-local skills in `.skills/`.
+5. Review consequential changes; accepted work receives a local Git checkpoint.
 
 A Silver workspace distinguishes three representation roles:
 
@@ -56,35 +56,45 @@ repository for now.
 
 ## Quick start
 
-Clone Silver, install its small runtime dependency set, and initialize a blank
-workspace:
+Clone Silver and install its small runtime dependency set:
 
 ```sh
 git clone https://github.com/thejparsenault/silver-design-framework.git
 cd silver-design-framework
 npm install
-
-node bin/silver.mjs setup ../my-product-design \
-  --name "My Product" \
-  --id my-product
-
-node bin/silver.mjs doctor ../my-product-design
 ```
 
-The workspace ID must use lowercase kebab-case. Setup finishes by running the
-installed `what-now` skill once, so its terminal output already includes
-evidence-ranked options for the next step; it does not start any option
-automatically.
+Then ask your agent:
 
-Now open `../my-product-design` in your agent. Start with:
+> Install Silver for this product. Ask me only for decisions you cannot infer
+> safely, recommend whether design should live in this repository or a separate
+> repository, and show me the setup plan before applying it.
 
-> Use `what-now` to inspect this Silver workspace and recommend what I should
-> do next. Do not start any recommendation.
+Underneath the conversation, the agent uses:
+
+```sh
+node /path/to/silver-design-framework/bin/silver.mjs setup inspect \
+  /path/to/product --answers /tmp/silver-answers.json --json
+
+node /path/to/silver-design-framework/bin/silver.mjs setup apply \
+  /tmp/silver-plan.json --json
+```
+
+The plan recommends a separate design repository for multiple codebases,
+separate discipline ownership, or independent design history. It recommends
+integration for a solo or small shared team with one codebase and lifecycle.
+The recommendation is never applied until the plan is reviewed.
+
+Guided setup also creates the visible, tool-neutral
+`~/Silver/My Practice` workspace. It has readable methods, playbooks, rubrics,
+and decisions plus implicit local Git history. A configured GitHub remote is
+reported separately from a verified remote backup; Silver never pushes merely
+because it created a local revision.
 
 You do not normally need to create skill-invocation JSON by hand. Tell the
 agent which project-local skill to use. The agent should read that skill's
-`SKILL.md`, pin its inputs, respect the workspace permissions and guardrails,
-and record the result.
+`SKILL.md`, pin its inputs and active design context, respect repository
+instructions and guardrails, and record the result.
 
 ## A good first session
 
@@ -151,6 +161,10 @@ A typical feature session could use these prompts:
 > Use `flow` to create a structured user flow from the specification. Generate
 > both Mermaid and HTML views.
 
+> Use `map` to create a current-state journey map from the accepted evidence.
+> Label assumptions, pin the active design context, and render the local HTML
+> view.
+
 > Use `sketch` to create an inexpensive HTML representation of the important
 > states. Stop for my review before making a higher-fidelity prototype.
 
@@ -168,16 +182,16 @@ constraint suspension.
 
 ## Other skills
 
-The installed catalog contains nineteen independently runnable skills:
+The installed catalog contains twenty-one independently runnable skills:
 
 | Area | Skills |
 | --- | --- |
 | Orientation | `what-now` |
 | Foundations | `product`, `brand`, `voice`, `principles`, `theme`, `system` |
-| Discovery | `research`, `synthesize`, `ideate` |
+| Discovery | `research`, `synthesize`, `ideate`, `map` |
 | Definition | `specify`, `flow`, `component` |
 | Making | `sketch`, `prototype` |
-| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `design-check` |
+| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `practice-review`, `design-check` |
 
 Use `pitch` to create an opportunity, proposal, or outcome case for team
 buy-in. It can generate a branded local presentation view while keeping
@@ -210,7 +224,7 @@ Checks cover artifact contracts, flow structure, semantic styles, prototype
 policy, evidence provenance, presentations, production readiness, assets,
 accessibility, responsive behavior, critical interactions, bindings,
 revision pins, view provenance, synchronization, semantic mapping, stale
-proposals, authority, and secret-free configuration.
+proposals, authority, map structure, and secret-free configuration.
 
 A genuinely unavailable target reports `not-run`; Silver never turns missing
 coverage into a pass.
@@ -227,15 +241,18 @@ my-product-design/
   design/
     INDEX.md                 Generated artifact index
     manifest.yaml            Workspace configuration and artifact map
-    permissions.yaml         Project permission policy
     product.md
     brand.md
     voice.md
     design-principles.md
     system/
     assets/
+    contexts/                Product/surface contexts and expression mappings
     decisions/
     flows/
+    maps/
+    guidance/                Manually linked institutional guidance
+    sources/                 Pinned design-system, component, and code links
     integrations/
     presentation-kit/
     work/                    Findings, concepts, specs, and other working artifacts
@@ -244,6 +261,10 @@ my-product-design/
   production/
   reference-system/         Editable demonstration system for local rendering
 ```
+
+`~/Silver/My Practice` is intentionally outside this product workspace.
+Product results record only its stable identity, revision, and applied method
+IDs—not a private path or a copy of the personal repository.
 
 Treat `design/manifest.yaml` and the mapped design artifacts as sources of
 truth. `design/INDEX.md` is generated. Framework-managed files under
@@ -259,6 +280,7 @@ node /path/to/silver-design-framework/bin/silver.mjs doctor /path/to/workspace
 node /path/to/silver-design-framework/bin/silver.mjs repair /path/to/workspace
 node /path/to/silver-design-framework/bin/silver.mjs update /path/to/workspace
 node /path/to/silver-design-framework/bin/silver.mjs migrate /path/to/workspace
+node /path/to/silver-design-framework/bin/silver.mjs trace artifact-id /path/to/workspace
 ```
 
 - `doctor` is read-only and reports contract, integrity, and configuration
@@ -268,32 +290,41 @@ node /path/to/silver-design-framework/bin/silver.mjs migrate /path/to/workspace
   project-owned proposals.
 - `migrate` previews a supported migration. Add `--apply` only after reviewing
   the plan.
+- `trace` shows the sources, practice revision, linked guidance, design
+  contexts, acceptance, and external bindings behind a durable artifact.
 
 Daily design work belongs in skills, not in the installer. Setup and updates
 never start recommended design tasks automatically.
 
 ## Important safety rules
 
-- Canonical design changes require the authority and approval declared by the
-  relevant skill and workspace policy.
+- Filesystem access, Git/GitHub permissions, branch protection, and repository
+  instructions determine repository authority. Silver declares and audits
+  expected effects but does not add another repository permission gate.
 - Recommended next actions are never started automatically.
 - Constraint suspension must be requested explicitly; an agent may not infer
   it from a request for exploration.
-- External writes, production writes, publication, and version-control effects
-  require separate permission.
+- Accepted artifacts, implementation handoffs, and material configuration
+  changes create local Git checkpoints when possible. Checkpoints never push.
 - External changes are inspected and proposed before they affect portable
   artifacts.
 - Credentials and secrets do not belong in project bindings or tool profiles.
 
 ## Current limitations
 
-Silver `0.4.0` is validated for the blank-workspace path.
+Silver `0.5.0`, **Traceable Practice and Context**, is validated for guided
+setup, integrated and separate repository topology, My Practice, linked local
+or Git guidance, multiple design contexts, maps, provenance tracing, and
+reviewable 0.4-to-0.5 migration.
 
-- Automatic adoption of an arbitrary existing codebase is the next milestone.
-  Until then, create a Silver workspace beside existing product repositories.
-- The Figma adapter and reconciliation engine are implemented, but live Figma
-  setup does not yet have a polished `silver sync` command. Silver remains
-  fully usable through its local providers.
+- Guided setup can install into an existing repository, but deep semantic
+  discovery and adoption of arbitrary codebases remains a following milestone.
+- Silver reports drift for newly linked guidance, design-system, component, and
+  codebase sources. General `silver sync` commands and broader bidirectional
+  Figma/component/document synchronization are intentionally deferred.
+- GitHub repository creation is agent-mediated: Silver previews the proposed
+  private repository and records a resulting remote, but does not create it
+  through a direct built-in API.
 - The convenience npm package and immutable GitHub release have not yet been
   published.
 - Production recipes remain intentionally limited while the existing-codebase
@@ -323,5 +354,8 @@ setup, migration, skills, views, reconciliation, and checks.
 - [`silver_design_framework_prd.md`](silver_design_framework_prd.md) — product requirements
 - [`docs/agentic-design-workflows.md`](docs/agentic-design-workflows.md) — skills and playbooks
 - [`docs/tool-representations-and-reconciliation.md`](docs/tool-representations-and-reconciliation.md) — portable artifacts, views, providers, and drift
+- [`docs/traceable-practice-and-context.md`](docs/traceable-practice-and-context.md) — 0.5 architecture, ownership, versioning, backup, and authority
+- [`docs/silver-0.5-acceptance.md`](docs/silver-0.5-acceptance.md) — current release boundary
+- [`docs/silver-0.5-acceptance-audit.md`](docs/silver-0.5-acceptance-audit.md) — current direct evidence
 - [`docs/silver-0.3-acceptance.md`](docs/silver-0.3-acceptance.md) — release criteria
 - [`docs/silver-0.3-acceptance-audit.md`](docs/silver-0.3-acceptance-audit.md) — passing evidence

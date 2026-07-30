@@ -7,9 +7,64 @@ Silver `0.3.0` completed portable-provider registration, representation
 bindings, three-way reconciliation, and the first Figma adapter.
 Silver `0.4.0` added the project-local `what-now` orientation skill and
 contract-bounded ranked recommendations.
-`docs/silver-0.4-acceptance-audit.md` records the latest direct passing
-evidence.
-Existing-codebase adoption is the next recommended milestone.
+Silver `0.5.0` added traceable personal practice, guided repository topology,
+linked guidance, multi-context design work, portable maps, provenance, effects,
+and local Git checkpoints.
+`docs/silver-0.5-acceptance-audit.md` records the latest direct passing
+evidence. External-source synchronization and deep existing-codebase adoption
+are the next recommended milestones.
+
+## P1 — External Sources and Synchronization
+
+- [ ] One reconcile skill
+  - Inspect source drift, explain semantic differences, select accepted
+    operations, and route each change to the owning domain skill.
+
+- [ ] Generic deterministic sync commands
+  - Add `silver sync status [binding|--all]`,
+    `silver sync inspect <binding> --direction
+    <external-to-local|local-to-external> --json`, and
+    `silver sync apply <proposal.json> --json`.
+
+- [ ] Chat-first reconciliation language
+  - Let designers say “check Figma for component changes” or “publish the
+    accepted token update” while the agent selects the generic command,
+    provider, direction, and domain skill.
+
+- [ ] Artifact-kind routing
+  - Route tokens and themes to `theme`/`system`, components and patterns to
+    `component`/`system`, decisions and guidance to their owning skill plus a
+    decision record, maps and flows to `map`/`flow`, and prototypes and
+    presentations to their owning skills and representation bindings.
+
+- [ ] Broader Figma coverage
+  - Add component, library, token, style, map, flow, and presentation reads and
+    writes without regressing the existing narrow semantic-token write path.
+
+- [ ] Git and local-repository adapters
+  - Support revisioned design-system, component-library, guidance, and decision
+    sources before adding arbitrary cloud-document providers.
+
+- [ ] Multi-context impact reports
+  - Show every affected product, brand, surface, design context, and codebase
+    when a shared catalog or system changes.
+
+- [ ] Robust batch application
+  - Support batch proposal review, partial acceptance, conflicts,
+    stale-proposal rejection, rollback evidence, and interrupted-apply
+    recovery.
+
+- [ ] Readable reconciliation summaries
+  - Provide concise chat summaries with deterministic technical change sets on
+    demand.
+
+- [ ] Provider fixtures and optional live tests
+  - Keep deterministic gates credential-free and add opt-in live integration
+    evidence.
+
+- [ ] Later collaboration and document adapters
+  - Add document and collaboration providers only after snapshot, privacy, and
+    authority policies are established.
 
 ## P1 — Portable Tools and Reconciliation — Silver 0.3
 

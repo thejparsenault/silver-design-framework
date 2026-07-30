@@ -3,6 +3,12 @@ import path from "node:path";
 import { parse } from "yaml";
 
 import {
+  loadDesignContexts,
+  resolveDesignContext,
+} from "./context.mjs";
+import { inspectGuidanceSources } from "./guidance.mjs";
+import { inspectLinkedSources } from "./sources.mjs";
+import {
   exists,
   integrity,
   readUtf8,
@@ -96,6 +102,85 @@ async function inspectArtifact(root, mapping, diagnostics) {
     return;
   }
   if (mapping.kind === "permission-policy") {
+    return;
+  }
+  if (mapping.kind === "component-catalog") {
+    return;
+  }
+  if (
+    ["x-component-expression", "x-design-context"].includes(mapping.kind)
+  ) {
+    const value = await loadYaml(root, mapping.path, diagnostics);
+    if (!value) return;
+    const schema =
+      mapping.kind === "x-component-expression"
+        ? "v2/component-expression.schema.json"
+        : "v2/design-context.schema.json";
+    const valid = await applySchema(schema, value, mapping.path, diagnostics);
+    if (valid && value.id !== mapping.id) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "artifact-mismatch",
+          `Artifact id "${value.id}" disagrees with manifest value "${mapping.id}".`,
+          mapping.path,
+        ),
+      );
+    }
+    return;
+  }
+  if (mapping.kind === "x-guidance-source") {
+    const registry = await loadYaml(root, mapping.path, diagnostics);
+    if (!registry) return;
+    if (
+      registry.schema !== "silver/guidance-registry/v1" ||
+      !Array.isArray(registry.sources)
+    ) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "schema-invalid",
+          "Guidance registry does not declare the v1 schema.",
+          mapping.path,
+        ),
+      );
+      return;
+    }
+    for (const source of registry.sources) {
+      await applySchema(
+        "v2/guidance-source.schema.json",
+        source,
+        mapping.path,
+        diagnostics,
+      );
+    }
+    return;
+  }
+  if (mapping.kind === "x-linked-source") {
+    const registry = await loadYaml(root, mapping.path, diagnostics);
+    if (!registry) return;
+    if (
+      registry.schema !== "silver/source-registry/v1" ||
+      !Array.isArray(registry.sources)
+    ) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "schema-invalid",
+          "Linked source registry does not declare the v1 schema.",
+          mapping.path,
+        ),
+      );
+      return;
+    }
+    for (const source of registry.sources) {
+      await applySchema(
+        "v2/linked-source.schema.json",
+        source,
+        mapping.path,
+        diagnostics,
+      );
+    }
     return;
   }
   if (!mapping.path.endsWith(".md")) {
@@ -306,6 +391,86 @@ export async function doctorWorkspace(options = {}) {
         }
       }
     }
+  }
+
+  try {
+    for (const context of await loadDesignContexts(root)) {
+      const resolved = await resolveDesignContext({
+        root,
+        contextId: context.id,
+      });
+      if (resolved.stale_dependents?.length > 0) {
+        diagnostics.push(
+          diagnostic(
+            "warning",
+            "design-context-stale-dependent",
+            `${resolved.stale_dependents.length} durable artifact(s) pin an older ${context.id} revision.`,
+            "design/contexts",
+          ),
+        );
+      }
+    }
+  } catch (error) {
+    diagnostics.push(
+      diagnostic(
+        "error",
+        "design-context-invalid",
+        error.message,
+        "design/contexts",
+      ),
+    );
+  }
+
+  try {
+    for (const source of await inspectGuidanceSources(root)) {
+      if (source.state === "current") continue;
+      diagnostics.push(
+        diagnostic(
+          source.influence === "required" && source.state === "unavailable"
+            ? "error"
+            : "warning",
+          `guidance-${source.state}`,
+          source.state === "external-changed"
+            ? "Linked guidance changed upstream; review the re-pin proposal before updating."
+            : "Linked guidance is unavailable; no automatic replacement was attempted.",
+          "design/guidance/sources.yaml",
+        ),
+      );
+    }
+  } catch (error) {
+    diagnostics.push(
+      diagnostic(
+        "error",
+        "guidance-inspection-failed",
+        error.message,
+        "design/guidance/sources.yaml",
+      ),
+    );
+  }
+
+  try {
+    for (const source of await inspectLinkedSources(root)) {
+      if (source.state === "current") continue;
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          `linked-source-${source.state}`,
+          source.state === "external-changed"
+            ? `Linked ${source.kind} changed upstream; review the re-pin proposal before updating.`
+            : `Linked ${source.kind} is unavailable; no automatic replacement was attempted.`,
+          "design/sources/sources.yaml",
+        ),
+      );
+    }
+  } catch (error) {
+    diagnostics.push(
+      diagnostic(
+        "error",
+        "linked-source-inspection-failed",
+        error.message,
+        "design/sources/sources.yaml",
+      ),
+    );
   }
 
   return {

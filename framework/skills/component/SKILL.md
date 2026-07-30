@@ -12,7 +12,7 @@ description: Inspect the catalog, enumerate states, explore anatomy and behavior
 3. Document keyboard, focus, semantics, announcements, and responsive behavior.
 4. Propose catalog disposition; require approval for canonical registration.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's permission, guardrail, and output checks.
+Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
 
 ## Done
 
