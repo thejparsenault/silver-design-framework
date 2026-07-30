@@ -91,10 +91,46 @@ and decisions plus implicit local Git history. A configured GitHub remote is
 reported separately from a verified remote backup; Silver never pushes merely
 because it created a local revision.
 
-You do not normally need to create skill-invocation JSON by hand. Tell the
-agent which project-local skill to use. The agent should read that skill's
+Tell the agent which project-local skill to use. It should read that skill's
 `SKILL.md`, pin its inputs and active design context, respect repository
 instructions and guardrails, and record the result.
+
+Durable output goes through the guarded runtime. Ask for a scaffold rather than
+writing the request by hand:
+
+```sh
+.silver/bin/silver invoke --scaffold brand .   # prefilled request
+.silver/bin/silver invoke brand request.json .
+```
+
+The scaffold fills in identifiers, timestamps, the provenance envelope, the
+active design-context pin, required check entries, and the `expected_integrity`
+of any file being replaced. You supply the content and the reasons. Every
+placeholder carries a sentinel and the CLI refuses a request that still contains
+one, so a scaffold cannot be submitted unmodified.
+
+Run skills through `.silver/bin/silver`, not `.skills/<id>/scripts/invoke.mjs`.
+The guarded runtime needs dependencies the workspace does not carry; the CLI
+resolves them.
+
+## Working with Claude Code
+
+`silver setup` generates what Claude Code reads, because it reads `CLAUDE.md`
+rather than `AGENTS.md` and discovers skills only under `.claude/skills/`:
+
+- `CLAUDE.md` importing `@AGENTS.md`, merged into a marked block so a
+  project-owned `CLAUDE.md` keeps its content;
+- `.claude/skills/<id>` symlinks into the canonical `.skills/<id>`, so all
+  twenty-one skills appear in autocomplete;
+- `.silver/bin/silver`, a launcher giving the workspace one stable command.
+
+`.skills/` and `AGENTS.md` remain canonical and agent-neutral. The adapters are
+generated: `silver repair` regenerates them, `silver doctor` reports when one is
+missing or stale, and deleting them all still leaves a working workspace.
+
+Claude Cowork is not yet supported — it loads only account-level skills and runs
+code in an isolated remote environment. See
+[`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
 
 ## A good first session
 
@@ -235,9 +271,12 @@ A new workspace has this general shape:
 
 ```text
 my-product-design/
-  AGENTS.md                  Agent entry point
+  AGENTS.md                  Canonical agent entry point
+  CLAUDE.md                  Generated Claude Code adapter; imports AGENTS.md
+  .claude/skills/            Generated links into .skills/ for Claude Code
   .skills/                   Project-local design skills
   .silver/                   Installed packages, lock state, and results
+    bin/silver               Generated launcher for the Silver CLI
   design/
     INDEX.md                 Generated artifact index
     manifest.yaml            Workspace configuration and artifact map
@@ -273,19 +312,27 @@ edited casually.
 
 ## Maintenance commands
 
-Run maintenance commands with the CLI from your Silver checkout:
+From inside an initialized workspace, use its launcher:
+
+```sh
+.silver/bin/silver doctor .
+.silver/bin/silver repair .
+.silver/bin/silver update .
+.silver/bin/silver migrate .
+.silver/bin/silver trace artifact-id .
+```
+
+The equivalent from your Silver checkout, which also works before a workspace
+exists:
 
 ```sh
 node /path/to/silver-design-framework/bin/silver.mjs doctor /path/to/workspace
-node /path/to/silver-design-framework/bin/silver.mjs repair /path/to/workspace
-node /path/to/silver-design-framework/bin/silver.mjs update /path/to/workspace
-node /path/to/silver-design-framework/bin/silver.mjs migrate /path/to/workspace
-node /path/to/silver-design-framework/bin/silver.mjs trace artifact-id /path/to/workspace
 ```
 
 - `doctor` is read-only and reports contract, integrity, and configuration
-  problems.
-- `repair` regenerates disposable indexes and agent pointers.
+  problems, including a missing or stale agent adapter.
+- `repair` regenerates disposable indexes, agent pointers, host adapters, and
+  the launcher. Run it after moving your Silver checkout.
 - `update` updates clean framework-managed packages and reports conflicts or
   project-owned proposals.
 - `migrate` previews a supported migration. Add `--apply` only after reviewing
@@ -312,11 +359,18 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.5.0`, **Traceable Practice and Context**, is validated for guided
+Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is validated for guided
 setup, integrated and separate repository topology, My Practice, linked local
-or Git guidance, multiple design contexts, maps, provenance tracing, and
-reviewable 0.4-to-0.5 migration.
+or Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
+discovery, CLI-routed guarded invocation, and reviewable 0.5-to-0.6 migration.
 
+- Claude Cowork is not supported. It loads only account-level skills and runs
+  code in an isolated remote environment, so guarded invocation cannot reach a
+  local workspace. See
+  [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
+- The `.silver/bin/silver` launcher records an absolute path to your Silver
+  installation, so it is machine-specific. Run `silver repair` after cloning a
+  workspace onto another machine.
 - Guided setup can install into an existing repository, but deep semantic
   discovery and adoption of arbitrary codebases remains a following milestone.
 - Silver reports drift for newly linked guidance, design-system, component, and
@@ -335,7 +389,6 @@ reviewable 0.4-to-0.5 migration.
 Install development requirements and run both authoritative release gates:
 
 ```sh
-python3 -m pip install -r requirements-dev.txt
 npm install
 npm run build
 npm run test:package
@@ -354,6 +407,8 @@ setup, migration, skills, views, reconciliation, and checks.
 - [`silver_design_framework_prd.md`](silver_design_framework_prd.md) — product requirements
 - [`docs/agentic-design-workflows.md`](docs/agentic-design-workflows.md) — skills and playbooks
 - [`docs/tool-representations-and-reconciliation.md`](docs/tool-representations-and-reconciliation.md) — portable artifacts, views, providers, and drift
+- [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md) — what each agent host reads, and what Silver generates for it
+- [`docs/silver-0.5-audit.md`](docs/silver-0.5-audit.md) — the 0.5 audit that produced this release
 - [`docs/traceable-practice-and-context.md`](docs/traceable-practice-and-context.md) — 0.5 architecture, ownership, versioning, backup, and authority
 - [`docs/silver-0.5-acceptance.md`](docs/silver-0.5-acceptance.md) — current release boundary
 - [`docs/silver-0.5-acceptance-audit.md`](docs/silver-0.5-acceptance-audit.md) — current direct evidence

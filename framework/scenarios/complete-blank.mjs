@@ -219,7 +219,7 @@ async function invokeCase({
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.5.0" },
+    skill: { id, version: "0.6.0" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -614,7 +614,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.5.0" },
+      skill: { id: "prototype", version: "0.6.0" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -660,7 +660,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.5.0" },
+      skill: { id: "evaluate", version: "0.6.0" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
@@ -800,7 +800,7 @@ export async function runCompleteBlankScenario(options = {}) {
         object_id: "fixture-map-node",
         revision: "v1",
       },
-      adapter: { id: "silver-figma", version: "0.5.0" },
+      adapter: { id: "silver-figma", version: "0.6.0" },
       mapping_profile: "map-read-only",
       authority: "local",
       round_trip: "read-only",

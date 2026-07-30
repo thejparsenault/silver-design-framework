@@ -7,6 +7,13 @@ import { exists, integrity, readUtf8, writeUtf8 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
 import { renderAgentPointer } from "./setup.mjs";
+import {
+  CLAUDE_MEMORY_PATH,
+  mergeClaudeMemory,
+  renderClaudeBlock,
+  writeClaudeSkillLinks,
+  writeLauncher,
+} from "./agent-adapters.mjs";
 
 async function loadValidatedYaml(root, relativePath, schemaName) {
   const absolute = path.join(root, relativePath);
@@ -28,6 +35,12 @@ async function loadValidatedYaml(root, relativePath, schemaName) {
   return value;
 }
 
+function managedFileOwner(relativePath) {
+  if (relativePath === "design/INDEX.md") return "framework-indexer";
+  if (relativePath === CLAUDE_MEMORY_PATH) return "framework-agent-adapter";
+  return "framework-agent-pointer";
+}
+
 export async function repairWorkspace(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const manifest = await loadValidatedYaml(
@@ -43,12 +56,29 @@ export async function repairWorkspace(options = {}) {
   const skillIds = lock.packages
     .filter(({ type }) => type === "skill")
     .map(({ id }) => id);
+  const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
   const generated = new Map([
     ["design/INDEX.md", renderIndex(manifest, skillIds)],
     ["AGENTS.md", renderAgentPointer(skillIds)],
+    // Refreshes Silver's block in place and leaves project-owned content alone.
+    [
+      CLAUDE_MEMORY_PATH,
+      mergeClaudeMemory(
+        (await exists(claudeMemoryPath))
+          ? await readUtf8(claudeMemoryPath)
+          : undefined,
+        renderClaudeBlock(skillIds),
+      ),
+    ],
   ]);
   const repaired = [];
   const unchanged = [];
+
+  // Links and the launcher are directories and executables rather than managed
+  // file content, so they are reconciled separately from the map above.
+  const { linked } = await writeClaudeSkillLinks(root, skillIds);
+  repaired.push(...linked);
+  repaired.push(...(await writeLauncher(root)));
 
   for (const [relativePath, content] of generated) {
     const absolute = path.join(root, relativePath);
@@ -66,10 +96,7 @@ export async function repairWorkspace(options = {}) {
     } else {
       lock.managed_files.push({
         path: relativePath,
-        owner:
-          relativePath === "design/INDEX.md"
-            ? "framework-indexer"
-            : "framework-agent-pointer",
+        owner: managedFileOwner(relativePath),
         ownership: "generated",
         base_integrity: integrity(content),
       });

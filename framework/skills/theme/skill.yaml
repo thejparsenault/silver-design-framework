@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: theme
-version: 0.5.0
+version: 0.6.0
 summary: Generate, compare, apply, or revise semantic themes and modes.
 context_budget: small
 inputs:

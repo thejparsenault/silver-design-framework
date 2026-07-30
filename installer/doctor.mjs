@@ -9,6 +9,13 @@ import {
 import { inspectGuidanceSources } from "./guidance.mjs";
 import { inspectLinkedSources } from "./sources.mjs";
 import {
+  CLAUDE_BLOCK_BEGIN,
+  CLAUDE_MEMORY_PATH,
+  LAUNCHER_PATH,
+  claudeSkillLinkState,
+  launcherEntryPoint,
+} from "./agent-adapters.mjs";
+import {
   exists,
   integrity,
   readUtf8,
@@ -470,6 +477,99 @@ export async function doctorWorkspace(options = {}) {
         error.message,
         "design/sources/sources.yaml",
       ),
+    );
+  }
+
+  // Agent-host adapters. These are generated and repairable, so a problem here
+  // is a warning: canonical design work is unaffected.
+  try {
+    const skillIds = (lock?.packages ?? [])
+      .filter(({ type }) => type === "skill")
+      .map(({ id }) => id);
+    if (skillIds.length > 0) {
+      const { missing, broken } = await claudeSkillLinkState(root, skillIds);
+      if (missing.length > 0) {
+        diagnostics.push(
+          diagnostic(
+            "warning",
+            "claude-skill-links-missing",
+            `Claude Code cannot discover ${missing.length} skill(s) without .claude/skills entries; run \`silver repair\`.`,
+            ".claude/skills",
+          ),
+        );
+      }
+      if (broken.length > 0) {
+        diagnostics.push(
+          diagnostic(
+            "warning",
+            "claude-skill-links-broken",
+            `${broken.length} .claude/skills entr(ies) do not resolve to a SKILL.md; run \`silver repair\`.`,
+            ".claude/skills",
+          ),
+        );
+      }
+      // Generic ids can shadow, or be shadowed by, a user's own skills.
+      const collisions = skillIds.filter((id) =>
+        ["map", "system", "research", "component", "implement"].includes(id),
+      );
+      if (collisions.length > 0 && missing.length === 0) {
+        diagnostics.push(
+          diagnostic(
+            "info",
+            "claude-skill-name-collision-risk",
+            `Skills named ${collisions.join(", ")} use generic commands that a personal or bundled skill of the same name would override.`,
+            ".claude/skills",
+          ),
+        );
+      }
+    }
+
+    const claudeMemory = (await exists(path.join(root, CLAUDE_MEMORY_PATH)))
+      ? await readUtf8(path.join(root, CLAUDE_MEMORY_PATH))
+      : null;
+    if (claudeMemory === null) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "claude-memory-missing",
+          "Claude Code reads CLAUDE.md rather than AGENTS.md; run `silver repair` to generate it.",
+          CLAUDE_MEMORY_PATH,
+        ),
+      );
+    } else if (!claudeMemory.includes(CLAUDE_BLOCK_BEGIN)) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "claude-memory-block-missing",
+          "CLAUDE.md no longer contains the Silver block, so AGENTS.md is not imported; run `silver repair`.",
+          CLAUDE_MEMORY_PATH,
+        ),
+      );
+    }
+
+    const entryPoint = await launcherEntryPoint(root);
+    if (entryPoint === null) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "launcher-missing",
+          "Installed skills cannot resolve the guarded runtime without .silver/bin/silver; run `silver repair`.",
+          LAUNCHER_PATH,
+        ),
+      );
+    } else if (!(await exists(entryPoint))) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "launcher-stale",
+          `.silver/bin/silver points at ${entryPoint}, which no longer exists; run \`silver repair\` from your Silver installation.`,
+          LAUNCHER_PATH,
+        ),
+      );
+    }
+  } catch (error) {
+    diagnostics.push(
+      diagnostic("error", "agent-adapter-inspection-failed", error.message),
     );
   }
 

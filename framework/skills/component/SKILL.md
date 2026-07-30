@@ -1,6 +1,7 @@
 ---
 name: component
 description: Inspect the catalog, enumerate states, explore anatomy and behavior, classify composition level, propose a component contract, and document accessibility. Use for new or revised primitives, patterns, product compositions, and component state coverage.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Design component
@@ -12,7 +13,16 @@ description: Inspect the catalog, enumerate states, explore anatomy and behavior
 3. Document keyboard, focus, semantics, announcements, and responsive behavior.
 4. Propose catalog disposition; require approval for canonical registration.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold component .
+.silver/bin/silver invoke component <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

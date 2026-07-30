@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.5.0";
+const expectedVersion = "0.6.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -57,6 +57,8 @@ try {
     "bin/silver.mjs",
     "docs/brand/ag-mark.txt",
     "installer/brand.mjs",
+    "installer/agent-adapters.mjs",
+    "installer/invoke.mjs",
     "installer/repair.mjs",
     "installer/migrate.mjs",
     "installer/update.mjs",
@@ -143,6 +145,36 @@ try {
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
   });
+
+  // Agent-host adapters ship and work from the exact archive.
+  const packedMemory = await readFile(
+    path.join(workspaceRoot, "CLAUDE.md"),
+    "utf8",
+  );
+  assert.match(packedMemory, /^@AGENTS\.md$/m);
+  assert.match(
+    await readFile(
+      path.join(workspaceRoot, ".claude", "skills", "brand", "SKILL.md"),
+      "utf8",
+    ),
+    /^name: brand$/m,
+  );
+  const { stdout: packedScaffold } = await command(
+    process.execPath,
+    [cli, "invoke", "--scaffold", "brand", workspaceRoot],
+    { cwd: consumerRoot },
+  );
+  assert.equal(
+    JSON.parse(packedScaffold).schema,
+    "silver/skill-invocation/v2",
+  );
+  const { stdout: packedWhatNow } = await command(
+    process.execPath,
+    [cli, "what-now", workspaceRoot],
+    { cwd: consumerRoot },
+  );
+  assert.match(packedWhatNow, /What Now recommends:/);
+
   const fastCheck = path.join(
     workspaceRoot,
     ".skills",

@@ -2,16 +2,44 @@
 
 ## Current Focus
 
-Silver `0.5.0`, Traceable Practice and Context, is implemented and validated
-from source and as an exact offline archive. All twenty-one project-local skills
-run independently. Guided setup recommends integrated or separate repositories,
-creates or connects My Practice, pins manually linked guidance and design
-contexts, and applies only the reviewed plan. Maps, practice review, provenance
-tracing, effects-based repository authority, and isolated local Git checkpoints
-have direct release evidence. The next milestones are external-source
-synchronization and deep existing-codebase adoption.
+Silver `0.6.0`, Agent Hosts and Guarded Invocation, is implemented and validated
+from source and as an exact offline archive. An installed workspace can now run
+its own skills: guarded invocation routes through `silver invoke`, and
+`silver invoke --scaffold` supplies identifiers, timestamps, provenance, context
+pins, required checks, and `expected_integrity` so the agent supplies only
+content and reasons. A workspace is discoverable to Claude Code through a
+generated adapter layer while `.skills/` and `AGENTS.md` stay canonical.
+
+The next milestones are the Node-free durable-output path that Claude Cowork
+support depends on, external-source synchronization, and deep existing-codebase
+adoption.
 
 ## Recent Progress
+
+- 2026-07-30: Silver 0.6 Agent Hosts and Guarded Invocation
+  - Audited 0.5 against Claude Code and Claude Cowork; recorded findings and
+    evidence in `docs/silver-0.5-audit.md`.
+  - Fixed the blocker that left an installed workspace unable to run its own
+    runtime: `.silver/runtime/` imports `ajv` and `yaml` as bare specifiers that
+    do not resolve outside a `node_modules` tree, so every guarded invocation
+    failed on the documented install path. Execution now routes through
+    `silver invoke` and `silver what-now`, with a generated `.silver/bin/silver`
+    launcher and an actionable failure from the per-skill shim.
+  - Added `silver invoke --scaffold`, which emits a schema-valid request and
+    refuses to be submitted with its placeholders intact.
+  - Added the Claude Code adapter layer — `CLAUDE.md` importing `@AGENTS.md`,
+    `.claude/skills/` symlinks, and `allowed-tools` on all twenty-one skills —
+    wired into setup, repair, doctor, and a reviewable 0.5-to-0.6 migration.
+    Agent instruction files no longer make setup refuse a blank target.
+  - Retired the skill-catalog generator, which had drifted two releases behind
+    and would have downgraded every contract to `0.4.0`, plus the superseded
+    Python contract validator and its requirements file.
+  - Ran a Bun standalone-binary spike: interpreted execution works completely,
+    but `--compile` is blocked on the payload layer and 28 collapsed CLI
+    main-guards. Deferred with evidence in `DECISIONS.md`.
+  - Specified Claude Cowork support rather than assuming it in
+    `docs/agent-host-compatibility.md`; `npm run build` passes 86 source tests
+    and `npm run test:package` passes for the exact `0.6.0` archive.
 
 - 2026-07-30: Silver 0.5 Traceable Practice and Context
   - Added revisioned contracts and runtime support for setup plans, My Practice,
@@ -247,13 +275,12 @@ synchronization and deep existing-codebase adoption.
 
 ## Next 3 Actions
 
-1. Select one representative existing product repository for the adoption
-   milestone.
-2. Implement read-only repository discovery and an ambiguity report without
-   reorganizing or rewriting the selected codebase.
-3. Generate and validate a reviewable adoption plan covering native design
-   artifacts, tokens, utilities, components, source roots, commands, and agent
-   instruction files.
+1. Use Silver from Claude Code against a real product for one full session, and
+   record where the adapter layer or the scaffold still gets in the way.
+2. Design the Node-free durable-output path that Claude Cowork support depends
+   on, deciding how provenance and integrity survive without the guarded runtime.
+3. Select one representative existing product repository for the adoption
+   milestone and implement read-only discovery with an ambiguity report.
 
 ## Blockers
 
@@ -261,4 +288,4 @@ synchronization and deep existing-codebase adoption.
 
 ## Last Updated
 
-2026-07-26
+2026-07-30

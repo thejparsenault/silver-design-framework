@@ -1,6 +1,7 @@
 ---
 name: evaluate
 description: Define an evaluation question and method, prepare tasks, inspect a sketch or prototype, capture sanitized observations, and produce findings and recommendations. Use for usability testing, expert review, or feedback analysis distinct from deterministic conformance.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Evaluate design
@@ -12,7 +13,16 @@ description: Define an evaluation question and method, prepare tasks, inspect a 
 3. Separate observed behavior from interpretation and deterministic check findings.
 4. Produce evidence-linked findings and recommendations for explicit acceptance.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold evaluate .
+.silver/bin/silver invoke evaluate <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

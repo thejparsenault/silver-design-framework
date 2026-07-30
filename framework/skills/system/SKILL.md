@@ -1,6 +1,7 @@
 ---
 name: system
 description: Define or maintain semantic tokens, color ramps, typography roles, modes, component and pattern registries, deprecations, and migration proposals. Use for design-system maintenance, component catalogs, semantic token changes, or canonical system decisions.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Maintain system
@@ -12,7 +13,16 @@ description: Define or maintain semantic tokens, color ramps, typography roles, 
 3. Propose semantic changes and affected-consumer migration before applying them.
 4. Request approval and record canonical decisions.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold system .
+.silver/bin/silver invoke system <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

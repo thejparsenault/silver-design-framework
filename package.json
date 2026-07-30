@@ -1,6 +1,6 @@
 {
   "name": "silver-design-framework",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
@@ -20,8 +20,10 @@
     "framework/scenarios/",
     "framework/skills/",
     "installer/cli.mjs",
+    "installer/agent-adapters.mjs",
     "installer/brand.mjs",
     "installer/doctor.mjs",
+    "installer/invoke.mjs",
     "installer/lib/",
     "installer/migrate.mjs",
     "installer/repair.mjs",

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: design-check
-version: 0.5.0
+version: 0.6.0
 summary: Run applicable independent checks without performing design work.
 context_budget: small
 inputs:

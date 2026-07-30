@@ -1,6 +1,7 @@
 ---
 name: what-now
 description: Inspect a Silver workspace and recommend several evidence-based next actions without starting them. Use when work is resuming, context is missing, priorities are unclear, or the user asks what to do next.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Decide what to do next
@@ -12,7 +13,8 @@ description: Inspect a Silver workspace and recommend several evidence-based nex
 3. Use semantic timestamps only to order otherwise equivalent choices; use filesystem modification time only when structured time is unavailable.
 4. Present three to five ranked choices with evidence and leave selection to the user.
 
-Run `node scripts/analyze-workspace.mjs --root <workspace> --now <iso-time>` first. Copy its `invocation_recommendations` into a guarded invocation request as `recommended_next_actions`, then run `node scripts/invoke.mjs <request.json> --root <workspace>` to persist the normalized read-only result.
+Run `.silver/bin/silver what-now .`. It analyzes the workspace and records the
+normalized read-only result in one step; no request file is needed.
 
 ## Done
 

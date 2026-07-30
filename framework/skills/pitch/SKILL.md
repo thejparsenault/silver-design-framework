@@ -1,6 +1,7 @@
 ---
 name: pitch
 description: Produce an evidence-linked opportunity, proposal, or outcome change case and optional branded presentation view using the project presentation kit. Use to show before state, reasons, after state, tradeoffs, decision request, and estimated, proxy, or measured impact.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Build change case
@@ -12,7 +13,16 @@ description: Produce an evidence-linked opportunity, proposal, or outcome change
 3. Label impact as estimated, proxy, or measured with its source and confidence.
 4. Optionally render a branded local HTML view from the pinned presentation kit.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold pitch .
+.silver/bin/silver invoke pitch <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

@@ -59,15 +59,24 @@ build
 
 ## Latest Release
 
-Silver `0.5.0`, **Traceable Practice and Context**, is complete. Its
-authoritative scope is defined in `docs/silver-0.5-acceptance.md`; direct
-passing evidence is recorded in `docs/silver-0.5-acceptance-audit.md`.
+Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is complete. It responds
+to the audit in `docs/silver-0.5-audit.md`.
 
-The release adds agent-led setup, My Practice, manually linked guidance,
-revisioned multi-product design contexts, component-expression mappings,
-portable maps, universal provenance, trace views, effects-based authority, and
-local Git checkpoints. Generalized external synchronization and deep
-existing-codebase adoption remain following milestones.
+The release makes an installed workspace able to run its own skills — guarded
+invocation now routes through `silver invoke`, with `silver invoke --scaffold`
+supplying the mechanical parts of a request — and makes a workspace discoverable
+to Claude Code through a generated adapter layer that leaves `.skills/` and
+`AGENTS.md` canonical. It also retires the stale skill-catalog generator and the
+superseded Python contract validator.
+
+Claude Cowork remains unsupported and is now specified rather than assumed: it
+needs a Node-free durable-output path and an uploadable skill package.
+Generalized external synchronization and deep existing-codebase adoption remain
+following milestones.
+
+Silver `0.5.0`, **Traceable Practice and Context**, is defined in
+`docs/silver-0.5-acceptance.md` with evidence in
+`docs/silver-0.5-acceptance-audit.md`.
 
 ## Agent Access
 
@@ -80,6 +89,8 @@ existing-codebase adoption remain following milestones.
 ## Key Constraints
 
 - Project workflow skills are installed at the lowest useful repository scope, never globally by default.
+- `.skills/` and `AGENTS.md` are canonical and agent-neutral. Per-host discovery files are generated adapters, are never a prerequisite for running a skill, and can be deleted without breaking the workspace.
+- Guarded skill execution routes through the CLI. The workspace lock records the CLI version, never a filesystem path to an installation.
 - My Practice is a visible, personal, tool-neutral local Git workspace containing readable overlays and playbooks, not automatically trusted executable skill packages.
 - Installed project files are committed and project-owned. Updates arrive as reviewable diffs.
 - Daily design work belongs in skills. The CLI is limited to setup, update, repair, migration, and diagnostics.
@@ -112,6 +123,9 @@ The repository contains an architecture spike for a portable HTML/CSS design sys
 - `docs/silver-0.2-acceptance.md` — completed Complete Blank-Workspace Suite boundary and evidence criteria
 - `docs/silver-0.3-acceptance.md` — authoritative Portable Tools and Reconciliation release boundary and completion criteria
 - `docs/silver-0.3-acceptance-audit.md` — direct evidence for all 22 Portable Tools and Reconciliation criteria
+- `docs/silver-0.5-audit.md` — the 0.5 audit findings that produced 0.6
+- `docs/agent-host-compatibility.md` — what each agent host reads, what Silver
+  generates for it, and why Cowork is not yet supported
 - `docs/traceable-practice-and-context.md` — Silver 0.5 architecture,
   ownership, versioning, backup, authority, and synchronization boundary
 - `docs/silver-0.5-acceptance.md` — authoritative Traceable Practice and

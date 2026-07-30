@@ -8,7 +8,8 @@ import { repairWorkspace } from "./repair.mjs";
 import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
-import { runWhatNowAfterSetup } from "./what-now.mjs";
+import { runWhatNow } from "./what-now.mjs";
+import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
 import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
@@ -19,6 +20,9 @@ Usage:
   silver setup inspect [directory] [--answers <answers.json>] [--json]
   silver setup apply <plan.json> [--allow-unresolved] [--json]
   silver setup [directory] [--name <name>] [--id <id>] [--json]
+  silver invoke <skill-id> <request.json> [directory] [--json]
+  silver invoke --scaffold <skill-id> [directory]
+  silver what-now [directory] [--json]
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -28,12 +32,15 @@ Usage:
   silver version
 
 Commands:
-  setup   Inspect and apply a reviewed workspace plan; direct setup remains a compatibility path.
-  doctor  Diagnose workspace contracts and managed files without changing them.
-  repair  Regenerate disposable indexes and agent discovery pointers.
-  update  Update unmodified framework-managed packages; report owned-package proposals.
-  migrate Preview or explicitly apply a supported workspace migration.
-  version Print the local framework development version.
+  setup    Inspect and apply a reviewed workspace plan; direct setup remains a compatibility path.
+  invoke   Run an installed skill through the guarded runtime. Use --scaffold to emit a
+           prefilled request to complete, then invoke it.
+  what-now Rank evidence-based next actions for a workspace without starting any of them.
+  doctor   Diagnose workspace contracts and managed files without changing them.
+  repair   Regenerate disposable indexes and agent discovery pointers.
+  update   Update unmodified framework-managed packages; report owned-package proposals.
+  migrate  Preview or explicitly apply a supported workspace migration.
+  version  Print the local framework development version.
 `;
 
 function parseArguments(args) {
@@ -46,6 +53,7 @@ function parseArguments(args) {
     "json",
     "name",
     "practice",
+    "scaffold",
   ]);
   const positionals = [];
   const flags = {};
@@ -59,7 +67,7 @@ function parseArguments(args) {
     if (!supportedFlags.has(key)) {
       throw new Error(`Unknown option: --${key}`);
     }
-    if (["allow-unresolved", "apply", "json", "help"].includes(key)) {
+    if (["allow-unresolved", "apply", "json", "help", "scaffold"].includes(key)) {
       flags[key] = true;
       continue;
     }
@@ -85,8 +93,34 @@ function printSetup(result, write) {
   if (result.preserved.length > 0) {
     write(`Preserved ${result.preserved.length} existing files.`);
   }
+  printWhatNow(result.whatNow.analysis, write);
+}
+
+function printInvoke(result, write) {
+  write(
+    `${result.skill.id} ${result.execution.status}: ${result.execution.summary}`,
+  );
+  for (const output of result.outputs) {
+    write(`  WROTE ${output.path} (${output.kind}@${output.revision})`);
+  }
+  for (const finding of result.effect_findings) {
+    write(`  FINDING ${finding}`);
+  }
+  for (const readiness of result.readiness) {
+    write(`  READINESS ${readiness.name}: ${readiness.status}`);
+    for (const reason of readiness.reasons) {
+      write(`    ${reason}`);
+    }
+  }
+  write(`Acceptance: ${result.acceptance.status}`);
+  for (const recommendation of result.recommended_next_actions) {
+    write(`  NEXT ${recommendation.action}: ${recommendation.reason}`);
+  }
+}
+
+function printWhatNow(analysis, write) {
   write("What Now recommends:");
-  for (const recommendation of result.whatNow.analysis.recommendations) {
+  for (const recommendation of analysis.recommendations) {
     write(
       `  ${recommendation.rank}. ${recommendation.title}: ${recommendation.reason}`,
     );
@@ -200,6 +234,62 @@ export async function runCli(
       stdout(flags.json ? JSON.stringify(result, null, 2) : `Applied ${result.plan} at ${result.workspace.root}`);
       return 0;
     }
+    if (command === "invoke") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.scaffold) {
+        if (positionals.length < 1 || positionals.length > 2) {
+          throw new Error(
+            "invoke --scaffold requires a skill id and accepts an optional workspace directory.",
+          );
+        }
+        const scaffold = await scaffoldInvocation({
+          root: path.resolve(positionals[1] ?? process.cwd()),
+          skillId: positionals[0],
+          now: now(),
+        });
+        stdout(JSON.stringify(scaffold, null, 2));
+        return 0;
+      }
+      if (positionals.length < 2 || positionals.length > 3) {
+        throw new Error(
+          "invoke requires a skill id and a request JSON file, and accepts an optional workspace directory.",
+        );
+      }
+      const request = JSON.parse(
+        await readFile(path.resolve(positionals[1]), "utf8"),
+      );
+      const result = await invokeInstalledSkill({
+        root: path.resolve(positionals[2] ?? process.cwd()),
+        skillId: positionals[0],
+        request,
+      });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else {
+        printInvoke(result, stdout);
+      }
+      return ["complete", "complete-with-findings"].includes(
+        result.execution.status,
+      )
+        ? 0
+        : 1;
+    }
+    if (command === "what-now") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (positionals.length > 1) {
+        throw new Error("what-now accepts at most one directory.");
+      }
+      const { analysis, result } = await runWhatNow({
+        root: path.resolve(positionals[0] ?? process.cwd()),
+        now: now(),
+      });
+      if (flags.json) {
+        stdout(JSON.stringify({ analysis, result }, null, 2));
+      } else {
+        printWhatNow(analysis, stdout);
+      }
+      return 0;
+    }
     if (command === "practice" && args[1] === "apply") {
       const { positionals, flags } = parseArguments(args.slice(2));
       if (positionals.length !== 1) throw new Error("practice apply requires one proposal JSON file.");
@@ -258,7 +348,11 @@ export async function runCli(
         name: flags.name,
         id: flags.id,
       });
-      const whatNow = await runWhatNowAfterSetup({ root, now: now() });
+      const whatNow = await runWhatNow({
+        root,
+        now: now(),
+        invocationPrefix: "what-now-after-setup",
+      });
       const result = { ...setup, whatNow };
       if (flags.json) {
         stdout(JSON.stringify(result, null, 2));

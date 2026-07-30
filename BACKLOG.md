@@ -112,6 +112,20 @@ are the next recommended milestones.
 - [ ] Existing-repository fixture matrix
   - Validate adoption against plain HTML/CSS, Tailwind, React, and at least one non-React repository.
 
+## P1 — Agent Host Reach
+
+- [ ] Node-free durable-output path
+  - Let a skill produce a provenance-carrying artifact using plain file operations, with the guarded Node runtime as an optional upgrade rather than the only route.
+  - Prerequisite for any host that cannot run a Silver installation against the workspace. Revisits the invocation contract 0.5 and 0.6 are built on.
+
+- [ ] Uploadable Silver skill package for Claude Cowork
+  - One ZIP that teaches the workspace model and points at `design/manifest.yaml`, `AGENTS.md`, and `.skills/<id>/SKILL.md` as files to read.
+  - Depends on the Node-free output path; without it a Cowork session can read and edit artifacts but cannot record a checked result.
+
+- [ ] Standalone binary distribution
+  - Drops the Git + Node + `npm install` prerequisite chain for a designer audience.
+  - Blocked on a payload layer that serves 254 embedded files and 42 schemas without `readdir` over real directories, keeping `treeIntegrity` behaviour identical, plus an audit of 28 modules whose CLI main-guard collapses under bundling. Spike recorded in `DECISIONS.md`.
+
 ## P1 — Agentic Skill Composition
 
 - [x] Skill contract v2
@@ -435,8 +449,11 @@ are the next recommended milestones.
 
 ## P3 — Ecosystem and Governance
 
+- [x] Claude Code discovery adapter
+  - Generated `CLAUDE.md`, `.claude/skills/` links, `allowed-tools`, and the `.silver/bin/silver` launcher. See `docs/agent-host-compatibility.md`.
+
 - [ ] Additional agent wrappers
-  - Add and fixture-test discovery wrappers for Codex, Claude, and other supported agents without duplicating skill logic.
+  - Add and fixture-test discovery wrappers for Codex and other supported agents following the Claude Code adapter pattern, without duplicating skill logic.
 
 - [ ] Organization skill/check packs
   - Curated bundles with stricter policies and approved providers.

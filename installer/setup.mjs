@@ -13,9 +13,19 @@ import {
   resolveInside,
   treeIntegrity,
   writeNewFile,
+  writeUtf8,
 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
+import {
+  CLAUDE_MEMORY_PATH,
+  LAUNCHER_CMD_PATH,
+  LAUNCHER_PATH,
+  mergeClaudeMemory,
+  renderClaudeBlock,
+  writeClaudeSkillLinks,
+  writeLauncher,
+} from "./agent-adapters.mjs";
 import {
   FRAMEWORK_VERSION,
   LOCAL_SOURCE_REFERENCE,
@@ -54,6 +64,12 @@ const allowedBlankEntries = new Set([
   "LICENSE",
   "LICENSE.md",
   "README.md",
+  // Agent instruction files and host configuration do not make a folder an
+  // existing codebase, and a Silver workspace adds its own.
+  ".claude",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "CLAUDE.local.md",
 ]);
 export const SEEDED_TEMPLATES = [
   "design/brand.md",
@@ -256,6 +272,7 @@ async function renderLock({
   sourceReference,
   indexContent,
   agentPointerContent,
+  claudeMemoryContent,
   payloadRoot,
 }) {
   const packages = (await sourcePackages({ version, payloadRoot })).map(
@@ -284,6 +301,12 @@ async function renderLock({
         owner: "framework-agent-pointer",
         ownership: "generated",
         base_integrity: integrity(agentPointerContent),
+      },
+      {
+        path: CLAUDE_MEMORY_PATH,
+        owner: "framework-agent-adapter",
+        ownership: "generated",
+        base_integrity: integrity(claudeMemoryContent),
       },
     ],
   });
@@ -457,6 +480,30 @@ export async function setupWorkspace(options = {}) {
     created.push("AGENTS.md");
   }
 
+  // Claude Code reads CLAUDE.md rather than AGENTS.md and discovers skills only
+  // under .claude/skills, so a workspace that stops at AGENTS.md and .skills/ is
+  // invisible to it. These adapters are generated, never canonical.
+  const claudeBlock = renderClaudeBlock(INITIAL_SKILL_IDS);
+  const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
+  const existingClaudeMemory = (await exists(claudeMemoryPath))
+    ? await readUtf8(claudeMemoryPath)
+    : undefined;
+  const claudeMemoryContent = mergeClaudeMemory(existingClaudeMemory, claudeBlock);
+  if (existingClaudeMemory === claudeMemoryContent) {
+    preserved.push(CLAUDE_MEMORY_PATH);
+  } else {
+    await writeUtf8(claudeMemoryPath, claudeMemoryContent);
+    (existingClaudeMemory === undefined ? created : preserved).push(
+      CLAUDE_MEMORY_PATH,
+    );
+  }
+  const { mode: skillLinkMode, linked } = await writeClaudeSkillLinks(
+    root,
+    INITIAL_SKILL_IDS,
+  );
+  created.push(...linked);
+  created.push(...(await writeLauncher(root)));
+
   const indexPath = path.join(root, "design", "INDEX.md");
   const expectedIndexContent = renderIndex(manifest, INITIAL_SKILL_IDS);
   let indexContent;
@@ -477,6 +524,7 @@ export async function setupWorkspace(options = {}) {
       sourceReference,
       indexContent,
       agentPointerContent,
+      claudeMemoryContent,
       payloadRoot,
     });
     await writeNewFile(lockPath, lockContent);
@@ -489,6 +537,7 @@ export async function setupWorkspace(options = {}) {
     workspace: { id: workspaceId, name: workspaceName },
     created,
     preserved,
+    agentAdapters: { claudeSkillLinks: skillLinkMode },
     recommendedNextActions: [
       "Review design/product.md and design/brand.md.",
       "Create or refine a portable flow before prototyping when useful.",

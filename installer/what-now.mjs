@@ -6,17 +6,18 @@ import { parse } from "yaml";
 import { invokeSkill } from "../framework/runtime/invoke-skill.mjs";
 import { inspectWorkspace } from "../framework/skills/what-now/scripts/analyze-workspace.mjs";
 
-function invocationId(date) {
+function invocationId(prefix, date) {
   const timestamp = date
     .toISOString()
     .replace(/[-:.]/g, "")
     .toLowerCase();
-  return `what-now-after-setup-${timestamp}`;
+  return `${prefix}-${timestamp}`;
 }
 
-export async function runWhatNowAfterSetup({
+export async function runWhatNow({
   root,
   now = new Date(),
+  invocationPrefix = "what-now",
 } = {}) {
   const workspaceRoot = path.resolve(root);
   const skillDirectory = path.join(workspaceRoot, ".skills", "what-now");
@@ -37,7 +38,7 @@ export async function runWhatNowAfterSetup({
     completedAt: timestamp,
     request: {
       schema: "silver/skill-invocation/v2",
-      invocation_id: invocationId(observedAt),
+      invocation_id: invocationId(invocationPrefix, observedAt),
       skill: { id: contract.id, version: contract.version },
       started_at: timestamp,
       inputs: [],

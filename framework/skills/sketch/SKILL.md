@@ -1,6 +1,7 @@
 ---
 name: sketch
 description: Generate inexpensive alternatives from a brief, concept, specification, flow, or existing screen while recording fidelity separately from artifact type and honoring the constraint profile. Use for quick screen or component exploration before prototyping.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Sketch alternatives
@@ -12,7 +13,16 @@ description: Generate inexpensive alternatives from a brief, concept, specificat
 3. Render locally with semantic styles or the declared constrained subset.
 4. Record tradeoffs and request lightweight human review.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold sketch .
+.silver/bin/silver invoke sketch <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

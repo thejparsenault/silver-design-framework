@@ -1,6 +1,7 @@
 ---
 name: voice
 description: Define or revise product tone, voice, terminology, and context-specific content guidance. Use for voice principles, terminology, message examples, error tone, or canonical voice guidance.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Define voice
@@ -12,7 +13,16 @@ description: Define or revise product tone, voice, terminology, and context-spec
 3. Establish preferred terms, avoided terms, and representative examples.
 4. Request approval before changing voice.md.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold voice .
+.silver/bin/silver invoke voice <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

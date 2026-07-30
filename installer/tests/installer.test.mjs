@@ -94,8 +94,19 @@ async function temporaryPayload(t) {
   return root;
 }
 
+// Agent-host adapters are excluded from byte comparison: the launcher embeds an
+// absolute path to the running installation, and .claude/skills is a symlink on
+// POSIX and a copy on Windows. Both are asserted by shape instead.
+function isMachineSpecificAdapter(relativePath) {
+  const posixPath = relativePath.split(path.sep).join("/");
+  return (
+    posixPath.startsWith(".silver/bin/") || posixPath.startsWith(".claude/")
+  );
+}
+
 function comparableSnapshot(snapshot) {
   return [...snapshot.entries()]
+    .filter(([relativePath]) => !isMachineSpecificAdapter(relativePath))
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([relativePath, content]) => [relativePath, content.toString("utf8")]);
 }
@@ -131,7 +142,7 @@ test("setup produces the expected blank workspace", async (t) => {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.5.0",
+    version: "0.6.0",
     sourceReference: "framework-development-fixture",
   });
 
@@ -310,7 +321,7 @@ test("update replaces clean managed skills and only proposes copied-owned change
   await writeFile(
     sourceSkillContractPath,
     (await readFile(sourceSkillContractPath, "utf8")).replace(
-      "version: 0.5.0",
+      "version: 0.6.0",
       "version: 0.2.1",
     ),
   );

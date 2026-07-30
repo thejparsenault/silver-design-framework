@@ -1,6 +1,7 @@
 ---
 name: map
 description: Create or revise evidence-linked journey maps, service blueprints, experience maps, and ecosystem maps as portable structured artifacts with local or external views.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Map an experience or service
@@ -12,6 +13,17 @@ description: Create or revise evidence-linked journey maps, service blueprints, 
 
 Journey maps require actor actions and touchpoints. Service blueprints require
 actor actions, frontstage, backstage, support, and system lanes.
+
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold map .
+.silver/bin/silver invoke map <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

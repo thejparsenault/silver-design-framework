@@ -7,7 +7,7 @@ import test from "node:test";
 import { parse, stringify } from "yaml";
 
 import { doctorWorkspace } from "../doctor.mjs";
-import { snapshotFiles } from "../lib/files.mjs";
+import { exists, snapshotFiles } from "../lib/files.mjs";
 import { migrateWorkspace } from "../migrate.mjs";
 import { setupWorkspace } from "../setup.mjs";
 
@@ -138,7 +138,7 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.5.0");
+  assert.equal(lock.framework.version, "0.6.0");
   assert.equal(lock.packages.length, 28);
   assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
@@ -181,7 +181,7 @@ test("migration stops before all writes when a managed legacy skill was edited",
   assert.deepEqual(comparable(await snapshotFiles(root)), before);
 });
 
-test("0.4-to-0.5 migration preserves an edited legacy policy as inactive and bootstraps provenance", async (t) => {
+test("0.4-to-current migration preserves an edited legacy policy as inactive and bootstraps provenance", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-04-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -217,7 +217,7 @@ test("0.4-to-0.5 migration preserves an edited legacy policy as inactive and boo
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.4.0");
-  assert.equal(preview.toVersion, "0.5.0");
+  assert.equal(preview.toVersion, "0.6.0");
   assert.ok(
     preview.changes.some(({ action }) => action === "bootstrap-provenance"),
   );
@@ -247,7 +247,7 @@ test("0.4-to-0.5 migration preserves an edited legacy policy as inactive and boo
   );
 });
 
-test("0.3 workspace previews and applies the 0.5 installation idempotently", async (t) => {
+test("0.3 workspace previews and applies the current installation idempotently", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-03-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -301,7 +301,7 @@ test("0.3 workspace previews and applies the 0.5 installation idempotently", asy
   assert.equal(repeated.applied, false);
 });
 
-test("0.2 v2 workspace previews, applies, and reruns the 0.5 migration idempotently", async (t) => {
+test("0.2 v2 workspace previews, applies, and reruns the current migration idempotently", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({
@@ -341,7 +341,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.5 migration idempoten
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.5.0");
+  assert.equal(migrated.framework.version, "0.6.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma", "silver-portable"],
@@ -353,7 +353,7 @@ test("0.2 v2 workspace previews, applies, and reruns the 0.5 migration idempoten
   assert.equal(repeated.applied, false);
 });
 
-test("0.2-to-0.5 migration surfaces edited managed packages without writing", async (t) => {
+test("0.2-to-current migration surfaces edited managed packages without writing", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-v2-conflict-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await setupWorkspace({ root, name: "Edited 0.2", id: "edited-02", date: "2026-07-24" });
@@ -371,4 +371,58 @@ test("0.2-to-0.5 migration surfaces edited managed packages without writing", as
   assert.equal(result.applied, false);
   assert.ok(result.conflicts.some(({ package: id }) => id === "brand"));
   assert.deepEqual(comparable(await snapshotFiles(root)), before);
+});
+
+test("0.5-to-0.6 migration adds the agent-host adapters without touching owned work", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-06-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Legacy Product",
+    id: "legacy-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  // Rewind the workspace to the 0.5 shape: no adapters, older lock version.
+  await rm(path.join(root, "CLAUDE.md"), { force: true });
+  await rm(path.join(root, ".claude"), { force: true, recursive: true });
+  await rm(path.join(root, ".silver", "bin"), { force: true, recursive: true });
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.5.0";
+  lock.managed_files = lock.managed_files.filter(
+    ({ path: managedPath }) => managedPath !== "CLAUDE.md",
+  );
+  await writeFile(lockPath, stringify(lock), "utf8");
+  const ownedNote = "Project-owned brand note.\n";
+  const brandPath = path.join(root, "design", "brand.md");
+  await writeFile(brandPath, `${await readFile(brandPath, "utf8")}${ownedNote}`);
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.fromVersion, "0.5.0");
+  assert.equal(preview.toVersion, "0.6.0");
+  assert.equal(preview.applied, false);
+  for (const expected of ["CLAUDE.md", ".claude/skills", ".silver/bin/silver"]) {
+    assert.ok(
+      preview.changes.some(({ path: changed }) => changed === expected),
+      `preview should plan ${expected}`,
+    );
+  }
+  assert.equal(await exists(path.join(root, "CLAUDE.md")), false);
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.applied, true);
+  assert.match(
+    await readFile(path.join(root, "CLAUDE.md"), "utf8"),
+    /^@AGENTS\.md$/m,
+  );
+  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 21);
+  assert.ok(await exists(path.join(root, ".silver", "bin", "silver")));
+  assert.ok(
+    (await readFile(brandPath, "utf8")).endsWith(ownedNote),
+    "project-owned edits survive the migration",
+  );
+
+  assert.equal((await migrateWorkspace({ root })).needed, false);
 });

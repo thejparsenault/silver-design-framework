@@ -27,6 +27,15 @@ import {
   FRAMEWORK_VERSION,
   LOCAL_SOURCE_REFERENCE,
 } from "./version.mjs";
+import {
+  CLAUDE_MEMORY_PATH,
+  CLAUDE_SKILLS_DIRECTORY,
+  LAUNCHER_PATH,
+  mergeClaudeMemory,
+  renderClaudeBlock,
+  writeClaudeSkillLinks,
+  writeLauncher,
+} from "./agent-adapters.mjs";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
@@ -396,6 +405,11 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
   changes.push({ action: "upgrade-lock", path: ".silver/lock.yaml" });
   changes.push({ action: "regenerate", path: "design/INDEX.md" });
   changes.push({ action: "regenerate", path: "AGENTS.md" });
+  // Agent-host adapters added in 0.6. CLAUDE.md merges rather than overwrites,
+  // so a project-owned file keeps its content.
+  changes.push({ action: "regenerate", path: CLAUDE_MEMORY_PATH });
+  changes.push({ action: "link-skills", path: CLAUDE_SKILLS_DIRECTORY });
+  changes.push({ action: "regenerate", path: LAUNCHER_PATH });
 
   return {
     packages,
@@ -509,6 +523,15 @@ export async function migrateWorkspace(options = {}) {
   const agentContent = renderAgentPointer(INITIAL_SKILL_IDS);
   await writeUtf8(path.join(root, "design", "INDEX.md"), indexContent);
   await writeUtf8(path.join(root, "AGENTS.md"), agentContent);
+
+  const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
+  const claudeMemoryContent = mergeClaudeMemory(
+    (await exists(claudeMemoryPath)) ? await readUtf8(claudeMemoryPath) : undefined,
+    renderClaudeBlock(INITIAL_SKILL_IDS),
+  );
+  await writeUtf8(claudeMemoryPath, claudeMemoryContent);
+  await writeClaudeSkillLinks(root, INITIAL_SKILL_IDS);
+  await writeLauncher(root);
   const nextLock = {
     schema: "silver/lock/v2",
     framework: {
@@ -528,6 +551,12 @@ export async function migrateWorkspace(options = {}) {
         owner: "framework-agent-pointer",
         ownership: "generated",
         base_integrity: integrity(agentContent),
+      },
+      {
+        path: CLAUDE_MEMORY_PATH,
+        owner: "framework-agent-adapter",
+        ownership: "generated",
+        base_integrity: integrity(claudeMemoryContent),
       },
     ],
   };

@@ -1,6 +1,7 @@
 ---
 name: prototype
 description: Create or revise a testable simulation for a declared question, constrained by semantic styles by default and pinned to accepted inputs. Use for interaction prototypes, feedback-driven refinement, or explicit partial and suspended experiments.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Build prototype
@@ -12,7 +13,16 @@ description: Create or revise a testable simulation for a declared question, con
 3. Implement only the behavior and states needed to answer the question.
 4. Revise only from explicitly accepted findings and rerun applicable checks.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold prototype .
+.silver/bin/silver invoke prototype <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

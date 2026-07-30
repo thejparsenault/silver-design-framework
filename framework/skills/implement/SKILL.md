@@ -1,6 +1,7 @@
 ---
 name: implement
 description: Assess production readiness and rebuild accepted design intent into the local production recipe under production policy. Use when accepted specifications, flows, component proposals, or evaluation findings are ready for reviewable production code.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Implement design
@@ -14,7 +15,16 @@ description: Assess production readiness and rebuild accepted design intent into
    handoff. Default the proposed engineering handoff to a draft branch or pull
    request when the repository host supports it.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold implement .
+.silver/bin/silver invoke implement <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

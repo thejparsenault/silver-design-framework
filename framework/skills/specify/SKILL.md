@@ -1,6 +1,7 @@
 ---
 name: specify
 description: Create or revise a living design specification covering outcomes, hypothesis, scope, requirements, states, edge cases, accessibility, success criteria, linked revisions, decisions, and open questions. Use after concept selection or whenever durable design intent is needed.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Specify design
@@ -12,7 +13,16 @@ description: Create or revise a living design specification covering outcomes, h
 3. Declare accessibility expectations and success criteria before evaluating output.
 4. Preserve open questions and revise through explicit new revisions.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold specify .
+.silver/bin/silver invoke specify <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 

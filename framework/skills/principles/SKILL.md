@@ -1,6 +1,7 @@
 ---
 name: principles
 description: Create or maintain concrete design decision principles with examples and usable decision tests. Use when a team needs design principles, tradeoff rules, examples, counterexamples, or canonical decision guidance.
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Define principles
@@ -12,7 +13,16 @@ description: Create or maintain concrete design decision principles with example
 3. Add examples and counterexamples that expose its boundary.
 4. Request approval before changing canonical principles.
 
-Run the guarded file operation with `node scripts/invoke.mjs <request.json>` when durable outputs are ready. The request must pin inputs and pass the skill's effect, guardrail, and output checks.
+Run the guarded file operation through the CLI when durable outputs are ready:
+
+```sh
+.silver/bin/silver invoke --scaffold principles .
+.silver/bin/silver invoke principles <request.json> .
+```
+
+The scaffold prefills timestamps, provenance, pinned context, required checks, and
+`expected_integrity`. Replace every `silver-scaffold-placeholder` before invoking;
+the CLI refuses a request that still contains one.
 
 ## Done
 
