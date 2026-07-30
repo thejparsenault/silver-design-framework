@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: evaluate
-version: 0.6.0
+version: 0.6.1
 summary: Evaluate a design and produce sanitized product findings.
 context_budget: medium
 inputs:

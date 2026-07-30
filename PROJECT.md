@@ -59,8 +59,12 @@ build
 
 ## Latest Release
 
-Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is complete. It responds
-to the audit in `docs/silver-0.5-audit.md`.
+Silver `0.6.1` is the current release. It adds npm as the primary distribution
+channel with no behaviour change; `docs/release-notes/v0.6.1.md` records why the
+version was bumped rather than republishing `0.6.0`.
+
+Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is the substantive
+release. It responds to the audit in `docs/silver-0.5-audit.md`.
 
 The release makes an installed workspace able to run its own skills — guarded
 invocation now routes through `silver invoke`, with `silver invoke --scaffold`

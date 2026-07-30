@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.6.0";
+const expectedVersion = "0.6.1";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {

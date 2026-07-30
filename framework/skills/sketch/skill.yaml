@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: sketch
-version: 0.6.0
+version: 0.6.1
 summary: Create inexpensive, constraint-aware design alternatives.
 context_budget: small
 inputs:

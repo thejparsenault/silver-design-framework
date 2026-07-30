@@ -67,7 +67,7 @@ Open your product folder in a file-capable chat agent and paste this:
 >
 > using this if `silver` is not on my PATH:
 >
->     npx --yes silver-design-framework@0.6.0 setup inspect . --json
+>     npx --yes silver-design-framework@0.6.1 setup inspect . --json
 >
 > Do not run `npx silver`; that is an unrelated package. Show me the recommended
 > repository topology, its reasons, and every unresolved question. Ask me those
@@ -102,7 +102,7 @@ If your network cannot reach the npm registry, every release is also attached to
 its GitHub release, and npm accepts a remote tarball as a package spec:
 
 ```sh
-npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.1/silver-design-framework-0.6.1.tgz setup inspect . --json
 ```
 
 ### If you are installing from source
@@ -411,7 +411,7 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is validated for guided
+Silver `0.6.1`, **Agent Hosts and Guarded Invocation**, is validated for guided
 setup, integrated and separate repository topology, My Practice, linked local
 or Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
 discovery, CLI-routed guarded invocation, and reviewable 0.5-to-0.6 migration.

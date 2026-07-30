@@ -233,7 +233,7 @@ References:
 The package is publish-ready. What remains is a scope decision and the publish
 itself, which is not automated because it needs an npm account.
 
-Verified as of `0.6.0`:
+Verified as of `0.6.1`:
 
 - `npm pack` produces a 1,073-file archive that installs fully offline and
   passes `npm run test:package`.
@@ -259,13 +259,13 @@ $ npx --yes @11ty/eleventy@3.0.0 --version
 3.0.0
 ```
 
-Silver declares exactly one bin, `silver`, so `npx silver-design-framework@0.6.0
+Silver declares exactly one bin, `silver`, so `npx silver-design-framework@0.6.1
 setup inspect . --json` resolves to it. This cannot be verified against the
 registry before publishing, so confirm it immediately after the first publish.
 The unambiguous form always works and is the safe fallback for documentation:
 
 ```sh
-npx --yes --package silver-design-framework@0.6.0 silver setup inspect . --json
+npx --yes --package silver-design-framework@0.6.1 silver setup inspect . --json
 ```
 
 **Never document `npx silver`.** An unrelated `silver` package already exists on
@@ -304,7 +304,7 @@ So this works anonymously, provided the repository is public so the asset is
 anonymously downloadable:
 
 ```sh
-npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.1/silver-design-framework-0.6.1.tgz setup inspect . --json
 ```
 
 Release assets on a **private** repository require authentication to download,
@@ -384,8 +384,8 @@ and the fallback import in every skill shim.
 6. **Verify immediately:**
 
    ```sh
-   npx --yes silver-design-framework@0.6.0 version          # expect 0.6.0
-   npx --yes silver-design-framework@0.6.0 setup inspect . --json
+   npx --yes silver-design-framework@0.6.1 version          # expect 0.6.1
+   npx --yes silver-design-framework@0.6.1 setup inspect . --json
    ```
 
 7. **Verify the npx launcher.** Until publication, a workspace installed from a

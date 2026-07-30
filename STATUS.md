@@ -2,6 +2,12 @@
 
 ## Current Focus
 
+Silver `0.6.1` is built and gate-verified, ready to publish to npm and GitHub
+from identical bytes. `0.6.0` shipped as an immutable GitHub release before the
+npm channel existed, so its artifact pins the release tarball URL in the
+launchers it generates; that artifact stays valid and the version was bumped
+rather than republished.
+
 Silver `0.6.0`, Agent Hosts and Guarded Invocation, is implemented and validated
 from source and as an exact offline archive. An installed workspace can now run
 its own skills: guarded invocation routes through `silver invoke`, and
@@ -15,6 +21,25 @@ support depends on, external-source synchronization, and deep existing-codebase
 adoption.
 
 ## Recent Progress
+
+- 2026-07-30: Silver 0.6.1 npm channel
+  - Added npm as the primary distribution channel with no behaviour change. The
+    generated launcher pins the published package spec rather than a release
+    tarball URL, and `installer/version.mjs` derives the spec, tag, artifact
+    name, and download URL from one version constant so the channels cannot
+    drift.
+  - Bumped rather than republished: `0.6.0` was already an immutable GitHub
+    release, and publishing different bytes under that version would have left
+    one version naming two artifacts. Verified the published `0.6.0` asset still
+    installs anonymously and generates a working launcher.
+  - Added `npm run release`, which runs both gates, writes the artifact and its
+    checksum to `dist/`, and prints publish and verification commands for both
+    channels.
+  - Fixed two bugs found by `npm publish --dry-run`: the packaged smoke relied
+    on `npm install --prefix` creating its consumer directory, which does not
+    hold nested inside an npm lifecycle script, and `prepublishOnly` nested an
+    `npm pack` inside an `npm publish`.
+  - Added `0.6.0`-to-current migration coverage; `npm run build` passes 91 tests.
 
 - 2026-07-30: Silver 0.6 Agent Hosts and Guarded Invocation
   - Audited 0.5 against Claude Code and Claude Cowork; recorded findings and
@@ -39,7 +64,7 @@ adoption.
     main-guards. Deferred with evidence in `DECISIONS.md`.
   - Specified Claude Cowork support rather than assuming it in
     `docs/agent-host-compatibility.md`; `npm run build` passes 86 source tests
-    and `npm run test:package` passes for the exact `0.6.0` archive.
+    and `npm run test:package` passes for the exact release archive.
 
 - 2026-07-30: Silver 0.5 Traceable Practice and Context
   - Added revisioned contracts and runtime support for setup plans, My Practice,
