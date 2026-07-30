@@ -271,6 +271,97 @@ npx --yes --package silver-design-framework@0.6.0 silver setup inspect . --json
 **Never document `npx silver`.** An unrelated `silver` package already exists on
 npm at version 1.0.0, so that command runs a stranger's code.
 
+### Choosing a registry
+
+The choice is dictated by what a consumer must do before `npx` works, not by
+where the code lives.
+
+| Channel | Consumer needs | Name required | Repo visibility |
+| --- | --- | --- | --- |
+| npmjs.com, public | nothing | any, `silver-design-framework` is free | any |
+| GitHub Release asset | nothing | any | **public** |
+| GitHub Packages | a GitHub PAT and an `.npmrc` | `@OWNER/NAME` | any |
+
+**GitHub Packages requires every consumer to authenticate, including for public
+packages.** GitHub's own documentation states you need an access token to
+"publish, install, and delete private, internal, and public packages", and the
+npm registry there only accepts scoped names. Publishing Silver's CLI to GitHub
+Packages means a designer must create a GitHub account, mint a `read:packages`
+token, and write `~/.npmrc` before `npx` will run. That is worse than the
+current clone-from-source path and defeats the purpose of publishing. Use it
+only if every intended user already has GitHub access to this repository.
+
+**A GitHub Release asset needs no npm account at all.** npm accepts a remote
+tarball as a package spec and resolves its single bin, verified directly:
+
+```sh
+$ npx --yes https://registry.npmjs.org/cowsay/-/cowsay-1.6.0.tgz "url spec works"
+ ________________
+< url spec works >
+```
+
+So this works anonymously, provided the repository is public so the asset is
+anonymously downloadable:
+
+```sh
+npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+```
+
+Release assets on a **private** repository require authentication to download,
+so this option depends on making the repository public.
+
+### Where a token goes
+
+Never in a committed file. `.npmrc` is gitignored for this reason.
+
+For a laptop, put credentials in `~/.npmrc` and restrict it with
+`chmod 600 ~/.npmrc`:
+
+```ini
+@OWNER:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+
+To keep a project-level `.npmrc` that is safe to commit, reference an
+environment variable instead of the secret. npm expands `${VAR}` at read time:
+
+```ini
+@OWNER:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+Export `NODE_AUTH_TOKEN` from a password manager rather than typing it into a
+shell that records history.
+
+In GitHub Actions no PAT is needed; the automatic `GITHUB_TOKEN` can publish to
+GitHub Packages for its own repository:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+    registry-url: https://npm.pkg.github.com
+- run: npm publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+For npmjs.com, use a granular automation token in
+`secrets.NPM_TOKEN` with `registry-url: https://registry.npmjs.org`.
+
+Publishing to GitHub Packages also requires a scoped name and a matching
+`publishConfig` in `package.json`:
+
+```json
+{
+  "name": "@OWNER/silver-design-framework",
+  "publishConfig": { "registry": "https://npm.pkg.github.com" }
+}
+```
+
+That rename touches the 82 files listed below, including the workspace launcher
+and the fallback import in every skill shim.
+
 ### Before the first publish
 
 1. **Keep the name `silver-design-framework`.** It is unclaimed on npm, and 82

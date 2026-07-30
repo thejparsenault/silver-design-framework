@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Registry credentials. Never commit a token; see docs/installer-distribution.md
+# for the env-var indirection that is safe to commit.
+.npmrc
+
 # macOS
 .DS_Store
 
