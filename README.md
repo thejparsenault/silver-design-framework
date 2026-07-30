@@ -56,34 +56,77 @@ repository for now.
 
 ## Quick start
 
-Clone Silver and install its small runtime dependency set:
+Open your product folder in a file-capable chat agent and paste this:
 
-```sh
-git clone https://github.com/thejparsenault/silver-design-framework.git
-cd silver-design-framework
-npm install
-```
+> Install the Silver Design Framework in this folder.
+>
+> First check that Node.js 20.11 or newer is available by running
+> `node --version`. If it is missing or older, stop and tell me how to install
+> it for my operating system.
+>
+> Then run, from this folder:
+>
+>     silver setup inspect . --json
+>
+> using `npx --yes silver-design-framework@0.6.0 setup inspect . --json` if
+> `silver` is not on my PATH. Show me the recommended repository topology, its
+> reasons, and every unresolved question. Ask me those questions. Do not apply
+> anything yet.
+>
+> Once I have answered, apply exactly what I approved by piping inspect into
+> apply, so no plan file is written into this folder:
+>
+>     silver setup inspect . --answers '{"team_shape":"…","topology":"…"}' --json | silver setup apply -
+>
+> Then run `silver doctor .` and summarize the result.
 
-Then ask your agent:
+The agent reads its own instructions from `silver --help`, which documents every
+answer key.
 
-> Install Silver for this product. Ask me only for decisions you cannot infer
-> safely, recommend whether design should live in this repository or a separate
-> repository, and show me the setup plan before applying it.
+Two rules the agent must follow, both enforced by the CLI:
 
-Underneath the conversation, the agent uses:
-
-```sh
-node /path/to/silver-design-framework/bin/silver.mjs setup inspect \
-  /path/to/product --answers /tmp/silver-answers.json --json
-
-node /path/to/silver-design-framework/bin/silver.mjs setup apply \
-  /tmp/silver-plan.json --json
-```
+- `team_shape` and `topology` have no safe default. Setup refuses to apply while
+  either is unanswered, so a human confirms the topology rather than the agent
+  guessing.
+- A plan file written inside the folder being inspected changes that folder and
+  invalidates itself. Pipe into `setup apply -`, or keep the plan elsewhere.
 
 The plan recommends a separate design repository for multiple codebases,
 separate discipline ownership, or independent design history. It recommends
 integration for a solo or small shared team with one codebase and lifecycle.
 The recommendation is never applied until the plan is reviewed.
+
+### If you are installing from source
+
+Silver is not published yet, so today you clone it and call it by path:
+
+```sh
+git clone https://github.com/thejparsenault/silver-design-framework.git
+cd silver-design-framework && npm install
+node "$PWD/bin/silver.mjs" setup inspect /path/to/product --json
+```
+
+After setup, the workspace has its own launcher and you can drop the long path:
+
+```sh
+cd /path/to/product
+.silver/bin/silver doctor .
+```
+
+### Do I need to install Node?
+
+Yes, until the published package or a standalone binary lands. Silver needs
+Node.js 20.11 or newer and tells you so rather than failing obscurely:
+
+```text
+$ silver setup .
+Silver needs Node.js 20.11 or newer; this is v18.19.0.
+
+Install a supported Node.js, then run this command again:
+  macOS with Homebrew:  brew install node
+  macOS/Windows:        download the LTS installer from https://nodejs.org
+  Linux with a manager: https://nodejs.org/en/download/package-manager
+```
 
 Guided setup also creates the visible, tool-neutral
 `~/Silver/My Practice` workspace. It has readable methods, playbooks, rubrics,

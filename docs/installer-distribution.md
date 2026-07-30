@@ -227,3 +227,45 @@ References:
 - [Immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
 - [GitHub artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
 - [npm packages and modules](https://docs.npmjs.com/packages-and-modules/)
+
+## Publish Checklist
+
+The package is publish-ready. What remains is a scope decision and the publish
+itself, which is not automated because it needs an npm account.
+
+Verified as of `0.6.0`:
+
+- `npm pack` produces a 1,073-file archive that installs fully offline and
+  passes `npm run test:package`.
+- `npx --package <tarball> silver setup inspect . --json` works from a directory
+  with no Silver checkout, and the full
+  `setup inspect … --json | setup apply -` pipeline installs a working
+  workspace.
+- `bin/silver.mjs` refuses Node older than 20.11 with install instructions
+  rather than a syntax error.
+- The generated workspace launcher detects an ephemeral npx install and resolves
+  through `npx --yes silver-design-framework@<version>` instead of an absolute
+  path into the npx cache, which npm garbage-collects.
+
+Before the first publish:
+
+1. **Choose the package name.** The launcher, the README, and
+   `installer/agent-adapters.mjs` all reference `silver-design-framework`. A
+   scoped name such as `@scope/silver` requires updating
+   `launcherCommand()` in `agent-adapters.mjs`, the `package.json` `name`, the
+   fallback import specifier in every `framework/skills/*/scripts/invoke.mjs`,
+   and the README. Grep for `silver-design-framework` before deciding.
+2. **Decide public or private.** A private scope means `npx` users need
+   `npm login`, which removes most of the ergonomic benefit for a designer
+   audience. Prefer public for the CLI even if the design repository stays
+   private.
+3. **Remove `"private": true`** from `package.json`. It is currently set and
+   will block publishing.
+4. **Publish with provenance** from CI rather than a laptop:
+   `npm publish --access public --provenance`.
+5. **Verify the npx launcher end to end.** Until the package is published, a
+   workspace installed from a local tarball generates a launcher that resolves
+   through npx and cannot find the package. This resolves on publication; run
+   `npx --yes <name>@<version> version` once to confirm.
+6. **Cut the matching immutable GitHub Release** so the npm artifact and the
+   tagged source agree.

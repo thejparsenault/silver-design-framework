@@ -17,8 +17,8 @@ import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
 const usage = `The Silver Design Framework
 
 Usage:
-  silver setup inspect [directory] [--answers <answers.json>] [--json]
-  silver setup apply <plan.json> [--allow-unresolved] [--json]
+  silver setup inspect [directory] [--answers <json-or-file>] [--json]
+  silver setup apply <plan.json | -> [--allow-unresolved] [--json]
   silver setup [directory] [--name <name>] [--id <id>] [--json]
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
@@ -41,7 +41,56 @@ Commands:
   update   Update unmodified framework-managed packages; report owned-package proposals.
   migrate  Preview or explicitly apply a supported workspace migration.
   version  Print the local framework development version.
+
+Installing into a product:
+
+  1. Inspect. This is read-only; show the recommendation and the unresolved
+     questions to the person installing Silver.
+
+     silver setup inspect . --json
+
+  2. Apply, once they have answered. Piping keeps the plan out of the inspected
+     directory:
+
+     silver setup inspect . --answers '{"team_shape":"solo","topology":"integrated"}' --json \\
+       | silver setup apply -
+
+  --answers takes inline JSON or a file path. If you write the plan to a file
+  instead of piping, keep it outside the directory being inspected; a plan
+  written inside it changes that directory and invalidates itself.
+
+  Answer keys:
+    team_shape                  Required to apply. "solo" | "shared" | "split".
+    topology                    Required to apply. "integrated" | "separate".
+                                Confirms or overrides the recommendation, so a
+                                human answers it rather than the agent guessing.
+    name, id                    Workspace display name and slug.
+    separate_disciplines        true when design and engineering are owned apart.
+    independent_design_history  true when design needs its own review history.
+    codebases                   Paths to production codebases; more than one
+                                recommends a separate design repository.
+    design_workspace_path       Where a separate design workspace is created.
+    practice_root               Overrides ~/Silver/My Practice.
+    guidance, linked_sources    Pinned guidance and design-system sources.
+    design_contexts, tools      Extra contexts and configured tools.
+    create_github               true to record a proposed private repository;
+    github_repository           its name. Silver never creates it directly.
 `;
+
+async function readStdin(stream = process.stdin) {
+  if (stream.isTTY) {
+    throw new Error(
+      "setup apply - expects a plan on stdin. Pipe `silver setup inspect ... --json` into it.",
+    );
+  }
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  const text = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString(
+    "utf8",
+  );
+  if (text.trim() === "") throw new Error("setup apply - received an empty plan on stdin.");
+  return text;
+}
 
 function parseArguments(args) {
   const supportedFlags = new Set([
@@ -225,8 +274,19 @@ export async function runCli(
         stdout(flags.json ? JSON.stringify(result, null, 2) : JSON.stringify(result, null, 2));
         return 0;
       }
-      if (positionals.length !== 1) throw new Error("setup apply requires one plan JSON file.");
-      const plan = JSON.parse(await readFile(path.resolve(positionals[0]), "utf8"));
+      if (positionals.length !== 1) {
+        throw new Error(
+          "setup apply requires one plan JSON file, or - to read the plan from stdin.",
+        );
+      }
+      // Reading from stdin keeps the plan out of the inspected target. A plan
+      // file written inside the target changes its state integrity and
+      // invalidates itself, which an agent cannot escape by retrying.
+      const plan = JSON.parse(
+        positionals[0] === "-"
+          ? await readStdin()
+          : await readFile(path.resolve(positionals[0]), "utf8"),
+      );
       const result = await applySetupPlan({
         plan,
         allowUnresolved: Boolean(flags["allow-unresolved"]),

@@ -13,7 +13,7 @@ import {
   CLAUDE_MEMORY_PATH,
   LAUNCHER_PATH,
   claudeSkillLinkState,
-  launcherEntryPoint,
+  launcherResolution,
 } from "./agent-adapters.mjs";
 import {
   exists,
@@ -547,8 +547,9 @@ export async function doctorWorkspace(options = {}) {
       );
     }
 
-    const entryPoint = await launcherEntryPoint(root);
-    if (entryPoint === null) {
+    // An npx launcher resolves by version at run time and has no path to check.
+    const launcher = await launcherResolution(root);
+    if (launcher === null) {
       diagnostics.push(
         diagnostic(
           "warning",
@@ -557,12 +558,12 @@ export async function doctorWorkspace(options = {}) {
           LAUNCHER_PATH,
         ),
       );
-    } else if (!(await exists(entryPoint))) {
+    } else if (launcher.mode === "path" && !(await exists(launcher.entryPoint))) {
       diagnostics.push(
         diagnostic(
           "warning",
           "launcher-stale",
-          `.silver/bin/silver points at ${entryPoint}, which no longer exists; run \`silver repair\` from your Silver installation.`,
+          `.silver/bin/silver points at ${launcher.entryPoint}, which no longer exists; run \`silver repair\` from your Silver installation.`,
           LAUNCHER_PATH,
         ),
       );

@@ -177,3 +177,97 @@ test("a project-owned CLAUDE.md keeps its content", async (t) => {
     "repair must not duplicate the Silver block",
   );
 });
+
+test("setup apply reads a plan from stdin so no file lands in the target", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-stdin-"));
+  t.after(() => rm(root, { force: true, recursive: true }));
+  // A realistic existing product, which plain `silver setup` refuses.
+  await writeFile(path.join(root, "package.json"), "{}\n");
+
+  const answers = '{"team_shape":"solo","topology":"integrated"}';
+  const { stdout: plan } = await silver([
+    "setup",
+    "inspect",
+    root,
+    "--answers",
+    answers,
+    "--json",
+  ]);
+
+  // Writing that plan inside the target invalidates it: state integrity covers
+  // the whole directory, so the plan changes the thing it describes.
+  const insidePath = path.join(root, "silver-plan.json");
+  await writeFile(insidePath, plan);
+  const stale = await silver(["setup", "apply", insidePath, "--json"]).then(
+    () => null,
+    (error) => error,
+  );
+  assert.ok(stale, "a plan written inside the target must be rejected");
+  assert.match(stale.stderr, /stale because the inspected target changed/);
+  await rm(insidePath, { force: true });
+
+  // Piping avoids the trap entirely.
+  const applied = await new Promise((resolve, reject) => {
+    const child = execFile(
+      process.execPath,
+      [cli, "setup", "apply", "-", "--json"],
+      { maxBuffer: 10 * 1024 * 1024 },
+      (error, stdout) => (error ? reject(error) : resolve(stdout)),
+    );
+    child.stdin.end(plan);
+  });
+  assert.equal(JSON.parse(applied).schema, "silver/setup-application/v1");
+  assert.match(
+    await readFile(path.join(root, "CLAUDE.md"), "utf8"),
+    /^@AGENTS\.md$/m,
+  );
+  // The product's own files are untouched.
+  assert.equal(await readFile(path.join(root, "package.json"), "utf8"), "{}\n");
+});
+
+test("setup refuses to apply while topology is unanswered", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-unanswered-"));
+  t.after(() => rm(root, { force: true, recursive: true }));
+
+  const { stdout: plan } = await silver(["setup", "inspect", root, "--json"]);
+  const parsed = JSON.parse(plan);
+  assert.equal(parsed.unresolved_questions.length, 2);
+  assert.equal(parsed.topology.recommended, "integrated");
+
+  const refused = await new Promise((resolve) => {
+    const child = execFile(
+      process.execPath,
+      [cli, "setup", "apply", "-", "--json"],
+      (error, stdout, stderr) => resolve({ error, stderr }),
+    );
+    child.stdin.end(plan);
+  });
+  assert.ok(refused.error, "a human must confirm topology before apply");
+  assert.match(refused.stderr, /still has unresolved questions/);
+});
+
+test("the launcher adapts to how the CLI was delivered", async () => {
+  const { isEphemeralInstall, renderLauncher } = await import(
+    "../agent-adapters.mjs"
+  );
+  const stable = "/opt/silver/bin/silver.mjs";
+  assert.equal(isEphemeralInstall(stable), false);
+  assert.match(renderLauncher(stable), /^exec node "\/opt\/silver/m);
+
+  // npx unpacks into a cache npm garbage-collects, so an absolute path rots.
+  const ephemeral = path.join(
+    os.homedir(),
+    ".npm",
+    "_npx",
+    "4a91d615c2059338",
+    "node_modules",
+    "silver-design-framework",
+    "bin",
+    "silver.mjs",
+  );
+  assert.equal(isEphemeralInstall(ephemeral), true);
+  assert.match(
+    renderLauncher(ephemeral),
+    /^exec npx --yes silver-design-framework@\d+\.\d+\.\d+ "\$@"$/m,
+  );
+});
