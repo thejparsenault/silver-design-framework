@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { copyNewTree, exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
-import { FRAMEWORK_VERSION } from "./version.mjs";
+import { RELEASE_TARBALL_URL } from "./version.mjs";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,8 +31,10 @@ export function isEphemeralInstall(entryPoint = silverEntryPoint()) {
 }
 
 function launcherCommand(entryPoint, quote = (value) => `"${value}"`) {
+  // An npx install has no durable path, so pin the exact release artifact this
+  // version came from. It stays resolvable after npm prunes its cache.
   return isEphemeralInstall(entryPoint)
-    ? `npx --yes silver-design-framework@${FRAMEWORK_VERSION}`
+    ? `npx --yes ${RELEASE_TARBALL_URL}`
     : `node ${quote(entryPoint)}`;
 }
 

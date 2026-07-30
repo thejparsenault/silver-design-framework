@@ -266,8 +266,17 @@ test("the launcher adapts to how the CLI was delivered", async () => {
     "silver.mjs",
   );
   assert.equal(isEphemeralInstall(ephemeral), true);
+  const { RELEASE_TARBALL_URL } = await import("../version.mjs");
   assert.match(
     renderLauncher(ephemeral),
-    /^exec npx --yes silver-design-framework@\d+\.\d+\.\d+ "\$@"$/m,
+    new RegExp(
+      `^exec npx --yes ${RELEASE_TARBALL_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} "\\$@"$`,
+      "m",
+    ),
+  );
+  // The pinned artifact must be the one `npm run release` actually produces.
+  assert.match(
+    RELEASE_TARBALL_URL,
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\/v\d+\.\d+\.\d+\/silver-design-framework-\d+\.\d+\.\d+\.tgz$/,
   );
 });

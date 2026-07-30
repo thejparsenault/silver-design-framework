@@ -4,7 +4,7 @@ slug: silver-design-framework
 stage: exploring
 path: /Users/jp/Projects/exploring/silver-design-framework
 repo: https://github.com/thejparsenault/silver-design-framework
-visibility: private
+visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05

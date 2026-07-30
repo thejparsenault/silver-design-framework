@@ -45,14 +45,11 @@ but are not prerequisites for ordinary design work.
 
 ## Requirements
 
-For the current source-based installation you need:
+- Node.js 20.11 or newer;
+- an agent that can work with repository files and project instructions; and
+- Git, only if you install from source rather than from a release.
 
-- Git;
-- Node.js 20 or newer; and
-- an agent that can work with repository files and project instructions.
-
-Silver is not yet published as a public npm CLI. Install it from this
-repository for now.
+No npm account or registry token is needed.
 
 ## Quick start
 
@@ -68,11 +65,13 @@ Open your product folder in a file-capable chat agent and paste this:
 >
 >     silver setup inspect . --json
 >
-> using `npx --yes silver-design-framework@0.6.0 setup inspect . --json` if
-> `silver` is not on my PATH. Do not run `npx silver`; that is an unrelated
-> package. Show me the recommended repository topology, its
-> reasons, and every unresolved question. Ask me those questions. Do not apply
-> anything yet.
+> using this if `silver` is not on my PATH:
+>
+>     npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.0/silver-design-framework-0.6.0.tgz setup inspect . --json
+>
+> Do not run `npx silver`; that is an unrelated package. Show me the recommended
+> repository topology, its reasons, and every unresolved question. Ask me those
+> questions. Do not apply anything yet.
 >
 > Once I have answered, apply exactly what I approved by piping inspect into
 > apply, so no plan file is written into this folder:
@@ -97,9 +96,13 @@ separate discipline ownership, or independent design history. It recommends
 integration for a solo or small shared team with one codebase and lifecycle.
 The recommendation is never applied until the plan is reviewed.
 
+No npm account, login, or token is needed: npm accepts a remote tarball as a
+package spec, and the release asset on a public repository downloads
+anonymously.
+
 ### If you are installing from source
 
-Silver is not published yet, so today you clone it and call it by path:
+You can also clone it and call it by path:
 
 ```sh
 git clone https://github.com/thejparsenault/silver-design-framework.git
@@ -116,8 +119,8 @@ cd /path/to/product
 
 ### Do I need to install Node?
 
-Yes, until the published package or a standalone binary lands. Silver needs
-Node.js 20.11 or newer and tells you so rather than failing obscurely:
+Yes, until a standalone binary lands. Silver needs Node.js 20.11 or newer and
+tells you so rather than failing obscurely:
 
 ```text
 $ silver setup .

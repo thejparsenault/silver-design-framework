@@ -11,3 +11,6 @@ node_modules/
 # npm
 npm-debug.log*
 *.log
+
+# Release artifacts produced by npm run release
+dist/
