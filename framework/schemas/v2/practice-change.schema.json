@@ -21,7 +21,7 @@
         "additionalProperties": false,
         "required": ["section", "content"],
         "properties": {
-          "section": { "enum": ["tools", "process", "quality", "boundaries", "method"] },
+          "section": { "enum": ["tools", "process", "quality", "boundaries", "method", "studio-voice"] },
           "content": { "type": "string", "minLength": 1, "maxLength": 2000 }
         }
       }

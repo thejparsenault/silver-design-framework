@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: what-now
-version: 0.6.1
+version: 0.7.0
 summary: Recommend next actions from current workspace evidence.
 context_budget: small
 inputs: []
@@ -21,6 +21,13 @@ effects:
       - production/**
       - reference-system/**
       - .silver/**
+  # Analysis alone changes nothing. `--record` additionally persists the
+  # normalized result, which is a real write and is declared as one.
+  - capability: repository
+    actions:
+      - write
+    paths:
+      - .silver/results/skills/**
 guardrails:
   - authority-respected
   - effects-declared

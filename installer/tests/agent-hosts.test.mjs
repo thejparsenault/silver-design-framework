@@ -89,10 +89,9 @@ test("scaffolded requests round-trip through the guarded runtime", async (t) => 
     ({ reference }) => reference.path === "design/brand.md",
   );
   assert.match(brandOutput.expected_integrity, /^sha256:[a-f0-9]{64}$/);
-  assert.deepEqual(
-    scaffold.checks.map(({ id }) => id),
-    ["contract-integrity", "evidence-provenance"],
-  );
+  // The scaffold no longer prefills check statuses for the agent to hand-copy;
+  // the invocation runs them itself and records the real outcome.
+  assert.deepEqual(scaffold.checks, []);
 
   const requestPath = path.join(root, "request.json");
   await writeFile(requestPath, stdout);
@@ -116,6 +115,25 @@ test("scaffolded requests round-trip through the guarded runtime", async (t) => 
     await readFile(path.join(root, "design", "brand.md"), "utf8"),
     /Audience: teams adopting Silver\./,
   );
+
+  // The invocation ran its own required checks and left real evidence behind,
+  // so the recorded statuses describe work that actually happened.
+  const recorded = JSON.parse(
+    await readFile(
+      path.join(root, ".silver/results/skills", `${scaffold.invocation_id}.json`),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(
+    recorded.checks.map(({ id }) => id).sort(),
+    ["contract-integrity", "evidence-provenance"],
+  );
+  for (const check of recorded.checks) {
+    assert.ok(
+      await readFile(path.join(root, check.result_path), "utf8"),
+      `${check.id} must leave resolvable evidence`,
+    );
+  }
 });
 
 test("setup generates the Claude Code adapters and repair restores them", async (t) => {
@@ -126,13 +144,16 @@ test("setup generates the Claude Code adapters and repair restores them", async 
   assert.match(memory, /^@AGENTS\.md$/m);
   assert.ok(memory.includes(CLAUDE_BLOCK_BEGIN));
 
-  // Claude Code discovers skills only under .claude/skills.
-  const link = path.join(root, ".claude", "skills", "brand");
+  // Claude Code discovers skills only under .claude/skills. Names are prefixed
+  // so generic ids like `system` and `map` cannot be shadowed by a personal or
+  // bundled skill of the same name, while the canonical .skills/<id> path and
+  // the contract id stay unchanged.
+  const link = path.join(root, ".claude", "skills", "silver-brand");
   assert.equal((await lstat(link)).isSymbolicLink(), true);
   assert.equal(await readlink(link), "../../.skills/brand");
   assert.match(
     await readFile(path.join(link, "SKILL.md"), "utf8"),
-    /^name: brand$/m,
+    /^name: silver-brand$/m,
   );
 
   await rm(link, { force: true, recursive: true });
@@ -246,13 +267,40 @@ test("setup refuses to apply while topology is unanswered", async (t) => {
   assert.match(refused.stderr, /still has unresolved questions/);
 });
 
-test("the launcher adapts to how the CLI was delivered", async () => {
-  const { isEphemeralInstall, renderLauncher } = await import(
-    "../agent-adapters.mjs"
+test("the launcher resolves the CLI portably rather than by absolute path", async () => {
+  const { isEphemeralInstall, renderLauncher, renderLauncherCmd } =
+    await import("../agent-adapters.mjs");
+  const { PACKAGE_SPEC, RELEASE_TARBALL_URL } = await import("../version.mjs");
+  const workspace = "/workspaces/task-tracker";
+
+  // The npm case: the CLI is installed into the workspace it is setting up, so
+  // the launcher needs no absolute path at all and survives being moved.
+  const installed = path.join(
+    workspace,
+    "node_modules",
+    "silver-design-framework",
+    "bin",
+    "silver.mjs",
   );
-  const stable = "/opt/silver/bin/silver.mjs";
-  assert.equal(isEphemeralInstall(stable), false);
-  assert.match(renderLauncher(stable), /^exec node "\/opt\/silver/m);
+  const npmLauncher = renderLauncher(workspace, installed);
+  assert.match(npmLauncher, /workspace_cli="\$root\//);
+  assert.ok(
+    !npmLauncher.includes(workspace),
+    "an npm launcher must not hard-code the workspace path",
+  );
+  assert.match(npmLauncher, new RegExp(`exec npx --yes ${PACKAGE_SPEC.replaceAll(".", "\\.")} `));
+
+  // A source or linked install keeps working through a fallback, but only after
+  // the portable probe — never as the primary resolution.
+  const source = "/opt/silver/bin/silver.mjs";
+  assert.equal(isEphemeralInstall(source), false);
+  const sourceLauncher = renderLauncher(workspace, source);
+  assert.ok(
+    sourceLauncher.indexOf('workspace_cli="$root/') <
+      sourceLauncher.indexOf("/opt/silver"),
+    "the portable probe must come before the fallback",
+  );
+  assert.match(sourceLauncher, /# silver:fallback/);
 
   // npx unpacks into a cache npm garbage-collects, so an absolute path rots.
   const ephemeral = path.join(
@@ -266,11 +314,16 @@ test("the launcher adapts to how the CLI was delivered", async () => {
     "silver.mjs",
   );
   assert.equal(isEphemeralInstall(ephemeral), true);
-  const { PACKAGE_SPEC, RELEASE_TARBALL_URL } = await import("../version.mjs");
-  assert.match(
-    renderLauncher(ephemeral),
-    new RegExp(`^exec npx --yes ${PACKAGE_SPEC.replace(".", "\\.")} "\\$@"$`, "m"),
+  assert.ok(!renderLauncher(workspace, ephemeral).includes("_npx"));
+
+  // A macOS-generated .cmd carrying a macOS path was the reported defect.
+  const cmd = renderLauncherCmd(workspace, source);
+  assert.ok(
+    !cmd.includes("/opt/silver"),
+    "a Windows launcher must not embed a POSIX fallback path",
   );
+  assert.match(cmd, /%~dp0\.\.\\\.\.\\node_modules/);
+
   // Both published channels must describe the same exact version.
   assert.match(PACKAGE_SPEC, /^silver-design-framework@\d+\.\d+\.\d+$/);
   assert.match(

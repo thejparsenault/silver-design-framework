@@ -59,9 +59,19 @@ build
 
 ## Latest Release
 
-Silver `0.6.1` is the current release. It adds npm as the primary distribution
-channel with no behaviour change; `docs/release-notes/v0.6.1.md` records why the
-version was bumped rather than republishing `0.6.0`.
+Silver `0.7.0`, **One Good Step**, is the current release. It answers the
+22-issue field report from the first real product session: invocations run their
+own required checks and record real evidence, a claimed pass without evidence is
+not believed, accepted canonical work activates across artifact, manifest,
+index, and lock in one checkpoint, an accepted invocation confirms Git can
+commit before writing, and generated agent instructions say to run one skill and
+stop. Tone became a separate layer — a studio voice set once and overridable in
+a personal practice — so skills stay precise and independently upgradeable.
+`docs/silver-0.7-acceptance.md` is the release boundary.
+
+Silver `0.6.1` added npm as the primary distribution channel with no behaviour
+change; `docs/release-notes/v0.6.1.md` records why the version was bumped rather
+than republishing `0.6.0`.
 
 Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is the substantive
 release. It responds to the audit in `docs/silver-0.5-audit.md`.
@@ -109,7 +119,19 @@ Silver `0.5.0`, **Traceable Practice and Context**, is defined in
 - Durable visual work pins one or more exact design-context revisions.
 - Every generally applicable skill has a useful bundled portable baseline; an external integration adds capability and never silently becomes a prerequisite for unrelated work.
 - Canonical artifacts, generated local views, and external views have distinct roles, authority, provenance, and revisions. Drift is reconciled against a shared base rather than resolved by last-write-wins.
-- Skill execution, acceptance, and downstream readiness are separate states.
+- Skill execution, acceptance, and downstream readiness are separate states, and
+  "the output was generated" is never reported as "the output was verified".
+- A check status is believed only when its evidence exists and agrees. A guarded
+  invocation runs its own required checks rather than trusting its caller.
+- A skill runs, reports what its checks said, offers next moves, and stops.
+  Recipes, implementation profiles, and playbooks are offered, never chosen for
+  the designer.
+- Accepted canonical status changes are atomic across the artifact, manifest,
+  generated index, and lock, and are checkpointed together.
+- Every personal preference is authored in My Practice and nowhere else, so it
+  applies across workspaces and is committed to none of them. Studio voice and
+  method overlays are separate layers from skill packages, and personal
+  preference never relaxes project facts, guardrails, or required guidance.
 - Playbook invocation permits only its declared safe local progression and never broadens external, canonical, production, destructive, or version-control authority.
 - Presentation outputs consume canonical brand and design-system artifacts; reusable presentation templates and components remain a distinct project-owned kit.
 

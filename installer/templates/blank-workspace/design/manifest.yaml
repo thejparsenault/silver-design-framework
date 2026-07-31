@@ -3,7 +3,7 @@ workspace:
   id: {{WORKSPACE_ID}}
   name: {{WORKSPACE_NAME}}
   scope: product-workspace
-  description: Blank-workspace fixture for The Silver Design Framework.
+  description: {{WORKSPACE_DESCRIPTION}}
 
 artifacts:
   - id: brand
@@ -114,6 +114,7 @@ artifacts:
 implementation_profiles:
   reference-system:
     recipe: static-html
+    status: offered
     root: reference-system
     commands:
       preview: python3 -m http.server 4173 --directory reference-system

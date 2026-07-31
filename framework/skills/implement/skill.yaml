@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: implement
-version: 0.6.1
+version: 0.7.0
 summary: Rebuild accepted design intent in the local production recipe.
 context_budget: medium
 inputs:

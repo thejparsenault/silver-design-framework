@@ -2,11 +2,29 @@
 
 ## Current Focus
 
-Silver `0.6.1` is built and gate-verified, ready to publish to npm and GitHub
-from identical bytes. `0.6.0` shipped as an immutable GitHub release before the
-npm channel existed, so its artifact pins the release tarball URL in the
-launchers it generates; that artifact stays valid and the version was bumped
-rather than republished.
+Silver `0.7.0`, **One Good Step**, is implemented and gate-verified, not yet
+published. It answers the 22-issue field report from the first real session
+against a product (`~/Projects/exploring/task-tracker`), recorded in that
+repository's `SILVER_DESIGN_FRAMEWORK_BUG_REPORT.md`.
+
+The shape of the release: an invocation now runs its own required checks and
+writes their evidence, a claimed pass without evidence is not believed, accepted
+canonical work activates across artifact/manifest/index/lock in one checkpoint,
+an accepted invocation confirms Git can commit before writing, and the generated
+agent instructions say plainly to run one skill and stop. Tone became its own
+layer — a studio voice set once in the framework default or a personal practice,
+composed with skills that stay precise and independently upgradeable.
+
+Verified end to end against a copy of the reported workspace: it migrates from
+`0.6.1` with zero conflicts and reports zero doctor diagnostics afterward, with
+the manual manifest edits, repair runs, and checker exclusions from the original
+session no longer needed.
+
+Silver `0.6.1` added npm as the primary distribution channel with no behaviour
+change. `0.6.0` shipped as an immutable GitHub release before the npm channel
+existed, so its artifact pins the release tarball URL in the launchers it
+generates; that artifact stays valid and the version was bumped rather than
+republished.
 
 Silver `0.6.0`, Agent Hosts and Guarded Invocation, is implemented and validated
 from source and as an exact offline archive. An installed workspace can now run
@@ -21,6 +39,44 @@ support depends on, external-source synchronization, and deep existing-codebase
 adoption.
 
 ## Recent Progress
+
+- 2026-07-31: Silver 0.7 One Good Step
+  - Made check results mean something. A guarded invocation runs its own
+    required checks and writes evidence to `.silver/results/checks/`; a claimed
+    `pass` whose evidence is missing or disagrees is degraded to `not-run` with
+    the reason, in completed and blocked results alike. Added
+    `complete-awaiting-verification` so "generated" and "verified" stop being
+    the same word, and `silver check` as an on-demand surface.
+  - Made accepted canonical work activate atomically. The artifact, manifest,
+    generated index, and lock move together in one Git checkpoint, with the
+    manifest edited in place so flipping a status is a one-line diff. `repair`
+    and the migration reconcile a workspace that already disagrees with itself.
+  - Made accepted invocations recoverable: Git writability is confirmed before
+    canonical files are touched, and a post-write failure leaves a resumable
+    request with fresh integrity hashes instead of a state needing hand-rebuild.
+  - Shipped the stop-and-offer rule into workspaces. Generated `AGENTS.md` and
+    `CLAUDE.md` now say to run one skill, report what its checks said, offer two
+    or three moves, and wait. Recipes carry `offered | selected`, playbooks
+    honour the previously-dead `single-step` autonomy mode, and the README
+    presents the loop as a map rather than a script.
+  - Added the studio voice: a framework default plus a personal override in My
+    Practice, rendered into generated instructions and materialized as an
+    untracked workspace file so personal content never lands in a committed one.
+    Skill prose was deliberately left untouched — tone and skills are now
+    separate layers.
+  - Fixed the installed-path defects: portable launcher resolution with no
+    absolute path on the npm install path, `silver-` namespaced adapter skills,
+    `allowed-tools` advertising only what works, and a post-install next command.
+  - Fixed the false-signal defects: one shared artifact-kind classifier so
+    `what-now`, `doctor`, and `design-check` agree; dependency, build, and cache
+    directories excluded from check traversal and from installer snapshots;
+    effect deduplication; and a fresh workspace that produces zero diagnostics
+    and no self-repair recommendation.
+  - Made setup explain itself — structured questions with per-option effects,
+    external paths, reversibility, an explicit Git preflight, and the reference
+    system's separate install step.
+  - `npm run build` passes 99 tests and `npm run test:package` passes for the
+    exact 1,084-file, 643,764-byte archive.
 
 - 2026-07-30: Silver 0.6.1 npm channel
   - Added npm as the primary distribution channel with no behaviour change. The
@@ -300,12 +356,22 @@ adoption.
 
 ## Next 3 Actions
 
-1. Use Silver from Claude Code against a real product for one full session, and
-   record where the adapter layer or the scaffold still gets in the way.
+1. Publish `0.7.0` to npm and GitHub from identical bytes, then migrate the
+   task-tracker workspace and run one full design session against it to see
+   whether the one-step loop actually feels faster in practice.
 2. Design the Node-free durable-output path that Claude Cowork support depends
    on, deciding how provenance and integrity survive without the guarded runtime.
 3. Select one representative existing product repository for the adoption
    milestone and implement read-only discovery with an ambiguity report.
+
+## Known Gaps
+
+- `silver setup <dir>` still refuses any folder containing `package.json`, which
+  after `npm install` is every folder. The two-stage `setup inspect | setup
+  apply` path handles it, but the compatibility path is unusable in exactly the
+  npm scenario and should either learn to handle it or stop being advertised.
+- Browser checks remain unverifiable where a browser cannot reach a local URL.
+  0.7 reports that honestly rather than fixing it.
 
 ## Blockers
 
@@ -313,4 +379,4 @@ adoption.
 
 ## Last Updated
 
-2026-07-30
+2026-07-31

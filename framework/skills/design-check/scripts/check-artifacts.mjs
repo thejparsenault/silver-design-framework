@@ -16,6 +16,11 @@ import {
   readYaml,
   workspacePath,
 } from "./check-lib.mjs";
+import {
+  isDirectoryKind,
+  registryContractFor,
+  structuredSchemaFor,
+} from "./artifact-kinds.mjs";
 
 let contracts;
 try {
@@ -60,6 +65,15 @@ async function exists(filePath) {
   } catch {
     return false;
   }
+}
+
+// Structured artifacts ship as .json or .yaml. check-lib's YAML reader is a
+// deliberately dependency-free line parser rather than a full YAML
+// implementation, so it cannot stand in for JSON.parse here.
+async function readStructured(absolute) {
+  return absolute.endsWith(".json")
+    ? JSON.parse(await readFile(absolute, "utf8"))
+    : readYaml(absolute);
 }
 
 export async function checkArtifacts(options = {}) {
@@ -168,6 +182,7 @@ export async function checkArtifacts(options = {}) {
     }
     completed.push(relativePath);
     try {
+      // How a kind is stored decides how it is checked. See artifact-kinds.mjs.
       if (artifact.kind === "permission-policy") {
         const policy = await readYaml(absolute);
         if (policy.schema !== "silver/permission-policy/v1") {
@@ -175,64 +190,29 @@ export async function checkArtifacts(options = {}) {
         }
         continue;
       }
-      if (artifact.kind === "asset-catalog") {
-        const catalog = JSON.parse(await readFile(absolute, "utf8"));
-        await validateV2("asset-catalog.schema.json", catalog);
-        if (catalog.id !== artifact.id) {
-          throw new Error("Asset catalog ID does not match its manifest mapping.");
+      // A directory-backed catalog's contract is the set of contracts it holds.
+      if (isDirectoryKind(artifact.kind)) {
+        continue;
+      }
+      const structuredSchema = structuredSchemaFor(artifact.kind);
+      if (structuredSchema) {
+        const value = await readStructured(absolute);
+        await validateV2(structuredSchema, value);
+        if (value.id !== artifact.id) {
+          throw new Error(
+            `${artifact.kind} ID "${value.id}" does not match its manifest mapping "${artifact.id}".`,
+          );
         }
         continue;
       }
-      if (artifact.kind === "presentation-kit") {
-        const kit = JSON.parse(await readFile(absolute, "utf8"));
-        await validateV2("presentation-kit.schema.json", kit);
-        if (artifact.id !== "presentation-kit") {
-          throw new Error("Presentation kit manifest identity is invalid.");
+      const registry = registryContractFor(artifact.kind);
+      if (registry) {
+        const value = await readStructured(absolute);
+        if (value.schema !== registry.schema || !Array.isArray(value.sources)) {
+          throw new Error(`${registry.label} does not declare the v1 schema.`);
         }
-        continue;
-      }
-      if (artifact.kind === "component-catalog") {
-        continue;
-      }
-      if (artifact.kind === "x-component-expression") {
-        const expression = await readYaml(absolute);
-        await validateV2("component-expression.schema.json", expression);
-        if (expression.id !== artifact.id) {
-          throw new Error("Component expression ID does not match its manifest mapping.");
-        }
-        continue;
-      }
-      if (artifact.kind === "x-design-context") {
-        const context = await readYaml(absolute);
-        await validateV2("design-context.schema.json", context);
-        if (context.id !== artifact.id) {
-          throw new Error("Design context ID does not match its manifest mapping.");
-        }
-        continue;
-      }
-      if (artifact.kind === "x-guidance-source") {
-        const registry = await readYaml(absolute);
-        if (
-          registry.schema !== "silver/guidance-registry/v1" ||
-          !Array.isArray(registry.sources)
-        ) {
-          throw new Error("Guidance registry does not declare the v1 schema.");
-        }
-        for (const source of registry.sources) {
-          await validateV2("guidance-source.schema.json", source);
-        }
-        continue;
-      }
-      if (artifact.kind === "x-linked-source") {
-        const registry = await readYaml(absolute);
-        if (
-          registry.schema !== "silver/source-registry/v1" ||
-          !Array.isArray(registry.sources)
-        ) {
-          throw new Error("Linked source registry does not declare the v1 schema.");
-        }
-        for (const source of registry.sources) {
-          await validateV2("linked-source.schema.json", source);
+        for (const source of value.sources) {
+          await validateV2(registry.entrySchema, source);
         }
         continue;
       }

@@ -180,7 +180,66 @@ export async function initPrototype(options) {
     encoding: "utf8",
     flag: "wx",
   });
-  return { metadata, outputPath };
+  const notesPath = path.join(directory, "NOTES.md");
+  await writeFile(notesPath, renderNotes(metadata, prototypeRoot), {
+    encoding: "utf8",
+    flag: "wx",
+  });
+  return { metadata, outputPath, notesPath };
+}
+
+// A prototype exists to be looked at. `prototype.yaml` recorded `run: npm run
+// dev` and nothing else — not the directory to run it from, whether to install
+// first, or what URL to open — so the person it was built for had to ask how to
+// see their own prototype. This is the human-facing half.
+export function renderNotes(metadata, prototypeRoot) {
+  const directory = `${prototypeRoot}/${metadata.id}`;
+  return [
+    `# ${metadata.title}`,
+    "",
+    ...(metadata.question ? [`**Testing:** ${metadata.question}`, ""] : []),
+    `Constraint profile: \`${metadata.constraint_profile}\``,
+    ...(metadata.constraint_profile !== "constrained"
+      ? [
+          "",
+          `> This prototype suspends design-system constraints (${(metadata.suspended_constraints ?? []).join(", ")}).`,
+          "> It is not a production candidate; promoting it means rebuilding against the",
+          "> active design system.",
+        ]
+      : []),
+    "",
+    "## Run it",
+    "",
+    "```sh",
+    `cd ${directory}`,
+    "npm install       # first time only",
+    "npm run dev",
+    "```",
+    "",
+    "Vite prints the local URL when it starts — usually <http://localhost:5173>.",
+    "Stop the server with Ctrl+C.",
+    "",
+    "To check the production build instead:",
+    "",
+    "```sh",
+    "npm run build",
+    "npm run preview   # usually http://localhost:4173",
+    "```",
+    "",
+    "If this prototype has no `package.json`, it is a static prototype: open",
+    "`index.html` in a browser, or serve the directory over HTTP.",
+    "",
+    "## Checking it",
+    "",
+    "```sh",
+    ".silver/bin/silver check .",
+    "```",
+    "",
+    "Browser checks — contrast, responsive behaviour, and interaction — need a",
+    "reachable local URL. If the browser cannot open one, those checks report",
+    "`not-run` rather than passing, and the prototype stays unverified.",
+    "",
+  ].join("\n");
 }
 
 function parseArguments(args) {

@@ -205,6 +205,60 @@ The authoritative requirements and evidence are in
   - context: large
   - notes: Migration preserves project work and edited legacy policies, bootstraps unknown legacy provenance by exact integrity, installs 21 skills, and passes source and exact-package gates.
 
+## Completed Release — Silver 0.7 One Good Step
+
+The authoritative requirements and evidence are in
+`docs/silver-0.7-acceptance.md`. This release answers the 22-issue field report
+from the first real product session.
+
+- [x] Make check results mean something
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Invocations run their own required checks and persist evidence; a
+    claimed pass without resolvable evidence is degraded to `not-run` with a
+    reason; `complete-awaiting-verification` separates generated from verified;
+    `silver check` added.
+
+- [x] Make accepted canonical work activate atomically
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Artifact, manifest, index, and lock move in one checkpoint with an
+    in-place manifest edit. `repair` and migration reconcile existing drift.
+
+- [x] Make accepted invocations recoverable
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Git writability is confirmed before canonical writes; a post-write
+    failure leaves a resumable request with fresh integrity hashes.
+
+- [x] Ship the one-skill-then-stop rule into workspaces
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: Generated AGENTS.md and CLAUDE.md carry it, recipes are `offered`,
+    playbooks honour `single-step`, and the README presents the loop as a map.
+
+- [x] Separate tone from skills with a studio voice layer
+  - type: design
+  - priority: medium
+  - context: medium
+  - notes: Framework default plus personal practice override, resolved through
+    an ordered source list with a workspace layer designed in. Personal content
+    is materialized untracked and never enters a committed file. No skill prose
+    changed.
+
+- [x] Fix the installed-path and false-signal defects
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Portable launcher, namespaced adapter skills, honest `allowed-tools`,
+    post-install guidance, one shared artifact-kind classifier, dependency and
+    build directories excluded from traversal, deduplicated effects, explained
+    setup questions, and a fresh workspace with zero diagnostics.
+
 ## Following Milestone — Existing Codebase Adoption
 
 - [ ] Adopt one representative existing product repository

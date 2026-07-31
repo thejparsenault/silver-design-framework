@@ -219,7 +219,7 @@ async function invokeCase({
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.6.1" },
+    skill: { id, version: "0.7.0" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -614,7 +614,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.6.1" },
+      skill: { id: "prototype", version: "0.7.0" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -660,7 +660,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.6.1" },
+      skill: { id: "evaluate", version: "0.7.0" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
@@ -800,7 +800,7 @@ export async function runCompleteBlankScenario(options = {}) {
         object_id: "fixture-map-node",
         revision: "v1",
       },
-      adapter: { id: "silver-figma", version: "0.6.1" },
+      adapter: { id: "silver-figma", version: "0.7.0" },
       mapping_profile: "map-read-only",
       authority: "local",
       round_trip: "read-only",
@@ -875,7 +875,7 @@ export async function runCompleteBlankScenario(options = {}) {
         view_path: "presentations/guided-setup/index.html",
         change_case_revision: "r1",
         presentation_kit_revision: "r1",
-      }, [refs.changeCase, ref("project-presentation-kit", "presentation-kit", "r1", "design/presentation-kit/kit.json")]), "working-artifact.schema.json"),
+      }, [refs.changeCase, ref("presentation-kit", "presentation-kit", "r1", "design/presentation-kit/kit.json")]), "working-artifact.schema.json"),
     ],
     checkEvidence,
     provenanceMetadata: {

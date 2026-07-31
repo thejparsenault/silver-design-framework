@@ -1,5 +1,5 @@
 ---
-name: principles
+name: silver-principles
 description: Create or maintain concrete design decision principles with examples and usable decision tests. Use when a team needs design principles, tradeoff rules, examples, counterexamples, or canonical decision guidance.
 allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---

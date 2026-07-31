@@ -1,5 +1,5 @@
 ---
-name: voice
+name: silver-voice
 description: Define or revise product tone, voice, terminology, and context-specific content guidance. Use for voice principles, terminology, message examples, error tone, or canonical voice guidance.
 allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---

@@ -1,7 +1,7 @@
 ---
-name: prototype
+name: silver-prototype
 description: Create or revise a testable simulation for a declared question, constrained by semantic styles by default and pinned to accepted inputs. Use for interaction prototypes, feedback-driven refinement, or explicit partial and suspended experiments.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Build prototype

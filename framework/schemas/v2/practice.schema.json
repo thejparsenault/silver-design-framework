@@ -11,7 +11,12 @@
     "name": { "type": "string", "minLength": 1, "maxLength": 160 },
     "revision": { "$ref": "common.schema.json#/$defs/revision" },
     "updated_at": { "type": "string", "format": "date-time" },
+    "studio_voice": {
+      "description": "Relative path to this practice's studio voice, when the designer has written one. Absent means the framework default applies.",
+      "$ref": "common.schema.json#/$defs/relativePath"
+    },
     "methods": {
+      "description": "Relative paths to method overlays this practice applies. Personal refinements that add to a skill's instructions and never relax project facts, guardrails, or required guidance.",
       "type": "array",
       "items": { "$ref": "common.schema.json#/$defs/relativePath" },
       "uniqueItems": true

@@ -19,10 +19,11 @@ try {
     name: "Example Product",
     id: "example-product",
     date: "2026-07-23",
-    version: "0.6.1",
+    version: "0.7.0",
     sourceReference: "framework-development-fixture",
   });
   for (const relativePath of [
+    ".gitignore",
     "AGENTS.md",
     "CLAUDE.md",
     "design/INDEX.md",

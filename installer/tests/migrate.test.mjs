@@ -138,7 +138,7 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.6.1");
+  assert.equal(lock.framework.version, "0.7.0");
   assert.equal(lock.packages.length, 28);
   assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
@@ -217,7 +217,7 @@ test("0.4-to-current migration preserves an edited legacy policy as inactive and
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.4.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.7.0");
   assert.ok(
     preview.changes.some(({ action }) => action === "bootstrap-provenance"),
   );
@@ -341,7 +341,7 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.6.1");
+  assert.equal(migrated.framework.version, "0.7.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma", "silver-portable"],
@@ -401,7 +401,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.5.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.7.0");
   assert.equal(preview.applied, false);
   for (const expected of ["CLAUDE.md", ".claude/skills", ".silver/bin/silver"]) {
     assert.ok(
@@ -438,7 +438,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   const lock = parse(await readFile(lockPath, "utf8"));
   lock.framework.version = "0.6.0";
   for (const installed of lock.packages) {
-    if (installed.version === "0.6.1") installed.version = "0.6.0";
+    if (installed.version === "0.7.0") installed.version = "0.6.0";
   }
   await writeFile(lockPath, stringify(lock), "utf8");
   const launcherPath = path.join(root, ".silver", "bin", "silver");
@@ -452,7 +452,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.6.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.7.0");
   assert.equal(preview.applied, false);
 
   const applied = await migrateWorkspace({ root, apply: true });
@@ -461,7 +461,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   // pin on the superseded 0.6.0 release artifact is gone either way.
   const launcher = await readFile(launcherPath, "utf8");
   assert.doesNotMatch(launcher, /releases\/download\/v0\.6\.0/);
-  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.6\.1)/m);
+  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.7\.0)/m);
   assert.ok((await readFile(voicePath, "utf8")).endsWith(ownedNote));
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

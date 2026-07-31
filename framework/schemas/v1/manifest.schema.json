@@ -339,6 +339,11 @@
         "recipe": {
           "$ref": "#/$defs/id"
         },
+        "status": {
+          "description": "An offered profile is available for the designer to choose; a selected one has been chosen deliberately. A recipe is never adopted by default, so an agent presents the offered profiles rather than picking one.",
+          "enum": ["offered", "selected"],
+          "default": "offered"
+        },
         "root": {
           "$ref": "#/$defs/relativePath"
         },

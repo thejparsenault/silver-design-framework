@@ -15,19 +15,31 @@ the workspace launcher:
 .silver/bin/silver invoke --scaffold <skill-id> .   # emit a prefilled request
 .silver/bin/silver invoke <skill-id> <request.json> .
 .silver/bin/silver what-now .                       # rank next actions
+.silver/bin/silver check .                          # run the fast checks
 .silver/bin/silver doctor .                         # read-only diagnosis
 ```
 
-Do not run `.skills/<id>/scripts/invoke.mjs` directly. It needs dependencies
-the workspace does not carry; the launcher resolves them.
+Do not run scripts under `.skills/<id>/scripts/` directly. They need
+dependencies the workspace does not carry; the launcher resolves them.
 
 ### Rules
 
+- Run one skill, then stop. Report what it produced and what its checks
+  actually said, offer two or three directions, and let the designer choose.
+  A request to explore is not authorization to run the whole chain.
+- Recommended next actions are never started automatically.
+- Recipes, implementation profiles, and playbooks are offered, never chosen
+  for the designer.
 - Never suspend design-system constraints unless the user explicitly asks for a
   partial or suspended prototype constraint profile. A request to explore is not
   a request to suspend.
 - Propose changes to canonical artifacts and wait for approval before writing.
-- Recommended next actions are never started automatically.
 - Never put credentials or secrets in bindings, tool profiles, or artifacts.
+
+If `.silver/my-practice.md` exists, read it. It carries the personal
+practice of whoever is working here — their studio voice and their method
+overlays — from outside the project, and it takes precedence over the studio
+voice in AGENTS.md. Personal preference adds to how the work is done; it never
+relaxes project facts, guardrails, required guidance, or approval boundaries.
 
 <!-- silver:end -->

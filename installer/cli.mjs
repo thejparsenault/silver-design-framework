@@ -9,6 +9,7 @@ import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
 import { runWhatNow } from "./what-now.mjs";
+import { runCheckSuite } from "./checks.mjs";
 import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
@@ -22,7 +23,8 @@ Usage:
   silver setup [directory] [--name <name>] [--id <id>] [--json]
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
-  silver what-now [directory] [--json]
+  silver what-now [directory] [--record] [--json]
+  silver check [directory] [--only <check-id,...>] [--json]
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -36,6 +38,10 @@ Commands:
   invoke   Run an installed skill through the guarded runtime. Use --scaffold to emit a
            prefilled request to complete, then invoke it.
   what-now Rank evidence-based next actions for a workspace without starting any of them.
+           Read-only; pass --record to also persist the result.
+  check    Run the fast deterministic checks and write evidence to
+           .silver/results/checks/. Invocations run their own required checks, so
+           this is for checking the workspace on demand.
   doctor   Diagnose workspace contracts and managed files without changing them.
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
@@ -101,7 +107,9 @@ function parseArguments(args) {
     "id",
     "json",
     "name",
+    "only",
     "practice",
+    "record",
     "scaffold",
   ]);
   const positionals = [];
@@ -116,7 +124,11 @@ function parseArguments(args) {
     if (!supportedFlags.has(key)) {
       throw new Error(`Unknown option: --${key}`);
     }
-    if (["allow-unresolved", "apply", "json", "help", "scaffold"].includes(key)) {
+    if (
+      ["allow-unresolved", "apply", "json", "help", "record", "scaffold"].includes(
+        key,
+      )
+    ) {
       flags[key] = true;
       continue;
     }
@@ -128,6 +140,15 @@ function parseArguments(args) {
     index += 1;
   }
   return { positionals, flags };
+}
+
+function printSetupSteps(result, write) {
+  for (const step of result.setupSteps ?? []) {
+    write("");
+    write(`${step.required ? "Required" : "Optional"}: ${step.summary}`);
+    write(`  ${step.reason}`);
+    for (const command of step.commands) write(`    ${command}`);
+  }
 }
 
 function printSetup(result, write) {
@@ -142,7 +163,9 @@ function printSetup(result, write) {
   if (result.preserved.length > 0) {
     write(`Preserved ${result.preserved.length} existing files.`);
   }
-  printWhatNow(result.whatNow.analysis, write);
+  printSetupSteps(result, write);
+  write("");
+  printWhatNow(result.whatNow.analysis, write, result.whatNow.recorded);
 }
 
 function printInvoke(result, write) {
@@ -155,6 +178,11 @@ function printInvoke(result, write) {
   for (const finding of result.effect_findings) {
     write(`  FINDING ${finding}`);
   }
+  for (const check of result.checks ?? []) {
+    write(
+      `  CHECK ${check.id}: ${check.status}${check.reason ? ` — ${check.reason}` : ""}`,
+    );
+  }
   for (const readiness of result.readiness) {
     write(`  READINESS ${readiness.name}: ${readiness.status}`);
     for (const reason of readiness.reasons) {
@@ -162,12 +190,23 @@ function printInvoke(result, write) {
     }
   }
   write(`Acceptance: ${result.acceptance.status}`);
+  if (result.resume_request) {
+    write(`  RESUME ${result.resume_request.reason}`);
+    write(
+      `    silver invoke ${result.skill.id} ${result.resume_request.path} .`,
+    );
+  }
+  for (const pending of result.pending_outputs ?? []) {
+    write(`  COULD ALSO PRODUCE ${pending.kind} (${pending.path_pattern})`);
+  }
   for (const recommendation of result.recommended_next_actions) {
     write(`  NEXT ${recommendation.action}: ${recommendation.reason}`);
   }
+  // One skill per invocation. Nothing downstream begins on its own.
+  write("Nothing else was started. Choose the next step.");
 }
 
-function printWhatNow(analysis, write) {
+function printWhatNow(analysis, write, recorded = false) {
   write("What Now recommends:");
   for (const recommendation of analysis.recommendations) {
     write(
@@ -175,6 +214,26 @@ function printWhatNow(analysis, write) {
     );
   }
   write("No recommendation was started automatically.");
+  write(
+    recorded
+      ? "Recorded this orientation under .silver/results/skills/."
+      : "Nothing was written; this was a read-only look at the workspace.",
+  );
+}
+
+function printCheck(suite, write) {
+  write(`Fast checks: ${suite.status}`);
+  for (const result of suite.results) {
+    const findings = result.findings.length;
+    write(
+      `  ${result.checker}: ${result.status}${findings > 0 ? ` (${findings} finding(s))` : ""}`,
+    );
+    for (const finding of result.findings.slice(0, 5)) {
+      write(`    ${finding.rule}${finding.file ? ` ${finding.file}` : ""}: ${finding.message}`);
+    }
+    if (findings > 5) write(`    ... and ${findings - 5} more`);
+  }
+  write("Evidence written to .silver/results/checks/.");
 }
 
 function printDoctor(result, write) {
@@ -328,9 +387,11 @@ export async function runCli(
       } else {
         printInvoke(result, stdout);
       }
-      return ["complete", "complete-with-findings"].includes(
-        result.execution.status,
-      )
+      return [
+        "complete",
+        "complete-awaiting-verification",
+        "complete-with-findings",
+      ].includes(result.execution.status)
         ? 0
         : 1;
     }
@@ -339,16 +400,39 @@ export async function runCli(
       if (positionals.length > 1) {
         throw new Error("what-now accepts at most one directory.");
       }
-      const { analysis, result } = await runWhatNow({
+      const { analysis, result, recorded } = await runWhatNow({
         root: path.resolve(positionals[0] ?? process.cwd()),
         now: now(),
+        record: Boolean(flags.record),
       });
       if (flags.json) {
-        stdout(JSON.stringify({ analysis, result }, null, 2));
+        stdout(JSON.stringify({ analysis, result, recorded }, null, 2));
       } else {
-        printWhatNow(analysis, stdout);
+        printWhatNow(analysis, stdout, recorded);
       }
       return 0;
+    }
+    if (command === "check") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (positionals.length > 1) {
+        throw new Error("check accepts at most one directory.");
+      }
+      const only = flags.only
+        ? String(flags.only)
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
+        : undefined;
+      const suite = await runCheckSuite({
+        root: path.resolve(positionals[0] ?? process.cwd()),
+        ...(only ? { only } : {}),
+      });
+      if (flags.json) {
+        stdout(JSON.stringify(suite, null, 2));
+      } else {
+        printCheck(suite, stdout);
+      }
+      return suite.status === "fail" ? 1 : 0;
     }
     if (command === "practice" && args[1] === "apply") {
       const { positionals, flags } = parseArguments(args.slice(2));
@@ -408,10 +492,13 @@ export async function runCli(
         name: flags.name,
         id: flags.id,
       });
+      // Setup records its one orientation so a new workspace starts with a
+      // provenance entry. Interactive `what-now` stays read-only.
       const whatNow = await runWhatNow({
         root,
         now: now(),
         invocationPrefix: "what-now-after-setup",
+        record: true,
       });
       const result = { ...setup, whatNow };
       if (flags.json) {

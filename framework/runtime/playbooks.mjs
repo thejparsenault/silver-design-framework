@@ -121,6 +121,22 @@ function markRunnable(playbook, state) {
   state.current_nodes = state.node_states
     .filter(({ status }) => status === "ready")
     .map(({ node }) => node);
+
+  // `single-step` was declared in the schema from the start but never honoured,
+  // so a playbook could advance five skills between its two human checkpoints.
+  // In single-step mode exactly one node becomes ready at a time and the run
+  // pauses after it, which is what "one skill, then check, then choose" means
+  // for a composed run.
+  if (playbook.autonomy?.mode === "single-step" && state.current_nodes.length > 1) {
+    const [first] = state.current_nodes;
+    for (const observed of state.node_states) {
+      if (observed.status === "ready" && observed.node !== first) {
+        observed.status = "pending";
+      }
+    }
+    state.current_nodes = [first];
+  }
+
   if (state.current_nodes.length > 0) {
     state.status = "running";
   }

@@ -1,6 +1,6 @@
 schema: silver/artifact-codec/v1
 id: silver-structured
-version: 0.6.1
+version: 0.7.0
 artifact_kinds:
   - design-system
   - component-catalog

@@ -1,7 +1,7 @@
 ---
-name: map
+name: silver-map
 description: Create or revise evidence-linked journey maps, service blueprints, experience maps, and ecosystem maps as portable structured artifacts with local or external views.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Map an experience or service

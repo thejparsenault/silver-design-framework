@@ -103,6 +103,26 @@ export async function initializePractice(options = {}) {
 This is your visible, tool-neutral design practice. Silver changes it only
 through reviewed proposals and records each approved revision in local Git.
 
+Everything personal lives here, in one place, and applies to every workspace you
+work in. Nothing personal belongs in a project: a workspace is shared, and your
+preferences are yours.
+
+## What you can set here
+
+| File | Sets |
+| --- | --- |
+| \`studio-voice.md\` | How the agent talks to you while designing |
+| \`methods/*.yaml\` | Preferred questions, techniques, quality emphasis, and exclusions, per skill |
+| \`playbooks/\` | Your own composed sequences |
+| \`rubrics/\` | How you judge quality |
+
+Silver reads these when you run \`silver repair\` in a workspace, and carries
+them in as an untracked file. They are never committed with a project.
+
+Personal preference adds to how work is done. It never relaxes project facts,
+guardrails, required guidance, or approval boundaries — where a preference and a
+project rule disagree, the project rule wins.
+
 ## Tools
 
 - Add durable tool preferences through conversation.
@@ -130,6 +150,68 @@ through reviewed proposals and records each approved revision in local Git.
       `# ${directory[0].toUpperCase()}${directory.slice(1)}\n`,
     );
   }
+
+  // An override point nobody can find is not an override point. Seed both with
+  // commented-out starters so the shape is obvious and neither is active until
+  // the designer means it.
+  await writeNewFile(
+    path.join(root, "studio-voice.md"),
+    `<!--
+Your studio voice: how you want the agent to talk to you while designing.
+
+Silver ships a default. Uncomment the frontmatter below and write your own to
+replace it everywhere you work, then run \`silver repair\` in a workspace to
+apply it. Yours replaces the default rather than blending with it.
+
+This governs register, not rigour. Skills still say what to do.
+
+schema: silver/studio-voice/v1
+id: my-studio-voice
+title: My studio voice
+revision: r1
+-->
+
+Write your voice here, then move the frontmatter above out of this comment.
+
+For example: be blunt. Lead with the idea, not the process. Show me two options
+before you commit to one, and tell me which you would pick.
+`,
+  );
+  await writeNewFile(
+    path.join(root, "methods", "example.yaml.txt"),
+    `# A method overlay: your personal refinement to one or more skills.
+#
+# Rename this to something.yaml to activate it, then run \`silver repair\` in a
+# workspace. Overlays only add — they never relax project facts, guardrails,
+# required guidance, or approval boundaries.
+#
+# schema: silver/method-overlay/v1
+# id: my-ideation-overlay
+# title: How I like to ideate
+# revision: r1
+# applies_to:
+#   - ideate
+#   - sketch
+# guidance:
+#   - Give me at least three genuinely different directions, not three variations.
+#   - Name the one you would pick and say why.
+# quality_emphasis:
+#   - An idea without a stated assumption is not finished.
+# exclusions:
+#   - Do not produce mood boards.
+# provenance:
+#   schema: silver/provenance/v1
+#   origin: human-authored
+#   recorded_at: ${now}
+#   sources: []
+#   guidance: []
+#   design_contexts: []
+#   change:
+#     reason: Record how I prefer to run ideation.
+#   acceptance: not-required
+#   external_bindings: []
+`,
+  );
   await git(root, ["init"]);
   const manifest = {
     schema: "silver/practice/v1",
@@ -146,6 +228,8 @@ through reviewed proposals and records each approved revision in local Git.
   const commit = await commitPractice(root, "Initialize My Practice", [
     "README.md",
     "PRACTICE.md",
+    "studio-voice.md",
+    "methods/example.yaml.txt",
     ".silver/practice.yaml",
     ...directories.map((directory) => `${directory}/README.md`),
   ]);

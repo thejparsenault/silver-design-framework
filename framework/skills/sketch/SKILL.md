@@ -1,7 +1,7 @@
 ---
-name: sketch
+name: silver-sketch
 description: Generate inexpensive alternatives from a brief, concept, specification, flow, or existing screen while recording fidelity separately from artifact type and honoring the constraint profile. Use for quick screen or component exploration before prototyping.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Sketch alternatives

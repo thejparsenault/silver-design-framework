@@ -92,9 +92,141 @@ export async function inspectSetup({
   const practiceAction = (await exists(path.join(practiceRoot, ".silver", "practice.yaml")))
     ? "connect"
     : "create";
-  const unresolved = [];
-  if (!answers.team_shape) unresolved.push("Confirm whether the team is solo, shared, or split by discipline.");
-  if (!answers.topology) unresolved.push(`Confirm the recommended ${recommendation.recommended} repository topology.`);
+  // Every unresolved question carries what it means, what each answer does,
+  // which paths it touches, and whether it can be changed later.
+  //
+  // These used to be one-line prompts naming framework terms — "solo | shared |
+  // split", "integrated | separate" — with the explanations only in `--help` and
+  // the README. Whoever was installing Silver had to ask what the words meant
+  // before they could answer, and `integrated` never said out loud that it would
+  // reach outside the project folder. The structured form travels with the plan,
+  // so any agent or UI presenting the question has what it needs.
+  const questions = [];
+  if (!answers.team_shape) {
+    questions.push({
+      id: "team_shape",
+      question: "Who works on design in this product?",
+      explanation:
+        "Records how design work is staffed so later guidance can match it. It does not change which files are created.",
+      options: [
+        {
+          value: "solo",
+          summary: "One person does the design work.",
+          effect: "No shared-review expectations are assumed.",
+        },
+        {
+          value: "shared",
+          summary: "Several people share design work in one repository.",
+          effect: "Review and handoff guidance assumes more than one author.",
+        },
+        {
+          value: "split",
+          summary: "Design and engineering are owned by different people.",
+          effect:
+            "Handoff guidance assumes a boundary between design and implementation.",
+        },
+      ],
+      recommended: null,
+      reversible: true,
+      how_to_change: "Edit design/manifest.yaml and run `silver repair`.",
+      external_paths: [],
+    });
+  }
+  if (!answers.topology) {
+    questions.push({
+      id: "topology",
+      question: "Where should the design workspace live?",
+      explanation:
+        "Decides whether Silver installs into this repository or into a separate one beside it.",
+      options: [
+        {
+          value: "integrated",
+          summary: "Install Silver into this repository.",
+          effect: `Creates design/, .skills/, .silver/, and AGENTS.md inside ${productRoot}. Design work is versioned with the product.`,
+        },
+        {
+          value: "separate",
+          summary: "Create a separate design repository beside this one.",
+          effect: `Creates a new workspace at ${workspaceRoot} and initializes Git there. The product repository is not modified.`,
+        },
+      ],
+      recommended: recommendation.recommended,
+      recommendation_reasons: recommendation.reasons,
+      reversible: false,
+      how_to_change:
+        "Changing topology after apply means moving the workspace by hand; decide before applying.",
+      // Neither choice is what reaches outside the project. My Practice does,
+      // and that was never stated at the decision point.
+      external_paths: [],
+    });
+  }
+
+  // My Practice is created or read regardless of topology, and it lives outside
+  // the project. That is consequential enough to state plainly rather than leave
+  // implied by a word like "integrated".
+  const practiceNotice = {
+    id: "practice_root",
+    question: `Silver will ${practiceAction === "create" ? "create" : "connect to"} your personal practice at ${practiceRoot}. Continue?`,
+    explanation:
+      "My Practice is your own visible, local, Git-tracked workspace of methods, rubrics, and decisions, shared across every Silver workspace you use. It lives outside this project and is not committed with it. Setup pins its identity and revision in results; it never copies its contents into project files.",
+    options: [
+      {
+        value: "default",
+        summary: `Use ${practiceRoot}.`,
+        effect:
+          practiceAction === "create"
+            ? "Creates the directory, writes PRACTICE.md, and makes an initial local Git commit there."
+            : "Reads the existing practice and records its revision. Nothing there is overwritten.",
+      },
+      {
+        value: "custom",
+        summary: "Use a different location.",
+        effect: "Pass practice_root in the setup answers.",
+      },
+    ],
+    recommended: "default",
+    reversible: true,
+    how_to_change: "Re-run setup with a different practice_root.",
+    external_paths: [practiceRoot],
+    backup_note:
+      "A local-only backup means the practice has local Git history but no verified remote, so it is not backed up off this machine.",
+  };
+  questions.push(practiceNotice);
+
+  // Git matters before hundreds of files exist, not after. Accepted work is
+  // checkpointed into local Git, so a workspace without a repository silently
+  // loses that — and then every later skill repeats "not-a-repository" as if it
+  // were a new problem.
+  if (!topLevelEntries.includes(".git") && selected === "integrated") {
+    questions.push({
+      id: "initialize_git",
+      question: `${productRoot} is not a Git repository. Initialize one before applying?`,
+      explanation:
+        "Silver checkpoints accepted design work into local Git. Without a repository, accepted invocations still write their files but record no checkpoint, and there is no rollback point.",
+      options: [
+        {
+          value: "yes",
+          summary: "Run `git init` before installing.",
+          effect:
+            "Creates a local repository. Silver never adds a remote and never pushes.",
+        },
+        {
+          value: "no",
+          summary: "Install without Git.",
+          effect:
+            "Setup proceeds. Checkpoints report `not-a-repository` until a repository exists; this is expected, not a fault.",
+        },
+      ],
+      recommended: "yes",
+      reversible: true,
+      how_to_change: "Run `git init` at any time; later checkpoints will work.",
+      external_paths: [],
+    });
+  }
+
+  const unresolved = questions
+    .filter(({ id: questionId }) => ["team_shape", "topology"].includes(questionId))
+    .map(({ question }) => question);
   const plan = {
     schema: "silver/setup-plan/v1",
     id: `setup-${id}`,
@@ -150,6 +282,7 @@ export async function inspectSetup({
         ]
       : [],
     unresolved_questions: unresolved,
+    questions,
     state_integrity: await stateIntegrity(productRoot),
   };
   await assertV2("setup-plan.schema.json", plan);

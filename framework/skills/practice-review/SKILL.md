@@ -1,5 +1,5 @@
 ---
-name: practice-review
+name: silver-practice-review
 description: Review accepted work for a reusable personal lesson and produce a sanitized proposal without modifying My Practice.
 allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---

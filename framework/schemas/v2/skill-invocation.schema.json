@@ -232,6 +232,7 @@
       }
     },
     "checks": {
+      "description": "Check statuses this request claims. The runtime runs a skill's required checks itself and verifies every claimed pass against its evidence file, so a status recorded here is a starting point rather than the final word.",
       "type": "array",
       "items": {
         "type": "object",
@@ -246,6 +247,11 @@
           },
           "result_path": {
             "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
           }
         }
       }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,6 +10,31 @@ import { promisify } from "node:util";
 import { invokeSkill } from "../runtime/invoke-skill.mjs";
 
 const run = promisify(execFile);
+
+// A claimed `pass` is only believed when its evidence file exists and agrees, so
+// a fixture that wants a check to count has to leave real evidence behind.
+async function seedCheckEvidence(workspace, checkers, status = "pass") {
+  await mkdir(path.join(workspace, ".silver/results/checks"), {
+    recursive: true,
+  });
+  for (const checker of checkers) {
+    await writeFile(
+      path.join(workspace, `.silver/results/checks/${checker}.json`),
+      `${JSON.stringify(
+        {
+          schema: "silver/check-result/v1",
+          checker,
+          status,
+          requested: [checker],
+          completed: [checker],
+          findings: [],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+}
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -108,7 +133,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.6.1" },
+    skill: { id: "synthesize", version: "0.7.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -161,6 +186,10 @@ test("guarded invocation writes a valid artifact and normalized accepted result"
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-positive-"),
   );
+  await seedCheckEvidence(workspace, [
+    "contract-integrity",
+    "evidence-provenance",
+  ]);
   const result = await invokeSkill({
     root: workspace,
     skillDirectory: path.join(root, "framework/skills/synthesize"),
@@ -203,6 +232,10 @@ test("accepted outputs create a local Git checkpoint without pushing", async () 
     path.join(os.tmpdir(), "silver-invoke-git-"),
   );
   await run("git", ["-C", workspace, "init"]);
+  await seedCheckEvidence(workspace, [
+    "contract-integrity",
+    "evidence-provenance",
+  ]);
   const result = await invokeSkill({
     root: workspace,
     skillDirectory: path.join(root, "framework/skills/synthesize"),
@@ -238,7 +271,7 @@ test("legacy Silver ask rules no longer deny repository writes", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.6.1" },
+    skill: { id: "brand", version: "0.7.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -273,8 +306,24 @@ test("legacy Silver ask rules no longer deny repository writes", async () => {
     request,
     completedAt,
   });
-  assert.equal(result.execution.status, "complete-with-findings");
+  // The write succeeded and nothing is wrong with it, but this skill's required
+  // checks never ran, so the output is unverified rather than confirmed. Saying
+  // "complete" here is what let a result look more trustworthy than it was.
+  assert.equal(result.execution.status, "complete-awaiting-verification");
+  assert.ok(
+    result.readiness.every(({ status }) => status === "not-ready"),
+    "unverified work cannot be downstream-ready",
+  );
   assert.equal(result.observed_effects[0].path, "design/brand.md");
+  // Persisting the result is itself a write. Declaring it is what stops a skill
+  // from calling itself read-only while dirtying the working tree.
+  assert.ok(
+    result.observed_effects.some(
+      ({ path: effectPath }) =>
+        effectPath === ".silver/results/skills/brand-test-1.json",
+    ),
+    "the result record write must appear in observed effects",
+  );
   assert.deepEqual(result.effect_findings, []);
   assert.deepEqual(
     JSON.parse(
@@ -328,7 +377,7 @@ test("visual durable output without a design-context pin is blocked", async () =
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "sketch-no-context",
-    skill: { id: "sketch", version: "0.6.1" },
+    skill: { id: "sketch", version: "0.7.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -377,6 +426,10 @@ test("existing outputs require matching integrity and remain unchanged on stale 
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-stale-"),
   );
+  await seedCheckEvidence(workspace, [
+    "contract-integrity",
+    "evidence-provenance",
+  ]);
   const first = synthesizeRequest();
   await invokeSkill({
     root: workspace,
@@ -410,7 +463,7 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.6.1" },
+    skill: { id: "implement", version: "0.7.0" },
     started_at: startedAt,
     inputs: [
       reference(

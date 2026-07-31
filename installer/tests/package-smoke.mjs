@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.6.1";
+const expectedVersion = "0.7.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -156,12 +156,14 @@ try {
     "utf8",
   );
   assert.match(packedMemory, /^@AGENTS\.md$/m);
+  // Adapter names are namespaced so generic ids cannot be shadowed by a
+  // personal or bundled skill, while .skills/<id> stays canonical.
   assert.match(
     await readFile(
-      path.join(workspaceRoot, ".claude", "skills", "brand", "SKILL.md"),
+      path.join(workspaceRoot, ".claude", "skills", "silver-brand", "SKILL.md"),
       "utf8",
     ),
-    /^name: brand$/m,
+    /^name: silver-brand$/m,
   );
   const { stdout: packedScaffold } = await command(
     process.execPath,

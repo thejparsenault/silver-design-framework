@@ -36,6 +36,12 @@ import {
   writeClaudeSkillLinks,
   writeLauncher,
 } from "./agent-adapters.mjs";
+import { planManifestStatusSync } from "../framework/runtime/manifest-sync.mjs";
+import {
+  ensureGitignoreEntries,
+  resolveSharedStudioVoice,
+  writeWorkspacePracticeOverlay,
+} from "./practice-overlay.mjs";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
@@ -183,15 +189,29 @@ function migrateManifest(manifest) {
   return next;
 }
 
+// Derive a stable, schema-valid id for a legacy file with no recorded identity.
+//
+// Truncating to a fixed width could cut mid-token and leave a trailing or
+// doubled hyphen, producing an id the contract pattern rejects — which failed a
+// whole migration because of one awkward filename. Normalize after slicing, and
+// verify the result rather than assuming it.
 function bootstrapId(relativePath) {
-  const digest = createHash("sha256").update(relativePath).digest("hex").slice(0, 8);
-  const stem = relativePath
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/^[^a-z]+/, "")
-    .slice(0, 48) || "legacy-artifact";
-  return `${stem}-${digest}`;
+  const digest = createHash("sha256")
+    .update(relativePath)
+    .digest("hex")
+    .slice(0, 8);
+  const stem =
+    relativePath
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^[^a-z]+/, "")
+      .slice(0, 48)
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "") || "legacy-artifact";
+  const id = `${stem}-${digest}`;
+  return /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(id)
+    ? id
+    : `legacy-artifact-${digest}`;
 }
 
 async function exactIntegrity(absolute) {
@@ -410,6 +430,17 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
   changes.push({ action: "regenerate", path: CLAUDE_MEMORY_PATH });
   changes.push({ action: "link-skills", path: CLAUDE_SKILLS_DIRECTORY });
   changes.push({ action: "regenerate", path: LAUNCHER_PATH });
+  // 0.7: the launcher stops hard-coding an absolute path, adapter links gain the
+  // silver- prefix so generic ids cannot be shadowed, the personal studio voice
+  // is ignored, and manifest status is reconciled with the artifacts themselves.
+  changes.push({ action: "regenerate", path: ".gitignore" });
+  for (const change of await planManifestStatusSync({ root, manifest: nextManifest })) {
+    changes.push({
+      action: "reconcile-status",
+      path: "design/manifest.yaml",
+      detail: `${change.id}: ${change.from} → ${change.to} (from ${change.path})`,
+    });
+  }
 
   return {
     packages,
@@ -519,10 +550,56 @@ export async function migrateWorkspace(options = {}) {
     );
   }
 
+  // The seeded presentation kit shipped with an id that disagreed with its own
+  // manifest entry, and a hard-coded exception in the checker hid it. Now that
+  // structured artifacts are all validated the same way, the disagreement is
+  // visible, so align the scaffold's identity with the manifest that maps it.
+  const kitEntry = plan.nextManifest.artifacts.find(
+    ({ kind }) => kind === "presentation-kit",
+  );
+  if (kitEntry) {
+    const kitPath = path.join(root, kitEntry.path);
+    if (await exists(kitPath)) {
+      const kit = JSON.parse(await readFile(kitPath, "utf8"));
+      if (kit.id !== kitEntry.id) {
+        await writeUtf8(
+          kitPath,
+          `${JSON.stringify({ ...kit, id: kitEntry.id }, null, 2)}\n`,
+        );
+      }
+    }
+  }
+
+  // Reconcile manifest status against what each artifact says about itself.
+  //
+  // A workspace that ran 0.6 can have accepted artifacts marked `active` in
+  // their own frontmatter while the manifest still calls them `draft` — the
+  // disagreement that made fast validation fail and forced a hand-edit followed
+  // by `silver repair`. Migration heals that in place rather than expecting the
+  // user to know which files disagree.
+  const statusChanges = await planManifestStatusSync({
+    root,
+    manifest: plan.nextManifest,
+  });
+  for (const change of statusChanges) {
+    const entry = plan.nextManifest.artifacts.find(({ id }) => id === change.id);
+    if (entry) entry.status = change.to;
+  }
+  if (statusChanges.length > 0) {
+    await writeUtf8(workspace.manifestPath, stringify(plan.nextManifest));
+  }
+
   const indexContent = renderIndex(plan.nextManifest, INITIAL_SKILL_IDS);
-  const agentContent = renderAgentPointer(INITIAL_SKILL_IDS);
+  const agentContent = renderAgentPointer(
+    INITIAL_SKILL_IDS,
+    await resolveSharedStudioVoice(),
+  );
   await writeUtf8(path.join(root, "design", "INDEX.md"), indexContent);
   await writeUtf8(path.join(root, "AGENTS.md"), agentContent);
+
+  // Ignore the personal studio voice before it can be committed, then apply it.
+  await ensureGitignoreEntries(root);
+  await writeWorkspacePracticeOverlay(root);
 
   const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
   const claudeMemoryContent = mergeClaudeMemory(

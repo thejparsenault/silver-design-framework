@@ -105,12 +105,32 @@ export async function treeIntegrity(root) {
   return `sha256:${hash.digest("hex")}`;
 }
 
+// Installed dependencies and tool caches are not workspace content. A prototype
+// with its dependencies installed would otherwise pull tens of thousands of
+// third-party files into an integrity snapshot or a provenance bootstrap — slow,
+// meaningless, and enough to fail a migration outright.
+//
+// Build output is deliberately *not* skipped here, unlike in the design checkers.
+// A checker asks "is this authored design source?", where generated output is
+// noise; integrity asks "is this file still what we installed?", and the
+// reference system ships committed build output as part of its payload.
+const SKIPPED_DIRECTORIES = new Set([
+  ".cache",
+  ".git",
+  ".parcel-cache",
+  ".turbo",
+  ".vite",
+  "bower_components",
+  "node_modules",
+]);
+
 export async function snapshotFiles(root) {
   const output = new Map();
 
   async function visit(directory) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
-      if (entry.name === ".git" || entry.name === ".DS_Store") {
+      if (entry.name === ".DS_Store") continue;
+      if (entry.isDirectory() && SKIPPED_DIRECTORIES.has(entry.name)) {
         continue;
       }
       const absolute = path.join(directory, entry.name);

@@ -4,7 +4,35 @@ import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parse as parseYaml } from "yaml";
+import {
+  isDirectoryKind,
+  isInactiveKind,
+} from "../../design-check/scripts/artifact-kinds.mjs";
+
+// This file is copied into `.skills/what-now/scripts/`, where a bare `yaml`
+// import cannot resolve: Node walks ancestor node_modules from the importing
+// file and never looks inside a sibling package's private tree. Ask the
+// installed package for it instead, which does resolve from a workspace that
+// installed Silver from npm. Running through `.silver/bin/silver` always works
+// because the CLI executes from inside the package.
+async function loadYamlParser() {
+  const candidates = [
+    "yaml",
+    "silver-design-framework/framework/runtime/yaml.mjs",
+  ];
+  for (const candidate of candidates) {
+    try {
+      return (await import(candidate)).parse;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(
+    "Could not resolve a YAML parser. Run this through the workspace launcher instead: `.silver/bin/silver what-now .`",
+  );
+}
+
+const parseYaml = await loadYamlParser();
 
 const ACTION_TITLES = {
   "repair-workspace": "Repair the Silver workspace",
@@ -89,6 +117,33 @@ async function readSafe(root, relativePath) {
     absolute,
     content: await readFile(absolute, "utf8"),
     mtime: observed.mtime,
+  };
+}
+
+// Some artifact kinds are backed by a directory, not a document. Reading one
+// through readSafe always reports it missing, which used to make every fresh
+// workspace's component catalog a high-confidence repair blocker.
+async function statArtifact(root, relativePath, kind) {
+  const absolute = inside(root, relativePath);
+  if (!absolute) return null;
+  const segments = path.relative(path.resolve(root), absolute).split(path.sep);
+  let cursor = path.resolve(root);
+  for (const segment of segments) {
+    cursor = path.join(cursor, segment);
+    if (!(await safeStat(cursor))) return null;
+  }
+  const observed = await safeStat(absolute);
+  if (!observed) return null;
+  if (isDirectoryKind(kind)) {
+    if (!observed.isDirectory()) return null;
+    return { absolute, content: "", mtime: observed.mtime, directory: true };
+  }
+  if (!observed.isFile()) return null;
+  return {
+    absolute,
+    content: await readFile(absolute, "utf8"),
+    mtime: observed.mtime,
+    directory: false,
   };
 }
 
@@ -249,7 +304,10 @@ async function inspectWorkspace(root, now) {
   if (Array.isArray(manifestRecord.value?.artifacts)) {
     for (const artifact of manifestRecord.value.artifacts) {
       if (!artifact?.path || !artifact?.kind) continue;
-      const declared = await readSafe(root, artifact.path);
+      // The legacy permission policy is inactive since 0.5 and is not required
+      // to be present.
+      if (isInactiveKind(artifact.kind)) continue;
+      const declared = await statArtifact(root, artifact.path, artifact.kind);
       if (!declared) {
         observations.push({
           severity: "blocker",

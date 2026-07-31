@@ -1,7 +1,7 @@
 ---
-name: pitch
+name: silver-pitch
 description: Produce an evidence-linked opportunity, proposal, or outcome change case and optional branded presentation view using the project presentation kit. Use to show before state, reasons, after state, tradeoffs, decision request, and estimated, proxy, or measured impact.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*), Bash(node ${CLAUDE_SKILL_DIR}/scripts/*)
+allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Build change case

@@ -183,6 +183,34 @@ export async function readYaml(filePath) {
   return parseYaml(await readFile(filePath, "utf8"));
 }
 
+// Installed dependencies, build output, and tool caches are not project-authored
+// design source. A checker that walks into them reports the third-party world's
+// raw colors and dimensions as this workspace's violations.
+export const IGNORED_DIRECTORIES = new Set([
+  ".cache",
+  ".git",
+  ".next",
+  ".nuxt",
+  ".output",
+  ".parcel-cache",
+  ".svelte-kit",
+  ".turbo",
+  ".vite",
+  "__pycache__",
+  "bower_components",
+  "build",
+  "coverage",
+  "dist",
+  "node_modules",
+  "out",
+  "target",
+  "vendor",
+]);
+
+export function isIgnoredDirectory(name) {
+  return IGNORED_DIRECTORIES.has(name);
+}
+
 export async function findFiles(root, predicate) {
   const output = [];
   async function visit(directory) {
@@ -197,6 +225,7 @@ export async function findFiles(root, predicate) {
     for (const entry of entries) {
       const absolute = path.join(directory, entry.name);
       if (entry.isDirectory()) {
+        if (isIgnoredDirectory(entry.name)) continue;
         await visit(absolute);
       } else if (entry.isFile() && predicate(absolute)) {
         output.push(absolute);

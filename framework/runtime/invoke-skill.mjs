@@ -12,8 +12,12 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
-import { checkpointAcceptedOutputs } from "./checkpoints.mjs";
+import {
+  checkpointAcceptedOutputs,
+  checkpointPreflight,
+} from "./checkpoints.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
+import { syncManifestStatus } from "./manifest-sync.mjs";
 import { discoverProviders } from "./providers.mjs";
 import {
   matchesPathPattern,
@@ -78,14 +82,72 @@ function effectForOutput(rule, action, outputPath) {
   return { capability, action, path: outputPath };
 }
 
+// Two contract blocks can legitimately describe the same capability, action, and
+// path scope, and several outputs under one path scope produce the same observed
+// effect. Persisting those duplicates makes an audit harder to read without
+// making it more accurate.
+function deduplicateEffects(effects) {
+  const seen = new Map();
+  for (const effect of effects) {
+    const key = JSON.stringify([
+      effect.capability,
+      effect.action,
+      effect.path ?? null,
+      effect.paths ?? null,
+      effect.reference ?? null,
+    ]);
+    if (!seen.has(key)) seen.set(key, effect);
+  }
+  return [...seen.values()];
+}
+
+// Every invocation persists its own normalized result. That is a real write, and
+// leaving it out of the audit is what let a skill describe itself as read-only
+// while dirtying the working tree. It belongs to the runtime rather than to any
+// one skill, so it is declared here instead of in all 21 contracts.
+const RESULT_RECORD_PATHS = ".silver/results/skills/**";
+
+// Activating a canonical artifact also updates the manifest that indexes it and
+// the files generated from that manifest. Those are runtime effects for the same
+// reason the result record is: they belong to the framework's bookkeeping rather
+// than to any one skill's contract.
+const RUNTIME_EFFECTS = [
+  {
+    capability: "repository",
+    action: "write",
+    paths: [RESULT_RECORD_PATHS],
+  },
+  ...["create", "write", "update"].map((action) => ({
+    capability: "repository",
+    action,
+    paths: [
+      ".silver/results/**",
+      "design/manifest.yaml",
+      "design/INDEX.md",
+      ".silver/lock.yaml",
+    ],
+  })),
+];
+
+function resultRecordEffect(invocationId) {
+  return {
+    capability: "repository",
+    action: "write",
+    path: `.silver/results/skills/${invocationId}.json`,
+  };
+}
+
 function declaredEffects(contract) {
-  return (contract.effects ?? contract.permissions ?? []).flatMap((effect) =>
-    effect.actions.map((action) => ({
-      capability: effect.capability,
-      action,
-      ...(effect.paths ? { paths: effect.paths } : {}),
-    })),
-  );
+  return deduplicateEffects([
+    ...(contract.effects ?? contract.permissions ?? []).flatMap((effect) =>
+      effect.actions.map((action) => ({
+        capability: effect.capability,
+        action,
+        ...(effect.paths ? { paths: effect.paths } : {}),
+      })),
+    ),
+    ...RUNTIME_EFFECTS,
+  ]);
 }
 
 function effectIsDeclared(declared, observed) {
@@ -104,12 +166,16 @@ function effectIsDeclared(declared, observed) {
 
 function effectAudit(contract, observed) {
   const declared = declaredEffects(contract);
+  const uniqueObserved = deduplicateEffects(observed);
   return {
-    declared: declared.map(({ paths, ...effect }) => ({
-      ...effect,
-      ...(paths?.length === 1 ? { path: paths[0] } : {}),
-    })),
-    findings: observed
+    declared: deduplicateEffects(
+      declared.map(({ paths, ...effect }) => ({
+        ...effect,
+        ...(paths?.length === 1 ? { path: paths[0] } : {}),
+      })),
+    ),
+    observed: uniqueObserved,
+    findings: uniqueObserved
       .filter((effect) => !effectIsDeclared(declared, effect))
       .map(
         (effect) =>
@@ -134,6 +200,96 @@ async function atomicWrite(filePath, content) {
   await rename(temporary, filePath);
 }
 
+// Write a request that can be submitted as-is to retry an invocation that failed
+// after its outputs landed.
+//
+// Without this, recovery meant recomputing an `expected_integrity` hash for every
+// file the failed attempt created, because the guard against blind overwrites
+// cannot tell a half-applied invocation from a stale one. The retry is now a
+// single command, and the hashes describe what is actually on disk.
+async function writeResumeRequest({ root, request, prepared, reason }) {
+  const written = new Map(
+    prepared.map(({ reference, content }) => [
+      reference.path,
+      integrity(content),
+    ]),
+  );
+  const resume = {
+    ...request,
+    outputs: request.outputs.map((output) =>
+      written.has(output.reference.path)
+        ? {
+            ...output,
+            expected_integrity: written.get(output.reference.path),
+          }
+        : output,
+    ),
+  };
+  const resumePath = inside(
+    root,
+    `.silver/results/resume/${request.invocation_id}.json`,
+  );
+  await atomicWrite(resumePath, `${JSON.stringify(resume, null, 2)}\n`);
+  return {
+    path: `.silver/results/resume/${request.invocation_id}.json`,
+    reason,
+  };
+}
+
+// Reconcile what a request claims about its checks against what is on disk.
+//
+// A caller could previously assert `pass` for a check whose `result_path` did
+// not exist — the reported prototype recorded six such claims while
+// `.silver/results/checks/` was absent, including a browser interaction check
+// that provably never ran. A status is only believed when its evidence resolves
+// and agrees; otherwise it degrades to `not-run` with the reason recorded.
+async function verifyChecks({ root, declared = [], ran }) {
+  const byId = new Map();
+  for (const check of declared) byId.set(check.id, check);
+  // Statuses this invocation produced itself outrank anything the caller claimed.
+  for (const check of ran ?? []) byId.set(check.id, check);
+
+  const verified = [];
+  for (const check of byId.values()) {
+    if (check.status !== "pass") {
+      verified.push(check);
+      continue;
+    }
+    const evidencePath = check.result_path
+      ? inside(root, check.result_path)
+      : null;
+    if (!evidencePath || !(await exists(evidencePath))) {
+      verified.push({
+        ...check,
+        status: "not-run",
+        reason: `Reported pass without evidence at ${check.result_path ?? "an unspecified path"}.`,
+      });
+      continue;
+    }
+    let evidence;
+    try {
+      evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    } catch (error) {
+      verified.push({
+        ...check,
+        status: "not-run",
+        reason: `Check evidence at ${check.result_path} could not be read: ${error.message}`,
+      });
+      continue;
+    }
+    if (evidence.status !== "pass") {
+      verified.push({
+        ...check,
+        status: evidence.status === "fail" ? "fail" : "not-run",
+        reason: `Check evidence at ${check.result_path} records ${evidence.status}, not pass.`,
+      });
+      continue;
+    }
+    verified.push(check);
+  }
+  return verified;
+}
+
 async function recordResult(workspaceRoot, result) {
   await assertV2("skill-result.schema.json", result);
   const resultPath = inside(
@@ -144,7 +300,8 @@ async function recordResult(workspaceRoot, result) {
   return result;
 }
 
-function blockedResult({
+async function blockedResult({
+  root,
   request,
   contract,
   completedAt,
@@ -154,7 +311,11 @@ function blockedResult({
   guardrails,
   outputs = [],
 }) {
-  const observed = request.observed_effects ?? [];
+  const checks = await verifyChecks({ root, declared: request.checks });
+  const observed = [
+    ...(request.observed_effects ?? []),
+    resultRecordEffect(request.invocation_id),
+  ];
   const audit = effectAudit(contract, observed);
   const provenance = request.provenance ?? {
     schema: "silver/provenance/v1",
@@ -205,7 +366,10 @@ function blockedResult({
         reasons: [summary],
       },
     ],
-    checks: request.checks,
+    // Blocked or not, an unbacked `pass` is still a claim about work that did
+    // not demonstrably happen, so it is degraded here too rather than echoed
+    // back into the persisted record.
+    checks,
     guardrails,
     unresolved_questions: request.unresolved_questions,
     recommended_next_actions: [],
@@ -286,6 +450,11 @@ export async function invokeSkill({
   request,
   completedAt = new Date().toISOString(),
   registryPath,
+  // Runs this skill's required checks and persists their evidence. Supplied by
+  // the CLI, which can reach the design-check scripts; the runtime deliberately
+  // does not depend on them, so a caller without it still gets verification of
+  // whatever evidence already exists.
+  runChecks,
 }) {
   const workspaceRoot = path.resolve(root);
   const skillRoot =
@@ -329,7 +498,8 @@ export async function invokeSkill({
         ? { reason: error.message }
         : {}),
     }));
-    const result = blockedResult({
+    const result = await blockedResult({
+      root: workspaceRoot,
       request,
       contract,
       completedAt,
@@ -353,7 +523,8 @@ export async function invokeSkill({
     )
   ) {
     const result = {
-      ...blockedResult({
+      ...(await blockedResult({
+        root: workspaceRoot,
         request,
         contract,
         completedAt,
@@ -361,7 +532,7 @@ export async function invokeSkill({
         providers: capabilityResolution.providers,
         degradedCapabilities: capabilityResolution.degradedCapabilities,
         guardrails,
-      }),
+      })),
       outputs: [],
       execution: {
         status: "not-run",
@@ -457,7 +628,8 @@ export async function invokeSkill({
       });
     }
   } catch (error) {
-    const result = blockedResult({
+    const result = await blockedResult({
+      root: workspaceRoot,
       request,
       contract,
       completedAt,
@@ -469,20 +641,111 @@ export async function invokeSkill({
     return recordResult(workspaceRoot, result);
   }
 
+  // Acceptance checkpoints the outputs into Git. Confirm Git can actually take
+  // the commit *before* touching canonical files, so a checkpoint failure can no
+  // longer leave written-but-uncommitted output that the next identical request
+  // refuses to overwrite.
+  const wantsCheckpoint =
+    (request.acceptance?.status ?? null) === "accepted" && prepared.length > 0;
+  if (wantsCheckpoint) {
+    const preflight = await checkpointPreflight({
+      root: workspaceRoot,
+      // Activation can also touch these, so they are part of the same commit and
+      // therefore part of what has to be clean beforehand.
+      outputs: [
+        ...prepared.map(({ reference }) => reference),
+        ...["design/manifest.yaml", "design/INDEX.md", ".silver/lock.yaml"].map(
+          (syncPath) => ({ path: syncPath }),
+        ),
+      ],
+    });
+    if (preflight.status === "blocked") {
+      const result = await blockedResult({
+        root: workspaceRoot,
+        request,
+        contract,
+        completedAt,
+        summary: `${preflight.message} No files were written; nothing needs to be undone.`,
+        providers: capabilityResolution.providers,
+        degradedCapabilities: capabilityResolution.degradedCapabilities,
+        guardrails,
+      });
+      return recordResult(workspaceRoot, result);
+    }
+  }
+
   for (const output of prepared) {
     await atomicWrite(output.absolute, output.content);
   }
-  const observedEffects = [
+
+  // An artifact that now declares itself active makes the manifest that still
+  // calls it draft wrong. Reconcile both, plus everything generated from them,
+  // as part of this invocation rather than leaving a hand-edit and a repair run
+  // as the user's problem.
+  //
+  // This runs before the checks, not after: contract-integrity compares
+  // frontmatter against the manifest, so checking first would fail on a
+  // disagreement this invocation is about to resolve.
+  const manifestSync = await syncManifestStatus({
+    root: workspaceRoot,
+    only: prepared.map(({ reference }) => reference.path),
+    write: (absolute, content) => atomicWrite(absolute, content),
+  });
+
+  // Past this point the workspace has changed. Any failure must leave a way back
+  // in rather than an integrity mismatch the caller has to rebuild by hand.
+  let checkRun = null;
+  try {
+    if (runChecks && contract.checks.length > 0) {
+      checkRun = await runChecks({
+        root: workspaceRoot,
+        contract,
+        invocationId: request.invocation_id,
+      });
+    }
+  } catch (error) {
+    await writeResumeRequest({
+      root: workspaceRoot,
+      request,
+      prepared,
+      reason: `Checks could not run: ${error.message}`,
+    });
+    checkRun = null;
+  }
+
+  const observedEffects = deduplicateEffects([
     ...(request.observed_effects ?? []),
     ...prepared.map(({ effect }) => effect),
-  ];
+    ...manifestSync.paths.map((syncPath) => ({
+      capability: "repository",
+      action: "update",
+      path: syncPath,
+    })),
+    resultRecordEffect(request.invocation_id),
+  ]);
   const audit = effectAudit(contract, observedEffects);
   const requiredCheckIds = contract.checks
     .filter(({ required }) => required)
     .map(({ id }) => id);
-  const checkById = new Map(request.checks.map((check) => [check.id, check]));
+  // A check status is a claim about work that happened. Verify the evidence
+  // exists and agrees before believing it, so a result can never report a
+  // passing check whose result file was never written.
+  const checks = await verifyChecks({
+    root: workspaceRoot,
+    declared: request.checks,
+    ran: checkRun?.checks,
+  });
+  const checkById = new Map(checks.map((check) => [check.id, check]));
   const checkBlocked = requiredCheckIds.some(
     (id) => !checkById.has(id) || checkById.get(id).status !== "pass",
+  );
+  // A check that could not run is different from a check that failed. Only the
+  // second means the work is wrong; the first means it is unverified.
+  const checkFailed = requiredCheckIds.some(
+    (id) => checkById.get(id)?.status === "fail",
+  );
+  const checkUnverified = requiredCheckIds.some(
+    (id) => !checkById.has(id) || checkById.get(id).status === "not-run",
   );
   const questionBlocked =
     contract.completion.unresolved_questions.startsWith("block") &&
@@ -498,7 +761,18 @@ export async function invokeSkill({
       ? await checkpointAcceptedOutputs({
           root: workspaceRoot,
           invocationId: request.invocation_id,
-          outputs: prepared.map(({ reference }) => reference),
+          // The manifest, index, and lock changed because these outputs did, so
+          // they belong in the same commit. Splitting them is what left the
+          // workspace inconsistent between an accepted skill and its repair.
+          outputs: [
+            ...prepared.map(({ reference }) => reference),
+            ...manifestSync.paths.map((syncPath) => ({
+              id: syncPath,
+              kind: "generated",
+              revision: "r1",
+              path: syncPath,
+            })),
+          ],
           now: completedAt,
         })
       : null;
@@ -506,6 +780,30 @@ export async function invokeSkill({
     gitCheckpoint?.status === "blocked"
       ? [gitCheckpoint.message]
       : [];
+  // Preflight makes this rare, but a checkpoint can still fail on a race. The
+  // outputs are already written, so leave a resumable request rather than a
+  // state the caller has to reconstruct.
+  const resume =
+    gitCheckpoint?.status === "blocked"
+      ? await writeResumeRequest({
+          root: workspaceRoot,
+          request,
+          prepared,
+          reason: gitCheckpoint.message,
+        })
+      : null;
+
+  // What else this skill can still produce. Contract outputs describe what a
+  // skill *may* write, not what it must, so this never blocks readiness — it
+  // gives the agent something concrete to offer next instead of guessing.
+  const producedKinds = new Set(prepared.map(({ reference }) => reference.kind));
+  const pendingOutputs = contract.outputs
+    .filter(({ kind }) => !producedKinds.has(kind))
+    .map(({ kind, path_pattern: pathPattern }) => ({
+      kind,
+      path_pattern: pathPattern,
+    }));
+
   const effectFindings = [...audit.findings, ...checkpointFindings];
   const ready =
     !checkBlocked &&
@@ -560,12 +858,26 @@ export async function invokeSkill({
         coverage: item.coverage,
       }),
     ),
+    ...(pendingOutputs.length > 0 ? { pending_outputs: pendingOutputs } : {}),
+    ...(resume ? { resume_request: resume } : {}),
     execution: {
+      // "Files were generated" and "the work was verified" are different claims.
+      // A required check that could not run leaves the second one open, and
+      // saying so is the difference between an honest result and a reassuring
+      // one.
       status:
-        checkBlocked || questionBlocked || effectFindings.length > 0
-          ? "complete-with-findings"
-          : "complete",
-      summary: `Completed ${contract.id} with ${prepared.length} durable output(s).`,
+        checkUnverified && !checkFailed && effectFindings.length === 0
+          ? "complete-awaiting-verification"
+          : checkBlocked || questionBlocked || effectFindings.length > 0
+            ? "complete-with-findings"
+            : "complete",
+      summary: [
+        `Completed ${contract.id} with ${prepared.length} durable output(s)`,
+        checkUnverified
+          ? "; one or more required checks could not be verified"
+          : "",
+        ".",
+      ].join(""),
     },
     acceptance,
     readiness:
@@ -582,7 +894,12 @@ export async function invokeSkill({
             status: ready ? "ready" : "not-ready",
             reasons: [
               ...(!accepted ? ["Human acceptance is unresolved."] : []),
-              ...(checkBlocked ? ["One or more required checks did not pass."] : []),
+              ...(checkFailed ? ["One or more required checks failed."] : []),
+              ...(checkUnverified
+                ? [
+                    "One or more required checks could not be run or verified, so this work is unverified rather than wrong.",
+                  ]
+                : []),
               ...(questionBlocked ? ["Unresolved questions block this handoff."] : []),
               ...(bindingBlockers.length
                 ? ["Externally authoritative input freshness is unresolved."]
@@ -592,7 +909,7 @@ export async function invokeSkill({
                 : []),
             ],
           })),
-    checks: request.checks,
+    checks,
     guardrails,
     unresolved_questions: request.unresolved_questions,
     recommended_next_actions: recommendations,

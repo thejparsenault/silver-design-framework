@@ -164,8 +164,10 @@
       "required": ["status", "summary"],
       "properties": {
         "status": {
+          "description": "complete-awaiting-verification separates 'the output was generated' from 'the output was verified': the work produced no findings, but a required check could not be run, so its correctness is unestablished rather than confirmed.",
           "enum": [
             "complete",
+            "complete-awaiting-verification",
             "complete-with-findings",
             "blocked",
             "failed",
@@ -223,6 +225,7 @@
       }
     },
     "checks": {
+      "description": "Verified check outcomes. A recorded pass means its evidence file exists and agrees; a status the runtime could not corroborate is degraded to not-run with a reason.",
       "type": "array",
       "items": {
         "type": "object",
@@ -237,7 +240,47 @@
           },
           "result_path": {
             "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "reason": {
+            "description": "Why a claimed status was not believed, or why a check could not run.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
           }
+        }
+      }
+    },
+    "pending_outputs": {
+      "description": "Declared contract outputs this skill has not produced yet. A skill may build its output set across several invocations; downstream readiness waits until the set is complete.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path_pattern"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/artifactKind"
+          },
+          "path_pattern": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "resume_request": {
+      "description": "A submittable request that retries this invocation after it failed with its outputs already written. Its expected_integrity values describe what is actually on disk.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "reason"],
+      "properties": {
+        "path": {
+          "$ref": "common.schema.json#/$defs/relativePath"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
         }
       }
     },

@@ -11,6 +11,7 @@ import { inspectLinkedSources } from "./sources.mjs";
 import {
   CLAUDE_BLOCK_BEGIN,
   CLAUDE_MEMORY_PATH,
+  CLAUDE_SKILLS_DIRECTORY,
   LAUNCHER_PATH,
   claudeSkillLinkState,
   launcherResolution,
@@ -24,6 +25,17 @@ import {
 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
+import {
+  isDirectoryKind,
+  isInactiveKind,
+  registryContractFor,
+  structuredSchemaFor,
+} from "../framework/skills/design-check/scripts/artifact-kinds.mjs";
+import {
+  WORKSPACE_PRACTICE_OVERLAY_PATH,
+  loadMethodOverlays,
+  resolveStudioVoice,
+} from "./practice-overlay.mjs";
 
 function diagnostic(level, code, message, relativePath) {
   return {
@@ -46,7 +58,9 @@ function parseFrontmatter(content) {
   return value;
 }
 
-async function loadYaml(root, relativePath, diagnostics) {
+// YAML is a JSON superset, so this reads both the .yaml registries and the
+// .json structured artifacts.
+async function loadStructured(root, relativePath, diagnostics) {
   let absolute;
   try {
     absolute = resolveInside(root, relativePath);
@@ -108,22 +122,21 @@ async function inspectArtifact(root, mapping, diagnostics) {
     );
     return;
   }
-  if (mapping.kind === "permission-policy") {
+  // How a kind is stored decides how it is inspected. See
+  // framework/skills/design-check/scripts/artifact-kinds.mjs.
+  if (isInactiveKind(mapping.kind) || isDirectoryKind(mapping.kind)) {
     return;
   }
-  if (mapping.kind === "component-catalog") {
-    return;
-  }
-  if (
-    ["x-component-expression", "x-design-context"].includes(mapping.kind)
-  ) {
-    const value = await loadYaml(root, mapping.path, diagnostics);
+  const structuredSchema = structuredSchemaFor(mapping.kind);
+  if (structuredSchema) {
+    const value = await loadStructured(root, mapping.path, diagnostics);
     if (!value) return;
-    const schema =
-      mapping.kind === "x-component-expression"
-        ? "v2/component-expression.schema.json"
-        : "v2/design-context.schema.json";
-    const valid = await applySchema(schema, value, mapping.path, diagnostics);
+    const valid = await applySchema(
+      `v2/${structuredSchema}`,
+      value,
+      mapping.path,
+      diagnostics,
+    );
     if (valid && value.id !== mapping.id) {
       diagnostics.push(
         diagnostic(
@@ -136,53 +149,24 @@ async function inspectArtifact(root, mapping, diagnostics) {
     }
     return;
   }
-  if (mapping.kind === "x-guidance-source") {
-    const registry = await loadYaml(root, mapping.path, diagnostics);
-    if (!registry) return;
-    if (
-      registry.schema !== "silver/guidance-registry/v1" ||
-      !Array.isArray(registry.sources)
-    ) {
+  const registry = registryContractFor(mapping.kind);
+  if (registry) {
+    const value = await loadStructured(root, mapping.path, diagnostics);
+    if (!value) return;
+    if (value.schema !== registry.schema || !Array.isArray(value.sources)) {
       diagnostics.push(
         diagnostic(
           "error",
           "schema-invalid",
-          "Guidance registry does not declare the v1 schema.",
+          `${registry.label} does not declare the v1 schema.`,
           mapping.path,
         ),
       );
       return;
     }
-    for (const source of registry.sources) {
+    for (const source of value.sources) {
       await applySchema(
-        "v2/guidance-source.schema.json",
-        source,
-        mapping.path,
-        diagnostics,
-      );
-    }
-    return;
-  }
-  if (mapping.kind === "x-linked-source") {
-    const registry = await loadYaml(root, mapping.path, diagnostics);
-    if (!registry) return;
-    if (
-      registry.schema !== "silver/source-registry/v1" ||
-      !Array.isArray(registry.sources)
-    ) {
-      diagnostics.push(
-        diagnostic(
-          "error",
-          "schema-invalid",
-          "Linked source registry does not declare the v1 schema.",
-          mapping.path,
-        ),
-      );
-      return;
-    }
-    for (const source of registry.sources) {
-      await applySchema(
-        "v2/linked-source.schema.json",
+        `v2/${registry.entrySchema}`,
         source,
         mapping.path,
         diagnostics,
@@ -193,9 +177,9 @@ async function inspectArtifact(root, mapping, diagnostics) {
   if (!mapping.path.endsWith(".md")) {
     diagnostics.push(
       diagnostic(
-        "warning",
-        "frontmatter-not-checked",
-        "Narrative artifact is not Markdown, so frontmatter was not checked.",
+        "error",
+        "narrative-artifact-not-markdown",
+        `A ${mapping.kind} artifact records intent in Markdown with frontmatter, but this path is not a .md file.`,
         mapping.path,
       ),
     );
@@ -237,7 +221,7 @@ async function inspectArtifact(root, mapping, diagnostics) {
 export async function doctorWorkspace(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const diagnostics = [];
-  const manifest = await loadYaml(
+  const manifest = await loadStructured(
     root,
     "design/manifest.yaml",
     diagnostics,
@@ -273,7 +257,7 @@ export async function doctorWorkspace(options = {}) {
 
   const indexPath = path.join(root, "design", "INDEX.md");
   if (manifest.permission_policy) {
-    const permissionPolicy = await loadYaml(
+    const permissionPolicy = await loadStructured(
       root,
       manifest.permission_policy,
       diagnostics,
@@ -288,7 +272,7 @@ export async function doctorWorkspace(options = {}) {
     }
   }
 
-  const lock = await loadYaml(
+  const lock = await loadStructured(
     root,
     ".silver/lock.yaml",
     diagnostics,
@@ -508,20 +492,67 @@ export async function doctorWorkspace(options = {}) {
           ),
         );
       }
-      // Generic ids can shadow, or be shadowed by, a user's own skills.
-      const collisions = skillIds.filter((id) =>
-        ["map", "system", "research", "component", "implement"].includes(id),
-      );
-      if (collisions.length > 0 && missing.length === 0) {
+      // Generic ids like `system` and `map` used to be advertised unprefixed,
+      // where a personal or bundled skill of the same name could shadow them.
+      // Every adapter entry is namespaced since 0.7, so a leftover unprefixed
+      // link is the only remaining collision risk.
+      const unprefixed = [];
+      for (const id of skillIds) {
+        if (await exists(path.join(root, CLAUDE_SKILLS_DIRECTORY, id))) {
+          unprefixed.push(id);
+        }
+      }
+      if (unprefixed.length > 0) {
         diagnostics.push(
           diagnostic(
-            "info",
+            "warning",
             "claude-skill-name-collision-risk",
-            `Skills named ${collisions.join(", ")} use generic commands that a personal or bundled skill of the same name would override.`,
+            `${unprefixed.length} .claude/skills entr(ies) are still advertised without the silver- prefix, so a personal or bundled skill of the same name can shadow them; run \`silver repair\`.`,
             ".claude/skills",
           ),
         );
       }
+    }
+
+    // Whether your practice is applied here is not a health problem, but it is
+    // the kind of thing a designer should be able to see without reading files.
+    const activeVoice = await resolveStudioVoice();
+    const { overlays, invalid } = await loadMethodOverlays();
+    const hasPersonal =
+      activeVoice?.source === "practice" || overlays.length > 0;
+    const materialized = await exists(
+      path.join(root, WORKSPACE_PRACTICE_OVERLAY_PATH),
+    );
+    if (hasPersonal && !materialized) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "practice-not-applied",
+          "Your personal practice is not applied in this workspace; run `silver repair`.",
+          WORKSPACE_PRACTICE_OVERLAY_PATH,
+        ),
+      );
+    } else if (!hasPersonal && materialized) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "practice-overlay-stale",
+          "A personal practice is applied here but no longer exists in My Practice; run `silver repair`.",
+          WORKSPACE_PRACTICE_OVERLAY_PATH,
+        ),
+      );
+    }
+    // A malformed personal file is never fatal, but silently ignoring it would
+    // leave a designer wondering why their preference had no effect.
+    for (const entry of invalid) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "method-overlay-invalid",
+          `Method overlay ${entry.path} in My Practice is not applied because it is invalid: ${entry.reason}`,
+          WORKSPACE_PRACTICE_OVERLAY_PATH,
+        ),
+      );
     }
 
     const claudeMemory = (await exists(path.join(root, CLAUDE_MEMORY_PATH)))
@@ -547,7 +578,9 @@ export async function doctorWorkspace(options = {}) {
       );
     }
 
-    // An npx launcher resolves by version at run time and has no path to check.
+    // A portable launcher probes the workspace at run time and an npx launcher
+    // resolves by version, so neither has a path that can rot. Only a pre-0.7
+    // hard-coded launcher does.
     const launcher = await launcherResolution(root);
     if (launcher === null) {
       diagnostics.push(
@@ -558,12 +591,12 @@ export async function doctorWorkspace(options = {}) {
           LAUNCHER_PATH,
         ),
       );
-    } else if (launcher.mode === "path" && !(await exists(launcher.entryPoint))) {
+    } else if (launcher.mode === "hard-coded-path") {
       diagnostics.push(
         diagnostic(
           "warning",
-          "launcher-stale",
-          `.silver/bin/silver points at ${launcher.entryPoint}, which no longer exists; run \`silver repair\` from your Silver installation.`,
+          "launcher-not-portable",
+          `.silver/bin/silver hard-codes ${launcher.entryPoint}, so it breaks when this workspace is moved, cloned, or checked out on another machine; run \`silver repair\` to replace it with a portable launcher.`,
           LAUNCHER_PATH,
         ),
       );

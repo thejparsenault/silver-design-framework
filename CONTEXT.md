@@ -49,6 +49,25 @@ _Avoid_: Done flag, success when only file generation completed
 A deterministic evaluation of one conformance dimension that produces normalized findings and never performs design work.
 _Avoid_: Skill when the operation is purely evaluative
 
+**Check evidence**:
+The persisted result file a check writes under `.silver/results/checks/`. A
+recorded `pass` is believed only when its evidence resolves and agrees; an
+unbacked claim is degraded to `not-run` with the reason.
+_Avoid_: Check status when referring to the file that substantiates it
+
+**Studio voice**:
+How the agent talks while doing design work: register, not rigour. Authored once
+as a framework default and overridable in My Practice, deliberately separate from
+skill packages so tone and instructions can change independently.
+_Avoid_: Voice, which is the product's voice to its audience
+
+**Practice overlay**:
+My Practice resolved and carried into one workspace as a generated, untracked
+file. It is where personal studio voice and method overlays reach an agent, and
+it is never an authoring location — personal preference is authored in My
+Practice so it applies everywhere and is committed nowhere.
+_Avoid_: Workspace setting, personal config in the project
+
 **Recipe**:
 A tested implementation profile for generating a particular kind of output, such as a static reference page, marketing site, web application, or mobile prototype.
 _Avoid_: Template when the choice includes runtime and workflow guidance

@@ -184,6 +184,23 @@ Claude Cowork is not yet supported — it loads only account-level skills and ru
 code in an isolated remote environment. See
 [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
 
+## How a session goes
+
+One skill per turn. You ask for something, the agent runs a single skill, its
+required checks run as part of that invocation, and it comes back with what it
+made, what the checks actually said, and a couple of places you could go next.
+Then it stops and you choose.
+
+That is deliberate. A run that chains brand into a design system into a
+prototype without stopping takes a long time to produce something you cannot
+steer, and the first thing you find out is usually that you would have taken a
+different turn three steps back. Short loops you can redirect beat long ones
+that arrive finished.
+
+So the sequences below are maps of where work can go, not scripts to run. Start
+wherever your evidence and decisions already are, and expect to stop between
+every step.
+
 ## A good first session
 
 Begin by giving the workspace enough context to constrain later work.
@@ -221,16 +238,18 @@ them whenever the product changes.
 
 ## Designing a feature
 
-Silver's recommended loop is:
+The moves available to you, roughly in the order they tend to become useful:
 
 ```text
 research → synthesize → ideate → specify ↔ flow/sketch → prototype → evaluate
 ```
 
-The loop is optional. Start at the point that matches the evidence and
-decisions you already have.
+This is a map, not a pipeline. Nothing runs it end to end, and nothing should:
+each arrow is a decision you make after seeing what the previous step produced.
+Start at whichever point matches the evidence and decisions you already have,
+and skip anything that does not earn its place.
 
-A typical feature session could use these prompts:
+Any one of these is a complete request on its own:
 
 > Use `research` to prepare a plan for learning why users abandon onboarding.
 > Separate planned research from research that has actually been conducted.
@@ -296,10 +315,13 @@ material by default, not automatically production code.
 
 ## Run checks
 
-Run the complete fast suite from the initialized workspace:
+Every guarded invocation runs its own required checks and writes their evidence
+to `.silver/results/checks/`, so you do not have to run anything to get a
+trustworthy result. To check the whole workspace on demand:
 
 ```sh
-node .skills/design-check/scripts/run-fast.mjs --root .
+.silver/bin/silver check .
+.silver/bin/silver check . --only semantic-styles,accessibility
 ```
 
 If local Chrome is available, run the browser suite:
@@ -314,8 +336,49 @@ accessibility, responsive behavior, critical interactions, bindings,
 revision pins, view provenance, synchronization, semantic mapping, stale
 proposals, authority, map structure, and secret-free configuration.
 
-A genuinely unavailable target reports `not-run`; Silver never turns missing
-coverage into a pass.
+Checks read project-authored design source. Installed dependencies, build
+output, and tool caches — `node_modules`, `dist`, `build`, `.vite` and the like
+— are skipped, because a third-party package's raw colors are not your
+workspace's problem.
+
+A genuinely unavailable target reports `not-run`, and a check that claims to
+pass without resolvable evidence is downgraded to `not-run` with the reason
+recorded. Silver never turns missing coverage into a pass.
+
+## Your practice
+
+Everything personal lives in **My Practice** — one visible, Git-tracked folder
+at `~/Silver/My Practice`, applying to every workspace you work in. Nothing
+personal belongs in a project, because a project is shared.
+
+| File in My Practice | Sets |
+| --- | --- |
+| `studio-voice.md` | How the agent talks to you while designing |
+| `methods/*.yaml` | Preferred questions, techniques, quality emphasis, and exclusions, per skill |
+
+Both are deliberately separate from the skill packages. Skills say *what to do*
+and can be rewritten or upgraded without touching either, so a skill upgrade
+never changes how the agent sounds and a preference change never edits
+twenty-one files.
+
+Silver seeds both files, commented out, when it creates your practice. Fill one
+in and apply it:
+
+```sh
+$EDITOR "~/Silver/My Practice/studio-voice.md"
+.silver/bin/silver repair .    # in each workspace, to pick it up
+```
+
+Your studio voice replaces the framework default rather than blending with it.
+Your method overlays add to the skills they name.
+
+Preferences are carried into a workspace as `.silver/my-practice.md`, which
+Silver adds to `.gitignore`. That file is a generated copy — editing it does
+nothing lasting. Author in My Practice.
+
+Personal preference adds to how work is done. It never relaxes project facts,
+guardrails, required guidance, or approval boundaries: where a preference and a
+project rule disagree, the project rule wins.
 
 ## Workspace structure
 
@@ -368,6 +431,7 @@ From inside an initialized workspace, use its launcher:
 
 ```sh
 .silver/bin/silver doctor .
+.silver/bin/silver check .
 .silver/bin/silver repair .
 .silver/bin/silver update .
 .silver/bin/silver migrate .
@@ -411,18 +475,24 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.6.1`, **Agent Hosts and Guarded Invocation**, is validated for guided
-setup, integrated and separate repository topology, My Practice, linked local
-or Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
-discovery, CLI-routed guarded invocation, and reviewable 0.5-to-0.6 migration.
+Silver `0.7.0`, **One Good Step**, is validated for guided setup, integrated and
+separate repository topology, My Practice and the studio voice, linked local or
+Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
+discovery, CLI-routed guarded invocation with self-running checks, atomic
+canonical activation, and reviewable 0.6-to-0.7 migration.
 
 - Claude Cowork is not supported. It loads only account-level skills and runs
   code in an isolated remote environment, so guarded invocation cannot reach a
   local workspace. See
   [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
-- The `.silver/bin/silver` launcher records an absolute path to your Silver
-  installation, so it is machine-specific. Run `silver repair` after cloning a
-  workspace onto another machine.
+- Browser checks need a reachable local URL. Where a browser cannot open one,
+  `responsive-behavior` and `critical-interactions` report `not-run` and the
+  work is recorded as `complete-awaiting-verification` rather than verified.
+- Playbooks are single-step and cannot chain, but there is still no
+  `silver playbook` command; composition is driven by the agent one skill at a
+  time.
+- `static-html` is the only implementation recipe. Profiles are offered rather
+  than selected by default, but the set to offer from is small.
 - Guided setup can install into an existing repository, but deep semantic
   discovery and adoption of arbitrary codebases remains a following milestone.
 - Silver reports drift for newly linked guidance, design-system, component, and
@@ -431,8 +501,6 @@ discovery, CLI-routed guarded invocation, and reviewable 0.5-to-0.6 migration.
 - GitHub repository creation is agent-mediated: Silver previews the proposed
   private repository and records a resulting remote, but does not create it
   through a direct built-in API.
-- The convenience npm package and immutable GitHub release have not yet been
-  published.
 - Production recipes remain intentionally limited while the existing-codebase
   adoption model is developed.
 

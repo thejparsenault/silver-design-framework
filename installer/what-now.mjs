@@ -14,10 +14,19 @@ function invocationId(prefix, date) {
   return `${prefix}-${timestamp}`;
 }
 
+// Asking what to do next should not change anything.
+//
+// `what-now` described itself as read-only and its boundaries said "do not edit
+// workspace files", yet every invocation persisted a result record — declaring
+// only read and inspect effects while the no-silent-mutation guardrail reported
+// a pass. Analysis is now genuinely read-only, and recording is an explicit
+// choice. Setup still records one, because a workspace's first orientation is
+// worth keeping in its provenance.
 export async function runWhatNow({
   root,
   now = new Date(),
   invocationPrefix = "what-now",
+  record = false,
 } = {}) {
   const workspaceRoot = path.resolve(root);
   const skillDirectory = path.join(workspaceRoot, ".skills", "what-now");
@@ -32,6 +41,9 @@ export async function runWhatNow({
   }
   const analysis = await inspectWorkspace(workspaceRoot, observedAt);
   const timestamp = observedAt.toISOString();
+  if (!record) {
+    return { analysis, result: null, recorded: false };
+  }
   const result = await invokeSkill({
     root: workspaceRoot,
     skillDirectory,
@@ -58,8 +70,12 @@ export async function runWhatNow({
       recommended_next_actions: analysis.invocation_recommendations,
     },
   });
-  if (!["complete", "complete-with-findings"].includes(result.execution.status)) {
+  if (
+    !["complete", "complete-awaiting-verification", "complete-with-findings"].includes(
+      result.execution.status,
+    )
+  ) {
     throw new Error(`what-now did not complete: ${result.execution.summary}`);
   }
-  return { analysis, result };
+  return { analysis, result, recorded: true };
 }
