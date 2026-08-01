@@ -1,0 +1,51 @@
+# Figma's official MCP server — a read-oriented transport to Figma.
+#
+# Good at structured reads: pulling variables, styles, and design structure back
+# out. It does not build frames, so it declares `directions: [read]` and is not
+# a candidate for any push activity. That is the whole point of splitting Figma
+# into transports — this one and figma-console-mcp are good at opposite jobs, and
+# a designer can bind each activity to the right one.
+#
+# It needs no local build and no background process, so its setup ladder is one
+# rung. That is why the default heuristic prefers it wherever it can serve.
+schema: silver/provider/v1
+id: figma-official-mcp
+version: 0.8.0
+kind: external
+target: figma
+variant: official
+aliases:
+  - official figma mcp
+  - figma official
+  - figma dev mode
+capabilities: [design-file, representation-sync]
+connection:
+  kind: mcp
+  server: figma
+  tool_prefix: mcp__figma__
+  # A remote endpoint: nothing to install and no process to supervise, which is
+  # why the ladder below is two rungs and neither is a terminal.
+  config:
+    url: https://mcp.figma.com/mcp
+availability:
+  script: scripts/health.mjs
+setup:
+  - id: host-config
+    kind: silver-managed
+    title: Declare the figma MCP server in this agent host
+    verify: { kind: host-mcp-entry, by: silver }
+  - id: authorize
+    kind: external-app
+    title: Authorize the connection when the host first calls it
+    verify: { kind: handshake, by: agent }
+permissions:
+  - capability: design-file
+    actions: [read, inspect]
+    default: ask
+supported_artifact_kinds: [token-source, design-specification, component-proposal]
+directions: [read]
+fidelity: partial
+operations:
+  - id: figma-official-health
+    script: scripts/health.mjs
+    effect: inspect

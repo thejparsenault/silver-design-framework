@@ -1,0 +1,64 @@
+# Figma Console MCP — a plugin-backed transport to Figma.
+#
+# Reaches the document you have open, so it can build frames, flows, and
+# sketches in place. It needs a plugin running in Figma, which means it can be
+# configured and still not respond; the setup ladder below is what lets `doctor`
+# tell you which of those is happening.
+schema: silver/provider/v1
+id: figma-console-mcp
+version: 0.8.0
+kind: external
+target: figma
+variant: console
+aliases:
+  - figma console
+  - console mcp
+  - the plugin one
+capabilities: [design-file, external-artifact, representation-sync]
+connection:
+  kind: mcp
+  server: figma-console
+  tool_prefix: mcp__figma-console__
+  # Deliberately no `config`. Silver does not know how this server is launched,
+  # and guessing a command would put an invented package name into someone's
+  # agent configuration. Without a config it cannot be declared by `--connect`,
+  # and the ladder says so rather than pretending otherwise.
+availability:
+  script: scripts/health.mjs
+setup:
+  - id: install-plugin
+    kind: external-app
+    title: Install and run the Figma Console plugin in Figma
+    url: https://www.figma.com/community
+    verify: { kind: handshake, by: agent }
+  - id: host-config
+    kind: external-app
+    title: Add the figma-console MCP server to your agent host's configuration
+    verify: { kind: host-mcp-entry, by: silver }
+permissions:
+  - capability: design-file
+    actions: [read, inspect]
+    default: ask
+  - capability: design-file
+    actions: [write, update]
+    default: ask
+  - capability: external-artifact
+    actions: [read, inspect, write, update]
+    default: ask
+supported_artifact_kinds: [flow, sketch, design-specification, component-proposal, token-source]
+directions: [read, write-preview, write]
+fidelity: partial
+operations:
+  - id: figma-console-health
+    script: scripts/health.mjs
+    effect: inspect
+  - id: figma-console-snapshot
+    script: adapter.mjs
+    effect: read
+  - id: figma-console-token-preview
+    script: adapter.mjs
+    effect: preview-write
+adapter:
+  id: silver-figma
+  version: 0.4.0
+  script: adapter.mjs

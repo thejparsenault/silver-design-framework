@@ -412,3 +412,113 @@ reconciliation preserves provenance and lets designers decide which semantic
 changes belong in which artifact.
 
 Status: Accepted
+
+## 2026-07-31 - Silver's interface is files; its transports may be MCP servers
+
+Decision: Two separate questions, previously conflated under one entry. Silver
+does not *expose* an MCP server: its interface to an agent remains structured
+files — `.skills/`, `AGENTS.md`, generated host adapters, and a CLI. That may
+never change. Silver *invokes* transports, and those may absolutely be MCP
+servers; from 0.8 they are the expected kind. A provider declares
+`connection.kind: mcp` with a server name and, when Silver knows it, the
+declaration a host needs.
+
+Silver never opens a socket, never holds a credential, and never runs an MCP
+server. The agent host owns the connection, its authorization, and its process
+lifecycle. Consequently Silver can establish only that a transport is
+*configured*, never that it *responds*: setup steps carry `verify.by`, and a
+result verifies the artifacts that came back rather than the transport that
+claimed to produce them.
+
+Reason: The 2026-06-05 entry ruled out hosting an MCP server, and that reasoning
+still holds — hosting, auth, and infrastructure without proportional benefit.
+It said nothing about consuming other people's servers, which is a different
+question with the opposite answer: the host already solves auth and lifecycle,
+so routing through MCP removes work rather than adding it. Leaving the
+distinction implied would have made 0.8 look like a reversal of an accepted
+decision.
+
+Status: Accepted, clarifying 2026-06-05
+
+## 2026-07-31 - Silver declares tools, and never installs them
+
+Decision: The boundary is ownership, not difficulty. Silver may detect what is
+present, write an agent host's MCP declaration for an already-installed tool
+with explicit approval, name required environment variables, explain a tool, and
+print exact commands. Silver may not install software, clone or build a
+repository, read or store a credential, launch or supervise a background
+process, or run the commands it prints. A transport's setup is a ladder of typed
+steps, and Silver climbs only the `silver-managed` rungs.
+
+Where Silver does not know how a server is launched, it says so and hands back
+the manual steps rather than guessing a command into someone's agent
+configuration.
+
+Reason: Writing `.mcp.json` is the same class of act as the `.claude/skills`
+links Silver already generates — reversible, reviewable, host-specific, and
+inspectable as a diff. Cloning and building is executing third-party code from a
+URL that a linked team catalog could supply, which is a supply-chain surface.
+And Silver has no process supervisor, so "run the server" would mean
+health-checking and restarting a daemon on every invocation. Difficulty was
+rejected as the dividing line because it is subjective and drifts; ownership is
+stable.
+
+Status: Accepted
+
+## 2026-07-31 - Silver has no vetted source of tool recommendations
+
+Decision: Silver's knowledge of tools is limited to the adapters it ships and
+what a designer tells it. There is no web search for tools, no agent-proposed
+tool, and no maintained ranking of third-party servers. An MCP server present in
+the host that no shipped adapter claims is reported as unmapped — Silver knows
+it exists and nothing more — and is never selected for any activity until the
+designer says what it is for. When nothing can serve an activity, Silver names
+the transports it ships that could and prints their setup ladders.
+
+A larger catalog may be linked through the existing guidance-source contract:
+manually linked, revision-pinned, never auto-discovered, and carrying exactly
+the trust of whoever chose to link it.
+
+Reason: Recommending a repository found by search would launder an unvetted
+project into an endorsement. Silver refusing to install it is not sufficient
+protection, because the recommendation is what sends someone to install it
+themselves, and a suggestion pulled off a search result reads with the same
+authority as a tested shipped adapter. Maintaining rankings for tools that
+appear and die monthly is also not sustainable for this project.
+
+The cost is accepted and real: a designer who does not already know a tool
+exists will not learn it here. The unmapped-transport flow is what keeps that
+from being a dead end.
+
+Status: Accepted
+
+## 2026-07-31 - Transport preference is ordered by the designer, filtered by permission
+
+Decision: Ordering and prohibition are separate mechanisms. Order runs personal,
+then project, then team, then framework default; the first source that binds an
+activity wins outright and sources are not merged. Two filters then apply to
+whichever order won: availability, and a veto that a project, team,
+organization, or machine policy may set. A veto cannot be waived by preferring
+something.
+
+An activity's transport chain is an offer list, not an auto-fallback list. When
+the preferred transport is unavailable, Silver reports why and asks — wait, use
+the next one, or stop — and `on_unavailable` records the designer's standing
+answer. Where nobody can be asked, the run stops with a resumable request rather
+than choosing unattended.
+
+Every removal is recorded with its reason, its source, the failing setup step
+where there is one, and who can lift it.
+
+Reason: Which client runs on a designer's machine is nobody else's decision, so
+personal order comes first. But a team may have real grounds to forbid a
+transport — a remote MCP means design files transit a third party — and that is
+a permission, not a preference, so expressing it as a higher precedence rank
+would have given teams the power to dictate tooling as a side effect. A veto
+list is both narrower and easier to explain.
+
+Silent substitution was rejected because a designer cannot tell it apart from a
+broken tool, and because the framework's premise is that its user stays in
+control of how the work is done.
+
+Status: Accepted

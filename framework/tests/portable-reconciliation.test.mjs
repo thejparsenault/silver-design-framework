@@ -13,7 +13,7 @@ import { resolvePermissions } from "../runtime/permissions.mjs";
 import { discoverProviders } from "../runtime/providers.mjs";
 import { acceptReconciliation, applyReconciliation, persistReconciliationRecord, proposeReconciliation } from "../runtime/reconciliation.mjs";
 import { contentIntegrity, synchronizationState, validateBinding, validateToolProfile, valueIntegrity, writeBinding } from "../runtime/representations.mjs";
-import { applySemanticTokenWrite, createFigmaChangeSet, normalizeFigmaSnapshot, previewSemanticTokenWrite } from "../providers/figma/adapter.mjs";
+import { applySemanticTokenWrite, createFigmaChangeSet, normalizeFigmaSnapshot, previewSemanticTokenWrite } from "../providers/figma-console-mcp/adapter.mjs";
 import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
 import { renderStaticPrototype } from "../skills/prototype/scripts/render-static-prototype.mjs";
 import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
@@ -114,11 +114,11 @@ async function reconciliationFixture(t, authority = "local") {
     id: "guided-setup-figma",
     artifact: { id: "guided-setup-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-123", revision: "v18" },
+    provider: { id: "figma-console-mcp", object_id: "file-123", revision: "v18" },
     adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web",
     authority,
-    ...(authority === "external" ? { authority_provider: "figma" } : {}),
+    ...(authority === "external" ? { authority_provider: "figma-console-mcp" } : {}),
     round_trip: "partial",
     sync_policy: "notify",
     last_reconciled: {
@@ -166,10 +166,19 @@ async function reconciliationFixture(t, authority = "local") {
 }
 
 test("provider packages and canonical codecs are registered and executable", async () => {
-  const providers = await discoverProviders();
-  assert.deepEqual(providers.map(({ id }) => id), ["figma", "silver-portable"]);
+  // `home` is pinned to a directory with no host config so the MCP-backed
+  // transports resolve to absent rather than picking up whatever the machine
+  // running the tests happens to have configured.
+  const providers = await discoverProviders({ home: path.join(repositoryRoot, "fixtures/host/empty") });
+  assert.deepEqual(providers.map(({ id }) => id), [
+    "figma-console-mcp",
+    "figma-official-mcp",
+    "silver-portable",
+  ]);
   assert.equal(providers.find(({ id }) => id === "silver-portable").available, true);
-  assert.equal(providers.find(({ id }) => id === "figma").available, false);
+  const console_ = providers.find(({ id }) => id === "figma-console-mcp");
+  assert.equal(console_.available, false);
+  assert.equal(console_.availability_level, "absent");
   const codecs = await discoverArtifactCodecs(providers);
   assert.deepEqual(codecs.map(({ id }) => id).sort(), ["silver-dtcg", "silver-flow-graph", "silver-prose", "silver-structured"]);
   for (const { name: id } of (await readdir(path.join(repositoryRoot, "framework/skills"), { withFileTypes: true })).filter((entry) => entry.isDirectory())) {
@@ -188,9 +197,9 @@ test("binding and user-profile contracts enforce authority, provenance, permissi
     id: "example-figma",
     artifact: { id: "example-flow", kind: "flow", revision: "r1", path: "design/flows/example/flow.json" },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-1", revision: "v1" },
+    provider: { id: "figma-console-mcp", object_id: "file-1", revision: "v1" },
     adapter: { id: "silver-figma", version: "0.4.0" },
-    mapping_profile: "product-web", authority: "external", authority_provider: "figma",
+    mapping_profile: "product-web", authority: "external", authority_provider: "figma-console-mcp",
     round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
       portable_revision: "r1", portable_integrity: `sha256:${"1".repeat(64)}`,
@@ -375,7 +384,7 @@ test("authority reversal blocks externally authoritative freshness when unavaila
   );
   const request = {
     schema: "silver/skill-invocation/v2", invocation_id: "external-freshness",
-    skill: { id: "design-check", version: "0.7.0" }, started_at: fixedTime,
+    skill: { id: "design-check", version: "0.8.0" }, started_at: fixedTime,
     inputs: [], outputs: [],
     permission_layers: [{
       schema: "silver/permission-policy/v2", id: "fixture-policy", layer: "framework-default",

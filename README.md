@@ -330,6 +330,33 @@ If local Chrome is available, run the browser suite:
 node .skills/design-check/scripts/run-browser.mjs --root .
 ```
 
+## See which tools will be used
+
+```sh
+.silver/bin/silver tools .
+```
+
+For every kind of tool-using work — pulling designs out of a design tool,
+pushing design-system updates into one — this shows the transport that will be
+used, which source ordered it (yours, the project's, your team's, or Silver's
+default), and every transport removed from the running with the reason and who
+can lift it. A tool that is forbidden and a tool that is down look identical
+unless someone says which it is.
+
+Silver reads your agent host's MCP configuration to learn what you already have,
+and reports servers it does not recognize rather than guessing what they do.
+
+To declare an installed MCP server in this project:
+
+```sh
+.silver/bin/silver tools . --connect figma-official-mcp
+```
+
+That writes the declaration into `.mcp.json` and prints whatever is still yours
+to do. Silver never installs software, never launches a process, and never
+writes a credential — where it does not know how a server starts, it says so and
+hands you the steps.
+
 Checks cover artifact contracts, flow structure, semantic styles, prototype
 policy, evidence provenance, presentations, production readiness, assets,
 accessibility, responsive behavior, critical interactions, bindings,
@@ -475,11 +502,27 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.7.0`, **One Good Step**, is validated for guided setup, integrated and
-separate repository topology, My Practice and the studio voice, linked local or
-Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
-discovery, CLI-routed guarded invocation with self-running checks, atomic
-canonical activation, and reviewable 0.6-to-0.7 migration.
+Silver `0.8.0`, **Tools That Are Actually There**, is validated for guided setup,
+integrated and separate repository topology, My Practice and the studio voice,
+linked local or Git guidance, multiple design contexts, maps, provenance tracing,
+Claude Code discovery, CLI-routed guarded invocation with self-running checks,
+atomic canonical activation, activity-based transport selection with veto and
+availability filtering, and reviewable migration from 0.6.
+
+- Silver knows about the tools it ships and the ones already configured in your
+  agent host. It does not search for tools and will not recommend one it has not
+  shipped, because there is no vetted source for that and a suggestion carries
+  the weight of an endorsement. An unrecognized MCP server is reported and left
+  alone until you say what it is for.
+- Personal tool preferences are not authored yet. Personal is the first ordering
+  source and the resolver reads it, but `My Practice/tools.yaml` and the
+  conversational path that writes it arrive in 0.9. Project-level preferences
+  work now, in `design/manifest.yaml`.
+- Silver cannot tell you an MCP transport is *responding*, only that it is
+  *configured*. Your agent host owns the connection, so results verify the
+  artifacts that came back rather than the transport that claimed to make them.
+- Only `figma-console-mcp` has been exercised against a live server.
+  `figma-official-mcp` is declared from Figma's published remote endpoint.
 
 - Claude Cowork is not supported. It loads only account-level skills and runs
   code in an isolated remote environment, so guarded invocation cannot reach a

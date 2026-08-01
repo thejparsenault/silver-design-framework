@@ -14,6 +14,11 @@ export function valueIntegrity(value) {
   return contentIntegrity(`${JSON.stringify(value, null, 2)}\n`);
 }
 
+export function assertNoSecrets(value, trail = []) {
+  inspectSecrets(value, trail);
+  return value;
+}
+
 function inspectSecrets(value, trail = []) {
   if (Array.isArray(value)) {
     value.forEach((item, index) => inspectSecrets(item, [...trail, index]));

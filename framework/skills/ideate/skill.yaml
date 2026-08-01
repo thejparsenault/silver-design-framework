@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: ideate
-version: 0.7.0
+version: 0.8.0
 summary: Generate distinct concepts and testable hypotheses.
 context_budget: small
 inputs:
@@ -71,6 +71,11 @@ effects:
       - update
     paths:
       - design/decisions/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

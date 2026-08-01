@@ -1,5 +1,5 @@
 schema: silver/guardrail-registry/v2
-version: 0.7.0
+version: 0.8.0
 guardrails:
   - id: privacy-sanitized-evidence
     summary: Store only sanitized observations and evidence appropriate for the repository.

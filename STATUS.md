@@ -2,10 +2,46 @@
 
 ## Current Focus
 
-Silver `0.7.0`, **One Good Step**, is implemented and gate-verified, not yet
-published. It answers the 22-issue field report from the first real session
-against a product (`~/Projects/exploring/task-tracker`), recorded in that
-repository's `SILVER_DESIGN_FRAMEWORK_BUG_REPORT.md`.
+Silver `0.8.0`, **Tools That Are Actually There**, is implemented and
+gate-verified on `release/silver-0.8-tools`, not yet published. It makes the
+provider selection layer real.
+
+Before it, that layer was a stub with a complete contract around it:
+`resolveCapabilities` chose a provider by alphabetical first-wins,
+`selectProvider` had zero callers, the tool-profile contract was never read from
+disk, an unreachable `local-fallback` branch sat in `permissions.mjs`, and the
+one external provider hardcoded itself unavailable — so there was nothing to
+choose between and nothing choosing.
+
+The shape of the release: tool-using work is named as *activities* derived from
+the existing provider and skill contracts; Figma splits from one provider into
+*transports* that are good at different jobs; each activity resolves through one
+order (personal → project → team → framework) and two filters (availability, and
+a veto a project, team, organization, or machine policy may set). A chain is an
+offer list, not an auto-fallback list: when the preferred transport is gone,
+Silver asks rather than substituting, and where nobody can be asked it stops with
+a resumable request.
+
+`silver tools` reports what will be used, which source ordered it, and everything
+removed with the reason and who can lift it. `silver tools --connect` writes a
+host MCP declaration for an already-installed tool, and nothing else — Silver
+installs no software, holds no credential, and runs no process. Silver has no
+network transport layer at all: an MCP transport belongs to the agent host, which
+means Silver can establish only that one is *configured*, never that it responds.
+
+Verified against a copy of the reported workspace: it migrates `0.6.1 → 0.8.0`
+with zero conflicts, retires the superseded `figma` provider package, reports
+zero doctor diagnostics, and passes its checks.
+
+Deferred to 0.9 with their contract shapes already in place: personal
+`tools.yaml`, conversational override and promotion, the team layer, presets, and
+a Git-optional practice folder. `docs/silver-0.8-acceptance.md` records what is
+out and why.
+
+Silver `0.7.0`, **One Good Step**, is the previous release, also unpublished. It
+answers the 22-issue field report from the first real session against a product
+(`~/Projects/exploring/task-tracker`), recorded in that repository's
+`SILVER_DESIGN_FRAMEWORK_BUG_REPORT.md`.
 
 The shape of the release: an invocation now runs its own required checks and
 writes their evidence, a claimed pass without evidence is not believed, accepted
@@ -371,7 +407,18 @@ adoption.
   apply` path handles it, but the compatibility path is unusable in exactly the
   npm scenario and should either learn to handle it or stop being advertised.
 - Browser checks remain unverifiable where a browser cannot reach a local URL.
-  0.7 reports that honestly rather than fixing it.
+  0.7 reports that honestly rather than fixing it. 0.8 names the gap:
+  `inspect-in-browser` is a `planned` activity with no shipped provider, so the
+  absence is specific rather than an unexplained degraded capability.
+- Only one shipped transport is verified against a live server.
+  `figma-console-mcp` was developed against one; `figma-official-mcp` is declared
+  from Figma's published remote endpoint and has not been exercised here.
+- The default transport ordering heuristic — prefer configured, prefer no local
+  build, then alphabetical — is deliberately thin. It is not a claim about which
+  tool is better, and it needs real use rather than more guessing.
+- Silver cannot confirm that any MCP transport responds, only that it is
+  configured. That is a consequence of the agent host owning the connection, and
+  it is why results verify artifacts rather than transports.
 
 ## Blockers
 

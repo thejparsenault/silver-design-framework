@@ -133,7 +133,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.7.0" },
+    skill: { id: "synthesize", version: "0.8.0" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -271,7 +271,7 @@ test("legacy Silver ask rules no longer deny repository writes", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.7.0" },
+    skill: { id: "brand", version: "0.8.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -377,7 +377,7 @@ test("visual durable output without a design-context pin is blocked", async () =
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "sketch-no-context",
-    skill: { id: "sketch", version: "0.7.0" },
+    skill: { id: "sketch", version: "0.8.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -463,7 +463,7 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.7.0" },
+    skill: { id: "implement", version: "0.8.0" },
     started_at: startedAt,
     inputs: [
       reference(

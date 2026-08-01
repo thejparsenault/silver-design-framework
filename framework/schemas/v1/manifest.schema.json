@@ -85,6 +85,44 @@
       },
       "default": {}
     },
+    "tool_preferences": {
+      "description": "This project's transport ordering and prohibitions, in silver/tool-preferences/v1 shape. A personal preference in My Practice is ordered ahead of this; a `forbid` entry here is not overridable by anyone's preference, and is reported by name when it removes a transport.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activities": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/id" },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["use"],
+            "properties": {
+              "use": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "$ref": "#/$defs/id" }
+              },
+              "on_unavailable": { "enum": ["ask", "use_next", "stop"] }
+            }
+          }
+        },
+        "forbid": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["transport", "reason"],
+            "properties": {
+              "transport": { "$ref": "#/$defs/id" },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "fixable_by": { "enum": ["designer", "project-owner", "policy-owner"] }
+            }
+          }
+        }
+      }
+    },
     "flow_policy": {
       "type": "object",
       "additionalProperties": false,

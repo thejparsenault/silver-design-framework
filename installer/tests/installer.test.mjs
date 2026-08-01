@@ -56,6 +56,7 @@ const managedPayloads = [
   ["framework/runtime", ".silver/runtime"],
   ["framework/playbooks", ".silver/playbooks"],
   ["framework/providers", ".silver/providers"],
+  ["framework/activities", ".silver/activities"],
 ];
 
 async function temporaryWorkspace(t) {
@@ -79,6 +80,7 @@ async function temporaryPayload(t) {
     "runtime",
     "playbooks",
     "providers",
+    "activities",
   ]) {
     await cp(
       path.join(repositoryRoot, "framework", relativePath),

@@ -10,6 +10,93 @@
     "id": { "$ref": "common.schema.json#/$defs/id" },
     "version": { "$ref": "common.schema.json#/$defs/version" },
     "kind": { "enum": ["portable", "external"] },
+    "target": {
+      "description": "The external system this provider reaches, such as `figma`. Several transports may share one target and be good at different things; this is what groups them when a designer is choosing.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "variant": {
+      "description": "Which transport to the target this is, such as `official-remote` or `pilot`. Distinguishes providers that share a target.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "aliases": {
+      "description": "What a designer might call this in conversation. Used to resolve \"use the official Figma MCP instead\" to an id; two matches ask rather than guess.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 2, "maxLength": 80 }
+    },
+    "connection": {
+      "description": "How this transport is reached. `mcp` means the agent host owns the connection, its credentials, and its lifecycle; Silver resolves and instructs, and never opens a socket.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["mcp", "local"] },
+        "server": {
+          "description": "The MCP server name as it appears in the host's configuration.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "tool_prefix": {
+          "description": "Prefix the host gives this server's tools, used to recognize it in an agent's tool namespace.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "config": {
+          "description": "What Silver would write into the host's MCP configuration. Never contains a credential; the secret scanner rejects anything that looks like one.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+            "args": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
+            "url": { "type": "string", "maxLength": 500 }
+          }
+        }
+      }
+    },
+    "requires_env": {
+      "description": "Environment variables this transport needs. Names only. Silver never reads, writes, or logs their values.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 100 }
+    },
+    "setup": {
+      "description": "The ladder a designer climbs to make this transport work. Steps are typed by who owns them, so `doctor` can say which rung is missing instead of reporting the whole transport unavailable. Silver executes `silver-managed` steps only.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "title", "verify"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "kind": {
+            "description": "external-app: the designer does it in another application. terminal: the designer runs commands Silver prints. background-process: a long-running process Silver never launches or supervises. silver-managed: Silver performs it, with approval.",
+            "enum": ["external-app", "terminal", "background-process", "silver-managed"]
+          },
+          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "url": { "type": "string", "maxLength": 500 },
+          "commands": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+          },
+          "verify": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "by"],
+            "properties": {
+              "kind": { "enum": ["path", "host-mcp-entry", "env", "handshake", "probe"] },
+              "by": {
+                "description": "silver: Silver's own process can check this. agent: only the agent can, because only the agent can call the tool.",
+                "enum": ["silver", "agent"]
+              },
+              "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+              "url": { "type": "string", "maxLength": 500 }
+            }
+          }
+        }
+      }
+    },
     "capabilities": {
       "type": "array", "minItems": 1, "uniqueItems": true,
       "items": { "$ref": "common.schema.json#/$defs/capability" }

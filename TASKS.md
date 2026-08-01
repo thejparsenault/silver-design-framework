@@ -259,6 +259,99 @@ from the first real product session.
     build directories excluded from traversal, deduplicated effects, explained
     setup questions, and a fresh workspace with zero diagnostics.
 
+## Completed Release — Silver 0.8 Tools That Are Actually There
+
+- [x] Name tool-using work as activities, derived from existing contracts
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: `silver/activity-catalog/v1` names a capability, its actions, and
+    optionally artifact kinds. Provider and skill support is derived from their
+    contracts, never declared, and drift fails the contract gate in both
+    directions. Skills gained effect declarations for their optional
+    capabilities, without which pull and push are indistinguishable.
+
+- [x] Split Figma into transports with typed setup ladders
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: `target`, `variant`, `aliases`, `connection`, `requires_env`, and a
+    `setup` ladder whose steps declare who owns them and who can verify them.
+    Availability distinguishes configured from responding, because only the
+    agent can call an MCP server. Migration retires the superseded package.
+
+- [x] Make provider selection real
+  - type: build
+  - priority: high
+  - context: large
+  - notes: One order — personal, project, team, framework — and two filters,
+    availability and veto. `selectProvider` gets its first caller, the
+    unreachable `local-fallback` branch becomes reachable, and pulling from and
+    pushing to one tool can resolve to different transports.
+
+- [x] Never narrow a designer's options silently
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: A chain is an offer list. Removals carry reason, source, failing
+    setup step, and who can lift them. Non-interactive runs stop with a
+    resumable request rather than choosing. Now a PROJECT.md constraint.
+
+- [x] Declare tools without installing them
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: `silver tools` and `silver tools --connect`. Silver writes a host MCP
+    declaration for an installed tool and nothing else — no install, no clone,
+    no credential, no process. Secret-gated, and honest where it does not know
+    a launch command.
+
+- [x] Fix the studio-voice practice-change path
+  - type: fix
+  - priority: high
+  - context: small
+  - notes: `practice apply` wrote prose into `PRACTICE.md`, which the resolver
+    never reads. It now writes `studio-voice.md` and pins it in the manifest.
+
+## Next Release — Silver 0.9 Preferences That Travel
+
+- [ ] Personal `tools.yaml` in My Practice
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Personal is already the first ordering source and the resolver reads
+    it; the file and its authoring path are what remain.
+
+- [ ] Conversational override and promotion
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Resolve "use the official Figma MCP instead" through `aliases`, ask
+    when ambiguous, and promote a repeated choice into a durable activity
+    binding with the interpretation echoed back for confirmation.
+
+- [ ] Team layer through guidance-source
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: A linked, revision-pinned source carrying a default order and a veto
+    list. Never auto-discovered.
+
+- [ ] Presets, and a Git-optional practice folder
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: Saved options and default overrides. Sync-service detection so a
+    practice folder can live in Drive without Git objects corrupting; provenance
+    already pins a revision rather than a commit, so nothing is lost.
+
+- [ ] `PRACTICE.md` becomes a generated view
+  - type: build
+  - priority: medium
+  - context: small
+  - notes: Route the remaining practice-change sections to real files, the way
+    studio voice now is.
+
 ## Following Milestone — Existing Codebase Adoption
 
 - [ ] Adopt one representative existing product repository

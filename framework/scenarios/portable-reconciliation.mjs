@@ -10,7 +10,7 @@ import {
   createFigmaChangeSet,
   normalizeFigmaSnapshot,
   previewSemanticTokenWrite,
-} from "../providers/figma/adapter.mjs";
+} from "../providers/figma-console-mcp/adapter.mjs";
 import {
   acceptReconciliation,
   applyReconciliation,
@@ -113,7 +113,7 @@ export async function runPortableReconciliationScenario({ root }) {
     id: "guided-figma",
     artifact: { id: "guided-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-123", revision: "v18" },
+    provider: { id: "figma-console-mcp", object_id: "file-123", revision: "v18" },
     adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web", authority: "local", round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
@@ -188,7 +188,7 @@ extensions:
     external: { revision: "v19", integrity: valueIntegrity(current), completeness: "complete" },
     changeSet: changes, createdAt: time,
   });
-  const externalAuthority = { ...binding, authority: "external", authority_provider: "figma" };
+  const externalAuthority = { ...binding, authority: "external", authority_provider: "figma-console-mcp" };
   const unavailable = await proposeReconciliation({
     root: workspace, binding: externalAuthority,
     local: { revision: "r2", integrity: localWrite.integrity },

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: sketch
-version: 0.7.0
+version: 0.8.0
 summary: Create inexpensive, constraint-aware design alternatives.
 context_budget: small
 inputs:
@@ -50,6 +50,13 @@ effects:
       - update
     paths:
       - design/work/sketches/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

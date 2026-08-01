@@ -7,7 +7,9 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { parse } from "yaml";
 
+import { auditActivityCatalog, loadActivityCatalog } from "../runtime/activities.mjs";
 import { migrateSkillContractV1 } from "../migrations/v1-to-v2/skill.mjs";
+import { discoverProviders } from "../runtime/providers.mjs";
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -276,10 +278,28 @@ async function validateV2(validators) {
       `migrated ${relativePath}`,
     );
   }
+
+  // Activity support is derived from the provider and skill contracts, so the
+  // catalog can go stale without anyone editing it: shipping a provider for a
+  // `planned` activity, or dropping the last provider for a `served` one, both
+  // make it lie. A stale catalog is worse than none — it promises tools that
+  // are not there — so the drift is a gate, not a warning.
+  const catalog = await loadActivityCatalog();
+  const providers = await discoverProviders({ skipAvailability: true });
+  const skills = [];
+  for (const entry of skillEntries) {
+    skills.push(await yaml(`framework/skills/${entry.name}/skill.yaml`));
+  }
+  const drift = auditActivityCatalog({ catalog, providers, skills });
+  if (drift.length > 0) {
+    throw new Error(`Activity catalog drift:\n  ${drift.join("\n  ")}`);
+  }
+
   return {
     examples: positive.length,
     skills: skillEntries.length,
     migrations: legacySkillFiles.length,
+    activities: catalog.activities.length,
   };
 }
 
@@ -292,7 +312,8 @@ async function main() {
     `Validated ${v1.count} v1 schemas, ${v2.count} v2 schemas, ` +
       `${v1Evidence.artifacts} mapped artifacts, ${v1Evidence.skills} v1 skill contracts, ` +
       `${v2Evidence.examples} v2 examples, ${v2Evidence.skills} v2 skill contracts, ` +
-      `and ${v2Evidence.migrations} v1-to-v2 skill migrations.`,
+      `${v2Evidence.migrations} v1-to-v2 skill migrations, ` +
+      `and ${v2Evidence.activities} activities with no catalog drift.`,
   );
 }
 

@@ -25,7 +25,12 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
-import { defaultPracticeRoot } from "./practice.mjs";
+import {
+  PRACTICE_METHODS_DIRECTORY,
+  PRACTICE_STUDIO_VOICE_FILE,
+  STUDIO_VOICE_SCHEMA,
+  defaultPracticeRoot,
+} from "./practice.mjs";
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
 
@@ -39,8 +44,13 @@ const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 // overwritten by `silver repair`. Author in My Practice.
 export const WORKSPACE_PRACTICE_OVERLAY_PATH = ".silver/my-practice.md";
 
-export const PRACTICE_STUDIO_VOICE_FILE = "studio-voice.md";
-export const PRACTICE_METHODS_DIRECTORY = "methods";
+// Re-exported so callers that think in terms of the overlay do not have to know
+// the practice module owns the folder layout.
+export {
+  PRACTICE_METHODS_DIRECTORY,
+  PRACTICE_STUDIO_VOICE_FILE,
+  STUDIO_VOICE_SCHEMA,
+};
 
 export function frameworkStudioVoicePath() {
   return path.resolve(installerRoot, "..", "framework", "studio-voice", "default.md");
@@ -58,11 +68,6 @@ function splitFrontmatter(content) {
   return { metadata, body: match[2].trim() };
 }
 
-// A studio voice counts only when it declares itself one. That keeps the
-// commented starter Silver seeds into a new practice inert until the designer
-// deliberately activates it, rather than silently overriding the default with
-// its own instructions.
-export const STUDIO_VOICE_SCHEMA = "silver/studio-voice/v1";
 
 async function readVoice(absolute, source) {
   if (!(await exists(absolute))) return null;

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: prototype
-version: 0.7.0
+version: 0.8.0
 summary: Build and refine a testable, traceable simulation.
 context_budget: medium
 inputs:
@@ -59,13 +59,16 @@ effects:
       - update
     paths:
       - prototypes/**
-  - capability: repository
+  - capability: design-file
     actions:
-      - create
-      - write
-      - update
-    paths:
-      - prototypes/**
+      - read
+      - inspect
+    external: true
+  - capability: browser
+    actions:
+      - inspect
+      - execute
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

@@ -154,6 +154,7 @@ export function payloadRoots(payloadRoot = repositoryRoot) {
     runtimeSourceRoot: path.join(payloadRoot, "framework", "runtime"),
     playbookSourceRoot: path.join(payloadRoot, "framework", "playbooks"),
     providerSourceRoot: path.join(payloadRoot, "framework", "providers"),
+    activitySourceRoot: path.join(payloadRoot, "framework", "activities"),
     referenceSystemSourceRoot: path.join(payloadRoot, "reference-system"),
   };
 }
@@ -216,6 +217,7 @@ export async function sourcePackages({
     runtimeSourceRoot,
     playbookSourceRoot,
     providerSourceRoot,
+    activitySourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
   const packages = [];
@@ -273,6 +275,12 @@ export async function sourcePackages({
       type: "playbook",
       path: ".silver/playbooks",
       source: playbookSourceRoot,
+    },
+    {
+      id: "activities",
+      type: "activity-catalog",
+      path: ".silver/activities",
+      source: activitySourceRoot,
     },
   ]) {
     packages.push({
@@ -382,6 +390,7 @@ export async function setupWorkspace(options = {}) {
     runtimeSourceRoot,
     playbookSourceRoot,
     providerSourceRoot,
+    activitySourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
 
@@ -480,6 +489,7 @@ export async function setupWorkspace(options = {}) {
       [runtimeSourceRoot, ".silver/runtime"],
       [playbookSourceRoot, ".silver/playbooks"],
       [providerSourceRoot, ".silver/providers"],
+      [activitySourceRoot, ".silver/activities"],
     ]) {
       const copied = await copyNewTree(source, path.join(root, destination));
       created.push(

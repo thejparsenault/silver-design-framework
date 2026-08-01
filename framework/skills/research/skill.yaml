@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: research
-version: 0.7.0
+version: 0.8.0
 summary: Plan ethical research and sanitized evidence handling.
 context_budget: small
 inputs:
@@ -46,6 +46,11 @@ effects:
       - update
     paths:
       - design/research/**
+  - capability: research-evidence
+    actions:
+      - read
+      - inspect
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

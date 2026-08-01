@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: pitch
-version: 0.7.0
+version: 0.8.0
 summary: Build an evidence-linked, branded change case.
 context_budget: medium
 inputs:
@@ -67,6 +67,13 @@ effects:
       - update
     paths:
       - presentations/**
+  - capability: external-artifact
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

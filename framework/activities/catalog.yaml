@@ -1,0 +1,144 @@
+# Activities: human-named units of tool-using design work.
+#
+# An activity names a combination that already exists in the contracts —
+# a capability, the actions taken with it, and sometimes the artifact kinds
+# involved. Naming it is what lets a designer say "use the official Figma MCP
+# for that" without knowing what a capability is.
+#
+# Nothing here declares which provider or skill supports an activity. That is
+# derived from the provider and skill contracts, so this file cannot drift out
+# of agreement with them. See framework/runtime/activities.mjs.
+#
+# `status: planned` marks a named gap — an activity worth having a word for
+# that no shipped provider serves yet. The contract check verifies status in
+# both directions, so adding a provider forces the status to be corrected.
+schema: silver/activity-catalog/v1
+version: 0.8.0
+activities:
+  # --- Design tools -------------------------------------------------------
+  # The reason this system exists: reading from and writing to a design tool
+  # are different jobs, and the transports that do them well are different.
+  - id: pull-design-file
+    title: Pull designs from a design tool
+    summary: Read frames, components, or structure out of a design file.
+    capability: design-file
+    actions: [read, inspect]
+    status: served
+
+  - id: pull-design-tokens
+    title: Pull design-system values from a design tool
+    summary: Read variables, styles, or token sources back out of a design tool.
+    capability: design-file
+    actions: [read]
+    artifact_kinds: [token-source]
+    status: served
+
+  - id: push-design-tokens
+    title: Push design-system updates to a design tool
+    summary: Write token or style updates into a design tool.
+    capability: design-file
+    actions: [write, update]
+    artifact_kinds: [token-source]
+    status: served
+
+  - id: push-design-frames
+    title: Build flows or sketches in a design tool
+    summary: Create or update frames, flows, and sketches in a design tool.
+    capability: design-file
+    actions: [write, update]
+    artifact_kinds: [flow, sketch]
+    status: served
+
+  # --- External artefacts -------------------------------------------------
+  - id: read-external-artifact
+    title: Read a linked external document
+    capability: external-artifact
+    actions: [read, inspect]
+    status: served
+
+  - id: publish-external-artifact
+    title: Publish to an external document or deck
+    capability: external-artifact
+    actions: [write, update]
+    status: served
+
+  # --- Portable, local work ----------------------------------------------
+  # These are served by silver-portable and rarely have a transport choice,
+  # but they are named so every capability a skill uses has a word for it and
+  # `silver tools` can account for all of them.
+  - id: read-workspace
+    title: Read the workspace
+    capability: repository
+    actions: [read, inspect]
+    status: served
+
+  - id: write-workspace
+    title: Write working files in the workspace
+    capability: repository
+    actions: [create, write, update]
+    status: served
+
+  - id: write-canonical-artifact
+    title: Write a canonical design artifact
+    summary: Create or update an artifact that defines design intent for its scope.
+    capability: canonical-artifact
+    actions: [create, write, update]
+    status: served
+
+  - id: author-flow
+    title: Author a tool-neutral flow
+    capability: flow
+    actions: [create, write, update]
+    status: served
+
+  - id: render-sketch
+    title: Render a sketch
+    capability: sketch-renderer
+    actions: [create, write]
+    status: served
+
+  - id: render-map
+    title: Render a map
+    capability: map-renderer
+    actions: [create, write]
+    status: served
+
+  - id: render-prototype
+    title: Render a prototype
+    capability: prototype-renderer
+    actions: [create, write]
+    status: served
+
+  - id: render-presentation
+    title: Render a presentation view
+    capability: presentation-renderer
+    actions: [create, write]
+    status: served
+
+  - id: write-production-source
+    title: Write production source
+    capability: production-source
+    actions: [create, write, update]
+    status: served
+
+  # --- Named gaps ---------------------------------------------------------
+  # No shipped provider serves these. They are named anyway so that a missing
+  # tool is a specific absence rather than an unexplained degraded capability.
+  - id: inspect-in-browser
+    title: Open and inspect a running prototype
+    summary: Drive a real browser to check rendering, behaviour, and accessibility.
+    capability: browser
+    actions: [inspect, execute]
+    status: planned
+
+  - id: gather-research-evidence
+    title: Gather research evidence from an external source
+    capability: research-evidence
+    actions: [read, inspect]
+    status: planned
+
+  - id: commit-to-version-control
+    title: Commit or push through a version-control tool
+    capability: version-control
+    actions: [commit, push, open-pr]
+    status: planned

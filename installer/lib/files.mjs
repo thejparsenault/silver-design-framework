@@ -74,6 +74,11 @@ export async function copyNewTree(sourceRoot, destinationRoot) {
     }
   }
 
+  // A payload that predates a directory is missing it, not corrupt. Throwing
+  // here aborts an update partway through — the unrecoverable half-applied state
+  // 0.7 was spent removing — so an absent source copies nothing and says so by
+  // returning an empty list.
+  if (!(await exists(sourceRoot))) return created;
   await visit(sourceRoot);
   return created;
 }

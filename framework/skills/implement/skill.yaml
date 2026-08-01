@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: implement
-version: 0.7.0
+version: 0.8.0
 summary: Rebuild accepted design intent in the local production recipe.
 context_budget: medium
 inputs:
@@ -80,6 +80,11 @@ effects:
     paths:
       - design/work/implementation-handoffs/**
       - production/**
+    external: true
+  - capability: browser
+    actions:
+      - inspect
+      - execute
     external: true
 guardrails:
   - authority-respected

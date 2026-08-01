@@ -59,7 +59,22 @@ build
 
 ## Latest Release
 
-Silver `0.7.0`, **One Good Step**, is the current release. It answers the
+Silver `0.8.0`, **Tools That Are Actually There**, is in progress on
+`release/silver-0.8-tools`. It makes the provider selection layer real. Before
+it, `resolveCapabilities` mapped a capability to a provider by alphabetical
+first-wins, `selectProvider` had no callers, the tool profile contract was never
+read from disk, and the only external provider reported itself permanently
+unavailable — so there was nothing to choose between and nothing doing the
+choosing.
+
+0.8 names the units of tool-using work as *activities*, splits Figma from one
+provider into separate *transports* that are good at different jobs, and
+resolves each activity through one order and two filters. Nothing is removed
+from a designer's options without being named and attributed. Personal
+preference files, presets, and the team layer follow in 0.9;
+`docs/silver-0.8-acceptance.md` is the release boundary.
+
+Silver `0.7.0`, **One Good Step**, is the previous release. It answers the
 22-issue field report from the first real product session: invocations run their
 own required checks and record real evidence, a claimed pass without evidence is
 not believed, accepted canonical work activates across artifact, manifest,
@@ -132,6 +147,23 @@ Silver `0.5.0`, **Traceable Practice and Context**, is defined in
   applies across workspaces and is committed to none of them. Studio voice and
   method overlays are separate layers from skill packages, and personal
   preference never relaxes project facts, guardrails, or required guidance.
+- A designer's options are never narrowed silently. Every transport removed from
+  consideration is named, attributed to the availability failure or the project,
+  team, organization, or machine policy that removed it, and reported with who
+  can lift it. Where a preferred transport is gone, Silver asks rather than
+  substituting; where nobody can be asked, it stops with a resumable request.
+- An activity's transport is ordered by the designer first, then the project,
+  team, and framework default, and filtered by availability and veto. Ordering
+  is a preference and belongs to whoever is working; forbidding is a permission
+  and belongs to the project, team, or organization.
+- Silver declares tools and never installs them. It may detect what is present,
+  write an agent host's MCP declaration for an installed tool with approval, and
+  print exact commands — never install software, clone or build a repository,
+  hold a credential, or launch a background process.
+- Silver's knowledge of tools is what it ships plus what the designer tells it.
+  There is no discovery of third-party tools and no recommendation Silver cannot
+  stand behind; an unrecognized host server is reported as unmapped and never
+  used until the designer says what it is for.
 - Playbook invocation permits only its declared safe local progression and never broadens external, canonical, production, destructive, or version-control authority.
 - Presentation outputs consume canonical brand and design-system artifacts; reusable presentation templates and components remain a distinct project-owned kit.
 

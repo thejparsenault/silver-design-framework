@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: design-check
-version: 0.7.0
+version: 0.8.0
 summary: Run applicable independent checks without performing design work.
 context_budget: small
 inputs:
@@ -41,6 +41,11 @@ effects:
       - production/**
       - reference-system/**
       - .silver/**
+  - capability: browser
+    actions:
+      - inspect
+      - execute
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

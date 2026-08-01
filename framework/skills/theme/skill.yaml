@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: theme
-version: 0.7.0
+version: 0.8.0
 summary: Generate, compare, apply, or revise semantic themes and modes.
 context_budget: small
 inputs:
@@ -30,7 +30,12 @@ capabilities:
   required:
     - repository
     - canonical-artifact
-  optional: []
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
 effects:
   - capability: repository
     actions:
@@ -64,6 +69,13 @@ effects:
       - update
     paths:
       - design/decisions/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

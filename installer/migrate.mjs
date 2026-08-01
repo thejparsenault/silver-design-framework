@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -321,8 +321,13 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       reason: "Legacy Silver permission policy is preserved but inactive in 0.5.",
     }));
 
+  const retiredIds = new Set(RETIRED_PACKAGES.map(({ id }) => id));
   for (const installed of lock.packages) {
     if (installed.ownership !== "framework-managed") continue;
+    // A package this release deliberately removes is not an orphan. Without
+    // this, retiring one blocks the whole migration on a conflict describing
+    // the very thing the migration is there to do.
+    if (retiredIds.has(installed.id)) continue;
     if (!targetById.has(installed.id)) {
       conflicts.push({
         package: installed.id,
@@ -396,6 +401,16 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
     changes.push({ action: "replace-clean-managed", package: target.id, path: target.path });
   }
 
+  for (const retired of RETIRED_PACKAGES) {
+    if (!(await exists(path.join(root, retired.path)))) continue;
+    changes.push({
+      action: "retire",
+      package: retired.id,
+      path: retired.path,
+      detail: retired.reason,
+    });
+  }
+
   const nextManifest = migrateManifest(manifest);
   if (stringify(nextManifest) !== stringify(manifest)) {
     changes.push({ action: "upgrade-manifest", path: "design/manifest.yaml" });
@@ -451,6 +466,18 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
     nextManifest,
   };
 }
+
+// Packages a release removes rather than replaces. Leaving a superseded provider
+// installed is not harmless: `discoverProviders` reads whatever is on disk, so a
+// retired package keeps competing for the activities it used to serve.
+const RETIRED_PACKAGES = [
+  {
+    id: "figma",
+    path: ".silver/providers/figma",
+    reason:
+      "0.8 split Figma into transports; figma-console-mcp and figma-official-mcp replace it.",
+  },
+];
 
 export async function migrateWorkspace(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
@@ -530,6 +557,12 @@ export async function migrateWorkspace(options = {}) {
     await writeNewFile(destination, content);
   }
   await writeUtf8(workspace.manifestPath, stringify(plan.nextManifest));
+
+  // Remove superseded packages before installing the new ones, so a retired
+  // provider never coexists with its replacements even for one step.
+  for (const retired of RETIRED_PACKAGES) {
+    await rm(path.join(root, retired.path), { recursive: true, force: true });
+  }
 
   const records = [];
   for (const target of plan.packages) {

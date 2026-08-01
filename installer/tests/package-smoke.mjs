@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.7.0";
+const expectedVersion = "0.8.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -75,8 +75,18 @@ try {
     "framework/playbooks/default-design-loop.yaml",
     "framework/scenarios/complete-blank.mjs",
     "framework/scenarios/portable-reconciliation.mjs",
-    "framework/providers/figma/adapter.mjs",
+    "framework/providers/figma-console-mcp/adapter.mjs",
+    "framework/providers/figma-official-mcp/provider.yaml",
     "framework/providers/silver-portable/provider.yaml",
+    // The activity catalog is payload, not documentation: a package without it
+    // resolves every capability by the pre-0.8 fallback and silently loses the
+    // names a designer binds preferences to.
+    "framework/activities/catalog.yaml",
+    "framework/runtime/activities.mjs",
+    "framework/runtime/transports.mjs",
+    "framework/runtime/host-mcp.mjs",
+    "installer/tools.mjs",
+    "installer/host-mcp-config.mjs",
     "framework/schemas/v2/representation-binding.schema.json",
     "framework/runtime/reconciliation.mjs",
     "reference-system/packages/css/src/tokens.css",
@@ -271,7 +281,7 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 28);
+  assert.equal(lock.packages.length, 30);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
     21,
@@ -387,7 +397,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 28);
+  assert.equal(migratedLock.packages.length, 30);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,

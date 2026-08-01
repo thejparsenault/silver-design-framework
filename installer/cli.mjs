@@ -13,6 +13,9 @@ import { runCheckSuite } from "./checks.mjs";
 import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
+import { discoverProviders } from "../framework/runtime/providers.mjs";
+import { writeHostMcpConfig } from "./host-mcp-config.mjs";
+import { inspectTools } from "./tools.mjs";
 import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
 
 const usage = `The Silver Design Framework
@@ -25,6 +28,7 @@ Usage:
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
   silver check [directory] [--only <check-id,...>] [--json]
+  silver tools [directory] [--connect <transport-id>] [--json]
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -42,6 +46,12 @@ Commands:
   check    Run the fast deterministic checks and write evidence to
            .silver/results/checks/. Invocations run their own required checks, so
            this is for checking the workspace on demand.
+  tools    Show which transport each design activity resolves to, which source
+           ordered it, and what was removed from the running with the reason.
+           Read-only; reads the agent host's MCP configuration. Pass
+           --connect <transport-id> to declare an installed MCP server in this
+           project's .mcp.json. Silver never installs, launches, or authorizes
+           anything, and never writes a credential.
   doctor   Diagnose workspace contracts and managed files without changing them.
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
@@ -103,6 +113,7 @@ function parseArguments(args) {
     "allow-unresolved",
     "answers",
     "apply",
+    "connect",
     "help",
     "id",
     "json",
@@ -234,6 +245,98 @@ function printCheck(suite, write) {
     if (findings > 5) write(`    ... and ${findings - 5} more`);
   }
   write("Evidence written to .silver/results/checks/.");
+}
+
+const REMOVAL_LABEL = {
+  unavailable: "not available",
+  vetoed: "forbidden",
+  unsupported: "cannot do this",
+  unknown: "not installed",
+};
+
+function printTools(report, write) {
+  write(`Design tools for ${report.root}`);
+  write("");
+  for (const activity of report.activities) {
+    const chosen = activity.selected
+      ? `${activity.selected} (ordered by ${activity.ordered_by})`
+      : activity.decision === "ask"
+        ? `waiting on you — choose from ${activity.options.join(", ")}`
+        : activity.decision === "stop"
+          ? activity.would_select
+            ? `stopped — ${activity.would_select} is available but is not your first choice`
+            : "stopped"
+          : "nothing available";
+    write(`  ${activity.title}`);
+    write(`    uses: ${chosen}`);
+    if (activity.reason) write(`    why: ${activity.reason}`);
+    if (activity.decision === "fallback") {
+      write(`    note: this is not your first choice; ${activity.chain[0]} was unavailable`);
+    }
+    for (const removal of activity.removed) {
+      // Who set it and who can lift it. A removal without both reads as a
+      // broken tool, which is the one thing it must never be mistaken for.
+      const by = removal.source ? ` by ${removal.source}` : "";
+      const step = removal.failing_step ? ` at step "${removal.failing_step}"` : "";
+      const fix = removal.fixable_by ? ` — ${removal.fixable_by} can fix this` : "";
+      write(
+        `    removed: ${removal.transport} — ${REMOVAL_LABEL[removal.reason]}${by}${step}${fix}`,
+      );
+      if (removal.detail) write(`      ${removal.detail}`);
+    }
+    if (!activity.selected && activity.candidates?.length) {
+      write(`    could work if set up: ${activity.candidates.join(", ")}`);
+    }
+  }
+  if (report.unmapped.length > 0) {
+    write("");
+    write("Configured in your agent host, but Silver does not know what they do:");
+    for (const server of report.unmapped) {
+      write(`  ${server.name} (${server.host}, ${server.scope})`);
+    }
+    write("  Tell Silver what one of these is good for and it will use it.");
+  }
+  write("");
+  write(`Read outside this project: ${report.external_paths.join(", ")}`);
+}
+
+function printConnect(result, write) {
+  if (result.manual_only) {
+    write(`Silver cannot declare ${result.manual_only.transport} for you.`);
+    write(`  ${result.manual_only.reason}`);
+    if (result.manual_only.server) {
+      write(`  Add it to ${result.path} as "${result.manual_only.server}" yourself.`);
+    }
+    for (const step of result.manual_only.manual_steps) {
+      write(`    ${step.title} (${step.kind})`);
+      if (step.url) write(`      ${step.url}`);
+      for (const command of step.commands ?? []) write(`      ${command}`);
+    }
+    return;
+  }
+  if (!result.written) {
+    write(
+      result.already_present.length > 0
+        ? `Already declared in ${result.path}: ${result.already_present.join(", ")}`
+        : "Nothing to declare.",
+    );
+    return;
+  }
+  for (const addition of result.additions) {
+    write(`Declared ${addition.server} in ${result.path} for ${addition.transport}.`);
+    if (addition.requires_env) {
+      write(`  Needs these in your environment: ${addition.requires_env.join(", ")}`);
+      write("  Silver does not read or store their values.");
+    }
+    if (addition.manual_steps.length > 0) {
+      write("  Still yours to do:");
+      for (const step of addition.manual_steps) {
+        write(`    ${step.title} (${step.kind})`);
+        if (step.url) write(`      ${step.url}`);
+        for (const command of step.commands ?? []) write(`      ${command}`);
+      }
+    }
+  }
 }
 
 function printDoctor(result, write) {
@@ -433,6 +536,35 @@ export async function runCli(
         printCheck(suite, stdout);
       }
       return suite.status === "fail" ? 1 : 0;
+    }
+    if (command === "tools") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (positionals.length > 1) throw new Error("tools accepts at most one directory.");
+      const toolsRoot = path.resolve(positionals[0] ?? process.cwd());
+      if (flags.connect) {
+        const providers = await discoverProviders({ root: toolsRoot });
+        const result = await writeHostMcpConfig({
+          root: toolsRoot,
+          providers,
+          transport: String(flags.connect),
+        });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else {
+          printConnect(result, stdout);
+        }
+        return 0;
+      }
+      const report = await inspectTools({
+        root: toolsRoot,
+        interactive: Boolean(process.stdout.isTTY),
+      });
+      if (flags.json) {
+        stdout(JSON.stringify(report, null, 2));
+      } else {
+        printTools(report, stdout);
+      }
+      return 0;
     }
     if (command === "practice" && args[1] === "apply") {
       const { positionals, flags } = parseArguments(args.slice(2));

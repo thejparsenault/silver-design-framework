@@ -21,6 +21,16 @@ export function defaultPracticeRoot() {
   return path.join(homedir(), "Silver", "My Practice");
 }
 
+// The shape of a practice folder. Declared here rather than in
+// practice-overlay.mjs so the dependency runs one way: the overlay reads the
+// practice, never the reverse.
+export const PRACTICE_STUDIO_VOICE_FILE = "studio-voice.md";
+export const PRACTICE_METHODS_DIRECTORY = "methods";
+
+// A studio voice counts only when it declares itself one, so the commented
+// starter Silver seeds stays inert until the designer means it.
+export const STUDIO_VOICE_SCHEMA = "silver/studio-voice/v1";
+
 async function git(root, args, { allowFailure = false } = {}) {
   try {
     const result = await run("git", ["-C", root, ...args], {
@@ -259,18 +269,56 @@ export async function applyPracticeChange({ root, proposal, now = new Date().toI
   const next = nextRevision(manifest.revision);
   const practicePath = resolveInside(practiceRoot, "PRACTICE.md");
   const current = await readUtf8(practicePath);
+
+  // A section that has a real file has to be written to that file. `studio-voice`
+  // was accepted by the change contract in 0.7 and appended as prose to
+  // PRACTICE.md, which `resolveStudioVoice` never reads — so changing your voice
+  // through the sanctioned path validated, committed, reported success, and did
+  // nothing. Prose in PRACTICE.md is the record of a change, not the mechanism.
+  const routedPaths = [];
+  for (const item of proposal.updates) {
+    if (item.section !== "studio-voice") continue;
+    const voicePath = resolveInside(practiceRoot, PRACTICE_STUDIO_VOICE_FILE);
+    await writeUtf8(
+      voicePath,
+      [
+        "---",
+        `schema: ${STUDIO_VOICE_SCHEMA}`,
+        `id: ${manifest.id}-studio-voice`,
+        `title: ${proposal.summary}`,
+        `revision: ${next}`,
+        "---",
+        "",
+        item.content.trim(),
+        "",
+      ].join("\n"),
+    );
+    manifest.studio_voice = PRACTICE_STUDIO_VOICE_FILE;
+    routedPaths.push(PRACTICE_STUDIO_VOICE_FILE);
+  }
+
   const update = [
     "",
     `## Revision ${next}: ${proposal.summary}`,
     "",
     `Reason: ${proposal.reason}`,
     "",
-    ...proposal.updates.flatMap((item) => [
-      `### ${item.section[0].toUpperCase()}${item.section.slice(1)}`,
-      "",
-      item.content,
-      "",
-    ]),
+    ...proposal.updates.flatMap((item) =>
+      item.section === "studio-voice"
+        ? [
+            "### Studio voice",
+            "",
+            `Written to \`${PRACTICE_STUDIO_VOICE_FILE}\`. Run \`silver repair\` in a`,
+            "workspace to carry it in.",
+            "",
+          ]
+        : [
+            `### ${item.section[0].toUpperCase()}${item.section.slice(1)}`,
+            "",
+            item.content,
+            "",
+          ],
+    ),
   ].join("\n");
   await writeUtf8(practicePath, `${current.trimEnd()}\n${update}`);
   const decisionPath = `decisions/${proposal.id}-${next}.md`;
@@ -286,7 +334,13 @@ export async function applyPracticeChange({ root, proposal, now = new Date().toI
   const commit = await commitPractice(
     practiceRoot,
     `Update My Practice: ${proposal.summary}`,
-    ["PRACTICE.md", decisionPath, ".silver/practice.yaml"],
+    ["PRACTICE.md", decisionPath, ".silver/practice.yaml", ...routedPaths],
   );
-  return { root: practiceRoot, revision: next, commit, backup: manifest.backup };
+  return {
+    root: practiceRoot,
+    revision: next,
+    commit,
+    backup: manifest.backup,
+    ...(routedPaths.length > 0 ? { written: routedPaths } : {}),
+  };
 }

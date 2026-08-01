@@ -39,22 +39,37 @@ async function providerRootFor(workspaceRoot, explicitRoot) {
   return sourceProviderRoot;
 }
 
-async function loadAvailability(packageRoot, manifest) {
+// `level` distinguishes what Silver actually established. An MCP transport can
+// only ever reach `configured`: the agent host owns the connection, so nothing
+// in this process can confirm the server responds. Scripts that omit it are
+// treated as `configured` when available, never as proof it works.
+const AVAILABILITY_LEVELS = new Set(["configured", "absent", "unknown", "local"]);
+
+async function loadAvailability(packageRoot, manifest, options = {}) {
   const script = inside(packageRoot, manifest.availability.script);
   await access(script);
   const module = await import(`${pathToFileURL(script).href}?silver=${manifest.version}`);
   if (typeof module.checkAvailability !== "function") {
     throw new Error(`Provider ${manifest.id} availability script must export checkAvailability().`);
   }
-  const result = await module.checkAvailability({ packageRoot, manifest });
+  const result = await module.checkAvailability({
+    packageRoot,
+    manifest,
+    root: options.root,
+    home: options.home,
+  });
   if (
     !result ||
     typeof result.available !== "boolean" ||
-    (result.reason !== undefined && typeof result.reason !== "string")
+    (result.reason !== undefined && typeof result.reason !== "string") ||
+    (result.level !== undefined && !AVAILABILITY_LEVELS.has(result.level))
   ) {
     throw new Error(`Provider ${manifest.id} returned an invalid availability result.`);
   }
-  return result;
+  return {
+    ...result,
+    level: result.level ?? (result.available ? "configured" : "absent"),
+  };
 }
 
 export async function discoverProviders(options = {}) {
@@ -79,12 +94,13 @@ export async function discoverProviders(options = {}) {
       await access(inside(packageRoot, codec));
     }
     const availability = options.skipAvailability
-      ? { available: true, reason: "Availability check intentionally skipped." }
-      : await loadAvailability(packageRoot, manifest);
+      ? { available: true, level: "unknown", reason: "Availability check intentionally skipped." }
+      : await loadAvailability(packageRoot, manifest, options);
     discovered.push({
       ...manifest,
       packageRoot,
       available: availability.available,
+      availability_level: availability.level,
       availability_reason: availability.reason,
     });
   }

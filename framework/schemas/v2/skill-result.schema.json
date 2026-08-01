@@ -100,11 +100,79 @@
           "capability": {
             "$ref": "common.schema.json#/$defs/capability"
           },
+          "activity": {
+            "description": "The named activity that decided this transport, when the catalog had a name for it. Lets a report say \"pushing design-system updates\" rather than \"design-file\".",
+            "$ref": "common.schema.json#/$defs/id"
+          },
           "provider": {
             "$ref": "common.schema.json#/$defs/id"
           },
           "status": {
             "enum": ["used", "fallback", "unavailable", "denied"]
+          }
+        }
+      }
+    },
+    "transports": {
+      "description": "How each named activity resolved: the chain considered, which source ordered it, what was selected, and every transport removed from the running with the reason and who can fix it. Nothing is removed from a designer's options without appearing here.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["activity", "title", "ordered_by", "chain", "removed", "decision"],
+        "properties": {
+          "activity": { "$ref": "common.schema.json#/$defs/id" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "ordered_by": { "enum": ["personal", "project", "team", "framework"] },
+          "chain": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "selected": {
+            "anyOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }]
+          },
+          "decision": {
+            "description": "selected: the preferred transport was used. fallback: something further down the chain was used, and which one is recorded. ask: the designer has a choice to make and nothing ran. stop: nothing may be substituted. none: nothing can serve this activity.",
+            "enum": ["selected", "fallback", "ask", "stop", "none"]
+          },
+          "on_unavailable": { "enum": ["ask", "use_next", "stop"] },
+          "would_select": { "$ref": "common.schema.json#/$defs/id" },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "candidates": {
+            "description": "Shipped transports that could serve this activity if they were set up. What Silver offers instead of inventing a recommendation.",
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "removed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["transport", "reason"],
+              "properties": {
+                "transport": { "$ref": "common.schema.json#/$defs/id" },
+                "reason": {
+                  "enum": ["unavailable", "vetoed", "unsupported", "unknown"]
+                },
+                "source": {
+                  "description": "Who forbade it. `machine-policy` covers an operating-system or enterprise policy Silver can observe but not change.",
+                  "enum": ["project", "team", "organization", "machine-policy"]
+                },
+                "detail": { "type": "string", "minLength": 1, "maxLength": 500 },
+                "failing_step": {
+                  "description": "Which rung of the transport's setup ladder did not hold.",
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "fixable_by": {
+                  "description": "Whether this is the designer's to fix, and if not, who to ask.",
+                  "enum": ["designer", "project-owner", "policy-owner"]
+                }
+              }
+            }
           }
         }
       }

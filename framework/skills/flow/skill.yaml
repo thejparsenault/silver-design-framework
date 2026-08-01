@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: flow
-version: 0.7.0
+version: 0.8.0
 summary: Create and revise portable, revision-aware behavior graphs.
 context_budget: medium
 inputs:
@@ -61,6 +61,13 @@ effects:
       - update
     paths:
       - prototypes/**/flows/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

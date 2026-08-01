@@ -116,6 +116,43 @@ _Avoid_: Framework default when it belongs to one workspace
 An abstract operation a skill needs, such as reading a design file or inspecting a browser, independent of the provider that supplies it.
 _Avoid_: MCP server when provider choice is not relevant
 
+**Activity**:
+A human-named unit of tool-using design work — "build flows in a design tool",
+"push design-system updates" — naming a capability, the actions taken with it,
+and sometimes the artifact kinds involved. It is what a transport preference
+binds to, and what lets a designer express a choice without knowing what a
+capability is. Which providers and skills serve an activity is derived from
+their contracts, never declared.
+_Avoid_: Capability when the designer-facing name is what matters
+
+**Transport**:
+One way of reaching an external system. Several transports may share a target —
+Figma has more than one — and be good at genuinely different jobs, so they are
+separate providers with their own directions, artifact kinds, and setup ladder.
+_Avoid_: Provider when the distinction between two routes to the same tool matters,
+Figma when a specific server is meant
+
+**Setup ladder**:
+A transport's typed steps, each declaring who owns it and who can verify it:
+installed in another application, run in a terminal, a background process, or
+Silver-managed. Silver climbs only the Silver-managed rungs, so a failure is
+reported as a specific missing step rather than a whole transport being
+unavailable.
+_Avoid_: Installed as a yes-or-no property
+
+**Unmapped transport**:
+An MCP server present in the agent host that no shipped adapter claims. Silver
+knows it exists and nothing more, so it says so and asks what it is for rather
+than guessing. It is never selected for an activity until the designer answers.
+_Avoid_: Unsupported, which implies Silver has judged it
+
+**Veto**:
+A project, team, organization, or machine policy forbidding a transport. It is a
+permission, not a preference: no ordering can waive it. Recorded with its source
+and who can lift it, because a silently vetoed transport is indistinguishable
+from a broken one.
+_Avoid_: Priority, ranking
+
 **Tool profile**:
 A user's provider preferences and permission ceilings for tool capabilities, stored outside project workflow context.
 _Avoid_: Global skills

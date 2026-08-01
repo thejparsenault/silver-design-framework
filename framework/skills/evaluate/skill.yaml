@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: evaluate
-version: 0.7.0
+version: 0.8.0
 summary: Evaluate a design and produce sanitized product findings.
 context_budget: medium
 inputs:
@@ -76,6 +76,16 @@ effects:
       - update
     paths:
       - design/work/findings/**
+  - capability: browser
+    actions:
+      - inspect
+      - execute
+    external: true
+  - capability: research-evidence
+    actions:
+      - read
+      - inspect
+    external: true
 guardrails:
   - authority-respected
   - effects-declared

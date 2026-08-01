@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/tool-preferences.schema.json",
+  "title": "Silver tool preferences v1",
+  "description": "Which transport to use for an activity, and what to do when it is not there. Authored personally in My Practice, or by a project or team. Ordering and prohibition are separate: `activities` states a preference order, `forbid` removes a transport from consideration entirely. A personal file uses `activities` only — forbidding is a project, team, or organization power.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "revision"],
+  "properties": {
+    "schema": { "const": "silver/tool-preferences/v1" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "activities": {
+      "description": "Keyed by activity id. The first source that binds an activity wins outright; later sources are not merged into it.",
+      "type": "object",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/id" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["use"],
+        "properties": {
+          "use": {
+            "description": "Transports in preference order. This is an offer list, not an auto-fallback list: when the first is unavailable, `on_unavailable` decides whether Silver may move down it.",
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "on_unavailable": {
+            "description": "ask: report why and let the designer choose (default). use_next: move down the list and say so. stop: do not substitute.",
+            "enum": ["ask", "use_next", "stop"],
+            "default": "ask"
+          }
+        }
+      }
+    },
+    "forbid": {
+      "description": "Transports that may never be selected here, whatever anyone prefers. For constraints a designer cannot waive on their own, such as design files not transiting a third-party server.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["transport", "reason"],
+        "properties": {
+          "transport": { "$ref": "common.schema.json#/$defs/id" },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "fixable_by": {
+            "description": "Who can lift this. Carried into the removal record so a designer is told whether to fix it or who to ask.",
+            "enum": ["designer", "project-owner", "policy-owner"]
+          }
+        }
+      }
+    }
+  }
+}

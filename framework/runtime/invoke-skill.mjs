@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
+import { loadActivityCatalog } from "./activities.mjs";
 import { assertV2 } from "./contracts.mjs";
 import {
   checkpointAcceptedOutputs,
@@ -41,6 +42,45 @@ async function exists(filePath) {
 
 function integrity(content) {
   return `sha256:${createHash("sha256").update(content).digest("hex")}`;
+}
+
+// A missing or unreadable catalog must not stop a workspace working. Without one
+// the resolver falls back to per-capability selection, which is what pre-0.8
+// workspaces did — degraded naming, not degraded correctness.
+async function loadActivityCatalogSafely(root) {
+  try {
+    return await loadActivityCatalog({ root });
+  } catch {
+    return null;
+  }
+}
+
+// Ordering sources, most local first. Personal preferences (`My Practice`) are
+// carried in by the installer rather than read here, because the runtime must
+// not reach outside the workspace on its own.
+async function loadTransportPreferences(root) {
+  const sources = [];
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  if (await exists(manifestPath)) {
+    try {
+      const manifest = parse(await readFile(manifestPath, "utf8"));
+      if (manifest?.tool_preferences) {
+        sources.push({ source: "project", preferences: manifest.tool_preferences });
+      }
+    } catch {
+      // A malformed manifest is reported by `doctor`; it does not get to decide
+      // transports by accident.
+    }
+  }
+  return sources;
+}
+
+function transportQuestionSummary(pending) {
+  const first = pending[0];
+  if (first.decision === "stop" && first.would_select) {
+    return `${first.title}: ${first.chain[0]} is unavailable and nothing may be substituted without you.`;
+  }
+  return `${first.title}: ${first.chain[0]} is unavailable. Choose a transport before this runs.`;
 }
 
 function inside(root, relativePath) {
@@ -516,33 +556,48 @@ export async function invokeSkill({
     contract,
     registeredProviders,
     availableProviders: request.available_providers,
+    catalog: await loadActivityCatalogSafely(workspaceRoot),
+    sources: await loadTransportPreferences(workspaceRoot),
+    interactive: request.interactive ?? false,
   });
   if (
     capabilityResolution.degradedCapabilities.some(
       ({ coverage }) => coverage === "not-run",
     )
   ) {
+    // A transport question is not the same failure as a missing tool. One is
+    // waiting for the designer; the other is an absence. Reporting them
+    // identically is how a choice gets made on someone's behalf.
+    const pending = capabilityResolution.questions;
+    const summary =
+      pending.length > 0
+        ? transportQuestionSummary(pending)
+        : "A required capability is unavailable; the skill was not run.";
     const result = {
       ...(await blockedResult({
         root: workspaceRoot,
         request,
         contract,
         completedAt,
-        summary: "A required capability is unavailable; the skill was not run.",
+        summary,
         providers: capabilityResolution.providers,
         degradedCapabilities: capabilityResolution.degradedCapabilities,
         guardrails,
       })),
       outputs: [],
-      execution: {
-        status: "not-run",
-        summary: "A required capability is unavailable; the skill was not run.",
-      },
+      execution: { status: "not-run", summary },
+      ...(capabilityResolution.activities.length > 0
+        ? { transports: capabilityResolution.activities }
+        : {}),
       readiness: [
         {
           name: "downstream",
           status: "not-ready",
-          reasons: ["Required capability coverage is not-run."],
+          reasons: [
+            pending.length > 0
+              ? "A transport choice is unresolved."
+              : "Required capability coverage is not-run.",
+          ],
         },
       ],
     };
@@ -839,6 +894,7 @@ export async function invokeSkill({
     outputs: prepared.map(({ reference }) => reference),
     providers: capabilityResolution.providers.map((provider) => ({
       capability: provider.capability,
+      ...(provider.activity ? { activity: provider.activity } : {}),
       provider: provider.provider ?? "unavailable",
       status:
         provider.status === "selected"
@@ -847,6 +903,12 @@ export async function invokeSkill({
             ? "fallback"
             : "unavailable",
     })),
+    // What was chosen for each named activity, and what was removed from the
+    // running before it. A fallback that does not say what it replaced, or a
+    // veto that does not say who set it, is a silently narrowed option.
+    ...(capabilityResolution.activities.length > 0
+      ? { transports: capabilityResolution.activities }
+      : {}),
     representation_coverage: representationCoverage(
       capabilityResolution.providers,
     ),

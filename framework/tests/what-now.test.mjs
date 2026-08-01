@@ -150,7 +150,7 @@ function invocation(recommendedNextActions) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "what-now-test",
-    skill: { id: "what-now", version: "0.7.0" },
+    skill: { id: "what-now", version: "0.8.0" },
     started_at: "2026-07-28T18:00:00Z",
     inputs: [],
     outputs: [],
@@ -223,7 +223,7 @@ test("accepted ready results contribute their declared follow-up evidence", asyn
     ".silver/results/skills/specify-ready.json",
     JSON.stringify({
       invocation_id: "specify-ready",
-      skill: { id: "specify", version: "0.7.0" },
+      skill: { id: "specify", version: "0.8.0" },
       completed_at: "2026-07-28T17:50:00Z",
       execution: { status: "complete" },
       acceptance: { status: "accepted" },
@@ -318,7 +318,7 @@ test("generated what-now package stays aligned with the catalog", async () => {
     ),
   );
   assert.equal(contract.id, "what-now");
-  assert.equal(contract.version, "0.7.0");
+  assert.equal(contract.version, "0.8.0");
   assert.deepEqual(contract.outputs, []);
   assert.equal(contract.completion.review.required, false);
   assert.equal(contract.completion.quality_criteria[0].evaluation, "deterministic");

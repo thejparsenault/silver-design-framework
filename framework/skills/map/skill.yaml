@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: map
-version: 0.7.0
+version: 0.8.0
 summary: Create evidence-linked journey, service, experience, and ecosystem maps.
 context_budget: medium
 inputs:
@@ -40,6 +40,13 @@ effects:
   - capability: repository
     actions: [create, write, update]
     paths: [design/maps/**]
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
 guardrails:
   - authority-respected
   - effects-declared
