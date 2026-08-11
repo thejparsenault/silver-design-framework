@@ -230,6 +230,7 @@ async function validateV2(validators) {
     ["guardrail-registry.schema.json", "framework/guardrails/registry.yaml", "yaml"],
     ["tool-profile.schema.json", "fixtures/contracts/v2/valid/tool-profile.yaml", "yaml"],
     ["playbook.schema.json", "framework/playbooks/default-design-loop.yaml", "yaml"],
+    ["semantic-roles.schema.json", "framework/semantic-roles/v1.yaml", "yaml"],
     ["lock.schema.json", "fixtures/blank-workspace/expected/.silver/lock.yaml", "yaml"],
     ["asset-catalog.schema.json", "fixtures/blank-workspace/expected/design/assets/catalog.json", "json"],
     ["presentation-kit.schema.json", "fixtures/blank-workspace/expected/design/presentation-kit/kit.json", "json"],
@@ -318,7 +319,53 @@ async function validateV2(validators) {
     );
   }
 
+  // The vocabulary is the spec; the default design system is one conforming
+  // instance of it. Checking both directions is what keeps that relationship
+  // true: a published role nothing implements is a promise to external systems
+  // that Silver cannot keep, and an implemented role the vocabulary never
+  // published is a name no other system can map onto.
+  const vocabulary = await yaml("framework/semantic-roles/v1.yaml");
+  const published = new Set(vocabulary.roles.map(({ id }) => id));
+  const implemented = new Map();
+  const semanticRoot = path.join(root, "reference-system/tokens/semantic");
+  for (const name of (await readdir(semanticRoot)).sort()) {
+    if (!name.endsWith(".tokens.json")) continue;
+    // `palette` is the scheme/mode matrix the role families reference. It is
+    // plumbing, not vocabulary, and is deliberately unpublished.
+    if (name === "palette.tokens.json") continue;
+    const document = JSON.parse(
+      await readFile(path.join(semanticRoot, name), "utf8"),
+    );
+    const walk = (node, trail = []) => {
+      if (!node || typeof node !== "object") return;
+      if ("$value" in node) {
+        implemented.set(trail.join("."), node.$type ?? "color");
+        return;
+      }
+      for (const [key, value] of Object.entries(node)) {
+        if (!key.startsWith("$")) walk(value, [...trail, key]);
+      }
+    };
+    walk(document);
+  }
+
+  const roleDrift = [
+    ...[...published]
+      .filter((id) => !implemented.has(id))
+      .map((id) => `published but not implemented by the default system: ${id}`),
+    ...[...implemented.keys()]
+      .filter((id) => !published.has(id))
+      .map((id) => `implemented but not published in the vocabulary: ${id}`),
+    ...vocabulary.roles
+      .filter(({ id, type }) => implemented.has(id) && implemented.get(id) !== type)
+      .map(({ id, type }) => `${id} is ${type} in the vocabulary, ${implemented.get(id)} in the default system`),
+  ];
+  if (roleDrift.length > 0) {
+    throw new Error(`Semantic role drift:\n  ${roleDrift.join("\n  ")}`);
+  }
+
   return {
+    semanticRoles: published.size,
     examples: positive.length,
     skills: skillEntries.length,
     migrations: legacySkillFiles.length,
@@ -336,7 +383,8 @@ async function main() {
       `${v1Evidence.artifacts} mapped artifacts, ${v1Evidence.skills} v1 skill contracts, ` +
       `${v2Evidence.examples} v2 examples, ${v2Evidence.skills} v2 skill contracts, ` +
       `${v2Evidence.migrations} v1-to-v2 skill migrations, ` +
-      `and ${v2Evidence.activities} activities with no catalog drift.`,
+      `${v2Evidence.activities} activities with no catalog drift, ` +
+      `and ${v2Evidence.semanticRoles} semantic roles matching the default system.`,
   );
 }
 

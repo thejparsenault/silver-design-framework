@@ -160,7 +160,7 @@ packages:
     path: .silver/schemas/v2
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:590adf6cf9f02c19b7ad170476048171cfb6eadd5d96ea37da282989eddce508
+    integrity: sha256:0b3d1767cc841442a7b47088a2c5fec3cbbea37db5652e13cdabe0355010fec0
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
@@ -196,7 +196,7 @@ packages:
     path: reference-system
     version: 0.7.0
     ownership: copied-and-owned
-    integrity: sha256:7e708964c9e779006e41eae2faeaf58e7e349c045f435ebf545448091adbcd6f
+    integrity: sha256:c17e0c887a9426d9b66d0ae6d58e92a1907cd2eafd48744cc160554785f194df
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer

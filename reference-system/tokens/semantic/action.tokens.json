@@ -1,16 +1,36 @@
 {
   "action": {
-    "$description": "Action semantic tokens — buttons, links, interactive controls. Mode-aware: swap these per data-mode.",
+    "$description": "Action semantic tokens — buttons, links, interactive controls. Mode-aware: swap these per data-mode. Every variant carries rest, hover, active, and disabled, because a system without roles for the interaction states gives an adopted system's hover colour nowhere to map.",
     "primary": {
       "bg": {
         "$type": "color",
         "$description": "Primary button/action background",
         "$value": "{color.blue.450}"
       },
+      "bg-hover": {
+        "$type": "color",
+        "$description": "Primary action background under pointer or keyboard focus",
+        "$value": "{color.blue.500}"
+      },
+      "bg-active": {
+        "$type": "color",
+        "$description": "Primary action background while being pressed",
+        "$value": "{color.blue.550}"
+      },
+      "bg-disabled": {
+        "$type": "color",
+        "$description": "Primary action background when the action is unavailable",
+        "$value": "{color.neutral.100}"
+      },
       "fg": {
         "$type": "color",
         "$description": "Primary button/action foreground (label, icon)",
         "$value": "{color.neutral.0}"
+      },
+      "fg-disabled": {
+        "$type": "color",
+        "$description": "Primary action foreground when unavailable",
+        "$value": "{color.neutral.350}"
       }
     },
     "secondary": {
@@ -19,15 +39,45 @@
         "$description": "Secondary button background — typically transparent or very light",
         "$value": "{color.neutral.0}"
       },
+      "bg-hover": {
+        "$type": "color",
+        "$description": "Secondary action background on hover",
+        "$value": "{color.blue.50}"
+      },
+      "bg-active": {
+        "$type": "color",
+        "$description": "Secondary action background while pressed",
+        "$value": "{color.blue.75}"
+      },
+      "bg-disabled": {
+        "$type": "color",
+        "$description": "Secondary action background when unavailable",
+        "$value": "{color.neutral.25}"
+      },
       "fg": {
         "$type": "color",
         "$description": "Secondary button foreground",
         "$value": "{color.blue.450}"
       },
+      "fg-disabled": {
+        "$type": "color",
+        "$description": "Secondary action foreground when unavailable",
+        "$value": "{color.neutral.350}"
+      },
       "border": {
         "$type": "color",
         "$description": "Secondary button border",
         "$value": "{color.blue.450}"
+      },
+      "border-hover": {
+        "$type": "color",
+        "$description": "Secondary button border on hover",
+        "$value": "{color.blue.500}"
+      },
+      "border-disabled": {
+        "$type": "color",
+        "$description": "Secondary button border when unavailable",
+        "$value": "{color.neutral.150}"
       }
     },
     "ghost": {
@@ -36,10 +86,30 @@
         "$description": "Ghost button background — transparent at rest",
         "$value": "{color.neutral.0}"
       },
+      "bg-hover": {
+        "$type": "color",
+        "$description": "Ghost button background on hover",
+        "$value": "{color.neutral.50}"
+      },
+      "bg-active": {
+        "$type": "color",
+        "$description": "Ghost button background while pressed",
+        "$value": "{color.neutral.75}"
+      },
+      "bg-disabled": {
+        "$type": "color",
+        "$description": "Ghost button background when unavailable",
+        "$value": "{color.neutral.0}"
+      },
       "fg": {
         "$type": "color",
         "$description": "Ghost button foreground",
         "$value": "{color.neutral.750}"
+      },
+      "fg-disabled": {
+        "$type": "color",
+        "$description": "Ghost button foreground when unavailable",
+        "$value": "{color.neutral.350}"
       }
     },
     "destructive": {
@@ -48,10 +118,30 @@
         "$description": "Destructive action background",
         "$value": "{color.red.450}"
       },
+      "bg-hover": {
+        "$type": "color",
+        "$description": "Destructive action background on hover",
+        "$value": "{color.red.500}"
+      },
+      "bg-active": {
+        "$type": "color",
+        "$description": "Destructive action background while pressed",
+        "$value": "{color.red.550}"
+      },
+      "bg-disabled": {
+        "$type": "color",
+        "$description": "Destructive action background when unavailable",
+        "$value": "{color.neutral.100}"
+      },
       "fg": {
         "$type": "color",
         "$description": "Destructive action foreground",
         "$value": "{color.neutral.0}"
+      },
+      "fg-disabled": {
+        "$type": "color",
+        "$description": "Destructive action foreground when unavailable",
+        "$value": "{color.neutral.350}"
       }
     }
   }
