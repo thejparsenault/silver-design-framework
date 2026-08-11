@@ -40,6 +40,32 @@ export function frameworkOrder(providers, activity) {
     .map((provider) => provider.id);
 }
 
+// Why this transport and not another. A resolver with an order and two filters
+// is undebuggable without an answer, and "alphabetical" is an answer a designer
+// deserves to be told rather than left to infer.
+export function explainSelection({ provider, orderedBy, decision }) {
+  if (!provider) return null;
+  const reasons = [];
+  if (orderedBy === "framework") {
+    if (provider.available) reasons.push("it is configured");
+    if (localBuildSteps(provider) === 0) reasons.push("it needs no local build");
+    // Say the quiet part. A tie broken by name is not a judgement about quality,
+    // and letting a designer believe otherwise is the whole problem with an
+    // unexplained default.
+    if (reasons.length === 0) {
+      reasons.push("nothing distinguished the candidates, so they were ordered by name");
+    }
+  } else {
+    reasons.push(`the ${orderedBy} preference asked for it`);
+  }
+  return {
+    ordered_by: orderedBy,
+    because: reasons,
+    ...(decision === "fallback" ? { note: "This is a fallback, not the first choice." } : {}),
+    ...(provider.guidance?.prefer_when ? { prefer_when: provider.guidance.prefer_when } : {}),
+  };
+}
+
 function bindingFor(sources, activityId) {
   for (const { source, preferences } of sources) {
     const binding = preferences?.activities?.[activityId];
@@ -133,7 +159,11 @@ export function resolveActivityTransport({
     if (!provider.available) {
       removed.push({
         transport: id,
-        reason: "unavailable",
+        // "Unavailable" would overstate what Silver knows about a transport it
+        // cannot see at all — an agent's built-in browser has no server to look
+        // for. Reporting that as missing is the same mistake as reporting a veto
+        // as a breakage: the designer cannot tell what to do about it.
+        reason: provider.availability_level === "unknown" ? "undetermined" : "unavailable",
         detail: provider.availability_reason,
         failing_step: firstFailingStep(provider),
         // Every rung of a setup ladder is the designer's: Silver writes host

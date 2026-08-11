@@ -76,6 +76,18 @@ const allowedBlankEntries = new Set([
   "AGENTS.md",
   "CLAUDE.md",
   "CLAUDE.local.md",
+  // Installing Silver is what puts these here. The documented path is
+  // `npm install silver-design-framework` followed by `silver setup .`, which
+  // means the folder is never literally empty by the time setup runs — so
+  // treating a package manifest as evidence of an existing product would
+  // classify every single installation as an adoption.
+  ".npmrc",
+  "bun.lockb",
+  "node_modules",
+  "package-lock.json",
+  "package.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
 ]);
 export const SEEDED_TEMPLATES = [
   "design/brand.md",
@@ -97,6 +109,7 @@ export const SEEDED_TEMPLATES = [
   "design/TRACE.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
+  "design/tools/README.md",
   "design/presentation-kit/kit.json",
   "design/presentation-kit/templates/opportunity.json",
   "design/presentation-kit/templates/proposal.json",
@@ -155,6 +168,7 @@ export function payloadRoots(payloadRoot = repositoryRoot) {
     playbookSourceRoot: path.join(payloadRoot, "framework", "playbooks"),
     providerSourceRoot: path.join(payloadRoot, "framework", "providers"),
     activitySourceRoot: path.join(payloadRoot, "framework", "activities"),
+    transportSourceRoot: path.join(payloadRoot, "framework", "transports"),
     referenceSystemSourceRoot: path.join(payloadRoot, "reference-system"),
   };
 }
@@ -218,6 +232,7 @@ export async function sourcePackages({
     playbookSourceRoot,
     providerSourceRoot,
     activitySourceRoot,
+    transportSourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
   const packages = [];
@@ -281,6 +296,12 @@ export async function sourcePackages({
       type: "activity-catalog",
       path: ".silver/activities",
       source: activitySourceRoot,
+    },
+    {
+      id: "transports",
+      type: "transport-catalog",
+      path: ".silver/transports",
+      source: transportSourceRoot,
     },
   ]) {
     packages.push({
@@ -356,20 +377,16 @@ async function assertSetupTarget(root, { allowExistingCodebase = false } = {}) {
     return "existing";
   }
 
+  // Silver used to throw here on any non-blank folder, which after `npm install`
+  // is every folder — the compatibility path was unusable in exactly the case it
+  // was most needed. Installing alongside existing work is safe because setup
+  // only ever creates files it owns and preserves anything already present; what
+  // it must not do is quietly decide what that existing work *means*. That is
+  // `silver adopt`, which asks one entry at a time.
   const unexpected = (await listTopLevel(root)).filter(
     (entry) => !allowedBlankEntries.has(entry),
   );
-  if (unexpected.length > 0) {
-    if (allowExistingCodebase) {
-      return "new";
-    }
-    throw new Error(
-      "This folder is not blank and does not contain design/manifest.yaml. " +
-        "Existing-codebase adoption is not implemented yet. " +
-        `Unexpected entries: ${unexpected.sort().join(", ")}`,
-    );
-  }
-  return "new";
+  return unexpected.length > 0 ? "alongside" : "new";
 }
 
 export async function setupWorkspace(options = {}) {
@@ -391,6 +408,7 @@ export async function setupWorkspace(options = {}) {
     playbookSourceRoot,
     providerSourceRoot,
     activitySourceRoot,
+    transportSourceRoot,
     referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
 
@@ -445,9 +463,14 @@ export async function setupWorkspace(options = {}) {
   const preserved = [];
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const hasLock = await exists(lockPath);
-  const seedPayload = mode === "new" || !hasLock;
+  // `alongside` is a fresh install that happens to have neighbours: there is no
+  // manifest yet, so everything is created exactly as in a blank folder. Only
+  // the reporting differs, because "Initialized" in a folder full of somebody
+  // else's work should say what it did and did not touch.
+  const isNew = mode !== "existing";
+  const seedPayload = isNew || !hasLock;
 
-  if (mode === "new") {
+  if (isNew) {
     const manifestContent = await readTemplate(
       "design/manifest.yaml",
       variables,
@@ -490,6 +513,7 @@ export async function setupWorkspace(options = {}) {
       [playbookSourceRoot, ".silver/playbooks"],
       [providerSourceRoot, ".silver/providers"],
       [activitySourceRoot, ".silver/activities"],
+      [transportSourceRoot, ".silver/transports"],
     ]) {
       const copied = await copyNewTree(source, path.join(root, destination));
       created.push(

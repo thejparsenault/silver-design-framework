@@ -366,6 +366,11 @@
         },
         "authority": {
           "$ref": "#/$defs/authority"
+        },
+        "origin": {
+          "description": "`authored` (default) means Silver owns this file's shape and checks it against the artifact contract. `adopted` means the file predates Silver and the project owns its format: it was registered where it sits by `silver adopt` and is never rewritten to satisfy a checker, so structural checks are skipped and only its existence is verified.",
+          "enum": ["authored", "adopted"],
+          "default": "authored"
         }
       }
     },

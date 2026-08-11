@@ -156,7 +156,14 @@
               "properties": {
                 "transport": { "$ref": "common.schema.json#/$defs/id" },
                 "reason": {
-                  "enum": ["unavailable", "vetoed", "unsupported", "unknown"]
+                  "description": "`undetermined` is distinct from `unavailable`: Silver cannot see an agent's own built-in tools, so a host-native transport is not missing, it is unverifiable from here. Collapsing the two would send a designer hunting a fault that may not exist.",
+                  "enum": [
+                    "unavailable",
+                    "undetermined",
+                    "vetoed",
+                    "unsupported",
+                    "unknown"
+                  ]
                 },
                 "source": {
                   "description": "Who forbade it. `machine-policy` covers an operating-system or enterprise policy Silver can observe but not change.",

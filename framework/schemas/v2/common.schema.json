@@ -32,6 +32,47 @@
         }
       ]
     },
+    "decisionQuestion": {
+      "description": "A decision put to a human in a form they can answer without knowing Silver's vocabulary: what is being asked, what it means, what each option actually does, what it touches outside the project, and whether it can be changed later. Explanations travel with the question rather than living in --help, so whatever presents it has everything it needs. `silver/setup-plan/v1` carries the same shape inline with a stricter id pattern; new contracts reference this.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "question", "explanation", "options", "reversible"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[_-][a-z0-9]+)*$",
+          "maxLength": 100
+        },
+        "question": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "summary", "effect"],
+            "properties": {
+              "value": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "effect": { "type": "string", "minLength": 1, "maxLength": 1000 }
+            }
+          }
+        },
+        "recommended": { "type": ["string", "null"] },
+        "recommendation_reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "reversible": { "type": "boolean" },
+        "how_to_change": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "external_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "backup_note": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
     "artifactKind": {
       "anyOf": [
         {

@@ -57,6 +57,7 @@ const managedPayloads = [
   ["framework/playbooks", ".silver/playbooks"],
   ["framework/providers", ".silver/providers"],
   ["framework/activities", ".silver/activities"],
+  ["framework/transports", ".silver/transports"],
 ];
 
 async function temporaryWorkspace(t) {
@@ -81,6 +82,7 @@ async function temporaryPayload(t) {
     "playbooks",
     "providers",
     "activities",
+    "transports",
   ]) {
     await cp(
       path.join(repositoryRoot, "framework", relativePath),
@@ -400,13 +402,33 @@ test("update stops before changing a locally edited managed skill", async (t) =>
   assert.deepEqual(comparableSnapshot(await snapshotFiles(root)), before);
 });
 
-test("setup refuses to guess that an existing codebase is blank", async (t) => {
+test("setup installs alongside existing work without touching it", async (t) => {
   const root = await temporaryWorkspace(t);
-  await writeFile(path.join(root, "package.json"), "{}\n");
+  // Deliberately not package.json or README.md: installing Silver itself leaves
+  // a package manifest behind, so treating one as evidence of an existing
+  // product classified every single installation as an adoption.
+  const productPath = path.join(root, "src", "components", "Button.jsx");
+  const documentPath = path.join(root, "docs", "design-guidelines.md");
+  await mkdir(path.dirname(productPath), { recursive: true });
+  await mkdir(path.dirname(documentPath), { recursive: true });
+  await writeFile(productPath, "export const Button = () => null;\n");
+  await writeFile(documentPath, "# Existing product\n");
 
-  await assert.rejects(
-    setupWorkspace({ root }),
-    /Existing-codebase adoption is not implemented yet/,
+  // Silver used to throw here, which after `npm install` meant every real
+  // repository. Installing is safe because setup only creates files it owns;
+  // what it must not do is decide on its own what the existing work means.
+  const result = await setupWorkspace({
+    root,
+    name: "Existing Product",
+    id: "existing-product",
+    sourceReference: "framework-development-fixture",
+  });
+
+  assert.equal(result.mode, "alongside");
+  assert.equal(
+    await readFile(productPath, "utf8"),
+    "export const Button = () => null;\n",
   );
-  assert.equal((await snapshotFiles(root)).size, 1);
+  assert.equal(await readFile(documentPath, "utf8"), "# Existing product\n");
+  assert.equal((await doctorWorkspace({ root })).ok, true);
 });

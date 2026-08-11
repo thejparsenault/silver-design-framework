@@ -295,6 +295,29 @@ async function validateV2(validators) {
     throw new Error(`Activity catalog drift:\n  ${drift.join("\n  ")}`);
   }
 
+  // A comparison against a transport that does not exist is worse than no
+  // guidance: it tells a designer to weigh their option against something they
+  // can never obtain, and it is exactly what a rename leaves behind.
+  const transportIds = new Set(providers.map(({ id }) => id));
+  const danglingComparisons = [];
+  for (const provider of providers) {
+    for (const comparison of provider.guidance?.compare_to ?? []) {
+      if (!transportIds.has(comparison.transport)) {
+        danglingComparisons.push(
+          `${provider.id} compares itself to unknown transport ${comparison.transport}`,
+        );
+      }
+      if (comparison.transport === provider.id) {
+        danglingComparisons.push(`${provider.id} compares itself to itself`);
+      }
+    }
+  }
+  if (danglingComparisons.length > 0) {
+    throw new Error(
+      `Transport guidance drift:\n  ${danglingComparisons.join("\n  ")}`,
+    );
+  }
+
   return {
     examples: positive.length,
     skills: skillEntries.length,

@@ -43,7 +43,18 @@ async function providerRootFor(workspaceRoot, explicitRoot) {
 // only ever reach `configured`: the agent host owns the connection, so nothing
 // in this process can confirm the server responds. Scripts that omit it are
 // treated as `configured` when available, never as proof it works.
-const AVAILABILITY_LEVELS = new Set(["configured", "absent", "unknown", "local"]);
+// `responding` and `unresponsive` are never returned by a health script — no
+// script in this process can establish either. They are applied afterwards from
+// a probe the agent recorded, which is the only party that can call an MCP
+// server. See framework/runtime/transport-probes.mjs.
+const AVAILABILITY_LEVELS = new Set([
+  "configured",
+  "responding",
+  "unresponsive",
+  "absent",
+  "unknown",
+  "local",
+]);
 
 async function loadAvailability(packageRoot, manifest, options = {}) {
   const script = inside(packageRoot, manifest.availability.script);
@@ -72,12 +83,64 @@ async function loadAvailability(packageRoot, manifest, options = {}) {
   };
 }
 
-export async function discoverProviders(options = {}) {
-  const providerRoot = await providerRootFor(options.root, options.providerRoot);
+// Capabilities that mean writing something Silver is answerable for. A
+// declaration is a name and an address — nobody here wrote or reviewed the code
+// behind it — so it may describe design work but never be trusted to produce a
+// canonical artifact or production source through a Silver operation.
+const PACKAGE_ONLY_CAPABILITIES = new Set([
+  "canonical-artifact",
+  "production-source",
+  "artifact-codec",
+]);
+
+function assertDeclarationIsHonest(manifest, file) {
+  const overreach = manifest.capabilities.filter((capability) =>
+    PACKAGE_ONLY_CAPABILITIES.has(capability),
+  );
+  if (overreach.length > 0) {
+    throw new Error(
+      `Declared transport ${manifest.id} (${file}) claims ${overreach.join(", ")}, which needs an adapter Silver ships. Remove the capability or contribute a provider package.`,
+    );
+  }
+  if (manifest.codecs?.length) {
+    throw new Error(
+      `Declared transport ${manifest.id} (${file}) declares codecs, which are scripts Silver runs. A declaration has none.`,
+    );
+  }
+  if (manifest.operations?.length) {
+    throw new Error(
+      `Declared transport ${manifest.id} (${file}) declares operations, which are scripts Silver runs. A declaration has none.`,
+    );
+  }
+}
+
+// Availability for a transport with no health script of its own. Silver can see
+// whether the agent host has the server configured, and that is the whole of
+// what it can honestly say — `responding` is the agent's to establish.
+async function declaredAvailability(manifest, options = {}) {
+  if (manifest.connection?.kind === "mcp") {
+    const { mcpAvailability } = await import("./host-mcp.mjs");
+    return mcpAvailability(manifest, options);
+  }
+  if (manifest.connection?.kind === "host-native") {
+    return {
+      available: false,
+      level: "unknown",
+      reason: `${manifest.id} is built into an agent host. Only the agent can confirm it is there.`,
+    };
+  }
+  return {
+    available: false,
+    level: "unknown",
+    reason: `${manifest.id} declares no connection Silver can inspect.`,
+  };
+}
+
+async function loadPackages(providerRoot, options) {
   const entries = (await readdir(providerRoot, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name));
-  const discovered = [];
+  const loaded = [];
   for (const entry of entries) {
     const packageRoot = path.join(providerRoot, entry.name);
     const manifestPath = path.join(packageRoot, "provider.yaml");
@@ -87,7 +150,7 @@ export async function discoverProviders(options = {}) {
     if (manifest.id !== entry.name) {
       throw new Error(`Provider directory ${entry.name} does not match manifest id ${manifest.id}.`);
     }
-    for (const operation of manifest.operations) {
+    for (const operation of manifest.operations ?? []) {
       await access(inside(packageRoot, operation.script));
     }
     for (const codec of manifest.codecs ?? []) {
@@ -95,19 +158,112 @@ export async function discoverProviders(options = {}) {
     }
     const availability = options.skipAvailability
       ? { available: true, level: "unknown", reason: "Availability check intentionally skipped." }
-      : await loadAvailability(packageRoot, manifest, options);
-    discovered.push({
+      : manifest.availability
+        ? await loadAvailability(packageRoot, manifest, options)
+        : await declaredAvailability(manifest, options);
+    loaded.push({
       ...manifest,
       packageRoot,
+      origin: "shipped",
+      // Whether Silver runs this or hands it to the agent. Without it, a caller
+      // cannot tell an adapter it can invoke from a server only the agent reaches.
+      execution: manifest.operations?.length ? "silver" : "agent",
       available: availability.available,
       availability_level: availability.level,
       availability_reason: availability.reason,
     });
   }
-  if (discovered.length === 0) {
+  return loaded;
+}
+
+// Single-file declarations: the shipped catalog, and whatever this project has
+// told Silver about. Neither carries code.
+async function loadDeclarations(directory, origin, options) {
+  if (!(await exists(directory))) return [];
+  const files = (await readdir(directory))
+    .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
+    .sort();
+  const loaded = [];
+  for (const name of files) {
+    const file = path.join(directory, name);
+    const source = await readFile(file, "utf8");
+    const manifest = parse(source);
+    if (!manifest || manifest.schema !== "silver/provider/v1") continue;
+    // A scaffold nobody finished describes a transport Silver would otherwise
+    // select while knowing nothing about it. Same rule as `invoke --scaffold`.
+    if (
+      source
+        .split("\n")
+        .some((line) => !line.trimStart().startsWith("#") && line.includes("TODO"))
+    ) {
+      throw new Error(
+        `${file} still contains TODO placeholders from \`silver tools --declare\`. Fill them in before Silver will read it.`,
+      );
+    }
+    await assertV2("provider.schema.json", manifest, options);
+    const expected = name.replace(/\.ya?ml$/, "");
+    if (manifest.id !== expected) {
+      throw new Error(`Transport file ${name} does not match manifest id ${manifest.id}.`);
+    }
+    assertDeclarationIsHonest(manifest, file);
+    const availability = options.skipAvailability
+      ? { available: true, level: "unknown", reason: "Availability check intentionally skipped." }
+      : await declaredAvailability(manifest, options);
+    loaded.push({
+      ...manifest,
+      declarationPath: file,
+      origin,
+      execution: "agent",
+      available: availability.available,
+      availability_level: availability.level,
+      availability_reason: availability.reason,
+    });
+  }
+  return loaded;
+}
+
+export async function discoverProviders(options = {}) {
+  const providerRoot = await providerRootFor(options.root, options.providerRoot);
+  const workspace = options.root ? path.resolve(options.root) : null;
+
+  // Three origins, most-general first, so a project declaration wins a name
+  // clash with the shipped catalog — the local answer is the more specific one.
+  const catalogRoot = workspace
+    ? path.join(workspace, ".silver", "transports")
+    : path.resolve(runtimeRoot, "../transports");
+  const discovered = [
+    ...(await loadPackages(providerRoot, options)),
+    ...(await loadDeclarations(catalogRoot, "catalog", options)),
+    ...(workspace
+      ? await loadDeclarations(
+          path.join(workspace, "design", "tools", "transports"),
+          "project-declared",
+          options,
+        )
+      : []),
+  ];
+
+  const byId = new Map();
+  for (const provider of discovered) byId.set(provider.id, provider);
+  let unique = [...byId.values()];
+
+  if (unique.length === 0) {
     throw new Error(`No registered provider packages found at ${providerRoot}.`);
   }
-  return discovered;
+
+  // Availability so far is what Silver could establish on its own, which for an
+  // MCP transport stops at `configured`. A recorded probe is the agent's
+  // evidence that it actually responds, and it is believed only while fresh.
+  if (workspace && !options.skipProbes) {
+    const { applyProbe, readProbes } = await import("./transport-probes.mjs");
+    const probes = await readProbes(workspace);
+    if (probes.size > 0) {
+      unique = unique.map((provider) =>
+        applyProbe(provider, probes.get(provider.id), options.now),
+      );
+    }
+  }
+  return unique;
 }
 
 export function selectProvider(providers, capability, preferred = []) {

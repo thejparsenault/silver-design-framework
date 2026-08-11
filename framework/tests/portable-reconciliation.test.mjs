@@ -170,11 +170,29 @@ test("provider packages and canonical codecs are registered and executable", asy
   // transports resolve to absent rather than picking up whatever the machine
   // running the tests happens to have configured.
   const providers = await discoverProviders({ home: path.join(repositoryRoot, "fixtures/host/empty") });
-  assert.deepEqual(providers.map(({ id }) => id), [
-    "figma-console-mcp",
-    "figma-official-mcp",
-    "silver-portable",
-  ]);
+  // Packages ship adapter code; the catalog entries are declarations the agent
+  // calls directly. Both resolve, and `execution` is what tells them apart.
+  assert.deepEqual(
+    providers.filter(({ origin }) => origin === "shipped").map(({ id }) => id),
+    [
+      "figma-console-mcp",
+      "figma-official-mcp",
+      "silver-browser-local",
+      "silver-portable",
+    ],
+  );
+  assert.deepEqual(
+    providers.filter(({ origin }) => origin === "catalog").map(({ id }) => id).sort(),
+    ["agent-native-browser", "chrome-devtools-mcp", "playwright-mcp"],
+  );
+  assert.equal(
+    providers.find(({ id }) => id === "chrome-devtools-mcp").execution,
+    "agent",
+  );
+  assert.equal(
+    providers.find(({ id }) => id === "silver-portable").execution,
+    "silver",
+  );
   assert.equal(providers.find(({ id }) => id === "silver-portable").available, true);
   const console_ = providers.find(({ id }) => id === "figma-console-mcp");
   assert.equal(console_.available, false);

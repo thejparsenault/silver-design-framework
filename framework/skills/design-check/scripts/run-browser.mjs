@@ -24,7 +24,25 @@ try {
   }
 }
 
-const chromeCandidates = [
+// The canonical list lives in the runtime so the browser transport's
+// availability and this suite cannot disagree about whether Chrome is here.
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder; `chrome path list stays in one place` in
+// framework/tests fails the gate if the inline fallback ever drifts from it.
+let chromeCandidates;
+for (const specifier of [
+  "silver-design-framework/framework/runtime/chrome.mjs",
+  "../../../.silver/runtime/chrome.mjs",
+  "../../../runtime/chrome.mjs",
+]) {
+  try {
+    ({ CHROME_CANDIDATES: chromeCandidates } = await import(specifier));
+    break;
+  } catch {
+    // Try the next resolution path.
+  }
+}
+chromeCandidates ??= [
   process.env.SILVER_CHROME_PATH,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/Applications/Chromium.app/Contents/MacOS/Chromium",

@@ -63,6 +63,7 @@
               "playbook",
               "provider",
               "activity-catalog",
+              "transport-catalog",
               "reference-system"
             ]
           },

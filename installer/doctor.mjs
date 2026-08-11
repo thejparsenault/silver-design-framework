@@ -8,6 +8,7 @@ import {
 } from "./context.mjs";
 import { inspectGuidanceSources } from "./guidance.mjs";
 import { inspectLinkedSources } from "./sources.mjs";
+import { discoverProviders } from "../framework/runtime/providers.mjs";
 import {
   CLAUDE_BLOCK_BEGIN,
   CLAUDE_MEMORY_PATH,
@@ -120,6 +121,14 @@ async function inspectArtifact(root, mapping, diagnostics) {
         mapping.path,
       ),
     );
+    return;
+  }
+  // An adopted artifact is registered, not owned. It was written by the product
+  // team before Silver arrived, in whatever shape suited them, and adoption
+  // promised not to rewrite it — so demanding Silver frontmatter here would make
+  // the only way to clear this diagnostic the one thing adoption said it would
+  // never do. Existence and reachability are checked; format is the project's.
+  if (mapping.origin === "adopted") {
     return;
   }
   // How a kind is stored decides how it is inspected. See
@@ -607,9 +616,95 @@ export async function doctorWorkspace(options = {}) {
     );
   }
 
+  await inspectTransports(root, manifest, diagnostics, options);
+
   return {
     ok: diagnostics.every(({ level }) => level !== "error"),
     root,
     diagnostics,
   };
+}
+
+// Tools, in the command a stuck designer actually reaches for.
+//
+// Before 0.9 `doctor` had no idea transports existed: a workspace whose
+// preferred tool was gone, or whose declared transport pointed at a server that
+// had since been removed from the host, reported itself perfectly healthy. The
+// answer lived in a different command you had to already suspect.
+//
+// Everything here is a warning. A missing external tool is not a broken
+// workspace — the portable baseline still does the work — and process guidance
+// is recommended rather than enforced.
+async function inspectTransports(root, manifest, diagnostics, options = {}) {
+  let providers;
+  try {
+    providers = await discoverProviders({ root, home: options.home });
+  } catch (error) {
+    diagnostics.push(
+      diagnostic("warning", "transport-inspection-failed", error.message),
+    );
+    return;
+  }
+  const byId = new Map(providers.map((provider) => [provider.id, provider]));
+
+  // A preference naming a transport nobody installed silently does nothing.
+  for (const [activityId, binding] of Object.entries(
+    manifest.tool_preferences?.activities ?? {},
+  )) {
+    for (const id of binding.use ?? []) {
+      if (!byId.has(id)) {
+        diagnostics.push(
+          diagnostic(
+            "warning",
+            "preferred-transport-missing",
+            `design/manifest.yaml prefers ${id} for ${activityId}, but no transport with that id is installed. The preference has no effect.`,
+            "design/manifest.yaml",
+          ),
+        );
+      }
+    }
+  }
+
+  for (const provider of providers) {
+    // A declaration whose server has vanished from the host is the one failure
+    // mode a designer cannot guess at: the file is still here and still valid.
+    if (
+      provider.origin === "project-declared" &&
+      provider.availability_level === "absent"
+    ) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "declared-transport-absent",
+          `${provider.id} is declared here, but no MCP server named ${provider.connection?.server} is configured in this agent host any more.`,
+          `design/tools/transports/${provider.id}.yaml`,
+        ),
+      );
+    }
+    if (provider.probe_state === "stale") {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "transport-probe-stale",
+          `${provider.id} last confirmed responding outside its freshness window. Run \`silver tools --probe ${provider.id}\` to check it again.`,
+        ),
+      );
+    }
+    if (provider.probe_state === "failed" || provider.probe_state === "refused") {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "transport-unresponsive",
+          `${provider.id} is configured but did not respond when last called. Run \`silver tools --diagnose ${provider.id}\`.`,
+        ),
+      );
+    }
+  }
+
+  // Unmapped host servers are deliberately *not* reported here. They are a fact
+  // about the machine, not this workspace, and 0.7 established that a fresh
+  // workspace produces zero diagnostics — a property that would become
+  // machine-dependent the moment someone's personal MCP configuration could
+  // change it. `silver tools` reports them, which is where a question about
+  // tools belongs.
 }

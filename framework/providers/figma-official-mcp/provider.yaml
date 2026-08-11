@@ -18,6 +18,31 @@ aliases:
   - official figma mcp
   - figma official
   - figma dev mode
+source:
+  publisher: Figma
+  homepage: https://www.figma.com
+  docs: https://help.figma.com/hc/en-us/articles/32132100833559
+  distribution:
+    kind: remote
+    ref: https://mcp.figma.com/mcp
+  # Declared from Figma's published endpoint. Nobody has exercised it here, and
+  # saying so is the difference between a description and a claim.
+  evidence: declared
+  verified_at: 2026-08-11
+  verified_against: published remote endpoint documentation
+guidance:
+  good_at:
+    - Structured reads of variables, styles, and design structure
+    - Pulling token values out of a file you do not have open
+  not_for:
+    - Creating or editing frames — it declares no write direction
+  prefer_when:
+    - You want design-system values back out of Figma without opening it
+  compare_to:
+    - transport: figma-console-mcp
+      difference: >-
+        Reads without needing the file open and needs no local plugin; the
+        console transport can build in the document but requires it running.
 capabilities: [design-file, representation-sync]
 connection:
   kind: mcp
@@ -34,10 +59,18 @@ setup:
     kind: silver-managed
     title: Declare the figma MCP server in this agent host
     verify: { kind: host-mcp-entry, by: silver }
+    troubleshoot:
+      - symptom: Silver reports no MCP server named figma
+        means: No host configuration file declares it yet.
+        do: Run `silver tools --connect figma-official-mcp`, then restart your agent host.
   - id: authorize
     kind: external-app
     title: Authorize the connection when the host first calls it
     verify: { kind: handshake, by: agent }
+    troubleshoot:
+      - symptom: Configured, but calls come back unauthorized
+        means: The remote endpoint has not been authorized for this machine.
+        do: Ask the agent to call it once and complete the browser authorization it opens.
 permissions:
   - capability: design-file
     actions: [read, inspect]
@@ -45,6 +78,10 @@ permissions:
 supported_artifact_kinds: [token-source, design-specification, component-proposal]
 directions: [read]
 fidelity: partial
+probe:
+  tool: mcp__figma__get_variable_defs
+  expects: variable definitions from a Figma file, or an explicit empty result
+  freshness_hours: 24
 operations:
   - id: figma-official-health
     script: scripts/health.mjs

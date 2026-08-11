@@ -121,16 +121,31 @@ activities:
     actions: [create, write, update]
     status: served
 
+  # --- Browsers -----------------------------------------------------------
+  # Split in 0.9, because a provider serving only some of an activity's actions
+  # does not support it: while this was one activity requiring [inspect,
+  # execute], a read-only browser transport supported nothing at all.
+  #
+  # Every agent host reaches a browser differently — a local Chrome Silver
+  # drives, an MCP server, or the agent's own built-in tools — so these resolve
+  # through the normal order and filters like anything else.
+  - id: inspect-in-browser
+    title: Open and inspect a running prototype
+    summary: Load a page and look at rendering, structure, and accessibility.
+    capability: browser
+    actions: [inspect]
+    status: served
+
+  - id: drive-browser
+    title: Drive a running prototype
+    summary: Click, type, and navigate to exercise behaviour rather than just look at it.
+    capability: browser
+    actions: [inspect, execute]
+    status: served
+
   # --- Named gaps ---------------------------------------------------------
   # No shipped provider serves these. They are named anyway so that a missing
   # tool is a specific absence rather than an unexplained degraded capability.
-  - id: inspect-in-browser
-    title: Open and inspect a running prototype
-    summary: Drive a real browser to check rendering, behaviour, and accessibility.
-    capability: browser
-    actions: [inspect, execute]
-    status: planned
-
   - id: gather-research-evidence
     title: Gather research evidence from an external source
     capability: research-evidence

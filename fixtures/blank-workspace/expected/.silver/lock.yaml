@@ -130,31 +130,37 @@ packages:
     path: .skills/design-check
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:903c50408f5edf72b44ffbf6a6ab44224fb5c51da67332b54e1c976a334ff904
+    integrity: sha256:2d769f571e905cf72afbe1ec1f7eb9fa5ddb939ef8cf30258f0e7d457cf23439
   - id: figma-console-mcp
     type: provider
     path: .silver/providers/figma-console-mcp
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:b3f59cf9cc49d50f0a9764233de9529ebd633199648a60f8f89655281f430944
+    integrity: sha256:5209a36de2937b2f836908df147e23c0c0f195dfd96f612a96fab538de498181
   - id: figma-official-mcp
     type: provider
     path: .silver/providers/figma-official-mcp
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:b9186dad94690fef4f484b603b05ee568883a3dc1eb97668279cf09686140bfe
+    integrity: sha256:e3f9d8b039b77190a9ad37adeeb99dd32b5342959b1bf1ed62bf516c781bb061
+  - id: silver-browser-local
+    type: provider
+    path: .silver/providers/silver-browser-local
+    version: 0.9.0
+    ownership: framework-managed
+    integrity: sha256:b41e048adc4f8b932e1241bd556630be9e34696d4e95e6b826bc2f301c4989fa
   - id: silver-portable
     type: provider
     path: .silver/providers/silver-portable
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:0ea40bc36ee1f9f7017fbe3c6c08931550a3406d4250074889f1bf116d98a438
+    integrity: sha256:7c22edc49c042e8bea18ddca0e81f3bea60bd05a3a00dcf770e051ddb3c7dcf9
   - id: schemas-v2
     type: schema-bundle
     path: .silver/schemas/v2
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:9bbe58baa8dadae03e95b9e44dc7769570f33209bfcff8f7f10fd4d65351db6b
+    integrity: sha256:590adf6cf9f02c19b7ad170476048171cfb6eadd5d96ea37da282989eddce508
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
@@ -166,7 +172,7 @@ packages:
     path: .silver/runtime
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:a480234c2a23f56ddcd6c14bcd05dcd6e08a24371873c19abe5a9c43340b432d
+    integrity: sha256:dd3c0290c143953fa6f815018ac8f5b2b80deae33db8f6cdbd8ba1cdb17ad99e
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
@@ -178,7 +184,13 @@ packages:
     path: .silver/activities
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:52e3cdd7e98a69acef47f6a97a8204a5beffb4bb7be6b78ee95b680c479e27da
+    integrity: sha256:918eb8be56c5e93a0c3a1a344768ad6b4469cb794d0a3f93090d4b2b25158c78
+  - id: transports
+    type: transport-catalog
+    path: .silver/transports
+    version: 0.7.0
+    ownership: framework-managed
+    integrity: sha256:65235ce066b7c017f9aee0b1ad36ed78015638b1dd0ffb0abf37418671cd122f
   - id: reference-system
     type: reference-system
     path: reference-system

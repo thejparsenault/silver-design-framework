@@ -19,8 +19,13 @@ import {
 } from "../framework/runtime/activities.mjs";
 import { unmappedHostServers, userConfigPaths } from "../framework/runtime/host-mcp.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
-import { resolveActivityTransport } from "../framework/runtime/transports.mjs";
-import { exists, readUtf8 } from "./lib/files.mjs";
+import { diagnoseTransport } from "../framework/runtime/transport-diagnosis.mjs";
+import { probeRequest, recordProbe } from "../framework/runtime/transport-probes.mjs";
+import {
+  explainSelection,
+  resolveActivityTransport,
+} from "../framework/runtime/transports.mjs";
+import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 
 async function projectPreferences(root) {
   const manifestPath = path.join(root, "design", "manifest.yaml");
@@ -50,6 +55,198 @@ async function installedSkills(root) {
     }
   }
   return skills;
+}
+
+export const DECLARED_TRANSPORT_DIR = "design/tools/transports";
+
+const DECLARE_PLACEHOLDER = "TODO";
+
+// Turning an unmapped server into something Silver can use.
+//
+// Before this, a server the host had and no shipped adapter claimed was a dead
+// end: `silver tools` reported it and stopped. That was honest but useless, and
+// it left `PROJECT.md`'s promise — what Silver ships plus what the designer
+// tells it — with no way to do the telling.
+//
+// The scaffold refuses to be used with its placeholders intact, the same rule
+// `invoke --scaffold` follows. A declaration nobody filled in is a transport
+// Silver would select while knowing nothing about it.
+export function scaffoldDeclaration({ server, host, toolPrefix }) {
+  return [
+    `# ${server} — declared by this project, not shipped by Silver.`,
+    "#",
+    "# Silver knows this server exists because your agent host has it configured.",
+    "# It knows nothing else until you say so here. Replace every TODO, then run",
+    "# `silver tools --list` to confirm Silver reads it.",
+    "#",
+    "# There are no scripts here: the agent calls this server's tools directly.",
+    "# Silver's job is to resolve it for the right activity and stay out of the way.",
+    "schema: silver/provider/v1",
+    `id: ${server}`,
+    "version: 0.1.0",
+    "kind: external",
+    `target: ${DECLARE_PLACEHOLDER}   # the system this reaches, such as figma or chrome`,
+    `variant: ${DECLARE_PLACEHOLDER}  # which route to that system this is`,
+    "aliases:",
+    `  - ${DECLARE_PLACEHOLDER}       # what you would call this out loud`,
+    "source:",
+    `  publisher: ${DECLARE_PLACEHOLDER}`,
+    `  repository: ${DECLARE_PLACEHOLDER}`,
+    "  evidence: declared",
+    "guidance:",
+    "  good_at:",
+    `    - ${DECLARE_PLACEHOLDER}     # what this is actually good at`,
+    "  prefer_when:",
+    `    - ${DECLARE_PLACEHOLDER}     # when you would reach for it over another`,
+    "# Which activities this can serve is derived from what you declare below.",
+    "# See `silver tools` for the activity list.",
+    `capabilities: [${DECLARE_PLACEHOLDER}]`,
+    "connection:",
+    "  kind: mcp",
+    `  server: ${server}`,
+    ...(toolPrefix ? [`  tool_prefix: ${toolPrefix}`] : []),
+    "permissions:",
+    `  - capability: ${DECLARE_PLACEHOLDER}`,
+    "    actions: [read, inspect]",
+    "    default: ask",
+    "directions: [read]",
+    "setup:",
+    "  - id: host-config",
+    "    kind: external-app",
+    `    title: ${server} is already configured in ${host ?? "your agent host"}`,
+    "    verify: { kind: host-mcp-entry, by: silver }",
+    "",
+  ].join("\n");
+}
+
+export function assertDeclarationComplete(content, file) {
+  if (content.split("\n").some((line) => !line.trimStart().startsWith("#") && line.includes(DECLARE_PLACEHOLDER))) {
+    throw new Error(
+      `${file} still contains TODO placeholders. Silver will not select a transport it knows nothing about — fill them in first.`,
+    );
+  }
+}
+
+// Every transport Silver knows about, whether or not this workspace uses it.
+// `silver tools` answers "what will be used for my work"; this answers "what
+// exists, where does it come from, and when would I pick it" — the question a
+// designer has before they have a preference.
+export async function listTransports(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home });
+  const catalog = await loadActivityCatalog({ root });
+
+  return {
+    root,
+    transports: providers
+      .map((provider) => ({
+        id: provider.id,
+        ...(provider.target ? { target: provider.target } : {}),
+        ...(provider.variant ? { variant: provider.variant } : {}),
+        kind: provider.kind,
+        available: provider.available,
+        level: provider.availability_level,
+        ...(provider.source ? { source: provider.source } : {}),
+        ...(provider.guidance ? { guidance: provider.guidance } : {}),
+        ...(provider.aliases ? { aliases: provider.aliases } : {}),
+        // What this transport could serve here, derived from its contract
+        // rather than declared — the same rule the activity catalog follows.
+        activities: catalog.activities
+          .filter(
+            (activity) => providersForActivity([provider], activity).length > 0,
+          )
+          .map(({ id }) => id),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    unmapped: await unmappedHostServers({ root, providers, home: options.home }),
+    external_paths: userConfigPaths(options.home),
+  };
+}
+
+// Why a transport is not working, whole ladder rather than first failure.
+export async function diagnoseTransports(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home });
+  const selected = options.transport
+    ? providers.filter((provider) => provider.id === options.transport)
+    : providers;
+  if (options.transport && selected.length === 0) {
+    throw new Error(
+      `No transport named ${options.transport} is installed here. Run \`silver tools --list\` to see what is.`,
+    );
+  }
+  return {
+    root,
+    transports: await Promise.all(
+      selected.map((provider) =>
+        diagnoseTransport(provider, { root, home: options.home }),
+      ),
+    ),
+    external_paths: userConfigPaths(options.home),
+  };
+}
+
+// The instruction Silver hands the agent. It names the call and stops; making it
+// is the agent's job, because Silver never opens a connection.
+export async function requestProbe(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home });
+  const selected = options.transport
+    ? providers.filter((provider) => provider.id === options.transport)
+    : providers.filter((provider) => provider.probe);
+  if (options.transport && selected.length === 0) {
+    throw new Error(`No transport named ${options.transport} is installed here.`);
+  }
+  return { root, probes: selected.map((provider) => probeRequest(provider)) };
+}
+
+export async function saveProbe(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home, skipProbes: true });
+  return recordProbe({ root, probe: options.probe, providers });
+}
+
+export async function declareTransport(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home });
+  const server = options.server;
+
+  if (providers.some((provider) => provider.id === server)) {
+    throw new Error(`${server} is already a transport Silver knows about.`);
+  }
+
+  const unmapped = await unmappedHostServers({ root, providers, home: options.home });
+  const found = unmapped.find((entry) => entry.name === server);
+  if (!found) {
+    // Declaring a server the host does not have would produce a transport that
+    // is permanently unavailable, and the reason would look like a bug.
+    throw new Error(
+      `No MCP server named ${server} is configured in this agent host. Silver declares tools that are there; it does not invent them.${
+        unmapped.length > 0
+          ? ` Unmapped servers here: ${unmapped.map(({ name }) => name).join(", ")}.`
+          : ""
+      }`,
+    );
+  }
+
+  const file = path.join(root, DECLARED_TRANSPORT_DIR, `${server}.yaml`);
+  if (await exists(file)) {
+    throw new Error(`${DECLARED_TRANSPORT_DIR}/${server}.yaml already exists.`);
+  }
+  const content = scaffoldDeclaration({
+    server,
+    host: found.host,
+    toolPrefix: `mcp__${server}__`,
+  });
+  await writeUtf8(file, content);
+  return {
+    path: `${DECLARED_TRANSPORT_DIR}/${server}.yaml`,
+    absolute: file,
+    server,
+    host: found.host,
+    scope: found.scope,
+    next: "Fill in every TODO, then run `silver tools --list`.",
+  };
 }
 
 export async function inspectTools(options = {}) {
@@ -82,6 +279,11 @@ export async function inspectTools(options = {}) {
       status: activity.status,
       supported_by: providersForActivity(providers, activity).map(({ id }) => id),
       skills: performers.map(({ id }) => id),
+      why: explainSelection({
+        provider: providers.find(({ id }) => id === resolution.selected),
+        orderedBy: resolution.ordered_by,
+        decision: resolution.decision,
+      }),
     });
   }
 
@@ -91,7 +293,10 @@ export async function inspectTools(options = {}) {
     transports: providers.map((provider) => ({
       id: provider.id,
       ...(provider.target ? { target: provider.target } : {}),
+      ...(provider.variant ? { variant: provider.variant } : {}),
       kind: provider.kind,
+      ...(provider.source ? { source: provider.source } : {}),
+      ...(provider.guidance ? { guidance: provider.guidance } : {}),
       available: provider.available,
       level: provider.availability_level,
       reason: provider.availability_reason,

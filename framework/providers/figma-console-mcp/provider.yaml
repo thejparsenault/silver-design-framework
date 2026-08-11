@@ -14,6 +14,30 @@ aliases:
   - figma console
   - console mcp
   - the plugin one
+source:
+  publisher: Figma Console MCP
+  repository: https://github.com/figma-console/figma-console-mcp
+  distribution:
+    kind: plugin
+    ref: Figma Community plugin plus an MCP server
+  # Developed against a live server, so the metadata here was checked rather
+  # than read off a README.
+  evidence: verified
+  verified_at: 2026-08-11
+  verified_against: "0.8 development"
+guidance:
+  good_at:
+    - Building frames, flows, and sketches in the document you have open
+    - Reading the current selection while you are working in it
+  not_for:
+    - Reading a file you do not have open — it reaches the running editor, not the API
+  prefer_when:
+    - You are working in Figma and want the agent to build alongside you
+  compare_to:
+    - transport: figma-official-mcp
+      difference: >-
+        Writes into the open document; the official server reads structure
+        without needing Figma open and cannot create frames.
 capabilities: [design-file, external-artifact, representation-sync]
 connection:
   kind: mcp
@@ -31,10 +55,25 @@ setup:
     title: Install and run the Figma Console plugin in Figma
     url: https://www.figma.com/community
     verify: { kind: handshake, by: agent }
+    troubleshoot:
+      - symptom: Configured, but every call times out
+        means: The plugin is not running in Figma right now.
+        do: Open the file in Figma and start the Figma Console plugin, then probe again.
+      - symptom: Calls work, but reach the wrong document
+        means: This transport reaches whichever file is open, not one you name.
+        do: Bring the file you want to the front in Figma before asking for work in it.
   - id: host-config
     kind: external-app
     title: Add the figma-console MCP server to your agent host's configuration
     verify: { kind: host-mcp-entry, by: silver }
+    troubleshoot:
+      - symptom: Silver reports no MCP server named figma-console
+        means: No host configuration file declares it.
+        do: Add it to your agent host's MCP configuration by hand. Silver does not know this server's launch command and will not guess one.
+probe:
+  tool: mcp__figma-console__figma_get_status
+  expects: a status object naming the connected file
+  freshness_hours: 24
 permissions:
   - capability: design-file
     actions: [read, inspect]

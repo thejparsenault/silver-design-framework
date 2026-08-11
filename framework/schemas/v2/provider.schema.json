@@ -4,7 +4,21 @@
   "title": "Silver provider package v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "version", "kind", "capabilities", "availability", "permissions", "operations"],
+  "description": "A transport Silver can resolve to. Two shapes share this contract. A *package* ships adapter code: it declares `availability` and `operations` and Silver runs them. A *declaration* is metadata only — Silver knows the tool exists, what it is good at, and how to reach it, and the agent calls the server directly. Declarations are how Silver keeps its promise to know what it ships plus what the designer tells it, without pretending to have written an adapter it has not.",
+  "required": ["schema", "id", "version", "kind", "capabilities", "permissions"],
+  "allOf": [
+    {
+      "if": { "required": ["adapter"] },
+      "then": {
+        "required": ["operations", "availability"],
+        "description": "A package that ships an adapter must say how to check it and what it can run."
+      }
+    },
+    {
+      "if": { "required": ["operations"] },
+      "then": { "required": ["availability"] }
+    }
+  ],
   "properties": {
     "schema": { "const": "silver/provider/v1" },
     "id": { "$ref": "common.schema.json#/$defs/id" },
@@ -24,13 +38,79 @@
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 2, "maxLength": 80 }
     },
+    "source": {
+      "description": "Where this transport comes from, so a designer can go and look. Silver ships declarations, not endorsements: recording a repository and a licence is describing a thing that exists, which is different from recommending it.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "publisher": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "homepage": { "type": "string", "maxLength": 500 },
+        "repository": { "type": "string", "maxLength": 500 },
+        "docs": { "type": "string", "maxLength": 500 },
+        "license": { "type": "string", "maxLength": 80 },
+        "distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["npm", "remote", "plugin", "binary", "host-native"] },
+            "ref": { "type": "string", "maxLength": 500 }
+          }
+        },
+        "verified_at": {
+          "description": "When this metadata was last checked against the tool itself. A curated list of third-party tools rots; stating the date makes staleness visible rather than silently wrong.",
+          "type": "string",
+          "format": "date"
+        },
+        "verified_against": { "type": "string", "maxLength": 200 },
+        "evidence": {
+          "description": "declared: written from published documentation. verified: someone ran it here and a probe recorded a response. Most shipped declarations are honestly `declared`.",
+          "enum": ["declared", "verified"],
+          "default": "declared"
+        }
+      }
+    },
+    "guidance": {
+      "description": "How to choose this transport, stated as facts about what it does. Deliberately not a ranking: Silver does not maintain a league table of third-party tools, and a cross-vendor score is a recommendation nobody can stand behind. `compare_to` names a difference, never a preference.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "good_at": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "not_for": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "prefer_when": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "compare_to": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["transport", "difference"],
+            "properties": {
+              "transport": { "$ref": "common.schema.json#/$defs/id" },
+              "difference": { "type": "string", "minLength": 1, "maxLength": 400 }
+            }
+          }
+        }
+      }
+    },
     "connection": {
       "description": "How this transport is reached. `mcp` means the agent host owns the connection, its credentials, and its lifecycle; Silver resolves and instructs, and never opens a socket.",
       "type": "object",
       "additionalProperties": false,
       "required": ["kind"],
       "properties": {
-        "kind": { "enum": ["mcp", "local"] },
+        "kind": {
+          "description": "mcp: a server the agent host owns. local: something Silver runs in this process. host-native: the agent's own built-in capability, with no server to configure — how a browser is reached differs per host, and this is what lets that be expressed rather than special-cased.",
+          "enum": ["mcp", "local", "host-native"]
+        },
         "server": {
           "description": "The MCP server name as it appears in the host's configuration.",
           "type": "string",
@@ -52,6 +132,33 @@
             "args": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
             "url": { "type": "string", "maxLength": 500 }
           }
+        }
+      }
+    },
+    "probe": {
+      "description": "One tool call that proves this transport actually responds, and who makes it. Silver cannot: it never opens a socket, so for an MCP transport it can only ever establish `configured`. The agent can, and `silver tools --probe` asks it to, recording the answer as evidence. This is what makes `responding` knowable without Silver owning a connection.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "expects"],
+      "properties": {
+        "tool": {
+          "description": "The tool the agent should call, named as it appears in the agent's own namespace. Silver never invokes it.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "expects": {
+          "description": "What a working response looks like, in plain language, so the agent can judge whether what came back counts.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "freshness_hours": {
+          "description": "How long a recorded response stays believable. Past this, availability degrades from `responding` back to `configured` — an old success is not a current one.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720,
+          "default": 24
         }
       }
     },
@@ -79,6 +186,20 @@
           "commands": {
             "type": "array",
             "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+          },
+          "troubleshoot": {
+            "description": "What goes wrong at this rung and what to do about it. Rendered by `silver tools --diagnose` when the step fails, so the answer arrives with the problem instead of living in a wiki.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["symptom", "means", "do"],
+              "properties": {
+                "symptom": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "means": { "type": "string", "minLength": 1, "maxLength": 400 },
+                "do": { "type": "string", "minLength": 1, "maxLength": 500 }
+              }
+            }
           },
           "verify": {
             "type": "object",
@@ -130,6 +251,7 @@
       "items": { "$ref": "common.schema.json#/$defs/relativePath" }
     },
     "operations": {
+      "description": "Scripts Silver itself runs. Absent on a declaration-only transport, where the agent calls the server's tools directly and Silver's job is to resolve and instruct.",
       "type": "array", "minItems": 1,
       "items": {
         "type": "object", "additionalProperties": false, "required": ["id", "script", "effect"],

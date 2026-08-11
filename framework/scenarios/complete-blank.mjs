@@ -264,7 +264,19 @@ async function invokeCase({
     });
     assert.ok(["complete", "complete-with-findings"].includes(result.execution.status));
     if (id === "design-check") {
-      assert.ok(result.degraded_capabilities.some(({ capability }) => capability === "browser"));
+      // Before 0.9 this asserted `browser` was always degraded, which was only
+      // true because no provider served it. Now `silver-browser-local` does,
+      // when a Chrome is installed — so the honest invariant is that browser
+      // coverage is either present or explained, never an unattributed absence.
+      const browser = result.degraded_capabilities.find(
+        ({ capability }) => capability === "browser",
+      );
+      if (browser) {
+        assert.ok(
+          browser.reason && browser.reason.length > 0,
+          "a degraded browser capability must say why, not just report the gap",
+        );
+      }
     }
     return result;
   }

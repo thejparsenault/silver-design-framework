@@ -139,7 +139,8 @@ test("migration preview is read-only and apply upgrades the installed shape with
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
   assert.equal(lock.framework.version, "0.8.0");
-  assert.equal(lock.packages.length, 30);
+  // 0.9 adds the silver-browser-local provider and the shipped transport catalog.
+  assert.equal(lock.packages.length, 32);
   assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
@@ -346,7 +347,7 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(migrated.framework.version, "0.8.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
-    ["figma-console-mcp", "figma-official-mcp", "silver-portable"],
+    ["figma-console-mcp", "figma-official-mcp", "silver-browser-local", "silver-portable"],
   );
   assert.equal((await doctorWorkspace({ root })).ok, true);
 

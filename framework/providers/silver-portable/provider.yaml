@@ -2,6 +2,22 @@ schema: silver/provider/v1
 id: silver-portable
 version: 0.8.0
 kind: portable
+source:
+  publisher: The Silver Design Framework
+  repository: https://github.com/thejparsenault/silver-design-framework
+  license: MIT
+  distribution:
+    kind: npm
+    ref: silver-design-framework
+  evidence: verified
+  verified_at: 2026-08-11
+  verified_against: shipped with this release
+guidance:
+  good_at:
+    - Every general design task, using only files in the workspace
+    - Working with no network, no credential, and no external tool configured
+  prefer_when:
+    - Always. This is the baseline an external transport adds to, never replaces
 capabilities:
   - repository
   - canonical-artifact

@@ -13,9 +13,17 @@ import { runCheckSuite } from "./checks.mjs";
 import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
+import { applyAdoptionPlan, inspectAdoption } from "./adopt.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import { writeHostMcpConfig } from "./host-mcp-config.mjs";
-import { inspectTools } from "./tools.mjs";
+import {
+  declareTransport,
+  diagnoseTransports,
+  inspectTools,
+  listTransports,
+  requestProbe,
+  saveProbe,
+} from "./tools.mjs";
 import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
 
 const usage = `The Silver Design Framework
@@ -24,11 +32,17 @@ Usage:
   silver setup inspect [directory] [--answers <json-or-file>] [--json]
   silver setup apply <plan.json | -> [--allow-unresolved] [--json]
   silver setup [directory] [--name <name>] [--id <id>] [--json]
+  silver adopt inspect [directory] [--source <path>]
+  silver adopt apply <plan.json | -> [--only <ids>] [--json]
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
   silver check [directory] [--only <check-id,...>] [--json]
-  silver tools [directory] [--connect <transport-id>] [--json]
+  silver tools [directory] [--list] [--json]
+  silver tools [directory] --diagnose [transport-id]
+  silver tools [directory] --probe [transport-id]
+  silver tools [directory] --record-probe <result.json | ->
+  silver tools [directory] --declare <server> | --connect <transport-id>
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -39,6 +53,13 @@ Usage:
 
 Commands:
   setup    Inspect and apply a reviewed workspace plan; direct setup remains a compatibility path.
+  adopt    Bring an existing repository's own work into a Silver workspace, one
+           entry at a time. Inspect enumerates what is there and returns a plan
+           for the agent to fill in with a proposed disposition per entry; the
+           designer decides each; apply acts only on accepted items. Adoption
+           is additive: no disposition moves, renames, deletes, or rewrites a
+           file that already exists. Pass --source to read a second repository
+           read-only and translate from it.
   invoke   Run an installed skill through the guarded runtime. Use --scaffold to emit a
            prefilled request to complete, then invoke it.
   what-now Rank evidence-based next actions for a workspace without starting any of them.
@@ -114,14 +135,20 @@ function parseArguments(args) {
     "answers",
     "apply",
     "connect",
+    "declare",
+    "diagnose",
     "help",
     "id",
     "json",
+    "list",
     "name",
     "only",
     "practice",
+    "probe",
     "record",
+    "record-probe",
     "scaffold",
+    "source",
   ]);
   const positionals = [];
   const flags = {};
@@ -136,7 +163,7 @@ function parseArguments(args) {
       throw new Error(`Unknown option: --${key}`);
     }
     if (
-      ["allow-unresolved", "apply", "json", "help", "record", "scaffold"].includes(
+      ["allow-unresolved", "apply", "json", "help", "list", "record", "scaffold"].includes(
         key,
       )
     ) {
@@ -144,6 +171,18 @@ function parseArguments(args) {
       continue;
     }
     const next = args[index + 1];
+    // `--diagnose` and `--probe` narrow to one transport when given a name and
+    // cover everything when not. Asking which transport is broken is a
+    // reasonable thing not to know yet.
+    if (["diagnose", "probe"].includes(key)) {
+      if (!next || next.startsWith("--")) {
+        flags[key] = true;
+        continue;
+      }
+      flags[key] = next;
+      index += 1;
+      continue;
+    }
     if (!next || next.startsWith("--")) {
       throw new Error(`Option --${key} requires a value.`);
     }
@@ -164,8 +203,20 @@ function printSetupSteps(result, write) {
 
 function printSetup(result, write) {
   write(
-    `${result.mode === "new" ? "Initialized" : "Resumed"} ${result.workspace.name} at ${result.root}`,
+    `${
+      { new: "Initialized", alongside: "Initialized", existing: "Resumed" }[
+        result.mode
+      ] ?? "Initialized"
+    } ${result.workspace.name} at ${result.root}`,
   );
+  if (result.mode === "alongside") {
+    write(
+      "This folder already had work in it. Silver created only its own files and changed nothing else.",
+    );
+    write(
+      "Run `silver adopt inspect` to decide, one entry at a time, what the existing work should mean.",
+    );
+  }
   write(
     result.created.length > 0
       ? `Created ${result.created.length} files.`
@@ -217,6 +268,27 @@ function printInvoke(result, write) {
   write("Nothing else was started. Choose the next step.");
 }
 
+function printAdopt(result, write) {
+  if (result.applied.length === 0) {
+    write("Nothing was adopted.");
+  } else {
+    write(
+      `Adopted ${result.applied.length} ${result.applied.length === 1 ? "entry" : "entries"}:`,
+    );
+    for (const item of result.applied) {
+      write(`  ${item.disposition} ${item.path}`);
+    }
+  }
+  for (const item of result.skipped) {
+    write(`  ${item.decision} ${item.id}`);
+  }
+  // Say it plainly: the point of adoption is that it did not touch the work.
+  write("No existing file was moved, renamed, or rewritten.");
+  if (result.checkpoint) {
+    write(`Checkpoint: ${result.checkpoint.status}`);
+  }
+}
+
 function printWhatNow(analysis, write, recorded = false) {
   write("What Now recommends:");
   for (const recommendation of analysis.recommendations) {
@@ -249,10 +321,94 @@ function printCheck(suite, write) {
 
 const REMOVAL_LABEL = {
   unavailable: "not available",
+  // Distinct from "not available" on purpose: Silver cannot see an agent's own
+  // built-in tools, and reporting what it cannot determine as missing would
+  // send a designer looking for a fault that may not exist.
+  undetermined: "Silver cannot tell — only the agent can",
   vetoed: "forbidden",
   unsupported: "cannot do this",
   unknown: "not installed",
 };
+
+const STEP_MARK = {
+  held: "ok  ",
+  failed: "FAIL",
+  "needs-agent": "?   ",
+  unknown: "?   ",
+};
+
+function printDiagnosis(report, write) {
+  for (const transport of report.transports) {
+    write(`${transport.transport} — ${transport.verdict}`);
+    write(`  ${transport.reason}`);
+    if (transport.probe) {
+      write(
+        `  probe: ${transport.probe.outcome}, recorded ${transport.probe.recorded_at}${
+          transport.probe.fresh ? "" : " (stale)"
+        }`,
+      );
+    }
+    for (const step of transport.steps) {
+      write(`  ${STEP_MARK[step.state] ?? "?   "} ${step.title}`);
+      // Who owns the rung. Silver climbs only its own and says so rather than
+      // reporting a step it will never take as merely incomplete.
+      write(`         ${step.detail} [${step.owner} owns this]`);
+      for (const command of step.commands ?? []) write(`         $ ${command}`);
+      if (step.url) write(`         ${step.url}`);
+      for (const hint of step.troubleshoot ?? []) {
+        write(`         if: ${hint.symptom}`);
+        write(`           that means: ${hint.means}`);
+        write(`           do: ${hint.do}`);
+      }
+    }
+    if (transport.next) write(`  next: ${transport.next}`);
+    write("");
+  }
+  write("Silver checks the rungs it can. The rest only the agent can confirm.");
+}
+
+function printTransportList(listing, write) {
+  write("Design tools Silver knows about");
+  write("");
+  for (const transport of listing.transports) {
+    const target = transport.target
+      ? ` — ${transport.target}${transport.variant ? ` (${transport.variant})` : ""}`
+      : "";
+    write(`  ${transport.id}${target}`);
+    write(
+      `    ${transport.available ? transport.level : "not configured here"}, ${transport.kind}`,
+    );
+    if (transport.source?.repository || transport.source?.homepage) {
+      write(`    from: ${transport.source.repository ?? transport.source.homepage}`);
+    }
+    for (const line of transport.guidance?.good_at ?? []) {
+      write(`    good at: ${line}`);
+    }
+    for (const line of transport.guidance?.not_for ?? []) {
+      write(`    not for: ${line}`);
+    }
+    for (const comparison of transport.guidance?.compare_to ?? []) {
+      write(`    vs ${comparison.transport}: ${comparison.difference}`);
+    }
+    // Metadata about a third-party tool goes stale. Saying when it was last
+    // checked is the difference between an old description and a wrong one.
+    if (transport.source?.evidence) {
+      const when = transport.source.verified_at
+        ? `, last checked ${transport.source.verified_at}`
+        : "";
+      write(`    evidence: ${transport.source.evidence}${when}`);
+    }
+  }
+  if (listing.unmapped.length > 0) {
+    write("");
+    write("Configured in your agent host, but Silver does not know what they do:");
+    for (const server of listing.unmapped) {
+      write(`  ${server.name} (${server.host}, ${server.scope})`);
+    }
+  }
+  write("");
+  write("Silver declares tools. It never installs, launches, or authorizes one.");
+}
 
 function printTools(report, write) {
   write(`Design tools for ${report.root}`);
@@ -456,6 +612,47 @@ export async function runCli(
       stdout(flags.json ? JSON.stringify(result, null, 2) : `Applied ${result.plan} at ${result.workspace.root}`);
       return 0;
     }
+    if (command === "adopt" && ["inspect", "apply"].includes(args[1])) {
+      const operation = args[1];
+      const { positionals, flags } = parseArguments(args.slice(2));
+      if (operation === "inspect") {
+        if (positionals.length > 1) {
+          throw new Error("adopt inspect accepts at most one directory.");
+        }
+        const result = await inspectAdoption({
+          root: path.resolve(positionals[0] ?? process.cwd()),
+          ...(flags.source ? { source: String(flags.source) } : {}),
+          now: now().toISOString(),
+        });
+        stdout(JSON.stringify(result, null, 2));
+        return 0;
+      }
+      if (positionals.length !== 1) {
+        throw new Error(
+          "adopt apply requires one plan JSON file, or - to read the plan from stdin.",
+        );
+      }
+      // Same reason as setup apply: a plan file written inside the target
+      // changes the state integrity it pins and invalidates itself.
+      const plan = JSON.parse(
+        positionals[0] === "-"
+          ? await readStdin()
+          : await readFile(path.resolve(positionals[0]), "utf8"),
+      );
+      const result = await applyAdoptionPlan({
+        plan,
+        now: now().toISOString(),
+        ...(flags.only
+          ? { only: String(flags.only).split(",").map((id) => id.trim()) }
+          : {}),
+      });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else {
+        printAdopt(result, stdout);
+      }
+      return 0;
+    }
     if (command === "invoke") {
       const { positionals, flags } = parseArguments(args.slice(1));
       if (flags.scaffold) {
@@ -541,6 +738,65 @@ export async function runCli(
       const { positionals, flags } = parseArguments(args.slice(1));
       if (positionals.length > 1) throw new Error("tools accepts at most one directory.");
       const toolsRoot = path.resolve(positionals[0] ?? process.cwd());
+      if (flags.list) {
+        const listing = await listTransports({ root: toolsRoot });
+        if (flags.json) {
+          stdout(JSON.stringify(listing, null, 2));
+        } else {
+          printTransportList(listing, stdout);
+        }
+        return 0;
+      }
+      if (flags.diagnose) {
+        const report = await diagnoseTransports({
+          root: toolsRoot,
+          ...(flags.diagnose === true ? {} : { transport: String(flags.diagnose) }),
+        });
+        if (flags.json) {
+          stdout(JSON.stringify(report, null, 2));
+        } else {
+          printDiagnosis(report, stdout);
+        }
+        return 0;
+      }
+      if (flags.probe) {
+        const report = await requestProbe({
+          root: toolsRoot,
+          ...(flags.probe === true ? {} : { transport: String(flags.probe) }),
+        });
+        stdout(JSON.stringify(report, null, 2));
+        return 0;
+      }
+      if (flags["record-probe"]) {
+        const probe = JSON.parse(
+          String(flags["record-probe"]) === "-"
+            ? await readStdin()
+            : await readFile(path.resolve(String(flags["record-probe"])), "utf8"),
+        );
+        const result = await saveProbe({ root: toolsRoot, probe });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else {
+          stdout(`Recorded ${result.probe.transport}: ${result.probe.outcome}`);
+          stdout(`  ${result.path}`);
+        }
+        return 0;
+      }
+      if (flags.declare) {
+        const result = await declareTransport({
+          root: toolsRoot,
+          server: String(flags.declare),
+        });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else {
+          stdout(`Wrote ${result.path}`);
+          stdout(`  ${result.server} is configured in ${result.host} (${result.scope}).`);
+          stdout(`  ${result.next}`);
+          stdout("  Silver wrote a description, not a connection. Nothing was installed or launched.");
+        }
+        return 0;
+      }
       if (flags.connect) {
         const providers = await discoverProviders({ root: toolsRoot });
         const result = await writeHostMcpConfig({

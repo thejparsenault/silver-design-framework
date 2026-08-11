@@ -17,7 +17,10 @@ import { FRAMEWORK_VERSION } from "./version.mjs";
 
 const run = promisify(execFile);
 
-async function stateIntegrity(root) {
+// A plan describes a working tree at a moment. Adoption reuses this for the same
+// reason setup needs it: if the tree moved underneath the plan, every path and
+// integrity in it is a claim about something that no longer exists.
+export async function stateIntegrity(root) {
   const resolved = path.resolve(root);
   if (!(await exists(resolved))) {
     return `sha256:${createHash("sha256").update("missing").digest("hex")}`;
