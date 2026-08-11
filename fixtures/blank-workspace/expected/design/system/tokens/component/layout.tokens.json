@@ -1,0 +1,56 @@
+{
+  "layout": {
+    "$description": "Reference composition layout tokens.",
+    "container": {
+      "max-width": {
+        "$type": "dimension",
+        "$value": { "value": 80, "unit": "rem" },
+        "$description": "Maximum width for standard page content"
+      },
+      "compact-max-width": {
+        "$type": "dimension",
+        "$value": { "value": 40, "unit": "rem" },
+        "$description": "Maximum width for compact page content"
+      },
+      "prose-max-width": {
+        "$type": "dimension",
+        "$value": { "value": 65, "unit": "ch" },
+        "$description": "Readable line length for prose"
+      }
+    },
+    "form": {
+      "max-width": {
+        "$type": "dimension",
+        "$value": { "value": 384, "unit": "px" },
+        "$description": "Maximum width for a focused, single-column form composition"
+      }
+    },
+    "screen-reader": {
+      "size": {
+        "$type": "dimension",
+        "$value": { "value": 1, "unit": "px" },
+        "$description": "Clipped dimension for visually hidden accessible text"
+      },
+      "offset": {
+        "$type": "dimension",
+        "$value": { "value": -1, "unit": "px" },
+        "$description": "Clipped offset for visually hidden accessible text"
+      }
+    },
+    "link-underline-offset": {
+      "$type": "dimension",
+      "$value": { "value": 0.2, "unit": "em" },
+      "$description": "Readable underline offset for inline links"
+    },
+    "code-relative-size": {
+      "$type": "dimension",
+      "$value": { "value": 0.9, "unit": "em" },
+      "$description": "Relative size for inline and block code"
+    },
+    "separator-width": {
+      "$type": "dimension",
+      "$value": { "value": 1, "unit": "px" },
+      "$description": "Default horizontal separator stroke"
+    }
+  }
+}

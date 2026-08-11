@@ -5,13 +5,14 @@ component_catalog:
   id: component-catalog
   kind: component-catalog
   revision: r1
-  path: reference-system/html-contracts
+  path: design/system/components.json
 design_system:
   id: design-system
   kind: design-system
   revision: r1
   path: design/system/README.md
 mode: identity
+stylesheet: design/system/expressions/html/styles/ds.css
 roles:
   - component_role: action.background
     system_role: action.background

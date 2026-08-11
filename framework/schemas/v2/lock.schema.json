@@ -64,7 +64,7 @@
               "provider",
               "activity-catalog",
               "transport-catalog",
-              "reference-system"
+              "design-system-seed"
             ]
           },
           "path": {

@@ -182,7 +182,7 @@ Confident, oriented, and in control.
     result.results.every(({ status }) => status === "pass"),
   );
   await access(
-    path.join(root, "reference-system", "packages", "css", "src", "ds.css"),
+    path.join(root, "design", "system", "expressions", "html", "styles", "ds.css"),
   );
   assert.match(
     await readFile(

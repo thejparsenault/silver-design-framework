@@ -26,7 +26,6 @@ const expectedRoot = path.join(
   "expected",
 );
 const skillSourceRoot = path.join(repositoryRoot, "framework", "skills");
-const referenceSystemSourceRoot = path.join(repositoryRoot, "reference-system");
 const installedSkillIds = [
   "what-now",
   "brand",
@@ -75,6 +74,23 @@ async function temporaryPayload(t) {
     path.join(root, "framework", "skills"),
     { recursive: true },
   );
+  await mkdir(
+    path.join(root, "installer", "templates", "blank-workspace", "design", "system"),
+    { recursive: true },
+  );
+  await cp(
+    path.join(
+      repositoryRoot,
+      "installer",
+      "templates",
+      "blank-workspace",
+      "design",
+      "system",
+      "tokens",
+    ),
+    path.join(root, "installer", "templates", "blank-workspace", "design", "system", "tokens"),
+    { recursive: true },
+  );
   for (const relativePath of [
     "schemas/v2",
     "guardrails",
@@ -90,11 +106,6 @@ async function temporaryPayload(t) {
       { recursive: true },
     );
   }
-  await cp(
-    path.join(repositoryRoot, "reference-system"),
-    path.join(root, "reference-system"),
-    { recursive: true },
-  );
   return root;
 }
 
@@ -131,11 +142,6 @@ async function expectedBlankWorkspaceSnapshot() {
       expected.set(path.join(destination, relativePath), content);
     }
   }
-  for (const [relativePath, content] of await snapshotFiles(
-    referenceSystemSourceRoot,
-  )) {
-    expected.set(path.join("reference-system", relativePath), content);
-  }
   return expected;
 }
 
@@ -168,17 +174,21 @@ test("setup is idempotent and preserves project edits", async (t) => {
     sourceReference: "framework-development-fixture",
   });
   const brandPath = path.join(root, "design", "brand.md");
-  const referencePath = path.join(
+  const tokenPath = path.join(
     root,
-    "reference-system",
-    "examples",
-    "static-html",
-    "login-form.css",
+    "design",
+    "system",
+    "tokens",
+    "primitive",
+    "color.tokens.json",
   );
   const edited = `${await readFile(brandPath, "utf8")}\nProject-owned note.\n`;
-  const editedReference = `${await readFile(referencePath, "utf8")}\n/* Product-owned note. */\n`;
+  const editedToken = (await readFile(tokenPath, "utf8")).replace(
+    "Primitive color scale.",
+    "Primitive color scale. Product-owned note.",
+  );
   await writeFile(brandPath, edited);
-  await writeFile(referencePath, editedReference);
+  await writeFile(tokenPath, editedToken);
   const before = comparableSnapshot(await snapshotFiles(root));
 
   const result = await setupWorkspace({
@@ -192,7 +202,7 @@ test("setup is idempotent and preserves project edits", async (t) => {
   assert.equal(result.created.length, 0);
   assert.deepEqual(comparableSnapshot(await snapshotFiles(root)), before);
   assert.equal(await readFile(brandPath, "utf8"), edited);
-  assert.equal(await readFile(referencePath, "utf8"), editedReference);
+  assert.equal(await readFile(tokenPath, "utf8"), editedToken);
 });
 
 test("doctor reports missing artifacts and stale managed files", async (t) => {
@@ -222,7 +232,7 @@ test("doctor reports missing artifacts and stale managed files", async (t) => {
   );
 });
 
-test("doctor verifies framework-managed skills but permits reference-system edits", async (t) => {
+test("doctor verifies framework-managed skills but permits design-system edits", async (t) => {
   const root = await temporaryWorkspace(t);
   await setupWorkspace({
     root,
@@ -230,16 +240,20 @@ test("doctor verifies framework-managed skills but permits reference-system edit
     id: "example-product",
     date: "2026-07-23",
   });
-  const referencePath = path.join(
+  const tokenPath = path.join(
     root,
-    "reference-system",
-    "examples",
-    "static-html",
-    "login-form.css",
+    "design",
+    "system",
+    "tokens",
+    "primitive",
+    "color.tokens.json",
   );
   await writeFile(
-    referencePath,
-    `${await readFile(referencePath, "utf8")}\n/* Expected project edit. */\n`,
+    tokenPath,
+    `${await readFile(tokenPath, "utf8")}`.replace(
+      "Primitive color scale.",
+      "Primitive color scale, edited by the project.",
+    ),
   );
   assert.equal((await doctorWorkspace({ root })).ok, true);
 
@@ -292,17 +306,21 @@ test("update replaces clean managed skills and only proposes copied-owned change
   });
 
   const brandArtifactPath = path.join(root, "design", "brand.md");
-  const referencePath = path.join(
+  const seedTokenPath = path.join(
     root,
-    "reference-system",
-    "examples",
-    "static-html",
-    "login-form.css",
+    "design",
+    "system",
+    "tokens",
+    "primitive",
+    "color.tokens.json",
   );
   const editedBrandArtifact = `${await readFile(brandArtifactPath, "utf8")}\nOwned brand note.\n`;
-  const editedReference = `${await readFile(referencePath, "utf8")}\n/* Owned reference edit. */\n`;
+  const editedSeedToken = (await readFile(seedTokenPath, "utf8")).replace(
+    "Primitive color scale.",
+    "Primitive color scale. Owned project edit.",
+  );
   await writeFile(brandArtifactPath, editedBrandArtifact);
-  await writeFile(referencePath, editedReference);
+  await writeFile(seedTokenPath, editedSeedToken);
 
   const sourceSkillPath = path.join(
     payloadRoot,
@@ -329,14 +347,23 @@ test("update replaces clean managed skills and only proposes copied-owned change
       "version: 0.2.1",
     ),
   );
-  const sourceReferenceReadme = path.join(
+  const sourceSeedTokenPath = path.join(
     payloadRoot,
-    "reference-system",
-    "README.md",
+    "installer",
+    "templates",
+    "blank-workspace",
+    "design",
+    "system",
+    "tokens",
+    "primitive",
+    "color.tokens.json",
   );
   await writeFile(
-    sourceReferenceReadme,
-    `${await readFile(sourceReferenceReadme, "utf8")}\nFixture-owned reference update.\n`,
+    sourceSeedTokenPath,
+    (await readFile(sourceSeedTokenPath, "utf8")).replace(
+      "Primitive color scale.",
+      "Primitive color scale. Improved in a later release.",
+    ),
   );
 
   const result = await updateWorkspace({
@@ -349,14 +376,16 @@ test("update replaces clean managed skills and only proposes copied-owned change
   assert.equal(result.ok, true);
   assert.deepEqual(result.updated, ["brand"]);
   assert.ok(
-    result.proposals.some(({ package: id }) => id === "reference-system"),
+    result.proposals.some(
+      ({ package: id }) => id === "design-system-tokens-seed",
+    ),
   );
   assert.equal(
     await readFile(path.join(root, ".skills", "brand", "SKILL.md"), "utf8"),
     await readFile(sourceSkillPath, "utf8"),
   );
   assert.equal(await readFile(brandArtifactPath, "utf8"), editedBrandArtifact);
-  assert.equal(await readFile(referencePath, "utf8"), editedReference);
+  assert.equal(await readFile(seedTokenPath, "utf8"), editedSeedToken);
   assert.equal((await doctorWorkspace({ root })).ok, true);
 
   const afterFirstUpdate = comparableSnapshot(await snapshotFiles(root));
@@ -402,7 +431,7 @@ test("update stops before changing a locally edited managed skill", async (t) =>
   assert.deepEqual(comparableSnapshot(await snapshotFiles(root)), before);
 });
 
-test("setup installs alongside existing work without touching it", async (t) => {
+test("setup installs into a folder with existing work without touching it", async (t) => {
   const root = await temporaryWorkspace(t);
   // Deliberately not package.json or README.md: installing Silver itself leaves
   // a package manifest behind, so treating one as evidence of an existing
@@ -424,7 +453,7 @@ test("setup installs alongside existing work without touching it", async (t) => 
     sourceReference: "framework-development-fixture",
   });
 
-  assert.equal(result.mode, "alongside");
+  assert.equal(result.mode, "with-existing-work");
   assert.equal(
     await readFile(productPath, "utf8"),
     "export const Button = () => null;\n",

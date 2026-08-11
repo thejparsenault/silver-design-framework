@@ -9,7 +9,7 @@ import { checkResult, exitCode, findFiles, finding, parseArguments, workspacePat
 export async function checkAccessibility(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "accessibility";
-  const requested = ["reference-system", "prototypes", "design/work/sketches", "presentations", "production"];
+  const requested = ["design/system", "prototypes", "design/work/sketches", "presentations", "production"];
   const completed = [];
   const findings = [];
   const files = (await Promise.all(requested.map((directory) => findFiles(path.join(root, directory), (file) => file.endsWith(".html"))))).flat();

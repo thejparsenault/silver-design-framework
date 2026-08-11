@@ -16,6 +16,30 @@ function inside(root, value, label) {
   return absolute;
 }
 
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path.posix.relative(fromDirectory, stylesheet);
+}
+
 async function writeExclusive(file, content, replace) {
   try {
     await access(file);
@@ -45,7 +69,7 @@ export async function renderSketch({ root = process.cwd(), artifact, output, rep
         <p>${escapeHtml(item.summary)}</p>
         <p class="sketch-tradeoff"><strong>Tradeoff:</strong> ${escapeHtml(item.tradeoff)}</p>
       </article>`).join("\n      ");
-  const relativeCss = path.posix.relative(path.posix.dirname(output), "reference-system/packages/css/src/ds.css");
+  const relativeCss = await resolveStylesheetHref(workspace, path.posix.dirname(output));
   const html = `<!doctype html>
 <html lang="en">
 <head>

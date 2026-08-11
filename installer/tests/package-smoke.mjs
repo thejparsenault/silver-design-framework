@@ -89,7 +89,8 @@ try {
     "installer/host-mcp-config.mjs",
     "framework/schemas/v2/representation-binding.schema.json",
     "framework/runtime/reconciliation.mjs",
-    "reference-system/packages/css/src/tokens.css",
+    "framework/runtime/tokens.mjs",
+    "installer/templates/blank-workspace/design/system/tokens/primitive/color.tokens.json",
   ]) {
     assert.ok(packedPaths.has(required), `Package is missing ${required}`);
   }
@@ -238,7 +239,7 @@ try {
                 capability: "repository",
                 actions: ["read", "inspect"],
                 decision: "allow",
-                paths: ["design/**", "reference-system/**"],
+                paths: ["design/**"],
               },
             ],
           },
@@ -333,7 +334,9 @@ try {
   assert.equal(v2Repeated.needed, false);
   await command(process.execPath, [cli, "doctor", v2MigrationRoot], { cwd: consumerRoot });
   const legacyBrand = lock.packages.find(({ id }) => id === "brand");
-  const legacyReference = lock.packages.find(({ id }) => id === "reference-system");
+  // A v0.1.0-alpha.1 workspace predates design/system entirely — it shipped
+  // reference-system, which is what a genuinely legacy lock would still name.
+  // v1's schema keeps "reference-system" in its enum for exactly this reason.
   await writeFile(
     path.join(workspaceRoot, ".silver", "lock.yaml"),
     stringify({
@@ -355,7 +358,7 @@ try {
           type: "reference-system",
           version: "0.1.0-alpha.1",
           ownership: "copied-and-owned",
-          integrity: legacyReference.integrity,
+          integrity: `sha256:${"a".repeat(64)}`,
         },
       ],
       managed_files: lock.managed_files,
@@ -405,10 +408,11 @@ try {
   await access(
     path.join(
       workspaceRoot,
-      "reference-system",
-      "packages",
-      "css",
-      "src",
+      "design",
+      "system",
+      "expressions",
+      "html",
+      "styles",
       "tokens.css",
     ),
   );

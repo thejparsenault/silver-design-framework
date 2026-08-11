@@ -37,6 +37,8 @@
     "framework/schemas/v2/",
     "framework/skills/",
     "framework/studio-voice/",
+    "framework/transports/",
+    "installer/adopt.mjs",
     "installer/agent-adapters.mjs",
     "installer/brand.mjs",
     "installer/checkpoint.mjs",
@@ -61,13 +63,11 @@
     "installer/trace.mjs",
     "installer/update.mjs",
     "installer/version.mjs",
-    "installer/what-now.mjs",
-    "reference-system/"
+    "installer/what-now.mjs"
   ],
   "scripts": {
     "validate:contracts": "node framework/scripts/validate-contracts.mjs",
-    "build": "npm run validate:contracts && npm run build:reference && npm test",
-    "build:reference": "node reference-system/packages/tokens/src/build.mjs",
+    "build": "npm run validate:contracts && npm test",
     "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
     "postinstall": "node installer/scripts/postinstall.mjs",
     "test": "node --test --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
@@ -78,18 +78,17 @@
   "engines": {
     "node": ">=20"
   },
-  "devDependencies": {
-    "style-dictionary": "^5.5.0"
-  },
   "dependencies": {
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "style-dictionary": "^5.5.0",
     "ws": "^8.18.3",
     "yaml": "^2.9.0"
   },
   "bundleDependencies": [
     "ajv",
     "ajv-formats",
+    "style-dictionary",
     "yaml",
     "ws"
   ],

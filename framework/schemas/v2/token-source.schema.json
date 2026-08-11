@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/token-source.schema.json",
+  "title": "Silver resolved token index v1",
+  "description": "A fully-resolved DTCG token tree — every {reference} alias flattened to its literal $value. This is the canonical, implementation-agnostic artifact external tools, production, and doctor consume; it is generated from the authored tokens/ tree and never hand-edited. Recursive: any key that is not a DTCG token itself groups further tokens.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/node" },
+  "$defs": {
+    "node": {
+      "oneOf": [{ "$ref": "#/$defs/token" }, { "$ref": "#/$defs/group" }]
+    },
+    "token": {
+      "description": "$type may be inherited from an ancestor group rather than declared on the leaf itself, so only $value is required here.",
+      "type": "object",
+      "required": ["$value"],
+      "properties": {
+        "$type": { "type": "string", "minLength": 1 },
+        "$value": {},
+        "$description": { "type": "string" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "properties": {
+        "$description": { "type": "string" },
+        "$type": { "type": "string" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/node" }
+    }
+  }
+}

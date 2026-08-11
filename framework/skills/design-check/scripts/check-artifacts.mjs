@@ -34,8 +34,17 @@ async function validateV2(name, value) {
     await contracts.assertV2(name, value);
     return;
   }
+  // token-source is a resolved DTCG tree, not a schema-enveloped Silver
+  // document — it has no schema/id/revision to check, only structure.
+  if (name === "token-source.schema.json") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new Error(`${name} structural validation failed in dependency-free installation.`);
+    }
+    return;
+  }
   const expected = {
     "asset-catalog.schema.json": "silver/asset-catalog/v2",
+    "component-catalog.schema.json": "silver/component-catalog/v1",
     "component-expression.schema.json": "silver/component-expression/v1",
     "design-context.schema.json": "silver/design-context/v1",
     "guidance-source.schema.json": "silver/guidance-source/v1",
@@ -198,7 +207,9 @@ export async function checkArtifacts(options = {}) {
       if (structuredSchema) {
         const value = await readStructured(absolute);
         await validateV2(structuredSchema, value);
-        if (value.id !== artifact.id) {
+        // token-source is a resolved DTCG tree, not a Silver artifact document
+        // — it has no id of its own to compare against the manifest mapping.
+        if (value.id !== undefined && value.id !== artifact.id) {
           throw new Error(
             `${artifact.kind} ID "${value.id}" does not match its manifest mapping "${artifact.id}".`,
           );

@@ -1,0 +1,60 @@
+{
+  "text": {
+    "$description": "Text color semantic tokens. All text in the system must use one of these roles.",
+    "primary": {
+      "$type": "color",
+      "$description": "Primary body and heading text — highest contrast",
+      "$value": "{color.neutral.850}"
+    },
+    "secondary": {
+      "$type": "color",
+      "$description": "Supporting text, less prominent labels",
+      "$value": "{color.neutral.600}"
+    },
+    "muted": {
+      "$type": "color",
+      "$description": "Subdued text — metadata, placeholder, captions",
+      "$value": "{color.neutral.400}"
+    },
+    "disabled": {
+      "$type": "color",
+      "$description": "Text on disabled controls",
+      "$value": "{color.neutral.250}"
+    },
+    "inverse": {
+      "$type": "color",
+      "$description": "Text on dark/filled surfaces — e.g., primary button label",
+      "$value": "{color.neutral.0}"
+    },
+    "link": {
+      "$type": "color",
+      "$description": "Hyperlink default",
+      "$value": "{color.blue.450}"
+    },
+    "link-hover": {
+      "$type": "color",
+      "$description": "Hyperlink hover",
+      "$value": "{color.blue.550}"
+    },
+    "on-action": {
+      "$type": "color",
+      "$description": "Text sitting on an action-primary surface (button label)",
+      "$value": "{color.neutral.0}"
+    },
+    "danger": {
+      "$type": "color",
+      "$description": "Error messages, destructive warnings",
+      "$value": "{color.red.450}"
+    },
+    "success": {
+      "$type": "color",
+      "$description": "Confirmation, success messages",
+      "$value": "{color.green.550}"
+    },
+    "warning": {
+      "$type": "color",
+      "$description": "Warning messages",
+      "$value": "{color.amber.450}"
+    }
+  }
+}

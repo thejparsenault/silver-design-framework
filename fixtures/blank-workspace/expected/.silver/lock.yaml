@@ -46,7 +46,7 @@ packages:
     path: .skills/system
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:c0b7e44ca227912fdf8a094b7858281b17c376626b25c095325fb6670778bb8e
+    integrity: sha256:0867edd2112bca68cf1f1838a8bc8b8a5ad751527538538f916e1dfa11d6c059
   - id: research
     type: skill
     path: .skills/research
@@ -76,13 +76,13 @@ packages:
     path: .skills/flow
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:6d47ad8bb383876329cd519637cd49f2e95f2714def8a792244fa38e70bf426c
+    integrity: sha256:f644262fcd913b1994902d2c40b63c9dc628c72e34289cb500eabe28881e34a6
   - id: sketch
     type: skill
     path: .skills/sketch
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:b0603a6b35e88ad9e9b03da8e90949838f4985737c05b366cc26a9aca8147f2a
+    integrity: sha256:b7eb42ef6efe2ccddda79e4e537660a878185bf2e65d4a8f15c4933cfe9c9489
   - id: component
     type: skill
     path: .skills/component
@@ -94,7 +94,7 @@ packages:
     path: .skills/prototype
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:474add80934e6bc154bb3efda2f943a7c6caa1920ce494f03eda09ccef36bb9c
+    integrity: sha256:7e2f9d5aba0d7103a26ab5a840d40b2acc3a31cf54ae52b9a09d9456205455d5
   - id: evaluate
     type: skill
     path: .skills/evaluate
@@ -106,13 +106,13 @@ packages:
     path: .skills/pitch
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:541770afabd859c7874d5badfa7f227f5cec488b682019a75ab3811f5895929e
+    integrity: sha256:f83dd63205ba0e63e7bf5586628f281ae6a0c9d284011611c9e20e2a6339071c
   - id: implement
     type: skill
     path: .skills/implement
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:aea58b64e3db61fbf49018a5fd7ef06c14f11b405c829e104c7b876af002410a
+    integrity: sha256:b0cbfc8472618ef1c381f828508a7c3f6953e268b39f5c58be8a029b99d8268f
   - id: map
     type: skill
     path: .skills/map
@@ -130,7 +130,7 @@ packages:
     path: .skills/design-check
     version: 0.8.0
     ownership: framework-managed
-    integrity: sha256:2d769f571e905cf72afbe1ec1f7eb9fa5ddb939ef8cf30258f0e7d457cf23439
+    integrity: sha256:613d412b95e34532288a4d689485d177a9e1ee41843ce041edcb01faf23ebc2d
   - id: figma-console-mcp
     type: provider
     path: .silver/providers/figma-console-mcp
@@ -160,7 +160,7 @@ packages:
     path: .silver/schemas/v2
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:0b3d1767cc841442a7b47088a2c5fec3cbbea37db5652e13cdabe0355010fec0
+    integrity: sha256:bfee76b9ce788e9b9cac90f17be702b25c5b93d229aade603ecd47cb1714090f
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
@@ -172,7 +172,7 @@ packages:
     path: .silver/runtime
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:dd3c0290c143953fa6f815018ac8f5b2b80deae33db8f6cdbd8ba1cdb17ad99e
+    integrity: sha256:aa9617629b5e2bbd2294472d2b53c3e3eb57a0372add0a93d83eefc7176a7fc4
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
@@ -191,17 +191,17 @@ packages:
     version: 0.7.0
     ownership: framework-managed
     integrity: sha256:65235ce066b7c017f9aee0b1ad36ed78015638b1dd0ffb0abf37418671cd122f
-  - id: reference-system
-    type: reference-system
-    path: reference-system
+  - id: design-system-tokens-seed
+    type: design-system-seed
+    path: design/system/tokens
     version: 0.7.0
     ownership: copied-and-owned
-    integrity: sha256:c17e0c887a9426d9b66d0ae6d58e92a1907cd2eafd48744cc160554785f194df
+    integrity: sha256:7c2a579bcf885402a66df23c2e10b2e39c88f86432b559ead42edb0ef78963fd
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer
     ownership: generated
-    base_integrity: sha256:972fdb7a015c0113d6237cdafe7e821d279165e8fb0fc0f4558d51928cb882ba
+    base_integrity: sha256:76b59333c4a8889d8c8f375a952adc616e50c2d6bc912343641e8e669c180d6d
   - path: AGENTS.md
     owner: framework-agent-pointer
     ownership: generated

@@ -10,6 +10,7 @@ import { parse } from "yaml";
 import { auditActivityCatalog, loadActivityCatalog } from "../runtime/activities.mjs";
 import { migrateSkillContractV1 } from "../migrations/v1-to-v2/skill.mjs";
 import { discoverProviders } from "../runtime/providers.mjs";
+import { loadTokenTree, resolveTokenTree } from "../runtime/tokens.mjs";
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -109,10 +110,7 @@ async function validateV1(validators) {
   const artifactIds = new Set();
   for (const mapping of manifest.artifacts) {
     const artifactPath = path.join(workspaceRoot, mapping.path);
-    const fileMetadata =
-      mapping.kind === "component-catalog"
-        ? null
-        : await stat(artifactPath);
+    const fileMetadata = await stat(artifactPath);
     const content = fileMetadata?.isFile()
       ? await readFile(artifactPath, "utf8")
       : null;
@@ -234,6 +232,8 @@ async function validateV2(validators) {
     ["lock.schema.json", "fixtures/blank-workspace/expected/.silver/lock.yaml", "yaml"],
     ["asset-catalog.schema.json", "fixtures/blank-workspace/expected/design/assets/catalog.json", "json"],
     ["presentation-kit.schema.json", "fixtures/blank-workspace/expected/design/presentation-kit/kit.json", "json"],
+    ["component-catalog.schema.json", "fixtures/blank-workspace/expected/design/system/components.json", "json"],
+    ["token-source.schema.json", "fixtures/blank-workspace/expected/design/system/tokens.json", "json"],
   ];
   for (const [schemaName, relativePath, format] of positive) {
     assertValid(
@@ -327,7 +327,10 @@ async function validateV2(validators) {
   const vocabulary = await yaml("framework/semantic-roles/v1.yaml");
   const published = new Set(vocabulary.roles.map(({ id }) => id));
   const implemented = new Map();
-  const semanticRoot = path.join(root, "reference-system/tokens/semantic");
+  const semanticRoot = path.join(
+    root,
+    "installer/templates/blank-workspace/design/system/tokens/semantic",
+  );
   for (const name of (await readdir(semanticRoot)).sort()) {
     if (!name.endsWith(".tokens.json")) continue;
     // `palette` is the scheme/mode matrix the role families reference. It is
@@ -362,6 +365,27 @@ async function validateV2(validators) {
   ];
   if (roleDrift.length > 0) {
     throw new Error(`Semantic role drift:\n  ${roleDrift.join("\n  ")}`);
+  }
+
+  // design/system/tokens.json is generated, never hand-edited — recompute it
+  // from the authored tree and diff against what is committed, the same
+  // "recompute, diff, fail if they disagree" shape doctor already uses for
+  // design/INDEX.md against the manifest.
+  const tokensDir = path.join(
+    root,
+    "installer/templates/blank-workspace/design/system/tokens",
+  );
+  const expectedTokens = resolveTokenTree(await loadTokenTree(tokensDir));
+  const expectedTokensContent = `${JSON.stringify(expectedTokens, null, 2)}\n`;
+  const committedTokensContent = await readFile(
+    path.join(root, "fixtures/blank-workspace/expected/design/system/tokens.json"),
+    "utf8",
+  );
+  if (expectedTokensContent !== committedTokensContent) {
+    throw new Error(
+      "design/system/tokens.json in the blank-workspace fixture is stale — " +
+        "regenerate it (npm run fixtures:blank) after editing tokens/**.",
+    );
   }
 
   return {

@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { cp, copyFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -29,6 +29,8 @@ try {
     "design/INDEX.md",
     "design/manifest.yaml",
     ".silver/lock.yaml",
+    "design/system/tokens.json",
+    "design/system/showcase.html",
     ...SEEDED_TEMPLATES,
   ]) {
     await mkdir(path.dirname(path.join(fixtureRoot, relativePath)), {
@@ -37,6 +39,14 @@ try {
     await copyFile(
       path.join(temporaryRoot, relativePath),
       path.join(fixtureRoot, relativePath),
+    );
+  }
+  for (const relativeDirectory of ["design/system/tokens", "design/system/expressions"]) {
+    await rm(path.join(fixtureRoot, relativeDirectory), { force: true, recursive: true });
+    await cp(
+      path.join(temporaryRoot, relativeDirectory),
+      path.join(fixtureRoot, relativeDirectory),
+      { recursive: true },
     );
   }
   console.log("Refreshed generated blank-workspace fixture files.");

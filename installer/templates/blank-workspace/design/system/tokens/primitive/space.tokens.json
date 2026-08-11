@@ -1,0 +1,28 @@
+{
+  "space": {
+    "$type": "dimension",
+    "$description": "Spacing scale. Token name = pixel value (space.16 = 16px). Micro tier (1–3) for optical nudges and fine adjustments; grid tier (4+) for layout. Compiled to rem for layout/typography output via SD4 transform. Negative offsets are not in the scale — use calc(-1 * var(--ds-space-N)) at the call site, or define a named component token for recurring structural offsets (e.g., card bleed).",
+    "0":   { "$value": { "value": 0,   "unit": "px" }, "$description": "No spacing" },
+    "1":   { "$value": { "value": 1,   "unit": "px" }, "$description": "1px — optical nudge, sub-pixel correction" },
+    "2":   { "$value": { "value": 2,   "unit": "px" }, "$description": "2px — optical nudge, fine border offset" },
+    "3":   { "$value": { "value": 3,   "unit": "px" }, "$description": "3px — optical nudge, tight icon inset" },
+    "4":   { "$value": { "value": 4,   "unit": "px" }, "$description": "4px — base grid unit, minimum meaningful gap" },
+    "6":   { "$value": { "value": 6,   "unit": "px" }, "$description": "6px — tight list gap, badge padding, icon-to-label gap" },
+    "8":   { "$value": { "value": 8,   "unit": "px" }, "$description": "8px — compact gap, small inset, dense list item" },
+    "10":  { "$value": { "value": 10,  "unit": "px" }, "$description": "10px — intermediate between 8 and 12" },
+    "12":  { "$value": { "value": 12,  "unit": "px" }, "$description": "12px — control inner padding y, tight section gap" },
+    "16":  { "$value": { "value": 16,  "unit": "px" }, "$description": "16px — base component padding, form field gap" },
+    "20":  { "$value": { "value": 20,  "unit": "px" }, "$description": "20px — stacked field gap, relaxed list gap" },
+    "24":  { "$value": { "value": 24,  "unit": "px" }, "$description": "24px — section gap small, card padding" },
+    "32":  { "$value": { "value": 32,  "unit": "px" }, "$description": "32px — section gap base" },
+    "40":  { "$value": { "value": 40,  "unit": "px" }, "$description": "40px — content group separation" },
+    "48":  { "$value": { "value": 48,  "unit": "px" }, "$description": "48px — section gap large" },
+    "64":  { "$value": { "value": 64,  "unit": "px" }, "$description": "64px — page section gap" },
+    "80":  { "$value": { "value": 80,  "unit": "px" }, "$description": "80px — large section separation" },
+    "96":  { "$value": { "value": 96,  "unit": "px" }, "$description": "96px — hero section inner padding" },
+    "128": { "$value": { "value": 128, "unit": "px" }, "$description": "128px — hero spacing, max section padding" },
+    "160": { "$value": { "value": 160, "unit": "px" }, "$description": "160px — large hero spacing" },
+    "192": { "$value": { "value": 192, "unit": "px" }, "$description": "192px" },
+    "256": { "$value": { "value": 256, "unit": "px" }, "$description": "256px — max page-level spacing" }
+  }
+}

@@ -9,7 +9,7 @@ import { checkResult, exitCode, findFiles, finding, parseArguments, workspacePat
 export async function checkResponsive(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "responsive-behavior";
-  const requested = ["reference-system", "prototypes", "design/work/sketches", "presentations", "production"];
+  const requested = ["design/system", "prototypes", "design/work/sketches", "presentations", "production"];
   const completed = [];
   const findings = [];
   for (const absolute of (await Promise.all(requested.map((directory) => findFiles(path.join(root, directory), (file) => file.endsWith(".html"))))).flat()) {

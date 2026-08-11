@@ -393,7 +393,7 @@ export async function runCompleteBlankScenario(options = {}) {
   for (const [id, inputs, outputs] of canonicalCases) {
     results.set(id, await invokeCase({ root, id, inputs, outputs, checkEvidence }));
   }
-  await renderSystemCatalog({ root });
+  await renderSystemCatalog({ root, replace: true });
 
   const research = ref("setup-research-plan", "research-plan", "r1", "design/research/setup-plan.json");
   results.set("research", await invokeCase({

@@ -25,7 +25,9 @@ async function legacyWorkspace(t) {
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const currentLock = parse(await readFile(lockPath, "utf8"));
   const brand = currentLock.packages.find(({ id }) => id === "brand");
-  const reference = currentLock.packages.find(({ id }) => id === "reference-system");
+  // A v0.1.0-alpha.1 workspace predates design/system entirely — it shipped
+  // reference-system, which is what a genuinely legacy lock would still name.
+  // v1's schema keeps "reference-system" in its enum for exactly this reason.
   const legacyLock = {
     schema: "silver/lock/v1",
     framework: {
@@ -45,7 +47,7 @@ async function legacyWorkspace(t) {
         type: "reference-system",
         version: "0.1.0-alpha.1",
         ownership: "copied-and-owned",
-        integrity: reference.integrity,
+        integrity: `sha256:${"a".repeat(64)}`,
       },
     ],
     managed_files: currentLock.managed_files,

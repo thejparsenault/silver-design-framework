@@ -13,15 +13,19 @@
 // workspace (`../../design-check/scripts/artifact-kinds.mjs`), so no resolution
 // fallback is needed.
 
-// Backed by a directory of files rather than a single document. The catalog's
-// contract is the set of contracts it contains, not frontmatter.
-const DIRECTORY_KINDS = new Set(["component-catalog"]);
+// Backed by a directory of files rather than a single document. Currently
+// unused — component-catalog moved to a schema-validated single document
+// (design/system/components.json) once it stopped being a folder of Markdown
+// contracts. Kept as a category in case a future artifact kind needs it.
+const DIRECTORY_KINDS = new Set([]);
 
 // Structured documents validated against a JSON Schema. These are intentionally
 // not Markdown and have no frontmatter to check.
 const STRUCTURED_KINDS = new Map([
   ["asset-catalog", "asset-catalog.schema.json"],
+  ["component-catalog", "component-catalog.schema.json"],
   ["presentation-kit", "presentation-kit.schema.json"],
+  ["token-source", "token-source.schema.json"],
   ["x-component-expression", "component-expression.schema.json"],
   ["x-design-context", "design-context.schema.json"],
 ]);

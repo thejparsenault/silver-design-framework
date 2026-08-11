@@ -1,0 +1,145 @@
+@layer components {
+  /* ============================================================
+   * ds-button — base
+   * HTML contract: <button class="ds-button" data-variant="primary" data-size="md">
+   * Supported variants: primary | secondary | ghost | destructive
+   * Supported sizes:    sm | md | lg
+   * Supported layout:   default | full-width
+   * ============================================================ */
+
+  .ds-button {
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ds-button-gap);
+
+    /* Sizing — md defaults */
+    min-height: var(--ds-button-height-md);
+    padding-inline: var(--ds-button-padding-x-md);
+
+    /* Typography */
+    font-size: var(--ds-button-font-size-md);
+    font-weight: var(--ds-button-font-weight);
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+
+    /* Shape */
+    border-radius: var(--ds-button-radius);
+    border: var(--ds-button-border-width) solid transparent;
+
+    /* Interaction */
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out),
+      color            var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out),
+      border-color     var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out),
+      box-shadow       var(--ds-motion-duration-base) var(--ds-motion-easing-ease-in-out);
+
+    /* Focus */
+    outline-offset: var(--ds-focus-ring-offset);
+  }
+
+  /* --- Variants --- */
+
+  .ds-button[data-variant="primary"],
+  .ds-button:not([data-variant]) {
+    background-color: var(--ds-action-primary-bg);
+    color: var(--ds-action-primary-fg);
+    border-color: var(--ds-action-primary-bg);
+  }
+
+  .ds-button[data-variant="primary"]:hover,
+  .ds-button:not([data-variant]):hover {
+    background-color: color-mix(in oklch, var(--ds-action-primary-bg), black 12%);
+    border-color:     color-mix(in oklch, var(--ds-action-primary-bg), black 12%);
+  }
+
+  .ds-button[data-variant="primary"]:active,
+  .ds-button:not([data-variant]):active {
+    background-color: color-mix(in oklch, var(--ds-action-primary-bg), black 20%);
+    border-color:     color-mix(in oklch, var(--ds-action-primary-bg), black 20%);
+  }
+
+  .ds-button[data-variant="secondary"] {
+    background-color: var(--ds-action-secondary-bg);
+    color: var(--ds-action-secondary-fg);
+    border-color: var(--ds-action-secondary-border);
+  }
+
+  .ds-button[data-variant="secondary"]:hover {
+    background-color: color-mix(in oklch, var(--ds-action-secondary-border), transparent 85%);
+  }
+
+  .ds-button[data-variant="secondary"]:active {
+    background-color: color-mix(in oklch, var(--ds-action-secondary-border), transparent 75%);
+  }
+
+  .ds-button[data-variant="ghost"] {
+    background-color: transparent;
+    color: var(--ds-action-ghost-fg);
+    border-color: transparent;
+  }
+
+  .ds-button[data-variant="ghost"]:hover {
+    background-color: var(--ds-surface-hover);
+  }
+
+  .ds-button[data-variant="ghost"]:active {
+    background-color: color-mix(in oklch, var(--ds-surface-hover), black 5%);
+  }
+
+  .ds-button[data-variant="destructive"] {
+    background-color: var(--ds-action-destructive-bg);
+    color: var(--ds-action-destructive-fg);
+    border-color: var(--ds-action-destructive-bg);
+  }
+
+  .ds-button[data-variant="destructive"]:hover {
+    background-color: color-mix(in oklch, var(--ds-action-destructive-bg), black 12%);
+    border-color:     color-mix(in oklch, var(--ds-action-destructive-bg), black 12%);
+  }
+
+  .ds-button[data-variant="destructive"]:active {
+    background-color: color-mix(in oklch, var(--ds-action-destructive-bg), black 20%);
+    border-color:     color-mix(in oklch, var(--ds-action-destructive-bg), black 20%);
+  }
+
+  /* --- Sizes --- */
+
+  .ds-button[data-size="sm"] {
+    min-height: var(--ds-button-height-sm);
+    padding-inline: var(--ds-button-padding-x-sm);
+    font-size: var(--ds-button-font-size-sm);
+  }
+
+  .ds-button[data-size="lg"] {
+    min-height: var(--ds-button-height-lg);
+    padding-inline: var(--ds-button-padding-x-lg);
+    font-size: var(--ds-button-font-size-lg);
+  }
+
+  /* --- Layout --- */
+
+  .ds-button[data-layout="full-width"] {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* --- Disabled state --- */
+
+  .ds-button:disabled,
+  .ds-button[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* --- Focus --- */
+
+  .ds-button:focus-visible {
+    outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  }
+}

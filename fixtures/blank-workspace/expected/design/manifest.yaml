@@ -48,7 +48,15 @@ artifacts:
       type: local
   - id: component-catalog
     kind: component-catalog
-    path: reference-system/html-contracts
+    path: design/system/components.json
+    scope: product
+    role: canonical
+    status: active
+    authority:
+      type: local
+  - id: design-system-tokens
+    kind: token-source
+    path: design/system/tokens.json
     scope: product
     role: canonical
     status: active
@@ -112,12 +120,12 @@ artifacts:
       type: local
 
 implementation_profiles:
-  reference-system:
+  default-html:
     recipe: static-html
     status: offered
-    root: reference-system
+    root: design/system
     commands:
-      preview: python3 -m http.server 4173 --directory reference-system
+      preview: python3 -m http.server 4173 --directory design/system
     adapters:
       - vanilla-css
 
@@ -211,10 +219,10 @@ checks:
       - responsive-behavior
       - critical-interactions
   render_targets:
-    - id: reference-system
-      profile: reference-system
-      path: /examples/static-html/login-form.html
-      start: python3 -m http.server 4173 --directory reference-system
+    - id: default-system
+      profile: default-html
+      path: /showcase.html
+      start: python3 -m http.server 4173 --directory design/system
       viewports:
         - width: 375
           height: 812

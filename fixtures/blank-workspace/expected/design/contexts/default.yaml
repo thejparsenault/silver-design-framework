@@ -18,11 +18,16 @@ design_system:
   kind: design-system
   revision: r1
   path: design/system/README.md
+token_source:
+  id: design-system-tokens
+  kind: token-source
+  revision: r1
+  path: design/system/tokens.json
 component_catalog:
   id: component-catalog
   kind: component-catalog
   revision: r1
-  path: reference-system/html-contracts
+  path: design/system/components.json
 component_expression:
   id: default-component-expression
   kind: x-component-expression

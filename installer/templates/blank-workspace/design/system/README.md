@@ -13,9 +13,22 @@ summary: Semantic design rules and the reference implementation that demonstrate
 
 # Design system
 
-The editable demonstration system lives in `reference-system/`. It illustrates
-the primitive-to-semantic token relationship and is a starting point for
-deliberate refinement, not a universal visual identity.
+This is your design system — seeded with a starting set of tokens and
+components, not a universal visual identity. Refine it deliberately with the
+`theme` and `system` skills as your brand takes shape.
+
+- `tokens/` — authored source, in three layers (primitive, semantic,
+  component). Edit here, or through the `theme` skill.
+- `tokens.json` — generated. The resolved, implementation-agnostic index;
+  never hand-edited.
+- `components.json` — the component index: roles, variants, states, slots.
+  No markup or class names — that's an expression's job.
+- `expressions/html/` — the default HTML/CSS realization of this system.
+  `styles/tokens.css` is generated alongside `tokens.json`; the rest is
+  hand-authored structural CSS.
+- `showcase.html` — generated. This workspace's own system, rendered. Open it
+  any time to see what your tokens and components currently produce. Safe to
+  delete; regenerates the next time `system` or `theme` runs.
 
 Production-facing work should consume semantic styles. Raw values belong only
 in declared token sources. The project-local design-check skill runs the

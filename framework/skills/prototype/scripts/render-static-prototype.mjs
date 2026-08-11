@@ -34,6 +34,33 @@ function safeWorkspacePath(root, value, label) {
   return absolute;
 }
 
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path
+    .relative(fromDirectory, path.join(root, stylesheet))
+    .split(path.sep)
+    .join("/");
+}
+
 function yamlString(value) {
   const trimmed = value.trim();
   return trimmed.startsWith('"') ? JSON.parse(trimmed) : trimmed;
@@ -69,7 +96,7 @@ function readPrototypeMetadata(content) {
   };
 }
 
-function renderHtml(prototype, flow) {
+function renderHtml(prototype, flow, stylesheetHref) {
   const outgoing = new Map(flow.nodes.map(({ id }) => [id, []]));
   for (const transition of flow.transitions) {
     outgoing.get(transition.from)?.push(transition);
@@ -104,7 +131,7 @@ function renderHtml(prototype, flow) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(prototype.title)}</title>
-  <link rel="stylesheet" href="../../reference-system/packages/css/src/ds.css" />
+  <link rel="stylesheet" href="${escapeHtml(stylesheetHref)}" />
   <link rel="stylesheet" href="./prototype.css" />
 </head>
 <body data-scheme="light" data-mode="default">
@@ -236,8 +263,9 @@ export async function renderStaticPrototype(options) {
   }
 
   await mkdir(prototypeDirectory, { recursive: true });
+  const stylesheetHref = await resolveStylesheetHref(root, prototypeDirectory);
   const outputs = new Map([
-    ["index.html", renderHtml(metadata, flow)],
+    ["index.html", renderHtml(metadata, flow, stylesheetHref)],
     ["prototype.css", renderCss()],
     ["prototype.js", renderJavaScript()],
   ]);

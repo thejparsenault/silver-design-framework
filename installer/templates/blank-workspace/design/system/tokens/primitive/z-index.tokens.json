@@ -1,0 +1,15 @@
+{
+  "z": {
+    "$type": "number",
+    "$description": "Z-index scale. Use only these values — never arbitrary z-index integers.",
+    "base":       { "$value": 0,    "$description": "Default stacking context" },
+    "raised":     { "$value": 10,   "$description": "Slightly elevated in-flow elements (sticky headers within a section)" },
+    "sticky":     { "$value": 100,  "$description": "Sticky page headers, nav bars" },
+    "dropdown":   { "$value": 200,  "$description": "Dropdowns, menus, popovers anchored to trigger" },
+    "overlay":    { "$value": 300,  "$description": "Drawer/sheet backdrop" },
+    "drawer":     { "$value": 400,  "$description": "Side drawers, sheets" },
+    "modal":      { "$value": 500,  "$description": "Dialog modals" },
+    "toast":      { "$value": 600,  "$description": "Toasts, snackbars — always above modals" },
+    "tooltip":    { "$value": 700,  "$description": "Tooltips — always topmost" }
+  }
+}

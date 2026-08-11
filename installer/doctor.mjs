@@ -146,7 +146,9 @@ async function inspectArtifact(root, mapping, diagnostics) {
       mapping.path,
       diagnostics,
     );
-    if (valid && value.id !== mapping.id) {
+    // token-source is a resolved DTCG tree, not a Silver artifact document — it
+    // has no id of its own to compare against the manifest mapping.
+    if (valid && value.id !== undefined && value.id !== mapping.id) {
       diagnostics.push(
         diagnostic(
           "error",
@@ -319,11 +321,7 @@ export async function doctorWorkspace(options = {}) {
       for (const installedPackage of lock.packages) {
         const packagePath =
           installedPackage.path ??
-          (installedPackage.type === "skill"
-            ? `.skills/${installedPackage.id}`
-            : installedPackage.type === "reference-system"
-              ? "reference-system"
-              : undefined);
+          (installedPackage.type === "skill" ? `.skills/${installedPackage.id}` : undefined);
         if (!packagePath) {
           continue;
         }

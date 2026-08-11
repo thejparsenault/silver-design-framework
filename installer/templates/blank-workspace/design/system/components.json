@@ -1,0 +1,29 @@
+{
+  "schema": "silver/component-catalog/v1",
+  "id": "component-catalog",
+  "revision": "r1",
+  "description": "The canonical component index: roles, variants, states, and slots this system declares. No markup or class names here — that belongs to an expression (design/system/expressions/**), which is how this index becomes rendered output.",
+  "components": {
+    "button": {
+      "summary": "Triggers an action or submits a form.",
+      "variants": {
+        "variant": ["primary", "secondary", "ghost", "destructive"],
+        "size": ["sm", "md", "lg"],
+        "layout": ["inline", "full-width"]
+      },
+      "states": ["default", "hover", "active", "disabled", "loading"],
+      "slots": ["label", "icon-leading", "icon-trailing"],
+      "related": ["field"]
+    },
+    "field": {
+      "summary": "A complete form field: label, input, optional hint, optional error.",
+      "variants": {
+        "input": ["text", "textarea"],
+        "size": ["sm", "md", "lg"]
+      },
+      "states": ["default", "error", "success", "disabled"],
+      "slots": ["label", "input", "hint", "error"],
+      "related": ["button"]
+    }
+  }
+}

@@ -16,6 +16,8 @@ import {
   writeUtf8,
 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
+import { buildDesignSystemTokens } from "../framework/runtime/tokens.mjs";
+import { renderSystemCatalog } from "../framework/skills/system/scripts/render-system-catalog.mjs";
 import {
   WORKSPACE_PRACTICE_OVERLAY_PATH,
   ensureGitignoreEntries,
@@ -95,6 +97,7 @@ export const SEEDED_TEMPLATES = [
   "design/voice.md",
   "design/design-principles.md",
   "design/system/README.md",
+  "design/system/components.json",
   "design/flows/README.md",
   "design/decisions/README.md",
   "design/integrations/README.md",
@@ -169,7 +172,15 @@ export function payloadRoots(payloadRoot = repositoryRoot) {
     providerSourceRoot: path.join(payloadRoot, "framework", "providers"),
     activitySourceRoot: path.join(payloadRoot, "framework", "activities"),
     transportSourceRoot: path.join(payloadRoot, "framework", "transports"),
-    referenceSystemSourceRoot: path.join(payloadRoot, "reference-system"),
+    designSystemTokensSourceRoot: path.join(
+      payloadRoot,
+      "installer",
+      "templates",
+      "blank-workspace",
+      "design",
+      "system",
+      "tokens",
+    ),
   };
 }
 
@@ -233,7 +244,7 @@ export async function sourcePackages({
     providerSourceRoot,
     activitySourceRoot,
     transportSourceRoot,
-    referenceSystemSourceRoot,
+    designSystemTokensSourceRoot,
   } = payloadRoots(payloadRoot);
   const packages = [];
   for (const id of skillIds) {
@@ -314,14 +325,18 @@ export async function sourcePackages({
       integrity: await treeIntegrity(item.source),
     });
   }
+  // The seeded token tree is a starting point, not something Silver imposes —
+  // a designer's edits are never overwritten (see the "copied-and-owned"
+  // branch in update.mjs). A newer release can still improve the defaults; the
+  // most it does is propose that, the same way reference-system's seed used to.
   packages.push({
-    id: "reference-system",
-    type: "reference-system",
-    path: "reference-system",
-    sourcePath: referenceSystemSourceRoot,
+    id: "design-system-tokens-seed",
+    type: "design-system-seed",
+    path: "design/system/tokens",
+    sourcePath: designSystemTokensSourceRoot,
     version,
     ownership: "copied-and-owned",
-    integrity: await treeIntegrity(referenceSystemSourceRoot),
+    integrity: await treeIntegrity(designSystemTokensSourceRoot),
   });
   return packages;
 }
@@ -379,14 +394,14 @@ async function assertSetupTarget(root, { allowExistingCodebase = false } = {}) {
 
   // Silver used to throw here on any non-blank folder, which after `npm install`
   // is every folder — the compatibility path was unusable in exactly the case it
-  // was most needed. Installing alongside existing work is safe because setup
+  // was most needed. Installing into a folder with existing work is safe because setup
   // only ever creates files it owns and preserves anything already present; what
   // it must not do is quietly decide what that existing work *means*. That is
   // `silver adopt`, which asks one entry at a time.
   const unexpected = (await listTopLevel(root)).filter(
     (entry) => !allowedBlankEntries.has(entry),
   );
-  return unexpected.length > 0 ? "alongside" : "new";
+  return unexpected.length > 0 ? "with-existing-work" : "new";
 }
 
 export async function setupWorkspace(options = {}) {
@@ -409,7 +424,6 @@ export async function setupWorkspace(options = {}) {
     providerSourceRoot,
     activitySourceRoot,
     transportSourceRoot,
-    referenceSystemSourceRoot,
   } = payloadRoots(payloadRoot);
 
   let workspaceName;
@@ -463,7 +477,7 @@ export async function setupWorkspace(options = {}) {
   const preserved = [];
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const hasLock = await exists(lockPath);
-  // `alongside` is a fresh install that happens to have neighbours: there is no
+  // `with-existing-work` is a fresh install that happens to have neighbours: there is no
   // manifest yet, so everything is created exactly as in a blank folder. Only
   // the reporting differs, because "Initialized" in a folder full of somebody
   // else's work should say what it did and did not touch.
@@ -525,18 +539,29 @@ export async function setupWorkspace(options = {}) {
         ),
       );
     }
-    const copiedReferenceFiles = await copyNewTree(
-      referenceSystemSourceRoot,
-      path.join(root, "reference-system"),
-    );
-    created.push(
-      ...copiedReferenceFiles.map((relativePath) =>
-        path.posix.join(
-          "reference-system",
-          relativePath.split(path.sep).join("/"),
+    for (const [source, destination] of [
+      [path.join(templateRoot, "design/system/tokens"), "design/system/tokens"],
+      [path.join(templateRoot, "design/system/expressions"), "design/system/expressions"],
+    ]) {
+      const copied = await copyNewTree(source, path.join(root, destination));
+      created.push(
+        ...copied.map((relativePath) =>
+          path.posix.join(destination, relativePath.split(path.sep).join("/")),
         ),
-      ),
-    );
+      );
+    }
+
+    // Resolves the authored tokens/ tree into tokens.json (canonical index) and
+    // tokens.css (var()-chained custom properties) so a fresh workspace renders
+    // styled immediately — no separate build step, no npm install of a nested
+    // package. `theme` reruns this same function after an edit.
+    await buildDesignSystemTokens({ root });
+    created.push("design/system/tokens.json", "design/system/expressions/html/styles/tokens.css");
+
+    // Pre-generated from the seeded default system so a fresh workspace has a
+    // user-facing reference to open on day one, before anything is authored.
+    await renderSystemCatalog({ root, replace: true });
+    created.push("design/system/showcase.html");
   }
 
   const agentPointerPath = path.join(root, "AGENTS.md");
@@ -622,24 +647,8 @@ export async function setupWorkspace(options = {}) {
       "Create or refine a portable flow before prototyping when useful.",
       "Run silver doctor to verify the workspace.",
     ],
-    // The reference system is a nested npm package. A root `npm install
-    // silver-design-framework` does not install its dependencies, so its token
-    // build fails until this runs — which was previously documented only inside
-    // reference-system/README.md and found the hard way.
-    setupSteps: [
-      {
-        id: "reference-system-dependencies",
-        summary:
-          "Install the reference system's own dependencies before building tokens.",
-        required: false,
-        reason:
-          "reference-system/ is a separate npm package. Installing Silver does not install its dependencies.",
-        commands: [
-          "cd reference-system",
-          "npm install",
-          "npm run build",
-        ],
-      },
-    ],
+    // Token build now runs as part of setup itself (see buildDesignSystemTokens
+    // above), so there is no longer a manual "go build the tokens" step.
+    setupSteps: [],
   };
 }

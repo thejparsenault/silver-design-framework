@@ -20,6 +20,30 @@ async function mayWrite(directory, names, replace) {
   if (present.length && !replace) throw new Error(`Refusing to replace ${present.join(", ")}; pass --replace after review.`);
 }
 
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path.posix.relative(fromDirectory, stylesheet);
+}
+
 export async function renderStaticImplementation({ root = process.cwd(), handoff, output, replace = false }) {
   const workspace = path.resolve(root);
   const handoffPath = inside(workspace, handoff);
@@ -36,7 +60,7 @@ export async function renderStaticImplementation({ root = process.cwd(), handoff
   const names = ["index.html", "implementation.css", "implementation.js"];
   await mayWrite(outputRoot, names, replace);
   await mkdir(outputRoot, { recursive: true });
-  const relativeCss = path.posix.relative(output, "reference-system/packages/css/src/ds.css");
+  const relativeCss = await resolveStylesheetHref(workspace, output);
   const html = `<!doctype html>
 <html lang="en">
 <head>

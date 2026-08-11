@@ -204,12 +204,12 @@ function printSetupSteps(result, write) {
 function printSetup(result, write) {
   write(
     `${
-      { new: "Initialized", alongside: "Initialized", existing: "Resumed" }[
+      { new: "Initialized", "with-existing-work": "Initialized", existing: "Resumed" }[
         result.mode
       ] ?? "Initialized"
     } ${result.workspace.name} at ${result.root}`,
   );
-  if (result.mode === "alongside") {
+  if (result.mode === "with-existing-work") {
     write(
       "This folder already had work in it. Silver created only its own files and changed nothing else.",
     );

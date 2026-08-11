@@ -253,8 +253,8 @@ test("flow and system renderers produce portable semantic HTML with exact proven
     'data-source-revision="r1"', 'data-renderer-version="flow-html@0.4.0"',
     'data-assets-revision="r1"', 'data-design-system-revision="r1"',
   ]) assert.ok(html.includes(value));
-  await renderSystemCatalog({ root });
-  assert.match(await readFile(path.join(root, "design/system/catalog.html"), "utf8"), /system-catalog-html@0.4.0/);
+  await renderSystemCatalog({ root, replace: true });
+  assert.match(await readFile(path.join(root, "design/system/showcase.html"), "utf8"), /system-catalog-html@0.4.0/);
   assert.equal((await runFastSuite({ root })).status, "pass");
 });
 

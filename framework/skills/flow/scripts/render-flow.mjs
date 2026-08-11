@@ -94,7 +94,7 @@ export function renderFlowHtml(flow, options = {}) {
       .kind { color: var(--ds-text-muted); text-transform: capitalize; }
     }
   </style>
-  <link rel="stylesheet" href="../../../reference-system/packages/css/src/ds.css" />
+  <link rel="stylesheet" href="${escapeHtml(options.stylesheetHref)}" />
 </head>
 <body data-scheme="light" data-mode="default">
   <main class="flow-page" data-silver-target="flow" data-source-id="${escapeHtml(flow.id)}" data-source-revision="r${escapeHtml(flow.revision)}" data-renderer-version="flow-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}">
@@ -108,6 +108,30 @@ export function renderFlowHtml(flow, options = {}) {
 `;
 }
 
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path.relative(fromDirectory, path.join(root, stylesheet)).split(path.sep).join("/");
+}
+
 export async function renderFlowFile(inputPath, outputPath, options = {}) {
   const absoluteInput = path.resolve(inputPath);
   const flow = JSON.parse(await readFile(absoluteInput, "utf8"));
@@ -119,7 +143,9 @@ export async function renderFlowFile(inputPath, outputPath, options = {}) {
     options.htmlOutput ?? path.join(path.dirname(absoluteInput), "index.html"),
   );
   await mkdir(path.dirname(htmlOutput), { recursive: true });
-  await writeFile(htmlOutput, renderFlowHtml(flow, options), "utf8");
+  const root = options.root ?? process.cwd();
+  const stylesheetHref = await resolveStylesheetHref(path.resolve(root), path.dirname(htmlOutput));
+  await writeFile(htmlOutput, renderFlowHtml(flow, { ...options, stylesheetHref }), "utf8");
   return { flow, outputPath: absoluteOutput, htmlOutput };
 }
 

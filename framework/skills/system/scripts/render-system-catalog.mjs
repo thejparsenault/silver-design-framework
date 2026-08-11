@@ -7,6 +7,30 @@ import { fileURLToPath } from "node:url";
 
 const escapeHtml = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path.relative(fromDirectory, path.join(root, stylesheet)).split(path.sep).join("/");
+}
+
 function leaves(value, prefix = []) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   const output = [];
@@ -29,8 +53,8 @@ function leaves(value, prefix = []) {
 
 export async function renderSystemCatalog({
   root = process.cwd(),
-  tokens = "reference-system/packages/tokens/dist/tokens.json",
-  output = "design/system/catalog.html",
+  tokens = "design/system/tokens.json",
+  output = "design/system/showcase.html",
   sourceRevision = "r1",
   assetRevision = "r1",
   designSystemRevision = "r1",
@@ -50,12 +74,13 @@ export async function renderSystemCatalog({
   const rows = leaves(tokenSource).slice(0, 200).map(({ name, value }) =>
     `<tr><th scope="row">${escapeHtml(name)}</th><td><code>${escapeHtml(typeof value === "object" ? JSON.stringify(value) : value)}</code></td></tr>`,
   ).join("");
+  const stylesheetHref = await resolveStylesheetHref(workspace, path.dirname(outputPath));
   const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Design system catalog</title>
-<link rel="stylesheet" href="../../reference-system/packages/css/src/ds.css" /><style>
+<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Design system showcase</title>
+<link rel="stylesheet" href="${escapeHtml(stylesheetHref)}" /><style>
 .catalog { max-width: var(--ds-layout-content-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
 table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: var(--ds-space-12); border-bottom: var(--ds-field-input-border-width) solid var(--ds-border-subtle); }
-</style></head><body data-scheme="light" data-mode="default"><main class="catalog" data-silver-target="system-catalog" data-source-id="design-system" data-source-revision="${escapeHtml(sourceRevision)}" data-renderer-version="system-catalog-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}"><h1>Design system catalog</h1><p>Portable semantic token inventory.</p><table><thead><tr><th>Token</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></main></body></html>`;
+</style></head><body data-scheme="light" data-mode="default"><main class="catalog" data-silver-target="system-catalog" data-source-id="design-system" data-source-revision="${escapeHtml(sourceRevision)}" data-renderer-version="system-catalog-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}"><h1>Design system showcase</h1><p>This workspace's own system, rendered from its current tokens. Regenerates whenever tokens or components change — safe to delete.</p><table><thead><tr><th>Token</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></main></body></html>`;
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, html, "utf8");
   return { outputPath, tokenCount: leaves(tokenSource).length };

@@ -24,9 +24,10 @@ const extensions = new Set([
   ".tsx",
 ]);
 const excluded = new Set([
-  "reference-system/packages/css/src/tokens.css",
-  "reference-system/packages/css/src/tailwind-theme.css",
-  "reference-system/packages/tokens/src/build.mjs",
+  "design/system/expressions/html/styles/tokens.css",
+  // The showcase dumps every resolved token's literal value as text — that is
+  // its whole purpose, not a case of markup bypassing the semantic layer.
+  "design/system/showcase.html",
 ]);
 const literalPatterns = [
   {
@@ -61,7 +62,7 @@ function location(content, offset) {
 export async function checkSemanticStyles(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "semantic-styles";
-  const roots = ["reference-system", "prototypes", "design/work/sketches", "presentations", "production"];
+  const roots = ["design/system", "prototypes", "design/work/sketches", "presentations", "production"];
   const files = (
     await Promise.all(
       roots.map((relativeRoot) =>

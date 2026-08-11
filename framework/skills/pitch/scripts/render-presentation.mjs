@@ -13,6 +13,30 @@ function inside(root, value) {
   if (!absolute.startsWith(`${root}${path.sep}`)) throw new Error("Path escapes workspace.");
   return absolute;
 }
+// This script runs from an installed workspace where a bare specifier may not
+// resolve, hence the ladder — the same one framework/skills/design-check/
+// scripts/run-browser.mjs uses for chrome.mjs.
+async function resolveStylesheetHref(root, fromDirectory) {
+  let resolveActiveStylesheet;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/expression.mjs",
+    "../../../.silver/runtime/expression.mjs",
+    "../../../runtime/expression.mjs",
+  ]) {
+    try {
+      ({ resolveActiveStylesheet } = await import(specifier));
+      break;
+    } catch {
+      // Try the next resolution path.
+    }
+  }
+  if (!resolveActiveStylesheet) {
+    throw new Error("Could not resolve the design-system runtime module.");
+  }
+  const stylesheet = await resolveActiveStylesheet(root);
+  return path.posix.relative(fromDirectory, stylesheet);
+}
+
 async function output(file, content, replace) {
   try { await access(file); if (!replace) throw new Error(`Refusing to replace ${file}; pass --replace after review.`); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
@@ -33,7 +57,7 @@ export async function renderPresentation({ root = process.cwd(), changeCase, kit
   const impact = payload.impact;
   if (!["estimated", "proxy", "measured"].includes(impact.kind) || !impact.source) throw new Error("Impact must distinguish kind and source.");
   if (!presentationKit.source_revisions?.length) throw new Error("Presentation kit must pin source revisions.");
-  const relativeCss = path.posix.relative(path.posix.dirname(destination), "reference-system/packages/css/src/ds.css");
+  const relativeCss = await resolveStylesheetHref(workspace, path.posix.dirname(destination));
   const html = `<!doctype html>
 <html lang="en">
 <head>

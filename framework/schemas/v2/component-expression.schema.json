@@ -4,7 +4,7 @@
   "title": "Silver component expression mapping v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "revision", "component_catalog", "design_system", "mode", "roles", "provenance"],
+  "required": ["schema", "id", "revision", "component_catalog", "design_system", "mode", "stylesheet", "roles", "provenance"],
   "properties": {
     "schema": { "const": "silver/component-expression/v1" },
     "id": { "$ref": "common.schema.json#/$defs/id" },
@@ -12,6 +12,10 @@
     "component_catalog": { "$ref": "common.schema.json#/$defs/artifactReference" },
     "design_system": { "$ref": "common.schema.json#/$defs/artifactReference" },
     "mode": { "enum": ["identity", "mapped"] },
+    "stylesheet": {
+      "description": "Workspace-relative path to the CSS this expression renders against. For the default HTML expression this is Silver's own generated stylesheet; for a mapped expression over an adopted system, this is that system's own built CSS.",
+      "$ref": "common.schema.json#/$defs/relativePath"
+    },
     "roles": {
       "type": "array",
       "minItems": 1,

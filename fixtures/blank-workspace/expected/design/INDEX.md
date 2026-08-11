@@ -11,7 +11,8 @@ Workspace: **Example Product** (`product-workspace`)
 | Voice | canonical | draft | [voice.md](voice.md) |
 | Design principles | canonical | draft | [design-principles.md](design-principles.md) |
 | Design system | canonical | draft | [system/README.md](system/README.md) |
-| Component catalog | canonical | active | [../reference-system/html-contracts](../reference-system/html-contracts) |
+| Component catalog | canonical | active | [system/components.json](system/components.json) |
+| Token source | canonical | active | [system/tokens.json](system/tokens.json) |
 | X component expression | canonical | active | [contexts/default-expression.yaml](contexts/default-expression.yaml) |
 | X design context | canonical | active | [contexts/default.yaml](contexts/default.yaml) |
 | X guidance source | supporting | active | [guidance/sources.yaml](guidance/sources.yaml) |
