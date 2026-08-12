@@ -28,7 +28,11 @@
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "repository": { "type": "string", "minLength": 1, "maxLength": 1000 },
-        "branch": { "type": "string", "minLength": 1, "maxLength": 200 }
+        "branch": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "linked_source": {
+          "description": "The id of a silver/linked-source/v1 entry in design/sources/sources.yaml that `silver link` registered for this codebase, if any.",
+          "$ref": "common.schema.json#/$defs/id"
+        }
       }
     },
     "provenance": { "$ref": "provenance.schema.json" }

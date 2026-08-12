@@ -77,6 +77,7 @@ export async function traceArtifact({ root, target }) {
       guidance: provenance?.guidance ?? [],
       linked_sources: provenance?.linked_sources ?? [],
       design_contexts: provenance?.design_contexts ?? value.design_contexts ?? [],
+      references: provenance?.references ?? [],
       acceptance: provenance?.acceptance ?? value.acceptance?.status ?? value.status ?? "unknown",
     };
   }
@@ -114,6 +115,7 @@ export async function traceArtifact({ root, target }) {
         guidance: [],
         linked_sources: [],
         design_contexts: [],
+        references: [],
         acceptance: "unknown",
       };
     }
@@ -134,6 +136,11 @@ export function renderTrace(trace) {
     `Linked source pins: ${trace.linked_sources?.length ?? 0}`,
     `Design contexts: ${trace.design_contexts.length}`,
   ];
+  for (const citation of trace.references ?? []) {
+    lines.push(
+      `Reference: ${citation.collection}@${citation.revision} (${citation.ids.join(", ")})`,
+    );
+  }
   if (trace.practice) {
     lines.push(`My Practice: ${trace.practice.id}@${trace.practice.revision}`);
   }

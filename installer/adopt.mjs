@@ -314,13 +314,30 @@ function questionFor(entry) {
   };
 }
 
+// `--source` usually names a filesystem path, but a codebase registered
+// through `silver link` is more durable to name by its linked-source id —
+// the id survives a clone landing the sibling repository somewhere else,
+// a literal path does not.
+async function resolveSourceOption(root, source) {
+  if (!source) return null;
+  const registryPath = path.join(root, "design", "sources", "sources.yaml");
+  if (await exists(registryPath)) {
+    const registry = parse(await readUtf8(registryPath));
+    const match = (registry?.sources ?? []).find((item) => item.id === source);
+    if (match) {
+      return path.isAbsolute(match.source.reference)
+        ? match.source.reference
+        : path.resolve(root, match.source.reference);
+    }
+  }
+  return path.resolve(source);
+}
+
 export async function inspectAdoption(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const now = options.now ?? new Date().toISOString();
-  const discovered = await enumerateRepository(
-    options.source ? path.resolve(options.source) : root,
-    options,
-  );
+  const resolvedSource = await resolveSourceOption(root, options.source);
+  const discovered = await enumerateRepository(resolvedSource ?? root, options);
   const handled = await alreadyHandled(root);
   const undecided = discovered.entries.filter((entry) => !handled.has(entry.path));
 
@@ -334,7 +351,7 @@ export async function inspectAdoption(options = {}) {
       ? {
           source: {
             kind: options.sourceKind ?? "local",
-            reference: path.resolve(options.source),
+            reference: resolvedSource,
           },
         }
       : {}),

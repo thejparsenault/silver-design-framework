@@ -1051,7 +1051,7 @@ export async function runCompleteBlankScenario(options = {}) {
       flow_mermaid: "design/flows/guided-setup/flow.mmd",
       flow_html: "design/flows/guided-setup/index.html",
       map_html: "design/maps/guided-setup/index.html",
-      system_catalog: "design/system/catalog.html",
+      system_catalog: "design/system/showcase.html",
       sketch_html: "design/work/sketches/guided-setup/index.html",
       prototype_html: "prototypes/guided-setup/index.html",
       pitch_html: "presentations/guided-setup/index.html",

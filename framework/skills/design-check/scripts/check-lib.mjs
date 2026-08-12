@@ -310,3 +310,34 @@ export async function loadManifest(root) {
     value: await readYaml(pathToManifest),
   };
 }
+
+// A workspace mid-adoption has no manifest opinion yet, or none at all — the
+// default profile stays "prototype" rather than making a checker fail closed
+// on a missing file it wasn't asked to require.
+export async function resolvePolicyProfile(root) {
+  try {
+    const manifest = await loadManifest(root);
+    return manifest.value?.checks?.policy_profile ?? "prototype";
+  } catch (error) {
+    if (error.code === "ENOENT") return "prototype";
+    throw error;
+  }
+}
+
+// Findings from the "adoption" profile are real observations, not defects to
+// fix before the next commit — a primitive-only system that was just adopted
+// has not had a chance to grow a semantic layer yet. The status still can't
+// read "pass" (a finding.schema.json status is fail|not-run, never pass, and
+// checkResult() requires zero findings for "pass"); only the severity and the
+// stated reason change.
+export function conformanceFinding({ policyProfile, message, ...rest }) {
+  if (policyProfile !== "adoption") {
+    return finding({ ...rest, message, policyProfile });
+  }
+  return finding({
+    ...rest,
+    policyProfile,
+    severity: "info",
+    message: `${message} Informational under the "adoption" policy profile — semantic conformance is not required until this system's layer is mapped.`,
+  });
+}

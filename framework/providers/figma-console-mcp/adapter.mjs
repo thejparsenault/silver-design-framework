@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { assertV2 } from "../../runtime/contracts.mjs";
+import { firstModeValue, isAlias, resolveReferenceToVariableId } from "./tokens.mjs";
 
 export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.4.0" };
 
@@ -105,6 +106,7 @@ function change({
   entity: providerEntity,
   target,
   classification,
+  valueKind,
   operation = "propose-update",
   confidence,
   fidelity,
@@ -117,6 +119,7 @@ function change({
     artifact_kind: target.kind,
     artifact_id: target.id,
     classification,
+    ...(valueKind ? { value_kind: valueKind } : {}),
     operation,
     confidence,
     mapping_fidelity: fidelity,
@@ -144,6 +147,7 @@ export async function createFigmaChangeSet({
       entity: variable,
       target: targets.tokens,
       classification: known ? "semantic-style" : "unknown-style",
+      valueKind: isAlias(firstModeValue(variable)) ? "alias" : "literal",
       operation: known ? "propose-update" : "finding",
       confidence: known ? 0.98 : 0.45,
       fidelity: known ? "semantic" : "partial",
@@ -244,9 +248,17 @@ export async function createFigmaChangeSet({
   return changeSet;
 }
 
+// Writing a token back is the moment a reference silently becomes a literal,
+// unless the alias is written on purpose. If `item.value` is still a DTCG
+// `{reference}` at push time, this resolves it against `snapshot`'s
+// variables and writes a `VARIABLE_ALIAS`, never the reference's resolved
+// value. Without a `snapshot` (or where the reference does not resolve),
+// this falls back to writing the value as given — the caller's choice to
+// make deliberately, not a silent default.
 export async function previewSemanticTokenWrite({
   binding,
   changes,
+  snapshot,
   permission = "ask",
   createdAt = new Date().toISOString(),
   schemaRoot,
@@ -254,6 +266,7 @@ export async function previewSemanticTokenWrite({
   if (!changes.length || changes.some((item) => item.classification !== "semantic-style")) {
     throw new Error("Figma write preview accepts only mapped semantic-style changes.");
   }
+  const variables = snapshot?.variables ?? [];
   const operation = {
     schema: "silver/provider-operation/v1",
     id: `${binding.id}-token-preview`,
@@ -268,11 +281,59 @@ export async function previewSemanticTokenWrite({
     status: "previewed",
     created_at: createdAt,
     payload: {
-      variables: changes.map((item) => ({
-        semantic_name: item.semantic_name,
-        value: item.value,
-      })),
+      variables: changes.map((item) => {
+        const aliasTarget = resolveReferenceToVariableId(item.value, variables);
+        return aliasTarget
+          ? { semantic_name: item.semantic_name, alias_to: aliasTarget }
+          : { semantic_name: item.semantic_name, value: item.value };
+      }),
     },
+  };
+  await assertV2("provider-operation.schema.json", operation, schemaRoot ? { schemaRoot } : {});
+  return operation;
+}
+
+// PUSH, per-property style write — the inverse of `bindStyleProperties`.
+// `properties` is the desired state per property (`{value, is_alias}`, the
+// same shape `bindStyleProperties` produces on pull); a property marked
+// `is_alias` has its `{reference}` resolved against `snapshot` and written as
+// a VARIABLE_ALIAS, never a literal.
+export async function previewStyleWrite({
+  binding,
+  style,
+  properties,
+  snapshot,
+  permission = "ask",
+  createdAt = new Date().toISOString(),
+  schemaRoot,
+}) {
+  const variables = snapshot?.variables ?? [];
+  const payloadProperties = {};
+  for (const [property, entry] of Object.entries(properties)) {
+    if (entry.is_alias) {
+      const variableId = resolveReferenceToVariableId(entry.value, variables);
+      if (!variableId) {
+        throw new Error(`Cannot resolve ${entry.value} to a Figma variable for property "${property}".`);
+      }
+      payloadProperties[property] = { alias_to: variableId };
+    } else {
+      payloadProperties[property] = { value: entry.value };
+    }
+  }
+  const operation = {
+    schema: "silver/provider-operation/v1",
+    id: `${binding.id}-style-preview`,
+    provider: "figma",
+    adapter: FIGMA_ADAPTER,
+    binding_id: binding.id,
+    operation: "preview-write",
+    direction: "local-to-external",
+    capability: "design-file",
+    permission,
+    expected_external_revision: binding.provider.revision,
+    status: "previewed",
+    created_at: createdAt,
+    payload: { style_id: style.id, properties: payloadProperties },
   };
   await assertV2("provider-operation.schema.json", operation, schemaRoot ? { schemaRoot } : {});
   return operation;

@@ -29,6 +29,10 @@
           "artifact_kind": { "$ref": "common.schema.json#/$defs/artifactKind" },
           "artifact_id": { "$ref": "common.schema.json#/$defs/id" },
           "classification": { "enum": ["presentation", "content", "specification", "flow", "component", "asset", "semantic-style", "unknown-style", "unknown-component", "unmapped"] },
+          "value_kind": {
+            "description": "Whether this change is a reference (an alias to another token) or a literal value. A change that stops being an alias and becomes a literal is a structural edit, a different risk class from an ordinary value edit, even though both share the same classification.",
+            "enum": ["alias", "literal"]
+          },
           "operation": { "enum": ["propose-create", "propose-update", "finding", "no-op"] },
           "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
           "mapping_fidelity": { "enum": ["exact", "semantic", "partial", "unmapped"] },

@@ -69,6 +69,25 @@
       "type": "array",
       "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
     },
+    "references": {
+      "description": "What this work explicitly cited from a reference collection, pinned by the collection's revision at citation time. Never populated implicitly — a skill that read no references block cites none here either.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["collection", "revision", "ids"],
+        "properties": {
+          "collection": { "$ref": "common.schema.json#/$defs/id" },
+          "revision": { "$ref": "common.schema.json#/$defs/revision" },
+          "ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          }
+        }
+      }
+    },
     "change": {
       "type": "object",
       "additionalProperties": false,

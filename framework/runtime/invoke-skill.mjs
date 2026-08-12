@@ -20,6 +20,7 @@ import {
 import { resolveGuardrails } from "./guardrails.mjs";
 import { syncManifestStatus } from "./manifest-sync.mjs";
 import { discoverProviders } from "./providers.mjs";
+import { resolveReferenceCitations } from "./references.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
@@ -364,6 +365,7 @@ async function blockedResult({
     sources: request.inputs,
     guidance: [],
     design_contexts: [],
+    references: await resolveReferenceCitations(root, request.references ?? []),
     change: { reason: `Recorded blocked ${contract.id} invocation: ${summary}` },
     acceptance: "not-required",
     external_bindings: [],
@@ -878,6 +880,7 @@ export async function invokeSkill({
         sources: request.inputs,
         guidance: [],
         design_contexts: [],
+        references: await resolveReferenceCitations(workspaceRoot, request.references ?? []),
         change: {
           reason: `Recorded read-only ${contract.id} invocation.`,
         },

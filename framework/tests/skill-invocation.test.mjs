@@ -364,6 +364,96 @@ test("durable output without provenance is blocked before writing", async () => 
   );
 });
 
+test("an invocation with no references block cites none, even when a collection exists", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-no-references-"),
+  );
+  await mkdir(path.join(workspace, "design/references"), { recursive: true });
+  await writeFile(
+    path.join(workspace, "design/references/onboarding-patterns.json"),
+    JSON.stringify({
+      schema: "silver/reference-collection/v1",
+      id: "onboarding-patterns",
+      revision: "r1",
+      updated: startedAt,
+      references: [],
+    }),
+  );
+  const request = synthesizeRequest();
+  delete request.provenance;
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.deepEqual(result.provenance.references, []);
+});
+
+test("an invocation citing a collection records exactly those ids, pinned by its revision", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-references-"),
+  );
+  await mkdir(path.join(workspace, "design/references"), { recursive: true });
+  await writeFile(
+    path.join(workspace, "design/references/onboarding-patterns.json"),
+    JSON.stringify({
+      schema: "silver/reference-collection/v1",
+      id: "onboarding-patterns",
+      revision: "r3",
+      updated: startedAt,
+      references: [
+        { id: "ref-a", revision: "r1", description: "A.", rights: { usage: "inspiration-only" }, path: "design/references/assets/a.png", media_type: "image/png", integrity: "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
+        { id: "ref-b", revision: "r1", description: "B.", rights: { usage: "internal" }, path: "design/references/assets/b.png", media_type: "image/png", integrity: "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
+      ],
+    }),
+  );
+  const request = synthesizeRequest({
+    references: [{ collection: "onboarding-patterns", ids: ["ref-a"] }],
+  });
+  delete request.provenance;
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.deepEqual(result.provenance.references, [
+    { collection: "onboarding-patterns", revision: "r3", ids: ["ref-a"] },
+  ]);
+});
+
+test("citing a reference id that does not exist in the collection is refused", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-bad-reference-"),
+  );
+  await mkdir(path.join(workspace, "design/references"), { recursive: true });
+  await writeFile(
+    path.join(workspace, "design/references/onboarding-patterns.json"),
+    JSON.stringify({
+      schema: "silver/reference-collection/v1",
+      id: "onboarding-patterns",
+      revision: "r1",
+      updated: startedAt,
+      references: [],
+    }),
+  );
+  const request = synthesizeRequest({
+    references: [{ collection: "onboarding-patterns", ids: ["not-a-real-id"] }],
+  });
+  delete request.provenance;
+  await assert.rejects(
+    () =>
+      invokeSkill({
+        root: workspace,
+        skillDirectory: path.join(root, "framework/skills/synthesize"),
+        request,
+        completedAt,
+      }),
+    /no entry named not-a-real-id/,
+  );
+});
+
 test("visual durable output without a design-context pin is blocked", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-no-context-"),

@@ -18,6 +18,7 @@ import {
 import { checkPrototypes } from "./check-prototypes.mjs";
 import { checkPresentations } from "./check-presentations.mjs";
 import { checkProduction } from "./check-production.mjs";
+import { checkReferenceIntegrity } from "./check-reference-integrity.mjs";
 import { checkResponsive } from "./check-responsive.mjs";
 import { checkInteractions } from "./check-interactions.mjs";
 import { checkSemanticStyles } from "./check-semantic-styles.mjs";
@@ -40,6 +41,7 @@ const checkers = [
   ["presentation-integrity", checkPresentations],
   ["production-readiness", checkProduction],
   ["asset-integrity", checkAssets],
+  ["reference-integrity", checkReferenceIntegrity],
   ["accessibility", checkAccessibility],
   ["responsive-behavior", checkResponsive],
   ["critical-interactions", checkInteractions],

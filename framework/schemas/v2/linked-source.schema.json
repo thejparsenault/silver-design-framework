@@ -17,6 +17,12 @@
       "properties": {
         "type": { "enum": ["git", "local"] },
         "reference": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "reference_hint": {
+          "description": "The absolute path reference resolved to at link time. A hint for a human reading the registry after a clone moves the workspace, never authoritative.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
         "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
         "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
         "paths": {

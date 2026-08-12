@@ -5,12 +5,14 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { access } from "node:fs/promises";
 import {
   checkResult,
+  conformanceFinding,
   exitCode,
   findFiles,
-  finding,
   parseArguments,
+  resolvePolicyProfile,
   workspacePath,
 } from "./check-lib.mjs";
 
@@ -59,10 +61,40 @@ function location(content, offset) {
   return { line: lines.length, column: lines.at(-1).length + 1 };
 }
 
+async function fileExists(candidate) {
+  try {
+    await access(candidate);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function checkSemanticStyles(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "semantic-styles";
   const roots = ["design/system", "prototypes", "design/work/sketches", "presentations", "production"];
+  const policyProfile = await resolvePolicyProfile(root);
+  const requested = roots;
+
+  // Under adoption, a workspace with no token index yet has nothing to be
+  // conformant *to* — scanning for raw literals would just report every
+  // literal as a defect, which is not what "not yet mapped" means.
+  if (
+    policyProfile === "adoption" &&
+    !(await fileExists(path.resolve(root, "design/system/tokens.json")))
+  ) {
+    return checkResult({
+      checker,
+      policyProfile,
+      requested,
+      completed: [],
+      findings: [],
+      reason:
+        "No design/system/tokens.json yet — semantic conformance cannot be evaluated until a token index exists.",
+    });
+  }
+
   const files = (
     await Promise.all(
       roots.map((relativeRoot) =>
@@ -73,7 +105,6 @@ export async function checkSemanticStyles(options = {}) {
       ),
     )
   ).flat();
-  const requested = roots;
   const completed = [];
   const findings = [];
 
@@ -89,9 +120,10 @@ export async function checkSemanticStyles(options = {}) {
         if (/^-?0(?:\.0+)?[a-z]+$/i.test(observed)) continue;
         const { line, column } = location(content, match.index);
         findings.push(
-          finding({
+          conformanceFinding({
             checker,
             rule: definition.rule,
+            policyProfile,
             file,
             line,
             column,
@@ -103,7 +135,7 @@ export async function checkSemanticStyles(options = {}) {
       }
     }
   }
-  return checkResult({ checker, requested, completed, findings });
+  return checkResult({ checker, policyProfile, requested, completed, findings });
 }
 
 async function main() {

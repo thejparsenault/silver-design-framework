@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, rm, stat } from "node:fs/promises";
+import { readdir, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,6 +37,8 @@ import {
   writeLauncher,
 } from "./agent-adapters.mjs";
 import { planManifestStatusSync } from "../framework/runtime/manifest-sync.mjs";
+import { buildDesignSystemTokens } from "../framework/runtime/tokens.mjs";
+import { renderSystemCatalog } from "../framework/skills/system/scripts/render-system-catalog.mjs";
 import {
   ensureGitignoreEntries,
   resolveSharedStudioVoice,
@@ -54,6 +56,8 @@ const newProjectFiles = [
   "design/guidance/sources.yaml",
   "design/sources/README.md",
   "design/sources/sources.yaml",
+  "design/references/README.md",
+  "design/system/components.json",
   "design/integrations/README.md",
   "design/maps/README.md",
   "design/assets/catalog.json",
@@ -113,15 +117,39 @@ function migrateManifest(manifest) {
     next.artifacts.push(artifact);
     mappings.set(artifact.id, artifact);
   }
-  ensureArtifact({
-    id: "component-catalog",
-    kind: "component-catalog",
-    path: "reference-system/html-contracts",
-    scope: "product",
-    role: "canonical",
-    status: "active",
-    authority: { type: "local" },
-  });
+  // 0.9 retired reference-system/html-contracts for a schema-validated
+  // design/system/components.json. A workspace that already had a
+  // component-catalog artifact pointing at the old path gets repointed in
+  // place; the retired directory itself is never touched here — it may
+  // still hold hand-edited content, and only ownership: copied-and-owned
+  // package handling (never auto-deleted) governs whether it survives.
+  const componentCatalogArtifact = mappings.get("component-catalog");
+  if (componentCatalogArtifact) {
+    if (componentCatalogArtifact.path === "reference-system/html-contracts") {
+      componentCatalogArtifact.path = "design/system/components.json";
+    }
+  } else {
+    ensureArtifact({
+      id: "component-catalog",
+      kind: "component-catalog",
+      path: "design/system/components.json",
+      scope: "product",
+      role: "canonical",
+      status: "active",
+      authority: { type: "local" },
+    });
+  }
+  if (!mappings.has("design-system-tokens")) {
+    ensureArtifact({
+      id: "design-system-tokens",
+      kind: "token-source",
+      path: "design/system/tokens.json",
+      scope: "product",
+      role: "canonical",
+      status: "active",
+      authority: { type: "local" },
+    });
+  }
   ensureArtifact({
     id: "default-component-expression",
     kind: "x-component-expression",
@@ -271,6 +299,39 @@ async function provenanceBootstrap(root, manifest, createdAt) {
   };
 }
 
+async function designContextFiles(root) {
+  const directory = path.join(root, "design", "contexts");
+  if (!(await exists(directory))) return [];
+  const entries = await readdir(directory, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".yaml"))
+    .map((entry) => path.join(directory, entry.name));
+}
+
+// A design context authored before 0.9 has no `token_source` at all (the
+// concept did not exist) and, if it names a component catalog, points it at
+// the retired reference-system/html-contracts. Returns the patched context,
+// or null when nothing needs to change.
+function migrateDesignContext(value) {
+  if (value?.schema !== "silver/design-context/v1") return null;
+  let changed = false;
+  const next = clone(value);
+  if (!next.token_source) {
+    next.token_source = {
+      id: "design-system-tokens",
+      kind: "token-source",
+      revision: "r1",
+      path: "design/system/tokens.json",
+    };
+    changed = true;
+  }
+  if (next.component_catalog?.path === "reference-system/html-contracts") {
+    next.component_catalog = { ...next.component_catalog, path: "design/system/components.json" };
+    changed = true;
+  }
+  return changed ? next : null;
+}
+
 function legacyPath(installed) {
   if (installed.path) return installed.path;
   if (installed.type === "skill") return `.skills/${installed.id}`;
@@ -411,9 +472,27 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
     });
   }
 
+  // design/system/tokens.json and expressions/ are not lock-tracked packages
+  // — they are generated from (and seeded alongside) design-system-tokens-seed
+  // the same way a blank setup builds them. A workspace migrating in the seed
+  // package for the first time needs this same build step, or it ends up with
+  // an authored token tree and no resolved tokens.json to render against.
+  if (!(await exists(path.join(root, "design", "system", "tokens.json")))) {
+    changes.push({ action: "build-design-system-tokens", path: "design/system/tokens.json" });
+  }
+
   const nextManifest = migrateManifest(manifest);
   if (stringify(nextManifest) !== stringify(manifest)) {
     changes.push({ action: "upgrade-manifest", path: "design/manifest.yaml" });
+  }
+  for (const file of await designContextFiles(root)) {
+    const value = parse(await readUtf8(file));
+    if (migrateDesignContext(value)) {
+      changes.push({
+        action: "upgrade-design-context",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
   }
   for (const relative of newProjectFiles) {
     if (await exists(path.join(root, relative))) {
@@ -558,6 +637,17 @@ export async function migrateWorkspace(options = {}) {
   }
   await writeUtf8(workspace.manifestPath, stringify(plan.nextManifest));
 
+  for (const file of await designContextFiles(root)) {
+    const value = parse(await readUtf8(file));
+    const patched = migrateDesignContext(value);
+    if (!patched) continue;
+    const contextValidation = await validateSchema("v2/design-context.schema.json", patched);
+    if (!contextValidation.valid) {
+      throw new Error(`Migrated design context is invalid: ${contextValidation.errors.join("; ")}`);
+    }
+    await writeUtf8(file, stringify(patched));
+  }
+
   // Remove superseded packages before installing the new ones, so a retired
   // provider never coexists with its replacements even for one step.
   for (const retired of RETIRED_PACKAGES) {
@@ -581,6 +671,19 @@ export async function migrateWorkspace(options = {}) {
         ? { ...record, integrity: await treeIntegrity(destination) }
         : record,
     );
+  }
+
+  const tokensJsonPath = path.join(root, "design", "system", "tokens.json");
+  if (!(await exists(tokensJsonPath))) {
+    const expressionsDestination = path.join(root, "design", "system", "expressions");
+    if (!(await exists(expressionsDestination))) {
+      await copyNewTree(
+        path.join(templateRoot, "design/system/expressions"),
+        expressionsDestination,
+      );
+    }
+    await buildDesignSystemTokens({ root });
+    await renderSystemCatalog({ root, replace: true });
   }
 
   // The seeded presentation kit shipped with an id that disagreed with its own

@@ -105,6 +105,7 @@ export const SEEDED_TEMPLATES = [
   "design/guidance/sources.yaml",
   "design/sources/README.md",
   "design/sources/sources.yaml",
+  "design/references/README.md",
   "design/contexts/README.md",
   "design/contexts/default.yaml",
   "design/contexts/default-expression.yaml",
@@ -248,15 +249,15 @@ export async function sourcePackages({
   } = payloadRoots(payloadRoot);
   const packages = [];
   for (const id of skillIds) {
-    const skill = parse(
-      await readUtf8(path.join(skillSourceRoot, id, "skill.yaml")),
-    );
+    // Parsed for validation only — every shipped package is pinned to the
+    // release version, not whatever a skill/provider's own file declares.
+    parse(await readUtf8(path.join(skillSourceRoot, id, "skill.yaml")));
     packages.push({
       id,
       type: "skill",
       path: `.skills/${id}`,
       sourcePath: path.join(skillSourceRoot, id),
-      version: skill.version,
+      version,
       ownership: "framework-managed",
       integrity: await treeIntegrity(path.join(skillSourceRoot, id)),
     });
@@ -272,7 +273,7 @@ export async function sourcePackages({
       type: "provider",
       path: `.silver/providers/${manifest.id}`,
       sourcePath,
-      version: manifest.version,
+      version,
       ownership: "framework-managed",
       integrity: await treeIntegrity(sourcePath),
     });

@@ -10,13 +10,14 @@
 // project, and says so.
 import path from "node:path";
 
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 
 import {
   loadActivityCatalog,
   providersForActivity,
   skillPerformsActivity,
 } from "../framework/runtime/activities.mjs";
+import { assertV2 } from "../framework/runtime/contracts.mjs";
 import { unmappedHostServers, userConfigPaths } from "../framework/runtime/host-mcp.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import { diagnoseTransport } from "../framework/runtime/transport-diagnosis.mjs";
@@ -25,6 +26,7 @@ import {
   explainSelection,
   resolveActivityTransport,
 } from "../framework/runtime/transports.mjs";
+import { defaultPracticeRoot } from "./practice.mjs";
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 
 async function projectPreferences(root) {
@@ -32,6 +34,22 @@ async function projectPreferences(root) {
   if (!(await exists(manifestPath))) return null;
   try {
     return parse(await readUtf8(manifestPath))?.tool_preferences ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Personal is the first ordering source, read from My Practice rather than
+// the project — this is what lets one designer prefer a transport a
+// teammate on the same project does not. A malformed file is doctor's
+// finding, not a reason to fail everything resolving through it.
+async function personalPreferences(practiceRoot) {
+  const file = path.join(practiceRoot, "tools.yaml");
+  if (!(await exists(file))) return null;
+  try {
+    const value = parse(await readUtf8(file));
+    await assertV2("tool-preferences.schema.json", value);
+    return value;
   } catch {
     return null;
   }
@@ -256,6 +274,9 @@ export async function inspectTools(options = {}) {
   const skills = await installedSkills(root);
 
   const sources = [];
+  const practiceRoot = path.resolve(options.practiceRoot ?? defaultPracticeRoot());
+  const personal = await personalPreferences(practiceRoot);
+  if (personal) sources.push({ source: "personal", preferences: personal });
   const project = await projectPreferences(root);
   if (project) sources.push({ source: "project", preferences: project });
 
@@ -313,4 +334,76 @@ export async function inspectTools(options = {}) {
     unmapped: await unmappedHostServers({ root, providers, home: options.home }),
     external_paths: userConfigPaths(options.home),
   };
+}
+
+// Resolving "use the official Figma MCP instead" to a transport id. A phrase
+// is free text, not an exact match — it contains an alias rather than
+// equalling one — so this looks for every declared alias that the phrase
+// contains. Two different transports both matching is ambiguous by
+// construction: asking beats guessing which one a designer meant.
+export function resolveToolAlias(phrase, providers) {
+  const normalized = phrase.toLowerCase();
+  const matches = [];
+  for (const provider of providers) {
+    const alias = (provider.aliases ?? []).find((candidate) =>
+      normalized.includes(candidate.toLowerCase()),
+    );
+    if (alias) matches.push({ transport: provider.id, alias });
+  }
+  if (matches.length === 0) {
+    return { status: "unresolved", phrase };
+  }
+  if (new Set(matches.map(({ transport }) => transport)).size > 1) {
+    return { status: "ambiguous", phrase, candidates: matches };
+  }
+  return { status: "resolved", phrase, transport: matches[0].transport, matched_alias: matches[0].alias };
+}
+
+export async function resolveTools(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const providers = await discoverProviders({ root, home: options.home });
+  return resolveToolAlias(options.phrase, providers);
+}
+
+function nextPreferencesRevision(revision) {
+  const value = Number(revision.slice(1));
+  return Number.isInteger(value) ? `r${value + 1}` : "r1";
+}
+
+// Promoting a resolved choice into something that survives past this one
+// conversation. Written directly rather than through the practice-change
+// review ceremony: a transport preference is local machine configuration, not
+// curated practice content someone else would want to review before it takes
+// effect.
+export async function bindActivityTransport(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const practiceRoot = path.resolve(options.practiceRoot ?? defaultPracticeRoot());
+  const { activity, transport } = options;
+
+  const catalog = await loadActivityCatalog({ root });
+  if (!catalog.activities.some(({ id }) => id === activity)) {
+    throw new Error(`No activity named ${activity}. See \`silver tools\` for the activity list.`);
+  }
+  const providers = await discoverProviders({ root, home: options.home });
+  if (!providers.some(({ id }) => id === transport)) {
+    throw new Error(`No transport named ${transport} is installed here. Run \`silver tools --list\` to see what is.`);
+  }
+
+  const file = path.join(practiceRoot, "tools.yaml");
+  const preferences = (await exists(file))
+    ? parse(await readUtf8(file))
+    : { schema: "silver/tool-preferences/v1", revision: "r1", activities: {} };
+  const next = {
+    ...preferences,
+    revision: (await exists(file))
+      ? nextPreferencesRevision(preferences.revision)
+      : preferences.revision,
+    activities: {
+      ...preferences.activities,
+      [activity]: { use: [transport] },
+    },
+  };
+  await assertV2("tool-preferences.schema.json", next);
+  await writeUtf8(file, stringify(next));
+  return { activity, transport, path: file, preferences: next };
 }

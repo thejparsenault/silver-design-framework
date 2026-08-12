@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -428,6 +428,109 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
     (await readFile(brandPath, "utf8")).endsWith(ownedNote),
     "project-owned edits survive the migration",
   );
+
+  assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("a 0.8 workspace migrates to 0.9, preserving hand-edited reference-system and installing design-system-tokens-seed", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-08-09-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre 0.9 Product",
+    id: "pre-09-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  // Rewind to the 0.8 shape: no design/system/tokens tree at all, a
+  // hand-edited reference-system/ instead, and the old manifest/context
+  // pointers that went with it.
+  await rm(path.join(root, "design/system/tokens"), { recursive: true, force: true });
+  await rm(path.join(root, "design/system/tokens.json"), { force: true });
+  await rm(path.join(root, "design/system/showcase.html"), { force: true });
+  await rm(path.join(root, "design/system/expressions"), { recursive: true, force: true });
+  await rm(path.join(root, "design/system/components.json"), { force: true });
+  const handEditedMarker = "/* hand-edited before 0.9 */\n.ds-button { color: var(--ds-action-primary-fg); }\n";
+  await mkdir(path.join(root, "reference-system", "packages", "css", "src"), { recursive: true });
+  await writeFile(
+    path.join(root, "reference-system", "packages", "css", "src", "ds.css"),
+    handEditedMarker,
+  );
+
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.8.0-pre-w9";
+  lock.packages = lock.packages.filter(({ id }) => id !== "design-system-tokens-seed");
+  lock.packages.push({
+    id: "reference-system",
+    type: "reference-system",
+    path: "reference-system",
+    version: "0.8.0",
+    ownership: "copied-and-owned",
+    integrity: `sha256:${"b".repeat(64)}`,
+  });
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  const manifest = parse(await readFile(manifestPath, "utf8"));
+  manifest.artifacts = manifest.artifacts.filter(({ id }) => id !== "design-system-tokens");
+  const componentCatalog = manifest.artifacts.find(({ id }) => id === "component-catalog");
+  componentCatalog.path = "reference-system/html-contracts";
+  await writeFile(manifestPath, stringify(manifest), "utf8");
+
+  const contextPath = path.join(root, "design/contexts/default.yaml");
+  const context = parse(await readFile(contextPath, "utf8"));
+  delete context.token_source;
+  context.component_catalog.path = "reference-system/html-contracts";
+  await writeFile(contextPath, stringify(context), "utf8");
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.applied, false);
+  assert.ok(preview.changes.some(({ path: changed }) => changed === "design/manifest.yaml" && changed));
+  assert.ok(
+    preview.changes.some(
+      ({ action, path: changed }) => action === "upgrade-design-context" && changed === "design/contexts/default.yaml",
+    ),
+  );
+  assert.ok(preview.changes.some(({ package: pkg }) => pkg === "design-system-tokens-seed"));
+  // Preview never writes.
+  assert.equal(await exists(path.join(root, "design/system/tokens.json")), false);
+  assert.equal(
+    await readFile(path.join(root, "reference-system/packages/css/src/ds.css"), "utf8"),
+    handEditedMarker,
+  );
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.applied, true);
+
+  // The hand-edited copied-and-owned directory is never touched.
+  assert.equal(
+    await readFile(path.join(root, "reference-system/packages/css/src/ds.css"), "utf8"),
+    handEditedMarker,
+  );
+
+  // The new copied-and-owned seed installs fresh alongside it.
+  assert.ok(await exists(path.join(root, "design/system/tokens.json")));
+  assert.ok(await exists(path.join(root, "design/system/components.json")));
+
+  const migratedManifest = parse(await readFile(manifestPath, "utf8"));
+  assert.equal(
+    migratedManifest.artifacts.find(({ id }) => id === "component-catalog").path,
+    "design/system/components.json",
+  );
+  assert.ok(migratedManifest.artifacts.some(({ id }) => id === "design-system-tokens"));
+
+  const migratedContext = parse(await readFile(contextPath, "utf8"));
+  assert.equal(migratedContext.token_source.path, "design/system/tokens.json");
+  assert.equal(migratedContext.component_catalog.path, "design/system/components.json");
+
+  const migratedLock = parse(await readFile(lockPath, "utf8"));
+  assert.ok(migratedLock.packages.some(({ id }) => id === "design-system-tokens-seed"));
+  // The retired package is neither deleted nor tracked going forward — its
+  // ownership was copied-and-owned, so migration never touches it at all.
+  assert.equal(migratedLock.packages.some(({ id }) => id === "reference-system"), false);
+  assert.ok(await exists(path.join(root, "reference-system")));
 
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

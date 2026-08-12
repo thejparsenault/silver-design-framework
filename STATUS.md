@@ -2,43 +2,40 @@
 
 ## Current Focus
 
-Silver `0.8.0`, **Tools That Are Actually There**, is implemented and
-gate-verified on `release/silver-0.8-tools`, not yet published. It makes the
-provider selection layer real.
+Silver `0.9`, **Meet the Work Where It Is**, is in progress on
+`release/silver-0.8-tools` (`package.json` still declares `0.8.0`; the
+version bumps at release, per `docs/silver-0.9-acceptance.md`). The thesis:
+Silver meets work it did not author — existing repositories, tools it does
+not ship, references from outside, and a design system that belongs to the
+team rather than to Silver.
 
-Before it, that layer was a stub with a complete contract around it:
-`resolveCapabilities` chose a provider by alphabetical first-wins,
-`selectProvider` had zero callers, the tool-profile contract was never read from
-disk, an unreachable `local-fallback` branch sat in `permissions.mjs`, and the
-one external provider hardcoded itself unavailable — so there was nothing to
-choose between and nothing choosing.
+Every automated `S09-*` criterion in `docs/silver-0.9-acceptance.md` is now
+done and gate-green (`npm run build`, 166/166; `npm run test:package`
+passes), uncommitted on top of commit `f5b4a6c`: adoption of an existing
+folder, provider provenance and guidance, declared transports, split browser
+inspection from driving, a real troubleshooting ladder, a published semantic
+role vocabulary, a workspace-owned `design/system/` retiring
+`reference-system/`, `checks.policy_profile` made real for the `adoption`
+profile, `silver link` for codebase binding with doctor diagnostics, personal
+`tools.yaml` with `--resolve`/`--bind`, a references collection that no
+skill reads implicitly, Figma pull/push alias fidelity with a shared
+adapter-round-trip harness, and a reviewable `0.8 → 0.9` migration.
 
-The shape of the release: tool-using work is named as *activities* derived from
-the existing provider and skill contracts; Figma splits from one provider into
-*transports* that are good at different jobs; each activity resolves through one
-order (personal → project → team → framework) and two filters (availability, and
-a veto a project, team, organization, or machine policy may set). A chain is an
-offer list, not an auto-fallback list: when the preferred transport is gone,
-Silver asks rather than substituting, and where nobody can be asked it stops with
-a resumable request.
+Only two `S09-*` criteria remain, both explicitly out of automated scope:
+`S09-CURATE-01` (W7, the guided transport-curation pass — needs the user
+directly) and `S09-MIGRATE-04` (manual end-to-end verification against a
+real workspace).
 
-`silver tools` reports what will be used, which source ordered it, and everything
-removed with the reason and who can lift it. `silver tools --connect` writes a
-host MCP declaration for an already-installed tool, and nothing else — Silver
-installs no software, holds no credential, and runs no process. Silver has no
-network transport layer at all: an MCP transport belongs to the agent host, which
-means Silver can establish only that one is *configured*, never that it responds.
+Silver `0.8.0`, **Tools That Are Actually There**, is the previous release,
+also unpublished, and made the provider selection layer real: activities
+derived from existing contracts, Figma split into transports, one resolution
+order with two filters, and `silver tools --connect` writing a host MCP
+declaration for an already-installed tool and nothing else. Verified against
+a copy of the reported workspace: migrates `0.6.1 → 0.8.0` with zero
+conflicts and zero doctor diagnostics. `docs/silver-0.8-acceptance.md`
+records what shipped and what was deferred (all now underway in 0.9 above).
 
-Verified against a copy of the reported workspace: it migrates `0.6.1 → 0.8.0`
-with zero conflicts, retires the superseded `figma` provider package, reports
-zero doctor diagnostics, and passes its checks.
-
-Deferred to 0.9 with their contract shapes already in place: personal
-`tools.yaml`, conversational override and promotion, the team layer, presets, and
-a Git-optional practice folder. `docs/silver-0.8-acceptance.md` records what is
-out and why.
-
-Silver `0.7.0`, **One Good Step**, is the previous release, also unpublished. It
+Silver `0.7.0`, **One Good Step**, is two releases back, also unpublished. It
 answers the 22-issue field report from the first real session against a product
 (`~/Projects/exploring/task-tracker`), recorded in that repository's
 `SILVER_DESIGN_FRAMEWORK_BUG_REPORT.md`.
@@ -75,6 +72,71 @@ support depends on, external-source synchronization, and deep existing-codebase
 adoption.
 
 ## Recent Progress
+
+- 2026-08-11: Silver 0.9 automated pass — CONFORM through MIGRATE-01
+  - `checks.policy_profile`: `semantic-styles`, `accessibility`, and
+    `responsive-behavior` now read the workspace's actual profile;
+    `adoption` downgrades `semantic-styles` findings to informational with
+    the reason stated, and reports `not-run` (not a flood of failures) when
+    there is no token index yet to check against.
+  - `silver link <path> [--as <id>]`: registers a codebase as a pinned,
+    workspace-relative `linked-source`, records it on the active design
+    context, and `doctor` reports an unresolved or moved link. Fixed a
+    latent bug along the way — linked-source drift inspection resolved a
+    relative reference against `process.cwd()` instead of the workspace
+    root, which would have silently broken the moment anyone actually used
+    a relative link.
+  - Personal `tools.yaml`: read as the first ordering source;
+    `silver tools --resolve "<phrase>"` matches a conversational reference
+    against declared provider aliases; `--bind <activity> <transport>`
+    writes a durable personal binding.
+  - References collection: `silver/reference-collection/v1` under
+    `design/references/`, a `reference-integrity` check, and
+    `references[]` on both `skill-invocation` (citation intent) and
+    `provenance` (the pinned record) — never read implicitly.
+  - Figma pull/push fidelity: `VARIABLE_ALIAS` parses into a DTCG
+    `{reference}` (bottom-up, cycle-guarded); collection classification is
+    proposed from alias direction, never assumed; per-property style
+    binding splits bound vs. literal; pushing a still-referenced value
+    writes a `VARIABLE_ALIAS`, never a flattened literal; a shared
+    `framework/testing/adapter-round-trip.mjs` harness proves pull∘push
+    identity on a no-op and that a structural edit is classified distinctly
+    — all fixture-only, no live Figma call anywhere.
+  - Reviewable `0.8 → 0.9` migration: preserves hand-edited
+    `reference-system/` untouched, installs `design-system-tokens-seed`.
+    Building its test surfaced four real defects: `lock.schema.json` had
+    dropped `"reference-system"` from its type enum entirely (would have
+    made every real 0.8 workspace's lock fail validation before migration
+    could even start), stale manifest/design-context pointers weren't
+    repointed, `tokens.json`/`showcase.html` were never rebuilt after the
+    package installed, and `components.json`/the references README weren't
+    seeded. All four fixed.
+  - `npm run build` passes 166 tests; `npm run test:package` passes.
+    Uncommitted on top of `f5b4a6c` — next action is review and commit.
+
+- 2026-08-11: Silver 0.9 W1-W5, W9a, W9b-f
+  - W1-W5 (`50ad656`): additive-only `silver adopt inspect | apply`; provider
+    `source`/`guidance` with `compare_to` drift on the gate; declared Figma
+    transports with typed setup ladders; `inspect-in-browser` split from
+    `drive-browser` with portable local Chrome, chrome-devtools-mcp, and
+    playwright-mcp providers; `--diagnose` walks the full ladder, live-verified
+    against a real Figma MCP. Setup no longer refuses a folder that already
+    has work in it.
+  - W9a (`4ee428e`): published `silver/semantic-roles/v1`, filling
+    interaction states, typography, icon, and elevation roles so an adopted
+    system has somewhere real to map its hover states and text styles.
+  - W9b-f (`f5b4a6c`): retired `reference-system/` for a workspace-owned
+    `design/system/` — authored DTCG token source separate from a generated,
+    var()-chained, hex-plus-oklch stylesheet; a schema-validated component
+    index; `showcase.html` pre-generated on every fresh install; `alongside`
+    renamed `with-existing-work`.
+  - Reconciled `TASKS.md`/`STATUS.md` with the actual 0.9 scope and wrote
+    `docs/silver-0.9-acceptance.md` with `S09-*` criteria, split into done,
+    automated-remaining, and manual-remaining so the tracker and the plan
+    stop disagreeing.
+  - Found, unrelated to this work: `npm run test:package` fails because
+    package versions aren't normalized at pack time — noted, not yet fixed.
+  - `npm run build` passes 128 tests.
 
 - 2026-07-31: Silver 0.7 One Good Step
   - Made check results mean something. A guarded invocation runs its own
@@ -392,24 +454,21 @@ adoption.
 
 ## Next 3 Actions
 
-1. Publish `0.7.0` to npm and GitHub from identical bytes, then migrate the
-   task-tracker workspace and run one full design session against it to see
-   whether the one-step loop actually feels faster in practice.
-2. Design the Node-free durable-output path that Claude Cowork support depends
-   on, deciding how provenance and integrity survive without the guarded runtime.
-3. Select one representative existing product repository for the adoption
-   milestone and implement read-only discovery with an ambiguity report.
+1. Review the uncommitted automated pass (everything in `git status` on top
+   of `f5b4a6c`) and commit it as the next checkpoint.
+2. Do the W7 transport curation pass with the user directly (`S09-CURATE-01`)
+   and the manual end-to-end verification (`S09-MIGRATE-04`): blank install,
+   adjacent/adopted workspace, and one live Figma round trip.
+3. Select one representative existing product repository and run
+   `silver adopt inspect | apply` against it for real (also
+   `S09-MIGRATE-04`), then decide on publishing `0.9.0`.
 
 ## Known Gaps
 
-- `silver setup <dir>` still refuses any folder containing `package.json`, which
-  after `npm install` is every folder. The two-stage `setup inspect | setup
-  apply` path handles it, but the compatibility path is unusable in exactly the
-  npm scenario and should either learn to handle it or stop being advertised.
-- Browser checks remain unverifiable where a browser cannot reach a local URL.
-  0.7 reports that honestly rather than fixing it. 0.8 names the gap:
-  `inspect-in-browser` is a `planned` activity with no shipped provider, so the
-  absence is specific rather than an unexplained degraded capability.
+- Browser checks remain unverifiable where a browser cannot reach a local URL
+  — an environment fact, not a missing capability. 0.9's W4 shipped
+  `inspect-in-browser` providers (portable local Chrome, chrome-devtools-mcp,
+  playwright-mcp), closing the "no shipped provider" gap 0.8 named here.
 - Only one shipped transport is verified against a live server.
   `figma-console-mcp` was developed against one; `figma-official-mcp` is declared
   from Figma's published remote endpoint and has not been exercised here.
@@ -426,4 +485,4 @@ adoption.
 
 ## Last Updated
 
-2026-07-31
+2026-08-11

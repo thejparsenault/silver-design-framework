@@ -55,6 +55,7 @@
             "$ref": "common.schema.json#/$defs/id"
           },
           "type": {
+            "description": "\"reference-system\" is what every v2 lock written before 0.9 used; \"design-system-seed\" is what 0.9 writes. Both stay valid so an existing lock can still be read and migrated rather than rejected outright.",
             "enum": [
               "skill",
               "schema-bundle",
@@ -64,7 +65,8 @@
               "provider",
               "activity-catalog",
               "transport-catalog",
-              "design-system-seed"
+              "design-system-seed",
+              "reference-system"
             ]
           },
           "path": {

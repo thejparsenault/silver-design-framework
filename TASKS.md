@@ -313,58 +313,214 @@ from the first real product session.
   - notes: `practice apply` wrote prose into `PRACTICE.md`, which the resolver
     never reads. It now writes `studio-voice.md` and pins it in the manifest.
 
-## Next Release — Silver 0.9 Preferences That Travel
+## Next Release — Silver 0.9 Meet the Work Where It Is
 
-- [ ] Personal `tools.yaml` in My Practice
+The authoritative requirement list and release evidence rules are in
+`docs/silver-0.9-acceptance.md`. A task is not complete until its
+corresponding `S09-*` criteria have automated evidence — except the items
+marked manual below, which `docs/silver-0.9-acceptance.md` excludes from the
+automated gate by design.
+
+### Done
+
+- [x] W1 Adopt an existing folder instead of only a blank one
   - type: build
   - priority: high
-  - context: medium
-  - notes: Personal is already the first ordering source and the resolver reads
-    it; the file and its authoring path are what remain.
+  - context: large
+  - notes: `silver adopt inspect | apply`, `silver/adoption-plan/v1`, six
+    additive-only dispositions. Setup no longer refuses non-blank folders.
+    `S09-ADOPT-*`.
 
-- [ ] Conversational override and promotion
-  - type: build
-  - priority: high
-  - context: medium
-  - notes: Resolve "use the official Figma MCP instead" through `aliases`, ask
-    when ambiguous, and promote a repeated choice into a durable activity
-    binding with the interpretation echoed back for confirmation.
-
-- [ ] Team layer through guidance-source
-  - type: build
-  - priority: medium
-  - context: medium
-  - notes: A linked, revision-pinned source carrying a default order and a veto
-    list. Never auto-discovered.
-
-- [ ] Presets, and a Git-optional practice folder
-  - type: build
-  - priority: medium
-  - context: medium
-  - notes: Saved options and default overrides. Sync-service detection so a
-    practice folder can live in Drive without Git objects corrupting; provenance
-    already pins a revision rather than a commit, so nothing is lost.
-
-- [ ] `PRACTICE.md` becomes a generated view
+- [x] W2 Provider provenance and guidance
   - type: build
   - priority: medium
   - context: small
-  - notes: Route the remaining practice-change sections to real files, the way
-    studio voice now is.
+  - notes: `source`/`guidance` on the provider contract; `compare_to` drift
+    fails the gate. `S09-PROV-*`.
+
+- [x] W3 Declared transports
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: Three discovery origins, optional `operations`, placeholder
+    refusal. `S09-TRANSPORT-*`.
+
+- [x] W4 Split browser inspection from browser driving
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: `inspect-in-browser` / `drive-browser`, portable local Chrome,
+    chrome-devtools-mcp, playwright-mcp. `S09-BROWSER-*`.
+
+- [x] W5 Make troubleshooting a real diagnostic ladder
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: `--diagnose` walks the whole ladder; live-verified against a real
+    Figma MCP. `S09-TROUBLESHOOT-*`.
+
+- [x] W9a Publish the semantic role vocabulary
+  - type: design
+  - priority: high
+  - context: medium
+  - notes: `silver/semantic-roles/v1`; filled `action.*` states, `type.*`,
+    `icon.*`, `elevation.*`. `S09-VOCAB-*`.
+
+- [x] W9b-f Workspace-owned `design/system/`, retire `reference-system/`
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Authored token source vs. generated index/CSS, var()-chained
+    output with an oklch wide-gamut block, `showcase.html` pre-generated at
+    setup, `alongside` renamed `with-existing-work`. Committed as `f5b4a6c`.
+    `S09-SYSTEM-*`.
+
+### Automated — safe to run as one unattended pass
+
+- [x] Make `checks.policy_profile` real
+  - type: build
+  - priority: high
+  - context: small
+  - notes: `semantic-styles`, `accessibility`, and `responsive-behavior` all
+    read the manifest's actual profile now; `adoption` downgrades
+    `semantic-styles` findings to `severity: info` with the reason stated,
+    and reports `not-run` with a reason when there's no
+    `design/system/tokens.json` yet to check against. `S09-CONFORM-*`, done.
+
+- [x] Fix the pack-time version-normalization defect
+  - type: fix
+  - priority: high
+  - context: small
+  - notes: `sourcePackages()` now stamps every skill/provider with the
+    release version instead of each file's own `version:`; a second stale
+    `design/system/catalog.html` reference (pre-W9b-f rename) in
+    `complete-blank.mjs` was also blocking the packed smoke test. Both
+    `npm run build` and `npm run test:package` are green. `S09-MIGRATE-03`,
+    done ahead of the rest of W8.
+
+- [x] W9g `silver link` and doctor link diagnostics
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Registers a codebase as a pinned `linked-source` relative to the
+    workspace; doctor reports an unresolved or moved link; `adopt --source`
+    now resolves a linked-source id. Fixed a latent root-resolution bug in
+    `inspectLinkedSources`/`verifyLinkedSource` along the way. `S09-LINK-*`,
+    done.
+
+- [x] W9h Figma pull fidelity
+  - type: build
+  - priority: high
+  - context: large
+  - notes: `framework/providers/figma-console-mcp/tokens.mjs` —
+    alias-preserving parse of `VARIABLE_ALIAS` into DTCG `{reference}`
+    (bottom-up, cycle-guarded), proposed collection classification from
+    alias direction, per-property style binding. Fixture-only tests, no
+    live calls. `S09-FIGMA-PULL-*`, done.
+
+- [x] W9i Figma push fidelity
+  - type: build
+  - priority: high
+  - context: large
+  - notes: `previewSemanticTokenWrite` writes a `VARIABLE_ALIAS` when a
+    value is still a reference; new `previewStyleWrite` mirrors it per
+    property; `change-set.schema.json` gained `value_kind` so a structural
+    edit (alias -> literal) is classified distinctly. Reuses the existing
+    revision-staleness and approval gates unchanged. `S09-FIGMA-PUSH-*`,
+    done.
+
+- [x] Shared adapter round-trip harness
+  - type: test
+  - priority: medium
+  - context: medium
+  - notes: `framework/testing/adapter-round-trip.mjs` — pull∘push identity
+    on a no-op, structural edit produces a distinct write — parameterized
+    by `framework/tests/figma-round-trip.test.mjs`. Corrected the plan's
+    `round_trip: full` to the schema's real `lossless` value.
+    `S09-ROUNDTRIP-*`, done.
+
+- [x] W5e Personal `tools.yaml`, resolve, and bind
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: `My Practice/tools.yaml` read as the personal ordering source;
+    `silver tools --resolve "<phrase>"` and `--bind <activity> <transport>`.
+    `S09-PRACTICE-*`, done.
+
+- [x] W6 References collection
+  - type: build
+  - priority: medium
+  - context: medium
+  - notes: `silver/reference-collection/v1` at `design/references/`, required
+    `description` and `rights`, `reference-integrity` check, never
+    auto-loaded — cited explicitly (`skill-invocation.references`) and
+    pinned in provenance. `S09-REF-*`, done.
+
+- [x] W8 (remaining automatable part): 0.8→0.9 migration
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Reviewable migration preserving any hand-edited
+    `reference-system/` content and installing `design-system-tokens-seed`
+    without overwriting it, done. Surfaced and fixed four real defects along
+    the way, the sharpest being `lock.schema.json` having dropped
+    `"reference-system"` from its type enum entirely — which would have
+    made every real 0.8 workspace's own lock file fail validation before
+    migration could even start. `S09-MIGRATE-01`, done. (`S09-MIGRATE-02`
+    and `S09-MIGRATE-03` were already done.) All of W8's automatable scope
+    is now complete; only `S09-MIGRATE-04` (manual end-to-end) remains.
+
+### Manual — needs the user directly, run after the automated pass
+
+- [ ] W7 Curated transport catalog entries
+  - type: design
+  - priority: medium
+  - context: medium
+  - notes: Guided, user-authored `framework/transports/*.yaml` beyond what
+    shipped in 0.8. This is a judgment call about real third-party tools,
+    not something Silver can generate for itself. `S09-CURATE-01`.
+
+- [ ] Manual end-to-end: blank workspace
+  - type: test
+  - priority: high
+  - context: small
+  - notes: `npm install` → `silver setup .` → flow → prototype → open it,
+    confirm it is visibly styled. `S09-MIGRATE-04`.
+
+- [ ] Manual end-to-end: adjacent/adopted workspace
+  - type: test
+  - priority: high
+  - context: medium
+  - notes: Set up in a copy of a real product, adopt its tokens and
+    components, render a prototype, confirm it uses the product's own
+    classes and CSS. `S09-MIGRATE-04`.
+
+- [ ] Manual live Figma round trip
+  - type: test
+  - priority: medium
+  - context: small
+  - notes: Interactive only, never a CI step — the figma-console MCP
+    operates on whatever file is open and node ids are session-specific.
+    `S09-MIGRATE-04`.
 
 ## Following Milestone — Existing Codebase Adoption
 
-- [ ] Adopt one representative existing product repository
-  - type: build
-  - priority: high
-  - context: medium
-  - notes: Discover existing docs, tokens, components, source roots, commands, and agent files without reorganizing the repository or silently rewriting production code.
+W1 (0.9) already built the generic mechanism this milestone describes:
+`silver adopt inspect | apply` discovers existing docs, tokens, components,
+and source roots and proposes one of six additive-only dispositions per
+entry, without reorganizing the repository or rewriting production code.
+What remains here is running it for real, which is why it stays a manual
+0.9 to-do (`S09-MIGRATE-04` in `docs/silver-0.9-acceptance.md`) rather than a
+separate milestone.
 
-- [ ] Generate an adoption report and reviewable installation diff
-  - type: build
+- [ ] Adopt one representative existing product repository, for real
+  - type: test
   - priority: high
   - context: medium
-  - notes: Map semantically clear existing artifacts, identify ambiguities, and recommend operational summaries for oversized omnibus documents.
+  - notes: Pick a real repository, run `silver adopt inspect | apply`
+    against it, and confirm the proposed dispositions and generated
+    adoption report are actually correct and useful — a human judgment
+    call, not a mechanism gap.
 
 ## Backlog
 

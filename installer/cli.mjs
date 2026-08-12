@@ -14,14 +14,17 @@ import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
 import { applyAdoptionPlan, inspectAdoption } from "./adopt.mjs";
+import { linkCodebase } from "./sources.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import { writeHostMcpConfig } from "./host-mcp-config.mjs";
 import {
+  bindActivityTransport,
   declareTransport,
   diagnoseTransports,
   inspectTools,
   listTransports,
   requestProbe,
+  resolveTools,
   saveProbe,
 } from "./tools.mjs";
 import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
@@ -34,6 +37,7 @@ Usage:
   silver setup [directory] [--name <name>] [--id <id>] [--json]
   silver adopt inspect [directory] [--source <path>]
   silver adopt apply <plan.json | -> [--only <ids>] [--json]
+  silver link <path> [directory] [--as <id>] [--json]
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
@@ -43,6 +47,7 @@ Usage:
   silver tools [directory] --probe [transport-id]
   silver tools [directory] --record-probe <result.json | ->
   silver tools [directory] --declare <server> | --connect <transport-id>
+  silver tools [directory] --resolve "<phrase>" | --bind <activity> <transport-id>
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -60,6 +65,10 @@ Commands:
            is additive: no disposition moves, renames, deletes, or rewrites a
            file that already exists. Pass --source to read a second repository
            read-only and translate from it.
+  link     Register an external codebase as a pinned linked-source, stored
+           relative to the workspace, and record it on the active design
+           context if exactly one is resolvable. Reads only what integrity
+           hashing requires; never moves, renames, or edits the codebase.
   invoke   Run an installed skill through the guarded runtime. Use --scaffold to emit a
            prefilled request to complete, then invoke it.
   what-now Rank evidence-based next actions for a workspace without starting any of them.
@@ -72,7 +81,11 @@ Commands:
            Read-only; reads the agent host's MCP configuration. Pass
            --connect <transport-id> to declare an installed MCP server in this
            project's .mcp.json. Silver never installs, launches, or authorizes
-           anything, and never writes a credential.
+           anything, and never writes a credential. --resolve turns a phrase
+           like "use the official Figma MCP instead" into a transport id
+           through its declared aliases. --bind writes a resolved choice into
+           My Practice's tools.yaml, the first ordering source, so it survives
+           past this one conversation.
   doctor   Diagnose workspace contracts and managed files without changing them.
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
@@ -134,6 +147,8 @@ function parseArguments(args) {
     "allow-unresolved",
     "answers",
     "apply",
+    "as",
+    "bind",
     "connect",
     "declare",
     "diagnose",
@@ -147,6 +162,7 @@ function parseArguments(args) {
     "probe",
     "record",
     "record-probe",
+    "resolve",
     "scaffold",
     "source",
   ]);
@@ -181,6 +197,16 @@ function parseArguments(args) {
       }
       flags[key] = next;
       index += 1;
+      continue;
+    }
+    // `--bind <activity> <transport>` is the one flag that takes two values.
+    if (key === "bind") {
+      const transport = args[index + 2];
+      if (!next || next.startsWith("--") || !transport || transport.startsWith("--")) {
+        throw new Error("Option --bind requires an activity and a transport id.");
+      }
+      flags.bind = [next, transport];
+      index += 2;
       continue;
     }
     if (!next || next.startsWith("--")) {
@@ -266,6 +292,17 @@ function printInvoke(result, write) {
   }
   // One skill per invocation. Nothing downstream begins on its own.
   write("Nothing else was started. Choose the next step.");
+}
+
+function printLink(result, write) {
+  write(`Linked ${result.source.id} -> ${result.source.source.reference}`);
+  write(`  ${result.source.source.type === "git" ? `pinned at ${result.source.source.revision}` : "no git revision to pin; tracked by content only"}`);
+  if (result.design_context) {
+    write(`Recorded on design context ${result.design_context.id} (now ${result.design_context.revision}).`);
+  } else {
+    write("No single active design context to record it on; linked-source only.");
+  }
+  if (result.checkpoint) write(`Checkpoint: ${result.checkpoint.status}`);
 }
 
 function printAdopt(result, write) {
@@ -653,6 +690,26 @@ export async function runCli(
       }
       return 0;
     }
+    if (command === "link") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (positionals.length < 1 || positionals.length > 2) {
+        throw new Error(
+          "link requires a path to the codebase to link, and accepts an optional workspace directory.",
+        );
+      }
+      const result = await linkCodebase({
+        root: path.resolve(positionals[1] ?? process.cwd()),
+        targetPath: positionals[0],
+        as: flags.as,
+        now: now().toISOString(),
+      });
+      if (flags.json) {
+        stdout(JSON.stringify(result, null, 2));
+      } else {
+        printLink(result, stdout);
+      }
+      return 0;
+    }
     if (command === "invoke") {
       const { positionals, flags } = parseArguments(args.slice(1));
       if (flags.scaffold) {
@@ -778,6 +835,33 @@ export async function runCli(
           stdout(JSON.stringify(result, null, 2));
         } else {
           stdout(`Recorded ${result.probe.transport}: ${result.probe.outcome}`);
+          stdout(`  ${result.path}`);
+        }
+        return 0;
+      }
+      if (flags.resolve) {
+        const result = await resolveTools({ root: toolsRoot, phrase: String(flags.resolve) });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else if (result.status === "resolved") {
+          stdout(`"${result.phrase}" -> ${result.transport} (matched "${result.matched_alias}")`);
+        } else if (result.status === "ambiguous") {
+          stdout(`"${result.phrase}" matches more than one transport:`);
+          for (const candidate of result.candidates) {
+            stdout(`  ${candidate.transport} (matched "${candidate.alias}")`);
+          }
+        } else {
+          stdout(`"${result.phrase}" did not match any declared transport alias.`);
+        }
+        return result.status === "resolved" ? 0 : 1;
+      }
+      if (flags.bind) {
+        const [activity, transport] = flags.bind;
+        const result = await bindActivityTransport({ root: toolsRoot, activity, transport });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else {
+          stdout(`Bound ${result.activity} -> ${result.transport} in personal preferences.`);
           stdout(`  ${result.path}`);
         }
         return 0;

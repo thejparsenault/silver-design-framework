@@ -44,6 +44,24 @@
     "provenance": {
       "$ref": "provenance.schema.json"
     },
+    "references": {
+      "description": "Reference collections this invocation is explicitly citing. Naming a collection is what makes it read at all — a body of references is frequently contradictory, so nothing is loaded implicitly. Absent or empty means none were cited, even where relevant collections exist.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["collection", "ids"],
+        "properties": {
+          "collection": { "$ref": "common.schema.json#/$defs/id" },
+          "ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          }
+        }
+      }
+    },
     "inputs": {
       "type": "array",
       "items": {
