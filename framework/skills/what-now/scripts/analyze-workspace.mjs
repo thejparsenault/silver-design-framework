@@ -47,16 +47,19 @@ const ACTION_TITLES = {
   theme: "Work on the semantic theme",
   system: "Maintain the design system",
   research: "Plan research",
+  collect: "Gather evidence from declared sources",
   synthesize: "Synthesize current evidence",
   ideate: "Explore design concepts",
   specify: "Specify the selected direction",
+  structure: "Define information architecture",
   flow: "Develop the interaction flow",
-  sketch: "Sketch alternatives",
+  visualize: "Visualize a design",
   component: "Design the component contract",
   prototype: "Build or refine a prototype",
   evaluate: "Evaluate the current design",
   pitch: "Build a change case",
   implement: "Assess production implementation",
+  measure: "Measure whether the change worked",
 };
 
 const FOUNDATION_ACTIONS = {

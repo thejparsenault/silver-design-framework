@@ -110,7 +110,7 @@ The release baseline uses the following outputs:
 | Ideation | Markdown concepts and hypotheses | Optional HTML concept board |
 | Specification | Markdown | Markdown; optional HTML reading view |
 | Flow | Structured JSON graph | Mermaid and self-contained HTML |
-| Sketch | Structured sketch record | Semantic HTML alternatives |
+| Visualize | Structured visualization record | Semantic HTML alternatives |
 | Component | JSON or YAML behavior contract | HTML specimen |
 | Theme and system | DTCG JSON and catalogs | HTML token or component catalog |
 | Prototype | `prototype.yaml` and recipe source | Runnable local prototype |
@@ -220,7 +220,7 @@ artifact during inspection. Each change records:
 - required checks and approval.
 
 Changes are classified by design meaning rather than file location. Moving a
-button may affect only a sketch. Adding an error state may propose
+button may affect only a visualization. Adding an error state may propose
 specification and flow updates. Adding a new navigation path may propose flow
 transitions. Introducing an unknown color produces a design-system finding or
 token proposal; it never silently creates a style.
@@ -262,12 +262,12 @@ Outside that invocation:
 
 ## Figma-to-Prototype Example
 
-Given a flow at `r4` and a Figma sketch at `v18` derived from it:
+Given a flow at `r4` and a Figma frame at `v18` derived from it:
 
 1. a designer edits the Figma file to `v19`;
 2. a read operation creates a normalized external snapshot;
 3. reconciliation compares flow `r4`, the binding base, and Figma `v19`;
-4. visual-only changes propose a sketch revision;
+4. visual-only changes propose a visualization revision;
 5. changed states or navigation propose separate specification or flow
    revisions;
 6. unknown tokens or components produce findings or proposals rather than

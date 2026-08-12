@@ -10,16 +10,28 @@ not ship, references from outside, and a design system that belongs to the
 team rather than to Silver.
 
 Every automated `S09-*` criterion in `docs/silver-0.9-acceptance.md` is now
-done and gate-green (`npm run build`, 166/166; `npm run test:package`
-passes), uncommitted on top of commit `f5b4a6c`: adoption of an existing
-folder, provider provenance and guidance, declared transports, split browser
-inspection from driving, a real troubleshooting ladder, a published semantic
-role vocabulary, a workspace-owned `design/system/` retiring
-`reference-system/`, `checks.policy_profile` made real for the `adoption`
-profile, `silver link` for codebase binding with doctor diagnostics, personal
-`tools.yaml` with `--resolve`/`--bind`, a references collection that no
-skill reads implicitly, Figma pull/push alias fidelity with a shared
-adapter-round-trip harness, and a reviewable `0.8 → 0.9` migration.
+done and gate-green, committed and pushed through `8a92437`: adoption of an
+existing folder, provider provenance and guidance, declared transports,
+split browser inspection from driving, a real troubleshooting ladder, a
+published semantic role vocabulary, a workspace-owned `design/system/`
+retiring `reference-system/`, `checks.policy_profile` made real for the
+`adoption` profile, `silver link` for codebase binding with doctor
+diagnostics, personal `tools.yaml` with `--resolve`/`--bind`, a references
+collection that no skill reads implicitly, Figma pull/push alias fidelity
+with a shared adapter-round-trip harness, and a reviewable `0.8 → 0.9`
+migration.
+
+A W10 pass was added mid-release, on top of that commit: 0.9's own thesis
+exposed a producer-less required input (`evidence`, required by
+`synthesize`, produced by no skill), so the skill taxonomy grew four
+entries. `sketch` is renamed `visualize` end to end (kept valid-but-
+deprecated for pre-0.9 artifacts); new `collect` closes
+research → collect → synthesize; new `structure` gives information
+architecture a home distinct from `flow` and `map`; new `measure` closes
+implement → measure → synthesize with a new `product-analytics` named-gap
+capability. 24 skills total. Every automated `S10-*` criterion is also done
+and gate-green, uncommitted on top of `8a92437` — next action is review and
+commit.
 
 Only two `S09-*` criteria remain, both explicitly out of automated scope:
 `S09-CURATE-01` (W7, the guided transport-curation pass — needs the user
@@ -72,6 +84,43 @@ support depends on, external-source synchronization, and deep existing-codebase
 adoption.
 
 ## Recent Progress
+
+- 2026-08-12: Silver 0.9 W10 — skill taxonomy
+  - `sketch` renamed `visualize` end to end: skill id, artifact kind
+    (`sketch` → `visualization`), output path, capability (`sketch-renderer`
+    → `visual-renderer`), activity (`render-sketch` → `render-visualization`).
+    `sketch` stays valid-but-deprecated in both schemas so a pre-0.9 artifact
+    keeps validating and migration never rewrites project-owned content;
+    `evaluate` accepts both kinds as input.
+  - New `collect` skill (modeled on `synthesize`) closes
+    research → collect → synthesize, outputting the existing `evidence` kind
+    at `design/evidence/**` rather than inventing a parallel one. Surfaced
+    and fixed a real gap while tracing where evidence goes: `evidence` was
+    missing from `check-evidence.mjs`'s own kind set, so the one artifact
+    kind with no producer was also the one kind nothing validated. Added a
+    required `payload.source_pin` (source, query, retrieved_at, sanitized)
+    and seeded `design/evidence/README.md`, which previously only
+    materialized silently on first write.
+  - New `structure` skill and `silver/structure/v1` schema (modeled on
+    `map`) give information architecture — entities, relationships,
+    hierarchy — a home distinct from `flow` (sequences) and `map` (broader
+    relational views). `check-structure.mjs` catches duplicate entity ids,
+    dangling relationship targets, and parent cycles.
+  - New `measure` skill (modeled on `evaluate`) closes
+    implement → measure → synthesize, requiring `hypothesis`, `metrics`,
+    `instrumentation`, `observed`, and `limitations` in its `measurement`
+    payload so weak instrumentation gets written down rather than smoothed
+    over. New `product-analytics` capability and `read-product-analytics`
+    activity (`status: planned`) follow the same named-gap pattern as
+    `research-evidence`.
+  - New `framework/tests/skill-taxonomy.test.mjs` asserts every artifact
+    kind required as an input by some skill is produced as an output by at
+    least one skill — the property whose absence caused this whole pass.
+  - Deferred to 0.10 (W11), recorded in `BACKLOG.md`: the evidence import
+    model — storing and drift-guarding raw pulls from research tools,
+    analytics, or chat, which needs freshness-based staleness rather than
+    the integrity/revision pinning `linked-source` already does.
+  - `npm run build` passes 174 tests; `npm run test:package` passes.
 
 - 2026-08-11: Silver 0.9 automated pass — CONFORM through MIGRATE-01
   - `checks.policy_profile`: `semantic-styles`, `accessibility`, and
@@ -454,8 +503,8 @@ adoption.
 
 ## Next 3 Actions
 
-1. Review the uncommitted automated pass (everything in `git status` on top
-   of `f5b4a6c`) and commit it as the next checkpoint.
+1. Review the uncommitted W10 pass (everything in `git status` on top of
+   `8a92437`) and commit it as the next checkpoint.
 2. Do the W7 transport curation pass with the user directly (`S09-CURATE-01`)
    and the manual end-to-end verification (`S09-MIGRATE-04`): blank install,
    adjacent/adopted workspace, and one live Figma round trip.
@@ -485,4 +534,4 @@ adoption.
 
 ## Last Updated
 
-2026-08-11
+2026-08-12

@@ -16,6 +16,12 @@ inputs:
   - kind: sketch
     required: false
     role: working
+  - kind: visualization
+    required: false
+    role: working
+  - kind: structure
+    required: false
+    role: working
 outputs:
   - kind: component-proposal
     scope: product

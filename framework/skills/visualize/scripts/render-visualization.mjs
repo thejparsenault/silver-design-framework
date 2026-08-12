@@ -51,23 +51,23 @@ async function writeExclusive(file, content, replace) {
   await writeFile(file, content, "utf8");
 }
 
-export async function renderSketch({ root = process.cwd(), artifact, output, replace = false }) {
+export async function renderVisualization({ root = process.cwd(), artifact, output, replace = false }) {
   const workspace = path.resolve(root);
   const sourcePath = inside(workspace, artifact, "Artifact");
   const outputPath = inside(workspace, output, "Output");
-  const sketch = JSON.parse(await readFile(sourcePath, "utf8"));
-  if (sketch.schema !== "silver/working-artifact/v2" || sketch.kind !== "sketch") {
-    throw new Error("Sketch input must be a silver/working-artifact/v2 sketch.");
+  const visualization = JSON.parse(await readFile(sourcePath, "utf8"));
+  if (visualization.schema !== "silver/working-artifact/v2" || visualization.kind !== "visualization") {
+    throw new Error("Visualization input must be a silver/working-artifact/v2 visualization.");
   }
-  const { fidelity, constraint_profile: profile, question, alternatives = [] } = sketch.payload;
+  const { fidelity, constraint_profile: profile, question, alternatives = [] } = visualization.payload;
   if (!fidelity || !profile || !question || alternatives.length < 2) {
-    throw new Error("Sketch must declare fidelity, constraint profile, question, and at least two alternatives.");
+    throw new Error("Visualization must declare fidelity, constraint profile, question, and at least two alternatives.");
   }
-  const cards = alternatives.map((item, index) => `<article class="sketch-card">
-        <p class="sketch-label">Alternative ${index + 1}</p>
+  const cards = alternatives.map((item, index) => `<article class="visualization-card">
+        <p class="visualization-label">Alternative ${index + 1}</p>
         <h2>${escapeHtml(item.title)}</h2>
         <p>${escapeHtml(item.summary)}</p>
-        <p class="sketch-tradeoff"><strong>Tradeoff:</strong> ${escapeHtml(item.tradeoff)}</p>
+        <p class="visualization-tradeoff"><strong>Tradeoff:</strong> ${escapeHtml(item.tradeoff)}</p>
       </article>`).join("\n      ");
   const relativeCss = await resolveStylesheetHref(workspace, path.posix.dirname(output));
   const html = `<!doctype html>
@@ -75,31 +75,31 @@ export async function renderSketch({ root = process.cwd(), artifact, output, rep
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(sketch.title)}</title>
+  <title>${escapeHtml(visualization.title)}</title>
   <link rel="stylesheet" href="${escapeHtml(relativeCss)}" />
   <style>
-    .sketch-page { min-height: 100dvh; padding: var(--ds-space-24); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
-    .sketch-shell { max-width: var(--ds-layout-content-max-width); margin: 0 auto; }
-    .sketch-meta, .sketch-label { color: var(--ds-text-muted); }
-    .sketch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); margin-top: var(--ds-space-24); }
-    .sketch-card { padding: var(--ds-space-20); background: var(--ds-surface-raised); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); }
-    .sketch-tradeoff { margin-top: var(--ds-space-16); }
+    .visualization-page { min-height: 100dvh; padding: var(--ds-space-24); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
+    .visualization-shell { max-width: var(--ds-layout-content-max-width); margin: 0 auto; }
+    .visualization-meta, .visualization-label { color: var(--ds-text-muted); }
+    .visualization-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); margin-top: var(--ds-space-24); }
+    .visualization-card { padding: var(--ds-space-20); background: var(--ds-surface-raised); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); }
+    .visualization-tradeoff { margin-top: var(--ds-space-16); }
   </style>
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="sketch-page" data-silver-target="sketch" data-source-id="${escapeHtml(sketch.id)}" data-source-revision="${escapeHtml(sketch.revision)}" data-artifact-id="${escapeHtml(sketch.id)}" data-artifact-revision="${escapeHtml(sketch.revision)}" data-renderer-version="sketch-html@0.4.0" data-assets-revision="r1" data-design-system-revision="r1">
-    <div class="sketch-shell">
-      <p class="sketch-meta">${escapeHtml(fidelity)} · ${escapeHtml(profile)}</p>
-      <h1>${escapeHtml(sketch.title)}</h1>
+  <main class="visualization-page" data-silver-target="visualization" data-source-id="${escapeHtml(visualization.id)}" data-source-revision="${escapeHtml(visualization.revision)}" data-artifact-id="${escapeHtml(visualization.id)}" data-artifact-revision="${escapeHtml(visualization.revision)}" data-renderer-version="visualization-html@0.1.0" data-assets-revision="r1" data-design-system-revision="r1">
+    <div class="visualization-shell">
+      <p class="visualization-meta">${escapeHtml(fidelity)} · ${escapeHtml(profile)}</p>
+      <h1>${escapeHtml(visualization.title)}</h1>
       <p>${escapeHtml(question)}</p>
-      <section class="sketch-grid" aria-label="Sketch alternatives">${cards}</section>
+      <section class="visualization-grid" aria-label="Visualization alternatives">${cards}</section>
     </div>
   </main>
 </body>
 </html>
 `;
   await writeExclusive(outputPath, html, replace);
-  return { outputPath, artifact: { id: sketch.id, revision: sketch.revision } };
+  return { outputPath, artifact: { id: visualization.id, revision: visualization.revision } };
 }
 
 function parseArgs(args) {
@@ -115,7 +115,7 @@ function parseArgs(args) {
 
 if (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
   try {
-    const result = await renderSketch(parseArgs(process.argv.slice(2)));
+    const result = await renderVisualization(parseArgs(process.argv.slice(2)));
     console.log(path.relative(process.cwd(), result.outputPath));
   } catch (error) {
     console.error(`Error: ${error.message}`);

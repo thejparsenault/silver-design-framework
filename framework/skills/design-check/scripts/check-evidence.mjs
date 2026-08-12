@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkResult, exitCode, findFiles, finding, parseArguments, workspacePath } from "./check-lib.mjs";
 
-const evidenceKinds = new Set(["finding", "observation", "evaluation", "change-case", "problem-frame"]);
+const evidenceKinds = new Set(["evidence", "finding", "observation", "evaluation", "change-case", "problem-frame", "measurement"]);
 export async function checkEvidence(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "evidence-provenance";
@@ -20,8 +20,14 @@ export async function checkEvidence(options = {}) {
     if (artifact.schema !== "silver/working-artifact/v2" || !evidenceKinds.has(artifact.kind)) continue;
     const file = workspacePath(root, absolute);
     completed.push(file);
-    if (!artifact.sources?.length && artifact.kind !== "observation") {
+    // Evidence and observations pin their provenance externally (source_pin,
+    // sanitized) rather than through other in-workspace artifacts, so the
+    // internal-sources requirement below does not apply to them.
+    if (!artifact.sources?.length && !["observation", "evidence"].includes(artifact.kind)) {
       findings.push(finding({ checker, rule: "evidence.sources-required", file, message: `${artifact.kind} must pin at least one source.` }));
+    }
+    if (artifact.kind === "evidence" && !artifact.payload?.source_pin?.source) {
+      findings.push(finding({ checker, rule: "evidence.source-unpinned", file, message: "Evidence must pin the source it was collected from." }));
     }
     if (artifact.kind === "finding" && !artifact.payload?.evidence_refs?.length) {
       findings.push(finding({ checker, rule: "evidence.finding-untraceable", file, message: "Finding must list evidence_refs." }));

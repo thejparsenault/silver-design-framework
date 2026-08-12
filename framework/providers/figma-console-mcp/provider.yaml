@@ -1,9 +1,9 @@
 # Figma Console MCP — a plugin-backed transport to Figma.
 #
 # Reaches the document you have open, so it can build frames, flows, and
-# sketches in place. It needs a plugin running in Figma, which means it can be
-# configured and still not respond; the setup ladder below is what lets `doctor`
-# tell you which of those is happening.
+# visualizations in place. It needs a plugin running in Figma, which means it
+# can be configured and still not respond; the setup ladder below is what lets
+# `doctor` tell you which of those is happening.
 schema: silver/provider/v1
 id: figma-console-mcp
 version: 0.8.0
@@ -27,7 +27,7 @@ source:
   verified_against: "0.8 development"
 guidance:
   good_at:
-    - Building frames, flows, and sketches in the document you have open
+    - Building frames, flows, and visualizations in the document you have open
     - Reading the current selection while you are working in it
   not_for:
     - Reading a file you do not have open — it reaches the running editor, not the API
@@ -84,7 +84,7 @@ permissions:
   - capability: external-artifact
     actions: [read, inspect, write, update]
     default: ask
-supported_artifact_kinds: [flow, sketch, design-specification, component-proposal, token-source]
+supported_artifact_kinds: [flow, visualization, design-specification, component-proposal, token-source]
 directions: [read, write-preview, write]
 fidelity: partial
 operations:

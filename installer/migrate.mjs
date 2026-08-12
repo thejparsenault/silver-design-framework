@@ -57,9 +57,11 @@ const newProjectFiles = [
   "design/sources/README.md",
   "design/sources/sources.yaml",
   "design/references/README.md",
+  "design/evidence/README.md",
   "design/system/components.json",
   "design/integrations/README.md",
   "design/maps/README.md",
+  "design/structures/README.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
   "design/presentation-kit/kit.json",
@@ -75,12 +77,14 @@ const independentChecks = [
   "contract-integrity",
   "flow-structure",
   "map-structure",
+  "structure-integrity",
   "semantic-styles",
   "prototype-policy",
   "evidence-provenance",
   "presentation-integrity",
   "production-readiness",
   "asset-integrity",
+  "reference-integrity",
   "accessibility",
   "responsive-behavior",
   "critical-interactions",
@@ -555,6 +559,11 @@ const RETIRED_PACKAGES = [
     path: ".silver/providers/figma",
     reason:
       "0.8 split Figma into transports; figma-console-mcp and figma-official-mcp replace it.",
+  },
+  {
+    id: "sketch",
+    path: ".skills/sketch",
+    reason: "0.9 renamed sketch to visualize; visualize replaces it.",
   },
 ];
 

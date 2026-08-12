@@ -470,6 +470,26 @@ automated gate by design.
     and `S09-MIGRATE-03` were already done.) All of W8's automatable scope
     is now complete; only `S09-MIGRATE-04` (manual end-to-end) remains.
 
+- [x] W10 Skill taxonomy: `visualize`, `collect`, `structure`, `measure`
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Added mid-release once 0.9's own thesis exposed a
+    producer-less required input (`evidence`, required by `synthesize`,
+    produced by no skill). `sketch` renamed `visualize` end to end
+    (skill id, artifact kind, output path, capability, activity), with
+    `sketch` kept valid-but-deprecated so pre-0.9 artifacts and migration
+    never rewrite project-owned content. New `collect` (research → collect
+    → synthesize) outputs the existing `evidence` kind with a new required
+    `source_pin`, surfacing and fixing a real gap: `evidence` was missing
+    from `check-evidence.mjs`'s own kind set, so it was never actually
+    validated. New `structure` (`silver/structure/v1`, modeled on `map`)
+    gives information architecture a home distinct from `flow` and `map`.
+    New `measure` (implement → measure → synthesize) closes the loop after
+    production, with a new `product-analytics` named-gap capability
+    matching the existing `research-evidence` pattern. 24 skills total.
+    `S10-*`, done.
+
 ### Manual — needs the user directly, run after the automated pass
 
 - [ ] W7 Curated transport catalog entries

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -9,6 +9,7 @@ import { parse, stringify } from "yaml";
 import { doctorWorkspace } from "../doctor.mjs";
 import { exists, snapshotFiles } from "../lib/files.mjs";
 import { migrateWorkspace } from "../migrate.mjs";
+import { validateSchema } from "../lib/schemas.mjs";
 import { setupWorkspace } from "../setup.mjs";
 
 async function legacyWorkspace(t) {
@@ -141,9 +142,11 @@ test("migration preview is read-only and apply upgrades the installed shape with
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
   assert.equal(lock.framework.version, "0.8.0");
-  // 0.9 adds the silver-browser-local provider and the shipped transport catalog.
-  assert.equal(lock.packages.length, 32);
-  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
+  // 0.9 adds the silver-browser-local provider, the shipped transport
+  // catalog, and W10's collect/structure/measure skills (visualize replaces
+  // sketch rather than adding to the count).
+  assert.equal(lock.packages.length, 35);
+  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 24);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "presentation-kit"));
@@ -422,7 +425,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
     await readFile(path.join(root, "CLAUDE.md"), "utf8"),
     /^@AGENTS\.md$/m,
   );
-  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 21);
+  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 24);
   assert.ok(await exists(path.join(root, ".silver", "bin", "silver")));
   assert.ok(
     (await readFile(brandPath, "utf8")).endsWith(ownedNote),
@@ -531,6 +534,118 @@ test("a 0.8 workspace migrates to 0.9, preserving hand-edited reference-system a
   // ownership was copied-and-owned, so migration never touches it at all.
   assert.equal(migratedLock.packages.some(({ id }) => id === "reference-system"), false);
   assert.ok(await exists(path.join(root, "reference-system")));
+
+  assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("a 0.8 workspace with sketch migrates to visualize, preserving the deprecated artifact", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-sketch-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre-visualize Product",
+    id: "pre-visualize-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  // Rewind to the pre-0.9 shape: .skills/sketch instead of .skills/visualize,
+  // and a hand-authored sketch artifact a designer produced with it.
+  const visualizeSkillPath = path.join(root, ".skills", "visualize");
+  const sketchSkillPath = path.join(root, ".skills", "sketch");
+  const visualizeTree = await readdir(visualizeSkillPath, { recursive: true });
+  await rm(sketchSkillPath, { recursive: true, force: true });
+  await mkdir(sketchSkillPath, { recursive: true });
+  for (const entry of visualizeTree) {
+    const source = path.join(visualizeSkillPath, entry);
+    const info = await stat(source);
+    if (info.isDirectory()) {
+      await mkdir(path.join(sketchSkillPath, entry), { recursive: true });
+    } else {
+      await mkdir(path.dirname(path.join(sketchSkillPath, entry)), { recursive: true });
+      await writeFile(path.join(sketchSkillPath, entry), await readFile(source));
+    }
+  }
+  await rm(visualizeSkillPath, { recursive: true, force: true });
+
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.8.0-pre-visualize";
+  const visualizeEntry = lock.packages.find(({ id }) => id === "visualize");
+  lock.packages = lock.packages.filter(({ id }) => id !== "visualize");
+  lock.packages.push({
+    ...visualizeEntry,
+    id: "sketch",
+    path: ".skills/sketch",
+  });
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const sketchArtifactPath = "design/work/sketches/onboarding/sketch.json";
+  const sketchArtifact = {
+    schema: "silver/working-artifact/v2",
+    id: "onboarding-sketch",
+    kind: "sketch",
+    revision: "r1",
+    scope: "product",
+    status: "draft",
+    title: "Onboarding alternatives",
+    created: "2026-07-23T20:00:00Z",
+    updated: "2026-07-23T20:00:00Z",
+    sources: [],
+    payload: {
+      fidelity: "low",
+      constraint_profile: "constrained",
+      question: "Which structure makes the next action clearest?",
+      view_path: "design/work/sketches/onboarding/index.html",
+      alternatives: [
+        { title: "Single focus", summary: "One centered decision.", tradeoff: "Less context visible." },
+        { title: "Guided context", summary: "Context beside the decision.", tradeoff: "More to scan." },
+      ],
+    },
+  };
+  await mkdir(path.join(root, "design/work/sketches/onboarding"), { recursive: true });
+  await writeFile(
+    path.join(root, sketchArtifactPath),
+    `${JSON.stringify(sketchArtifact, null, 2)}\n`,
+  );
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.applied, false);
+  assert.equal(preview.conflicts.length, 0, JSON.stringify(preview.conflicts, null, 2));
+  assert.ok(
+    preview.changes.some(
+      ({ action, package: pkg }) => action === "retire" && pkg === "sketch",
+    ),
+  );
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.applied, true);
+
+  assert.equal(await exists(sketchSkillPath), false);
+  assert.ok(await exists(visualizeSkillPath));
+
+  // The deprecated artifact is preserved exactly as authored — migration
+  // never rewrites project-owned content — and still schema-valid.
+  assert.equal(
+    await readFile(path.join(root, sketchArtifactPath), "utf8"),
+    `${JSON.stringify(sketchArtifact, null, 2)}\n`,
+  );
+  const artifactValidation = await validateSchema(
+    "v2/working-artifact.schema.json",
+    JSON.parse(await readFile(path.join(root, sketchArtifactPath), "utf8")),
+  );
+  assert.equal(artifactValidation.valid, true, JSON.stringify(artifactValidation.errors));
+
+  const migratedLock = parse(await readFile(lockPath, "utf8"));
+  assert.equal(migratedLock.packages.some(({ id }) => id === "sketch"), false);
+  assert.ok(migratedLock.packages.some(({ id }) => id === "visualize"));
+
+  const report = await doctorWorkspace({ root });
+  assert.ok(
+    report.diagnostics.some(
+      ({ code, level }) => code === "deprecated-artifact-kind" && level === "info",
+    ),
+  );
 
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

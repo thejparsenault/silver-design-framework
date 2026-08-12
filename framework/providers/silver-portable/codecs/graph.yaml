@@ -1,10 +1,10 @@
 schema: silver/artifact-codec/v1
 id: silver-flow-graph
 version: 0.8.0
-artifact_kinds: [flow, map]
+artifact_kinds: [flow, map, structure]
 canonical_format: json
 view_formats: [mermaid, html]
-compatibility: [silver/flow/v1, silver/map/v1]
+compatibility: [silver/flow/v1, silver/map/v1, silver/structure/v1]
 scripts:
   read: scripts/portable-artifact.mjs
   write: scripts/portable-artifact.mjs

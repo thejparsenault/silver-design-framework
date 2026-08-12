@@ -10,6 +10,9 @@ inputs:
   - kind: concept
     required: false
     role: working
+  - kind: structure
+    required: false
+    role: working
   - kind: product
     required: false
     role: canonical
@@ -94,7 +97,7 @@ checks:
   - id: flow-structure
     required: true
     blocks: &a1
-      - sketch
+      - visualize
       - prototype
       - component
       - implement
@@ -102,9 +105,9 @@ checks:
     required: true
     blocks: *a1
 handoffs:
-  - id: flow-to-sketch
-    target: sketch
-    readiness: sketch
+  - id: flow-to-visualize
+    target: visualize
+    readiness: visualize
     requires:
       - flow
       - flow

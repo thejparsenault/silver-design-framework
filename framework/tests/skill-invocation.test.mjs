@@ -458,27 +458,27 @@ test("visual durable output without a design-context pin is blocked", async () =
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-no-context-"),
   );
-  const sketch = reference(
-    "contextless-sketch",
-    "sketch",
+  const visualization = reference(
+    "contextless-visualization",
+    "visualization",
     "r1",
-    "design/work/sketches/contextless.json",
+    "design/work/visualizations/contextless.json",
   );
   const request = {
     schema: "silver/skill-invocation/v2",
-    invocation_id: "sketch-no-context",
-    skill: { id: "sketch", version: "0.8.0" },
+    invocation_id: "visualize-no-context",
+    skill: { id: "visualize", version: "0.8.0" },
     started_at: startedAt,
     inputs: [],
     outputs: [
       {
-        reference: sketch,
+        reference: visualization,
         content: {
           format: "json",
           value: {
-            id: sketch.id,
-            kind: sketch.kind,
-            revision: sketch.revision,
+            id: visualization.id,
+            kind: visualization.kind,
+            revision: visualization.revision,
           },
         },
       },
@@ -497,7 +497,7 @@ test("visual durable output without a design-context pin is blocked", async () =
   };
   const result = await invokeSkill({
     root: workspace,
-    skillDirectory: path.join(root, "framework/skills/sketch"),
+    skillDirectory: path.join(root, "framework/skills/visualize"),
     request,
     completedAt,
   });
@@ -505,7 +505,7 @@ test("visual durable output without a design-context pin is blocked", async () =
   assert.match(result.execution.summary, /design-context revision/);
   await assert.rejects(
     readFile(
-      path.join(workspace, "design/work/sketches/contextless.json"),
+      path.join(workspace, "design/work/visualizations/contextless.json"),
       "utf8",
     ),
     /ENOENT/,

@@ -8,6 +8,7 @@ import {
 } from "./context.mjs";
 import { inspectGuidanceSources } from "./guidance.mjs";
 import { inspectLinkedSources } from "./sources.mjs";
+import { findFiles, workspacePath } from "../framework/skills/design-check/scripts/check-lib.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import {
   CLAUDE_BLOCK_BEGIN,
@@ -467,6 +468,45 @@ export async function doctorWorkspace(options = {}) {
         "linked-source-inspection-failed",
         error.message,
         "design/sources/sources.yaml",
+      ),
+    );
+  }
+
+  // `sketch` is deprecated in favor of `visualize` (0.9). The artifact is
+  // still valid and migration never rewrites it, but a designer re-running
+  // the work gets a styled, current renderer — so this is informational,
+  // never an error.
+  try {
+    const jsonFiles = await findFiles(path.join(root, "design"), (file) => file.endsWith(".json"));
+    const deprecated = [];
+    for (const absolute of jsonFiles) {
+      let value;
+      try {
+        value = JSON.parse(await readUtf8(absolute));
+      } catch {
+        continue;
+      }
+      if (value?.schema === "silver/working-artifact/v2" && value.kind === "sketch") {
+        deprecated.push(workspacePath(root, absolute));
+      }
+    }
+    if (deprecated.length > 0) {
+      diagnostics.push(
+        diagnostic(
+          "info",
+          "deprecated-artifact-kind",
+          `${deprecated.length} artifact(s) use the deprecated kind "sketch"; re-run visualize, or update kind to "visualization".`,
+          deprecated[0],
+        ),
+      );
+    }
+  } catch (error) {
+    diagnostics.push(
+      diagnostic(
+        "error",
+        "deprecated-artifact-scan-failed",
+        error.message,
+        "design",
       ),
     );
   }

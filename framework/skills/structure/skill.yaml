@@ -1,0 +1,104 @@
+schema: silver/skill/v2
+id: structure
+version: 0.8.0
+summary: Define and refine information architecture and conceptual product structure.
+context_budget: medium
+inputs:
+  - kind: product
+    required: false
+    role: canonical
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: finding
+    required: false
+    role: working
+  - kind: map
+    required: false
+    role: working
+outputs:
+  - kind: structure
+    scope: product
+    path_pattern: design/structures/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional: []
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/structures/**
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+completion:
+  invariants:
+    - entities-named
+    - relationships-explicit
+    - ambiguity-recorded
+  quality_criteria:
+    - id: task-quality
+      description: What exists, how it is organized, and how things relate are
+        reviewable without conflating structure with sequence.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - flow
+      - specify
+      - component
+  - id: structure-integrity
+    required: true
+    blocks: *a1
+handoffs:
+  - id: structure-to-flow
+    target: flow
+    readiness: flow
+    requires:
+      - structure
+  - id: structure-to-specify
+    target: specify
+    readiness: specify
+    requires:
+      - structure
+  - id: structure-to-component
+    target: component
+    readiness: component
+    requires:
+      - structure
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+  - id: check-structure
+    path: scripts/check-structure.mjs
+    purpose: Validate references and structural relationships.
+recommend_after: *a1

@@ -74,6 +74,7 @@
       }
     },
     "artifactKind": {
+      "description": "`sketch` is deprecated in favor of `visualization` (Silver 0.9); it stays valid so pre-0.9 artifacts keep validating and is never produced as new output.",
       "anyOf": [
         {
           "enum": [
@@ -94,6 +95,9 @@
             "design-specification",
             "flow",
             "sketch",
+            "visualization",
+            "structure",
+            "measurement",
             "evaluation",
             "observation",
             "component-proposal",
@@ -125,6 +129,7 @@
       ]
     },
     "capability": {
+      "description": "`sketch-renderer` is deprecated in favor of `visual-renderer` (Silver 0.9); it stays valid so pre-0.9 contracts keep validating.",
       "anyOf": [
         {
           "enum": [
@@ -133,6 +138,7 @@
             "research-evidence",
             "flow",
             "sketch-renderer",
+            "visual-renderer",
             "map-renderer",
             "prototype-renderer",
             "presentation-renderer",
@@ -140,7 +146,8 @@
             "browser",
             "design-file",
             "external-artifact",
-            "version-control"
+            "version-control",
+            "product-analytics"
             ,"artifact-codec"
             ,"representation-sync"
           ]

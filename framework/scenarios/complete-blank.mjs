@@ -24,7 +24,7 @@ import { renderStaticImplementation } from "../skills/implement/scripts/render-s
 import { renderPresentation } from "../skills/pitch/scripts/render-presentation.mjs";
 import { initPrototype } from "../skills/prototype/scripts/init-prototype.mjs";
 import { renderStaticPrototype } from "../skills/prototype/scripts/render-static-prototype.mjs";
-import { renderSketch } from "../skills/sketch/scripts/render-sketch.mjs";
+import { renderVisualization } from "../skills/visualize/scripts/render-visualization.mjs";
 import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
 import { renderMap } from "../skills/map/scripts/render-map.mjs";
 import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
@@ -323,7 +323,7 @@ function artifactOutputs() {
   const selection = ref("select-guided-setup", "decision", "r1", "design/decisions/select-guided-setup.json");
   const specification = ref("guided-setup-spec", "design-specification", "r1", "design/work/specifications/guided-setup.json");
   const flow = ref("guided-setup-flow", "flow", "r1", "design/flows/guided-setup/flow.json");
-  const sketch = ref("guided-setup-sketch", "sketch", "r1", "design/work/sketches/guided-setup/sketch.json");
+  const visualization = ref("guided-setup-visualization", "visualization", "r1", "design/work/visualizations/guided-setup/visualization.json");
   const component = ref("setup-card", "component-proposal", "r1", "design/work/components/setup-card.json");
   const prototype = ref("guided-setup-prototype", "prototype", "r1", "prototypes/guided-setup/prototype.json");
   const observation = ref("setup-observation", "observation", "r1", "design/evidence/setup-observation.json");
@@ -335,7 +335,7 @@ function artifactOutputs() {
   const presentation = ref("guided-setup-presentation", "presentation-view", "r1", "presentations/guided-setup/view.json");
   const handoff = ref("guided-setup-handoff", "implementation-handoff", "r1", "design/work/implementation-handoffs/guided-setup.json");
   const implementation = ref("guided-setup-implementation", "implementation", "r1", "production/guided-setup/intent.json");
-  return { seed, finding, frame, concept, hypothesis, selection, specification, flow, sketch, component, prototype, observation, evaluation, evaluationFinding, journeyMap, practiceChange, changeCase, presentation, handoff, implementation };
+  return { seed, finding, frame, concept, hypothesis, selection, specification, flow, visualization, component, prototype, observation, evaluation, evaluationFinding, journeyMap, practiceChange, changeCase, presentation, handoff, implementation };
 }
 
 export async function runCompleteBlankScenario(options = {}) {
@@ -370,15 +370,19 @@ export async function runCompleteBlankScenario(options = {}) {
     },
   ]);
   const refs = artifactOutputs();
-  await writeJson(root, refs.seed.path, {
-    schema: "silver/evidence/v1",
-    id: refs.seed.id,
-    kind: refs.seed.kind,
-    revision: refs.seed.revision,
-    sanitized: true,
-    source: "Supplied release-fixture feedback",
-    observation: "The existing setup example does not explain what completion changes.",
-  });
+  await writeJson(
+    root,
+    refs.seed.path,
+    working(refs.seed, "Seed feedback", {
+      source_pin: {
+        source: "Supplied release-fixture feedback",
+        query: "What blocks completing setup?",
+        retrieved_at: time,
+        sanitized: true,
+      },
+      observation: "The existing setup example does not explain what completion changes.",
+    }),
+  );
   const checkEvidence = await seedCheckEvidence(root);
   const results = new Map();
 
@@ -515,15 +519,15 @@ export async function runCompleteBlankScenario(options = {}) {
     path.join(root, "design/flows/guided-setup/flow.mmd"),
   );
 
-  results.set("sketch", await invokeCase({
+  results.set("visualize", await invokeCase({
     root,
-    id: "sketch",
+    id: "visualize",
     inputs: [refs.concept, refs.specification, refs.flow],
-    outputs: [jsonOutput(refs.sketch, working(refs.sketch, "Guided setup alternatives", {
+    outputs: [jsonOutput(refs.visualization, working(refs.visualization, "Guided setup alternatives", {
       fidelity: "low",
       constraint_profile: "constrained",
       question: "Which structure makes the consequence and action clearest?",
-      view_path: "design/work/sketches/guided-setup/index.html",
+      view_path: "design/work/visualizations/guided-setup/index.html",
       alternatives: [
         { title: "Single focus", summary: "One centered consequence and action.", tradeoff: "Less context remains visible." },
         { title: "Review card", summary: "Saved details sit beside the action.", tradeoff: "More information to scan." },
@@ -531,12 +535,12 @@ export async function runCompleteBlankScenario(options = {}) {
     }, [refs.concept, refs.specification, refs.flow]), "working-artifact.schema.json")],
     checkEvidence,
   }));
-  await renderSketch({ root, artifact: refs.sketch.path, output: "design/work/sketches/guided-setup/index.html" });
+  await renderVisualization({ root, artifact: refs.visualization.path, output: "design/work/visualizations/guided-setup/index.html" });
 
   results.set("component", await invokeCase({
     root,
     id: "component",
-    inputs: [refs.specification, refs.flow, refs.sketch],
+    inputs: [refs.specification, refs.flow, refs.visualization],
     outputs: [jsonOutput(refs.component, working(refs.component, "Setup review card", {
       classification: "product-composition",
       anatomy: ["Heading", "Consequence summary", "Status", "Primary action", "Secondary action"],
@@ -544,7 +548,7 @@ export async function runCompleteBlankScenario(options = {}) {
       behavior: ["Finish announces completion", "Cancel confirms no change"],
       accessibility: ["Named region", "Visible focus", "Polite status"],
       catalog_disposition: "Keep product-specific until repeated use is demonstrated.",
-    }, [refs.specification, refs.flow, refs.sketch]), "working-artifact.schema.json")],
+    }, [refs.specification, refs.flow, refs.visualization]), "working-artifact.schema.json")],
     checkEvidence,
   }));
 
@@ -554,13 +558,13 @@ export async function runCompleteBlankScenario(options = {}) {
     revision: refs.prototype.revision,
     question: "Can a person predict and complete setup?",
     constraint_profile: "constrained",
-    sources: [refs.specification, refs.flow, refs.sketch],
+    sources: [refs.specification, refs.flow, refs.visualization],
     accepted_findings: [],
   };
   results.set("prototype", await invokeCase({
     root,
     id: "prototype",
-    inputs: [refs.specification, refs.flow, refs.sketch],
+    inputs: [refs.specification, refs.flow, refs.visualization],
     outputs: [jsonOutput(refs.prototype, prototypeValue)],
     checkEvidence,
   }));
@@ -581,7 +585,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("evaluate", await invokeCase({
     root,
     id: "evaluate",
-    inputs: [refs.sketch, refs.prototype, refs.specification],
+    inputs: [refs.visualization, refs.prototype, refs.specification],
     outputs: [
       jsonOutput(refs.observation, working(refs.observation, "Expert walkthrough observation", {
         sanitized: true,
@@ -628,7 +632,7 @@ export async function runCompleteBlankScenario(options = {}) {
       invocation_id: "prototype-refinement",
       skill: { id: "prototype", version: "0.8.0" },
       started_at: time,
-      inputs: [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
+      inputs: [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
       outputs: refinedOutput,
       provenance: provenance(
         "Refined the prototype from an accepted evaluation finding.",
@@ -640,7 +644,7 @@ export async function runCompleteBlankScenario(options = {}) {
             "design/contexts/default.yaml",
           ),
         ],
-        [refs.specification, refs.flow, refs.sketch, refs.evaluationFinding],
+        [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
       ),
       permission_layers: layers(),
       available_providers: [],
@@ -963,7 +967,7 @@ export async function runCompleteBlankScenario(options = {}) {
   const manifestPath = path.join(root, "design/manifest.yaml");
   const manifest = parse(await readFile(manifestPath, "utf8"));
   for (const [id, targetRoot] of [
-    ["sketch-guided-setup", "design/work/sketches/guided-setup"],
+    ["visualization-guided-setup", "design/work/visualizations/guided-setup"],
     ["prototype-guided-setup", "prototypes/guided-setup"],
     ["presentation-guided-setup", "presentations/guided-setup"],
     ["production-guided-setup", "production/guided-setup"],
@@ -988,7 +992,7 @@ export async function runCompleteBlankScenario(options = {}) {
     playbook,
     runId: "complete-loop",
     inputs: [refs.seed],
-    options: { "include-flow": true, "include-sketch": true, "include-prototype": true, "include-pitch": true, "include-implementation": true },
+    options: { "include-flow": true, "include-visualize": true, "include-prototype": true, "include-pitch": true, "include-implementation": true },
     now: time,
   });
   state = recordNodeResult({ playbook, state, nodeId: "synthesize", result: results.get("synthesize"), now: completed });
@@ -1052,7 +1056,7 @@ export async function runCompleteBlankScenario(options = {}) {
       flow_html: "design/flows/guided-setup/index.html",
       map_html: "design/maps/guided-setup/index.html",
       system_catalog: "design/system/showcase.html",
-      sketch_html: "design/work/sketches/guided-setup/index.html",
+      visualization_html: "design/work/visualizations/guided-setup/index.html",
       prototype_html: "prototypes/guided-setup/index.html",
       pitch_html: "presentations/guided-setup/index.html",
     },

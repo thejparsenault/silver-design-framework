@@ -167,10 +167,10 @@ test("an inspiration-only reference cited by a non-production invocation is not 
   ]);
   await mkdir(path.join(root, ".silver", "results", "skills"), { recursive: true });
   await writeFile(
-    path.join(root, ".silver", "results", "skills", "sketch-1.json"),
+    path.join(root, ".silver", "results", "skills", "visualize-1.json"),
     JSON.stringify({
-      invocation_id: "sketch-1",
-      outputs: [{ path: "design/work/sketches/onboarding/index.html" }],
+      invocation_id: "visualize-1",
+      outputs: [{ path: "design/work/visualizations/onboarding/index.html" }],
       provenance: {
         references: [{ collection: "competitor-flows", revision: "r1", ids: ["shot-1"] }],
       },

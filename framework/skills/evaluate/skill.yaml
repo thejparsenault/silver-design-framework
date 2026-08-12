@@ -7,6 +7,9 @@ inputs:
   - kind: sketch
     required: false
     role: working
+  - kind: visualization
+    required: false
+    role: working
   - kind: prototype
     required: false
     role: working

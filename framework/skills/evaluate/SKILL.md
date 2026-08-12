@@ -1,6 +1,6 @@
 ---
 name: silver-evaluate
-description: Define an evaluation question and method, prepare tasks, inspect a sketch or prototype, capture sanitized observations, and produce findings and recommendations. Use for usability testing, expert review, or feedback analysis distinct from deterministic conformance.
+description: Define an evaluation question and method, prepare tasks, inspect a visualization or prototype, capture sanitized observations, and produce findings and recommendations. Use for usability testing, expert review, or feedback analysis distinct from deterministic conformance.
 allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
@@ -9,7 +9,7 @@ allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bi
 ## Workflow
 
 1. Define the decision, question, method, participants or reviewers, and tasks.
-2. Inspect the pinned sketch or prototype and capture only sanitized observations.
+2. Inspect the pinned visualization or prototype and capture only sanitized observations.
 3. Separate observed behavior from interpretation and deterministic check findings.
 4. Produce evidence-linked findings and recommendations for explicit acceptance.
 

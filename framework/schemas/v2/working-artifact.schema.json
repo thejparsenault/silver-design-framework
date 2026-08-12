@@ -25,6 +25,7 @@
       "$ref": "common.schema.json#/$defs/id"
     },
     "kind": {
+      "description": "`sketch` is deprecated in favor of `visualization` (Silver 0.9); it stays valid so pre-0.9 artifacts keep validating and is never produced as new output.",
       "enum": [
         "problem-frame",
         "finding",
@@ -32,6 +33,9 @@
         "hypothesis",
         "design-specification",
         "sketch",
+        "visualization",
+        "measurement",
+        "evidence",
         "evaluation",
         "observation",
         "component-proposal",
@@ -159,7 +163,7 @@
       "if": {
         "properties": {
           "kind": {
-            "const": "sketch"
+            "enum": ["sketch", "visualization"]
           }
         }
       },
@@ -167,6 +171,44 @@
         "properties": {
           "payload": {
             "required": ["fidelity", "constraint_profile", "question", "view_path"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "evidence"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["source_pin"],
+            "properties": {
+              "source_pin": {
+                "type": "object",
+                "required": ["source", "query", "retrieved_at", "sanitized"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "measurement"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["hypothesis", "metrics", "instrumentation", "observed", "limitations"]
           }
         }
       }

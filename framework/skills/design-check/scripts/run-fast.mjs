@@ -10,6 +10,7 @@ import { checkAssets } from "./check-assets.mjs";
 import { checkEvidence } from "./check-evidence.mjs";
 import { checkFlows } from "./check-flows.mjs";
 import { checkMaps } from "./check-maps.mjs";
+import { checkStructures } from "./check-structures.mjs";
 import {
   checkResult,
   finding,
@@ -35,6 +36,7 @@ const checkers = [
   ["contract-integrity", checkArtifacts],
   ["flow-structure", checkFlows],
   ["map-structure", checkMaps],
+  ["structure-integrity", checkStructures],
   ["semantic-styles", checkSemanticStyles],
   ["prototype-policy", checkPrototypes],
   ["evidence-provenance", checkEvidence],

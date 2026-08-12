@@ -91,7 +91,7 @@ const ruleHandlers = {
     }
   },
   async "view-provenance"(root, checker, completed, findings) {
-    const roots = ["design/flows", "design/work/sketches", "design/system", "prototypes", "presentations"];
+    const roots = ["design/flows", "design/work/sketches", "design/work/visualizations", "design/system", "prototypes", "presentations"];
     const html = (await Promise.all(roots.map((relative) => files(root, relative, ".html")))).flat();
     for (const absolute of html) {
       const content = await readFile(absolute, "utf8");

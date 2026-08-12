@@ -42,11 +42,11 @@ activities:
     status: served
 
   - id: push-design-frames
-    title: Build flows or sketches in a design tool
-    summary: Create or update frames, flows, and sketches in a design tool.
+    title: Build flows or visualizations in a design tool
+    summary: Create or update frames, flows, and visualizations in a design tool.
     capability: design-file
     actions: [write, update]
-    artifact_kinds: [flow, sketch]
+    artifact_kinds: [flow, visualization]
     status: served
 
   # --- External artefacts -------------------------------------------------
@@ -91,9 +91,9 @@ activities:
     actions: [create, write, update]
     status: served
 
-  - id: render-sketch
-    title: Render a sketch
-    capability: sketch-renderer
+  - id: render-visualization
+    title: Render a visualization
+    capability: visual-renderer
     actions: [create, write]
     status: served
 
@@ -149,6 +149,13 @@ activities:
   - id: gather-research-evidence
     title: Gather research evidence from an external source
     capability: research-evidence
+    actions: [read, inspect]
+    status: planned
+
+  - id: read-product-analytics
+    title: Read product analytics
+    summary: Inspect funnels, cohorts, experiment results, or other behavioral data.
+    capability: product-analytics
     actions: [read, inspect]
     status: planned
 

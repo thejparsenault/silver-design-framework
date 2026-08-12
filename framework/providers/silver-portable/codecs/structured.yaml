@@ -12,6 +12,8 @@ artifact_kinds:
   - hypothesis
   - design-specification
   - sketch
+  - visualization
+  - measurement
   - evaluation
   - observation
   - component-proposal
@@ -29,7 +31,7 @@ artifact_kinds:
   - x-prototype-render
 canonical_format: json
 view_formats: [markdown, html, runnable-html]
-compatibility: [silver/working-artifact/v2, silver/map/v1, silver/design-context/v1]
+compatibility: [silver/working-artifact/v2, silver/map/v1, silver/structure/v1, silver/design-context/v1]
 scripts:
   read: scripts/portable-artifact.mjs
   write: scripts/portable-artifact.mjs

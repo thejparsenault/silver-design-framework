@@ -76,17 +76,17 @@ async function reconciliationFixture(t, authority = "local") {
   const root = await workspace(t);
   const paths = {
     flow: "design/flows/guided-setup/flow.json",
-    sketch: "design/work/sketches/guided-setup/sketch.json",
+    visualization: "design/work/visualizations/guided-setup/visualization.json",
     specification: "design/work/specifications/guided-setup.json",
     tokens: "design/work/tokens/guided-setup.json",
     component: "design/work/components/guided-setup.json",
   };
   const artifacts = {
     flow: flow(),
-    sketch: working("guided-setup-sketch", "sketch", "Guided setup sketch", {
+    visualization: working("guided-setup-visualization", "visualization", "Guided setup visualization", {
       fidelity: "low", constraint_profile: "constrained",
       question: "Does the structure explain the consequence?",
-      view_path: "design/work/sketches/guided-setup/index.html",
+      view_path: "design/work/visualizations/guided-setup/index.html",
       alternatives: [
         { title: "Summary", summary: "Show saved values.", tradeoff: "More content." },
         { title: "Action", summary: "Focus the decision.", tradeoff: "Less context." },
@@ -154,7 +154,7 @@ async function reconciliationFixture(t, authority = "local") {
   const targets = {
     local: { integrity: writes.flow.integrity },
     flow: target("flow", ["flow-structure"]),
-    sketch: target("sketch", ["contract-integrity", "semantic-styles"]),
+    visualization: target("visualization", ["contract-integrity", "semantic-styles"]),
     specification: target("specification", ["contract-integrity"]),
     tokens: target("tokens", ["semantic-styles"]),
     component: target("component", ["contract-integrity"]),
@@ -291,7 +291,7 @@ test("local-to-Figma plans are preview-only and writes require fresh revision, p
   assert.equal(writes, 1);
 });
 
-test("accepted Figma visual changes revise only the sketch and prototype pins only accepted revisions", async (t) => {
+test("accepted Figma visual changes revise only the visualization and prototype pins only accepted revisions", async (t) => {
   const fixture = await reconciliationFixture(t);
   const result = await proposeReconciliation({
     root: fixture.root, binding: fixture.binding,
@@ -308,7 +308,7 @@ test("accepted Figma visual changes revise only the sketch and prototype pins on
     approvals: [{ operation_id: visual.id, approved: true }], appliedAt: fixedTime,
   });
   assert.equal(applied.status, "applied");
-  assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8")).revision, "r2");
+  assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8")).revision, "r2");
   assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.flow), "utf8")).revision, 1);
   assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.specification), "utf8")).revision, "r1");
   const prototypeRoot = path.join(fixture.root, "prototypes/guided-setup");
@@ -328,12 +328,12 @@ extensions:
   silver.reconciliation:
     external_revision: v19
     accepted_artifacts:
-      - guided-setup-sketch@r2
+      - guided-setup-visualization@r2
       - guided-setup-flow@r1
 `;
   await writeFile(path.join(prototypeRoot, "prototype.yaml"), metadata, "utf8");
   await renderStaticPrototype({ root: fixture.root, prototype: "prototypes/guided-setup", flow: fixture.paths.flow });
-  assert.match(metadata, /guided-setup-sketch@r2/);
+  assert.match(metadata, /guided-setup-visualization@r2/);
   assert.match(metadata, /guided-setup-flow@r1/);
   assert.doesNotMatch(metadata, /guided-setup-flow@r2/);
 });
@@ -354,13 +354,13 @@ test("divergence, stale proposals, partial extraction, and interruption preserve
   assert.equal(await readFile(path.join(fixture.root, fixture.paths.flow), "utf8"), localWrite.content);
   const visual = fixture.changeSet.changes.find(({ classification }) => classification === "presentation");
   const accepted = await acceptReconciliation({ root: fixture.root, result, operationIds: [visual.id], acceptedAt: fixedTime });
-  const before = await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8");
+  const before = await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8");
   await assert.rejects(
     applyReconciliation({ root: fixture.root, result: accepted, approvals: [{ operation_id: visual.id, approved: true }], failBeforeCommit: true }),
     /Simulated interruption/,
   );
-  assert.equal(await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8"), before);
-  await writeFile(path.join(fixture.root, fixture.paths.sketch), `${before}\n`, "utf8");
+  assert.equal(await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8"), before);
+  await writeFile(path.join(fixture.root, fixture.paths.visualization), `${before}\n`, "utf8");
   await assert.rejects(
     applyReconciliation({ root: fixture.root, result: accepted, approvals: [{ operation_id: visual.id, approved: true }] }),
     /Stale expected integrity/,

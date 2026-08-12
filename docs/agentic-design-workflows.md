@@ -24,7 +24,7 @@ flowchart LR
     I --> D{"Select direction"}
     D --> P["Specify"]
     P <--> F["Flow"]
-    P <--> K["Sketch"]
+    P <--> K["Visualize"]
     F --> R["Prototype"]
     K --> R
     P --> R
@@ -47,10 +47,10 @@ The default loop has several deliberate properties:
   explicit assumptions;
 - ideation produces lightweight concepts before expensive specifications;
 - selecting a direction is a declared human or policy-driven checkpoint;
-- specifications, flows, and sketches may be created in either order and
+- specifications, flows, and visualizations may be created in either order and
   revised together;
-- flows, sketches, and prototypes are optional when the design question does
-  not need them;
+- flows, visualizations, and prototypes are optional when the design question
+  does not need them;
 - evaluation produces evidence that can re-enter synthesis;
 - production implementation is an explicit side path from accepted design
   intent, not the automatic final stage of a prototype.
@@ -66,8 +66,8 @@ The general design-practice vocabulary is:
 - **specify** — create or revise a living design contract for one selected
   direction;
 - **flow** — create or revise a portable behavior graph;
-- **sketch** — create inexpensive, usually noninteractive representations for
-  exploration or review;
+- **visualize** — create static visual representations of a proposed product
+  experience at whatever fidelity is useful, for exploration or review;
 - **prototype** — create a testable simulation to answer a declared question;
 - **evaluate** — plan and conduct a review or test, capture sanitized
   observations, and produce findings and recommendations;
@@ -115,7 +115,7 @@ evidence
 → finding or problem frame
 → concept and hypothesis
 → selected design specification
-↔ flow, sketch, or prototype
+↔ structure, flow, visualization, or prototype
 → evaluation finding
 → accepted decision
 → production change
@@ -126,10 +126,12 @@ outcomes, hypothesis, scope and non-goals, requirements, content and data
 needs, states and edge cases, accessibility expectations, linked artifact
 revisions, success criteria, and unresolved questions.
 
-A sketch is defined by its role as a cheap representation, not necessarily by
-low visual fidelity. A prototype is defined by its testable question and
-behavior. Fidelity (`lo-fi`, `mid-fi`, or `hi-fi`) remains separate from the
-prototype constraint profile (`constrained`, `partial`, or `suspended`).
+A visualization is defined by its role as a static representation, at
+whatever fidelity is useful — a rough sketch and a polished interface design
+are both visualizations. A prototype is defined by its testable question and
+interactive behavior. Fidelity (`lo-fi`, `mid-fi`, or `hi-fi`) remains
+separate from the prototype constraint profile (`constrained`, `partial`, or
+`suspended`).
 
 Only information needed across skill or session boundaries must become a
 durable artifact. Agents may keep transient reasoning and mechanical
@@ -175,7 +177,7 @@ For example:
 execution: complete-with-findings
 acceptance: awaiting-review
 readiness:
-  sketch: ready
+  visualization: ready
   prototype: ready
   production: not-ready
 ```
@@ -226,9 +228,10 @@ constraint profile.
 
 ## Production Boundary
 
-The `implement` skill may consume an accepted specification, flow, sketch,
-prototype, component contract, evaluation findings, or a combination. It first
-assesses readiness against the codebase binding and production policy.
+The `implement` skill may consume an accepted specification, flow,
+visualization, prototype, component contract, evaluation findings, or a
+combination. It first assesses readiness against the codebase binding and
+production policy.
 
 Prototype code is reference material by default. Production work is rebuilt
 against production contracts, semantic styles, approved components, required

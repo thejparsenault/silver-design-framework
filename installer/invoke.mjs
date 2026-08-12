@@ -17,6 +17,7 @@ export const SCAFFOLD_PLACEHOLDER = "silver-scaffold-placeholder";
 const contextPinnedOutputKinds = new Set([
   "map",
   "sketch",
+  "visualization",
   "prototype",
   "presentation-view",
   "implementation-handoff",

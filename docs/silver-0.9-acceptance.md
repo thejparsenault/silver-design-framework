@@ -33,13 +33,14 @@ Where a criterion is inherently unautomatable (a human decision, a live
 external call), it is marked **manual** instead, and never counted toward the
 automated release gate.
 
-As of this writing: `npm run build` passes 166/166 tests and
-`npm run test:package` passes, on `release/silver-0.8-tools`, uncommitted on
-top of `f5b4a6c`. Every automated criterion below (`CONFORM`, `LINK`,
-`PRACTICE`, `REF`, `FIGMA-PULL`, `FIGMA-PUSH`, `ROUNDTRIP`, `MIGRATE-01`,
-`MIGRATE-03`) is done. Only the two manual criteria remain: `S09-CURATE-01`
-(W7, needs the user directly) and `S09-MIGRATE-04` (manual end-to-end
-verification).
+As of this writing: `npm run build` passes 174/174 tests and
+`npm run test:package` passes, on `release/silver-0.8-tools`. Every
+automated criterion below (`CONFORM`,
+`LINK`, `PRACTICE`, `REF`, `FIGMA-PULL`, `FIGMA-PUSH`, `ROUNDTRIP`,
+`MIGRATE-01`, `MIGRATE-03`, and the `S10-*` skill-taxonomy criteria added
+mid-release once 0.9's own thesis exposed a producer-less required input)
+is done. Only the two manual criteria remain: `S09-CURATE-01` (W7, needs the
+user directly) and `S09-MIGRATE-04` (manual end-to-end verification).
 
 ## Criteria
 
@@ -354,16 +355,125 @@ verification).
   the way every prior release records in `STATUS.md`. *(manual — not run
   in this pass)*
 
+### Skill taxonomy (W10) — done
+
+Added mid-release once it became clear 0.9's own thesis — "Silver meets work
+it did not author" — was incomplete without it: `evidence` was a required
+input to `synthesize` with no skill producing it, information architecture
+had no home, and nothing closed the loop after `implement`.
+
+- **S10-VISUALIZE-01** `sketch` is renamed `visualize` end to end — skill id,
+  artifact kind (`sketch` → `visualization`), output path
+  (`design/work/sketches/**` → `design/work/visualizations/**`), capability
+  (`sketch-renderer` → `visual-renderer`), activity (`render-sketch` →
+  `render-visualization`) — because a renderer still labelling its output
+  `sketch` would reintroduce the low-fidelity implication the rename exists
+  to remove. `alternatives-cheap` is replaced with
+  `alternatives-distinguishable`, which is what was actually load-bearing.
+- **S10-VISUALIZE-02** `sketch` stays valid, marked deprecated, in
+  `common.schema.json` and `working-artifact.schema.json`, so a pre-0.9
+  artifact keeps validating; `evaluate` accepts both `sketch` and
+  `visualization` as input. Migration never rewrites project-owned content —
+  see S10-MIGRATE-01.
+- **S10-VISUALIZE-03** Every registry that named `sketch` was updated by
+  direct grep, not guesswork: `installer/setup.mjs`, both
+  `contextPinnedOutputKinds` copies, the renderer-capability list in
+  `invoke-skill.mjs`, `framework/activities/catalog.yaml`, the
+  `silver-portable` and `figma-console-mcp` provider contracts, the default
+  design-loop playbook, `what-now`'s action titles, and every skill contract
+  that referenced `sketch` as a handoff target. *(installer/tests/installer.test.mjs,
+  framework/tests/local-renderers.test.mjs, framework/tests/skill-invocation.test.mjs)*
+- **S10-COLLECT-01** New `collect` skill (modeled on `synthesize`) owns the
+  evidence-acquisition step `research` and `synthesize` both stopped short
+  of: `research → collect → synthesize`. Outputs `kind: evidence` at the
+  existing `design/evidence/**` path — no new artifact kind, since one
+  already existed with a checker and no producer.
+- **S10-COLLECT-02** `evidence` gained a required `payload.source_pin`
+  (`source`, `query`, `retrieved_at`, `sanitized`) in
+  `working-artifact.schema.json`, enforced by `evidence-provenance`
+  (`evidence.source-unpinned`). This closes a real gap found while tracing
+  where evidence goes: `check-evidence.mjs`'s `evidenceKinds` set was
+  missing `evidence` itself, so a `kind: evidence` artifact was skipped by
+  the one check meant to validate it — the fixture in
+  `complete-blank.mjs` had been writing an unschema'd, unvalidated
+  `schema: "silver/evidence/v1"` document with no backing schema file at
+  all. Fixed to a proper `silver/working-artifact/v2` document with a real
+  source pin. `design/evidence/README.md` is now seeded (it previously
+  materialized silently on first write) and states the boundary against
+  `design/references/`: inspiration and prior art go there, not here — same
+  file types, different contract (rights vs. provenance).
+  *(framework/tests/guardrail-negative.test.mjs)*
+- **S10-COLLECT-03** `reference-collection.schema.json`'s reference `kind`
+  enum gained `code`, so a scraped CSS/JS snippet is storable as what it is;
+  `rights.usage: inspiration-only` already carries the "never copied into
+  production" constraint that makes scraped code different from a component
+  library. The larger import model (storing and drift-guarding raw pulls
+  from research tools, analytics, or chat) is explicitly deferred — see
+  "Deliberately not in this release."
+- **S10-STRUCTURE-01** New `structure` skill and
+  `framework/schemas/v2/structure.schema.json` (`silver/structure/v1`,
+  modeled on `map.schema.json`): `structure_type`, `entities[]` (with
+  optional `parent` for hierarchy), `relationships[]`, `rules[]`. Distinct
+  from `flow` (sequences over time) and `map` (broader relational views) —
+  stated in both `SKILL.md` and the skill summary.
+- **S10-STRUCTURE-02** `check-structure.mjs` (pure validator) plus
+  `check-structures.mjs` (workspace walker, registered as
+  `structure-integrity` in the fast suite) catch duplicate entity ids, a
+  relationship referencing a missing entity, and a `parent` cycle — the
+  three failures that make an IA document actively wrong rather than just
+  incomplete. *(framework/tests/structure.test.mjs)* `structure` also joins
+  `graph.yaml`'s canonical codec alongside `flow` and `map` (its shape —
+  entities and relationships — is the same class of document), and
+  `installer/migrate.mjs`'s manifest checks-enabled list gained
+  `structure-integrity` — along with `reference-integrity`, missing from
+  that list since W6 and fixed here since it was directly adjacent to what
+  W10 was already touching.
+- **S10-STRUCTURE-03** `flow`, `specify`, and `component` each gained
+  `structure` as an optional input; `structure` hands off to all three.
+- **S10-MEASURE-01** New `measure` skill (modeled on `evaluate`) closes the
+  loop `implement → measure → synthesize`. Outputs new working-artifact kind
+  `measurement` at `design/work/measurements/**`, requiring
+  `hypothesis`, `metrics`, `instrumentation`, `observed`, `limitations` in
+  its schema payload — so weak instrumentation or a thin sample has to be
+  written down, not smoothed over.
+- **S10-MEASURE-02** New `product-analytics` capability and
+  `read-product-analytics` activity (`status: planned`), following the same
+  named-gap pattern the catalog already uses for `research-evidence` and
+  `version-control`: a missing analytics tool is a specific, accounted-for
+  absence rather than an unexplained degraded capability.
+  `auditActivityCatalog` verifies this both ways — a skill declares the
+  capability (`measure` does) and no shipped provider serves a `planned`
+  activity (none does).
+- **S10-MEASURE-03** `measurement` is added to `evidenceKinds` in
+  `check-evidence.mjs`, so `evidence-provenance` requires it to pin internal
+  `sources[]` — unlike `evidence`, a measurement genuinely does derive from
+  other in-workspace artifacts (the specification, the implementation), so
+  it is not exempted the way `evidence` is.
+- **S10-CATALOG-01** `README.md` and `docs/agentic-design-workflows.md`
+  regroup the (now 24) skills into Orientation / Foundations / Discovery
+  (`research`, `collect`, `synthesize`, `ideate`, `map`) / Definition
+  (`specify`, `structure`, `flow`, `component`) / Making (`visualize`,
+  `prototype`) / Evaluation and delivery (adds `measure`), matching the
+  taxonomy this section describes.
+- **S10-TAXONOMY-01** New `framework/tests/skill-taxonomy.test.mjs`:
+  **every artifact kind declared as a required input by some skill is
+  declared as an output by at least one skill.** `evidence` failed this
+  before `collect` existed; the test now holds, and the framework cannot
+  quietly grow another producer-less required input.
+
 ## Evidence
 
-Automated: `npm run build` (166 tests) and `npm run test:package`, both
-green. New suites added for the criteria above:
+Automated: `npm run build` (174 tests, 24 skills) and `npm run test:package`,
+both green. New suites added for the criteria above:
 `framework/tests/figma-tokens.test.mjs`,
 `framework/tests/figma-round-trip.test.mjs`,
 `framework/tests/reference-integrity.test.mjs`,
 `installer/tests/link.test.mjs`, `installer/tests/practice-tools.test.mjs`,
+`framework/tests/structure.test.mjs`,
+`framework/tests/skill-taxonomy.test.mjs`,
 plus extensions to `framework/tests/design-check.test.mjs`,
-`framework/tests/skill-invocation.test.mjs`, and
+`framework/tests/skill-invocation.test.mjs`,
+`framework/tests/guardrail-negative.test.mjs`, and
 `installer/tests/migrate.test.mjs`.
 
 Manual, recorded in `STATUS.md` rather than in an automated test:
@@ -391,6 +501,19 @@ Manual, recorded in `STATUS.md` rather than in an automated test:
   adoption cannot map onto the existing roles.
 - Any Silver-owned network transport, credential handling, or process
   supervision. This is a boundary, not a gap.
+- **The evidence import model (W11, deferred to 0.10).** No
+  `evidence-import/v1` schema, no `design/evidence/imports/`, no
+  `retention: evergreen | transient`, no `evidence-source` kind on
+  `linked-source`, no freshness-based staleness, no `doctor` import
+  diagnostic. `collect` declares where evidence came from
+  (`payload.source_pin`); storing and drift-guarding the raw extract behind
+  an import (a Slack export, an analytics pull) is a separate workstream —
+  `linked-source` can pin a git revision but has no notion of freshness,
+  which is what a live, ever-changing source actually needs. Recorded in
+  `BACKLOG.md`.
+- No `product-analytics` provider or transport, and no ticketing/chat
+  capability at all yet — `collect` and `measure` degrade through them
+  honestly rather than pretending they are served.
 
 ## Known gaps
 

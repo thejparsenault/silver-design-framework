@@ -189,11 +189,11 @@ export async function createFigmaChangeSet({
       changes.push(change({
         id: `visual-${node.id.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`.replace(/-+$/, ""),
         entity: node,
-        target: targets.sketch,
+        target: targets.visualization,
         classification: "presentation",
         confidence: 0.92,
         fidelity: "semantic",
-        patch: patchFor(targets.sketch, "figma_visual_changes", [node]),
+        patch: patchFor(targets.visualization, "figma_visual_changes", [node]),
       }));
     }
     if ("interactions" in data) {

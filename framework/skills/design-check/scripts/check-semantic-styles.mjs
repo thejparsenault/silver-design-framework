@@ -73,7 +73,7 @@ async function fileExists(candidate) {
 export async function checkSemanticStyles(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "semantic-styles";
-  const roots = ["design/system", "prototypes", "design/work/sketches", "presentations", "production"];
+  const roots = ["design/system", "prototypes", "design/work/sketches", "design/work/visualizations", "presentations", "production"];
   const policyProfile = await resolvePolicyProfile(root);
   const requested = roots;
 

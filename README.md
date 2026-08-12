@@ -7,12 +7,14 @@ portable visual outputs, guardrails, and deterministic checks.
 Use Silver to:
 
 - define product, audience, brand, voice, and design principles;
-- conduct research, synthesize evidence, and generate ideas;
-- create specifications, flows, sketches, components, and prototypes;
+- collect evidence, conduct research, synthesize it, and generate ideas;
+- create specifications, information architecture, flows, visualizations,
+  components, and prototypes;
 - evaluate work and refine it from accepted feedback;
 - prepare evidence-backed pitches and presentations;
 - move accepted designs toward production without silently inventing styles,
-  components, or requirements; and
+  components, or requirements;
+- measure whether a shipped change achieved its intended outcome; and
 - keep local artifacts and external-tool representations revisioned,
   inspectable, and explicitly reconciled.
 
@@ -173,7 +175,7 @@ rather than `AGENTS.md` and discovers skills only under `.claude/skills/`:
 - `CLAUDE.md` importing `@AGENTS.md`, merged into a marked block so a
   project-owned `CLAUDE.md` keeps its content;
 - `.claude/skills/<id>` symlinks into the canonical `.skills/<id>`, so all
-  twenty-one skills appear in autocomplete;
+  twenty-four skills appear in autocomplete;
 - `.silver/bin/silver`, a launcher giving the workspace one stable command.
 
 `.skills/` and `AGENTS.md` remain canonical and agent-neutral. The adapters are
@@ -241,7 +243,8 @@ them whenever the product changes.
 The moves available to you, roughly in the order they tend to become useful:
 
 ```text
-research → synthesize → ideate → specify ↔ flow/sketch → prototype → evaluate
+research → collect → synthesize → ideate → specify ↔ structure/flow/visualize
+  → prototype → evaluate → implement → measure
 ```
 
 This is a map, not a pipeline. Nothing runs it end to end, and nothing should:
@@ -272,7 +275,7 @@ Any one of these is a complete request on its own:
 > Label assumptions, pin the active design context, and render the local HTML
 > view.
 
-> Use `sketch` to create an inexpensive HTML representation of the important
+> Use `visualize` to create an inexpensive HTML representation of the important
 > states. Stop for my review before making a higher-fidelity prototype.
 
 > Use `prototype` to build a constrained local prototype that pins the accepted
@@ -282,23 +285,23 @@ Any one of these is a complete request on its own:
 > Use `evaluate` to record these observations, separate findings from
 > interpretations, and propose refinements. Apply only the findings I accept.
 
-Flows are useful but not required for every sketch or prototype. A prototype
+Flows are useful but not required for every visualization or prototype. A prototype
 may introduce experimental components, but it remains constrained to approved
 semantic styles unless you explicitly request and justify a partial or full
 constraint suspension.
 
 ## Other skills
 
-The installed catalog contains twenty-one independently runnable skills:
+The installed catalog contains twenty-four independently runnable skills:
 
 | Area | Skills |
 | --- | --- |
 | Orientation | `what-now` |
 | Foundations | `product`, `brand`, `voice`, `principles`, `theme`, `system` |
-| Discovery | `research`, `synthesize`, `ideate`, `map` |
-| Definition | `specify`, `flow`, `component` |
-| Making | `sketch`, `prototype` |
-| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `practice-review`, `design-check` |
+| Discovery | `research`, `collect`, `synthesize`, `ideate`, `map` |
+| Definition | `specify`, `structure`, `flow`, `component` |
+| Making | `visualize`, `prototype` |
+| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `measure`, `practice-review`, `design-check` |
 
 Use `pitch` to create an opportunity, proposal, or outcome case for team
 buy-in. It can generate a branded local presentation view while keeping
@@ -386,7 +389,7 @@ personal belongs in a project, because a project is shared.
 Both are deliberately separate from the skill packages. Skills say *what to do*
 and can be rewritten or upgraded without touching either, so a skill upgrade
 never changes how the agent sounds and a preference change never edits
-twenty-one files.
+twenty-four files.
 
 Silver seeds both files, commented out, when it creates your practice. Fill one
 in and apply it:
@@ -426,12 +429,16 @@ my-product-design/
     brand.md
     voice.md
     design-principles.md
-    system/
+    system/                  Tokens, components, and expressions — this
+                              workspace's own design system
     assets/
     contexts/                Product/surface contexts and expression mappings
     decisions/
+    evidence/                Observed claims, provenance-pinned
     flows/
     maps/
+    structures/              Information architecture and object models
+    references/              Prior art and inspiration, never auto-loaded
     guidance/                Manually linked institutional guidance
     sources/                 Pinned design-system, component, and code links
     integrations/
@@ -440,7 +447,6 @@ my-product-design/
   prototypes/
   presentations/
   production/
-  reference-system/         Editable demonstration system for local rendering
 ```
 
 `~/Silver/My Practice` is intentionally outside this product workspace.

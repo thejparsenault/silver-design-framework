@@ -14,7 +14,7 @@ The skill is cross-cutting rather than a required lifecycle stage. It may be
 used:
 
 - after synthesis to establish that an opportunity matters;
-- after ideation, specification, or sketching to select a direction;
+- after ideation, specification, or visualizing to select a direction;
 - after prototyping and evaluation to justify production investment;
 - after release to report measured outcomes and recommend follow-up work.
 

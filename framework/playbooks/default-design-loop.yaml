@@ -67,17 +67,17 @@ nodes:
       equals: true
     readiness:
       - flow
-  - id: sketch
+  - id: visualize
     skill:
-      id: sketch
+      id: visualize
       version: 0.8.0
     optional: true
     when:
       type: invocation-option
-      key: include-sketch
+      key: include-visualize
       equals: true
     readiness:
-      - sketch
+      - visualization
   - id: prototype
     skill:
       id: prototype
@@ -157,16 +157,16 @@ edges:
       type: invocation-option
       key: include-flow
       equals: true
-  - id: specification-to-sketch
+  - id: specification-to-visualize
     from: specify
-    to: sketch
+    to: visualize
     type: branch
     artifacts:
       - design-specification
     required: false
     condition:
       type: invocation-option
-      key: include-sketch
+      key: include-visualize
       equals: true
   - id: specification-to-prototype
     from: specify
@@ -186,12 +186,12 @@ edges:
     artifacts:
       - flow
     required: false
-  - id: sketch-to-prototype
-    from: sketch
+  - id: visualize-to-prototype
+    from: visualize
     to: prototype
     type: handoff
     artifacts:
-      - sketch
+      - visualization
     required: false
   - id: specification-to-evaluation
     from: specify
@@ -200,12 +200,12 @@ edges:
     artifacts:
       - design-specification
     required: true
-  - id: sketch-to-evaluation
-    from: sketch
+  - id: visualize-to-evaluation
+    from: visualize
     to: evaluate
     type: handoff
     artifacts:
-      - sketch
+      - visualization
     required: false
   - id: prototype-to-evaluation
     from: prototype

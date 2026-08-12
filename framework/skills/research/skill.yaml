@@ -81,6 +81,7 @@ checks:
     blocks: &a1
       - evaluate
       - synthesize
+      - collect
   - id: evidence-provenance
     required: true
     blocks: *a1
@@ -93,6 +94,11 @@ handoffs:
   - id: research-to-synthesize
     target: synthesize
     readiness: synthesize
+    requires:
+      - research-plan
+  - id: research-to-collect
+    target: collect
+    readiness: collect
     requires:
       - research-plan
 external_effects:

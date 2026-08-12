@@ -7,7 +7,7 @@
 This repository is a Silver workspace. `design/manifest.yaml` and the design
 artifacts it maps are the sources of truth; `design/INDEX.md` is generated.
 
-Design work belongs in the 21 project-local skills. Read the relevant
+Design work belongs in the 24 project-local skills. Read the relevant
 `.skills/<id>/SKILL.md` before starting, then run the guarded operation through
 the workspace launcher:
 

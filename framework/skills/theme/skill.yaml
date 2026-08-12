@@ -102,7 +102,7 @@ checks:
     required: true
     blocks: &a1
       - system
-      - sketch
+      - visualize
       - prototype
   - id: accessibility
     required: true
@@ -115,9 +115,9 @@ handoffs:
       - design-system
       - token-source
       - decision
-  - id: theme-to-sketch
-    target: sketch
-    readiness: sketch
+  - id: theme-to-visualize
+    target: visualize
+    readiness: visualize
     requires:
       - design-system
       - token-source

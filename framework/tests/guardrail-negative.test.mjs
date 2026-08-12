@@ -44,6 +44,59 @@ test("untraceable or fabricated findings fail evidence provenance", async (t) =>
   assert.ok(result.findings.some(({ rule }) => rule === "evidence.finding-untraceable"));
 });
 
+test("evidence without a pinned source fails evidence provenance", async (t) => {
+  const root = await workspace(t);
+  const target = path.join(root, "design/evidence/unpinned.json");
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, `${JSON.stringify({
+    schema: "silver/working-artifact/v2",
+    id: "unpinned",
+    kind: "evidence",
+    revision: "r1",
+    scope: "product",
+    status: "draft",
+    title: "Unpinned evidence",
+    created: "2026-07-24T20:00:00Z",
+    updated: "2026-07-24T20:00:00Z",
+    sources: [],
+    payload: {
+      observation: "Something was observed, from somewhere, at some point.",
+    },
+  }, null, 2)}\n`);
+  const result = await checkEvidence({ root });
+  assert.equal(result.status, "fail");
+  assert.ok(result.findings.some(({ rule }) => rule === "evidence.source-unpinned"));
+});
+
+test("evidence with a complete source pin passes evidence provenance", async (t) => {
+  const root = await workspace(t);
+  const target = path.join(root, "design/evidence/pinned.json");
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, `${JSON.stringify({
+    schema: "silver/working-artifact/v2",
+    id: "pinned",
+    kind: "evidence",
+    revision: "r1",
+    scope: "product",
+    status: "accepted",
+    title: "Pinned evidence",
+    created: "2026-07-24T20:00:00Z",
+    updated: "2026-07-24T20:00:00Z",
+    sources: [],
+    payload: {
+      source_pin: {
+        source: "Support tickets, Q3 export",
+        query: "What blocks checkout completion?",
+        retrieved_at: "2026-07-24T20:00:00Z",
+        sanitized: true,
+      },
+      observation: "Several tickets cite a missing confirmation step.",
+    },
+  }, null, 2)}\n`);
+  const result = await checkEvidence({ root });
+  assert.equal(result.status, "pass");
+});
+
 test("production cannot silently consume a prototype-local asset", async (t) => {
   const root = await workspace(t);
   const production = path.join(root, "production/leak");

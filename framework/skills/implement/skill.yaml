@@ -117,6 +117,7 @@ checks:
     blocks: &a1
       - design-check
       - pitch
+      - measure
   - id: semantic-styles
     required: true
     blocks: *a1
@@ -144,6 +145,11 @@ handoffs:
     readiness: pitch
     requires:
       - implementation-handoff
+      - implementation
+  - id: implement-to-measure
+    target: measure
+    readiness: measure
+    requires:
       - implementation
 external_effects:
   - version-control

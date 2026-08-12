@@ -1,36 +1,39 @@
 schema: silver/skill/v2
-id: sketch
+id: measure
 version: 0.8.0
-summary: Create inexpensive, constraint-aware design alternatives.
-context_budget: small
+summary: Determine whether a shipped design or product change achieved its
+  intended outcome.
+context_budget: medium
 inputs:
-  - kind: concept
-    required: false
-    role: working
   - kind: design-specification
     required: false
     role: working
-  - kind: flow
+  - kind: implementation
     required: false
     role: working
-  - kind: prototype
+  - kind: evaluation
     required: false
     role: working
+  - kind: finding
+    required: false
+    role: working
+  - kind: product
+    required: false
+    role: canonical
 outputs:
-  - kind: sketch
+  - kind: measurement
     scope: product
-    path_pattern: design/work/sketches/**
+    path_pattern: design/work/measurements/**
     authority: project-owned
 capabilities:
   required:
     - repository
-    - sketch-renderer
   optional:
-    - capability: design-file
+    - capability: product-analytics
       providers: []
       fallback: degraded
-      description: Use design-file when configured; preserve explicit fallback
-        coverage otherwise.
+      description: Use product-analytics when configured; preserve explicit
+        fallback coverage otherwise.
 effects:
   - capability: repository
     actions:
@@ -49,13 +52,11 @@ effects:
       - write
       - update
     paths:
-      - design/work/sketches/**
-  - capability: design-file
+      - design/work/measurements/**
+  - capability: product-analytics
     actions:
       - read
       - inspect
-      - write
-      - update
     external: true
 guardrails:
   - authority-respected
@@ -63,17 +64,18 @@ guardrails:
   - no-silent-mutation
   - revision-pinned
   - followups-recommended-only
-  - semantic-styles-only
-  - constraint-profile-explicit
+  - privacy-sanitized-evidence
+  - no-fabricated-evidence
+  - provenance-required
 completion:
   invariants:
-    - fidelity-declared
-    - alternatives-cheap
-    - constraint-profile-honored
+    - metrics-tied-to-hypothesis
+    - instrumentation-stated
+    - data-limits-recorded
   quality_criteria:
     - id: task-quality
-      description: Sketches make consequential structure and behavior choices
-        reviewable without false production fidelity.
+      description: Observed outcomes stay traceable to the success criteria they
+        test, with instrumentation and data limits stated rather than implied.
       evaluation: human
   unresolved_questions: block-handoff
   review:
@@ -84,38 +86,20 @@ checks:
   - id: contract-integrity
     required: true
     blocks: &a1
-      - evaluate
-      - prototype
-      - component
-  - id: semantic-styles
-    required: true
-    blocks: *a1
-  - id: accessibility
+      - synthesize
+  - id: evidence-provenance
     required: true
     blocks: *a1
 handoffs:
-  - id: sketch-to-evaluate
-    target: evaluate
-    readiness: evaluate
+  - id: measure-to-synthesize
+    target: synthesize
+    readiness: synthesize
     requires:
-      - sketch
-  - id: sketch-to-prototype
-    target: prototype
-    readiness: prototype
-    requires:
-      - sketch
-  - id: sketch-to-component
-    target: component
-    readiness: component
-    requires:
-      - sketch
+      - measurement
 external_effects:
   - none
 scripts:
   - id: invoke
     path: scripts/invoke.mjs
     purpose: Run this skill through the shared guarded invocation runtime.
-  - id: render-sketch
-    path: scripts/render-sketch.mjs
-    purpose: Bundled deterministic sketch operation.
 recommend_after: *a1

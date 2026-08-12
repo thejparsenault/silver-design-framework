@@ -267,9 +267,12 @@ are the next recommended milestones.
   - Create and revise a living contract for a selected direction, including outcomes, hypothesis, scope and non-goals, requirements, content and data needs, states, edge cases, accessibility, linked artifact revisions, success criteria, and open questions.
   - Allow flows, sketches, prototypes, and evaluations to refine the specification without silently overwriting accepted decisions.
 
-- [x] Sketch
-  - Generate inexpensive, usually noninteractive alternatives for exploration or review from a brief, concept, specification, flow, or existing screen.
+- [x] Visualize (formerly Sketch)
+  - Create static visual representations of a proposed product experience at whatever fidelity is useful — rough sketches through polished interface designs — from a brief, concept, specification, structure, flow, or existing screen.
   - Record fidelity independently from artifact type, use active brand and design-system constraints by default, and support optional design-tool or local renderers.
+
+- [x] Product structure
+  - Define and refine information architecture, navigation structure, taxonomy, content models, and object models — what exists, how it is organized, and how things relate — distinct from flow (sequences) and map (broader relational views).
 
 - [x] Component design
   - Inspect catalog, enumerate states, explore anatomy, prototype behavior, propose contracts, and document accessibility.
@@ -280,9 +283,21 @@ are the next recommended milestones.
 - [x] Research planning
   - Create questions, methods, participant criteria, scripts, and sanitized evidence plans.
 
+- [x] Evidence collection
+  - Gather evidence from declared sources — web research, competitor products, live sites, browser inspection, repositories, linked documentation, or supplied material — between planning research and synthesizing it, preserving provenance and separating observation from interpretation.
+
+- [ ] Evidence imports
+  - Store and drift-guard raw pulls from research tools, analytics, or chat/support systems (`retention: evergreen | transient`, an `evidence-source` linked-source kind, freshness-based staleness rather than integrity/revision pinning). Deferred out of Silver 0.9's W10 skill-taxonomy pass because `linked-source` can pin a git revision but has no notion of freshness, which is what a live, ever-changing source actually needs — a schema and workflow design of its own, not a detail of the `collect` skill.
+
+- [ ] Evidence-source transports
+  - `research-evidence` (interviews, surveys, usability sessions, research repositories) is a named `planned` activity with no shipped provider; add one. `product-analytics` (added in 0.9 as a named gap for `measure`) similarly has no provider. Ticketing, chat, and support-feedback sources have no capability declared at all yet. Until these exist, `collect` and `measure` degrade through them honestly rather than claiming support.
+
 - [x] Evaluation
   - Define the question and method, prepare tasks, inspect sketches or prototypes, capture sanitized observations, distinguish observation from interpretation, and produce findings and recommendations.
   - Keep subjective product evaluation separate from deterministic design conformance checks.
+
+- [x] Outcome measurement
+  - Close the loop after implementation: review or define instrumentation, inspect product analytics, compare before/after or experiment results, and determine whether a shipped change achieved its intended outcome — without treating correlation as causation or overstating confidence when instrumentation or sample quality is weak.
 
 - [x] Feedback-to-prototype refinement
   - Extend the prototype skill with structured accepted-finding selection, change traceability, and re-checks.

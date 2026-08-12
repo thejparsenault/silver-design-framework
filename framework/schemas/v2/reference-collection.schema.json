@@ -28,7 +28,7 @@
             "maxLength": 2000
           },
           "kind": {
-            "enum": ["image", "video", "audio", "document", "data"]
+            "enum": ["image", "video", "audio", "document", "data", "code"]
           },
           "rights": {
             "type": "object",

@@ -1,7 +1,7 @@
 // Activities: the naming layer between designers and capability contracts.
 //
 // A designer says "build the flow in Figma". A contract says
-// `(design-file, [write, update], [flow, sketch])`. An activity is the name
+// `(design-file, [write, update], [flow, visualization])`. An activity is the name
 // that connects them, and it is the unit a transport preference binds to.
 //
 // Nothing here is declared twice. Which providers serve an activity and which

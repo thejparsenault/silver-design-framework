@@ -103,7 +103,7 @@ test("playbook pauses for selection and resumes from serialized state", async ()
     inputs: [evidence],
     options: {
       "include-flow": false,
-      "include-sketch": false,
+      "include-visualize": false,
       "include-prototype": false,
       "include-pitch": false,
       "include-implementation": false,
@@ -201,7 +201,7 @@ test("upstream revision changes preserve old references and visibly stale downst
     inputs: [evidence],
     options: {
       "include-flow": false,
-      "include-sketch": false,
+      "include-visualize": false,
       "include-prototype": false,
       "include-pitch": false,
       "include-implementation": false,

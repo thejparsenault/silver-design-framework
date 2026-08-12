@@ -13,6 +13,9 @@ inputs:
   - kind: sketch
     required: false
     role: working
+  - kind: visualization
+    required: false
+    role: working
   - kind: finding
     required: false
     role: working

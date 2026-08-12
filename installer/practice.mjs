@@ -201,7 +201,7 @@ before you commit to one, and tell me which you would pick.
 # revision: r1
 # applies_to:
 #   - ideate
-#   - sketch
+#   - visualize
 # guidance:
 #   - Give me at least three genuinely different directions, not three variations.
 #   - Name the one you would pick and say why.

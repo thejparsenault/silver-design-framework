@@ -107,6 +107,7 @@ function outputRule(contract, reference) {
 const contextPinnedOutputKinds = new Set([
   "map",
   "sketch",
+  "visualization",
   "prototype",
   "presentation-view",
   "implementation-handoff",
@@ -145,7 +146,7 @@ function deduplicateEffects(effects) {
 // Every invocation persists its own normalized result. That is a real write, and
 // leaving it out of the audit is what let a skill describe itself as read-only
 // while dirtying the working tree. It belongs to the runtime rather than to any
-// one skill, so it is declared here instead of in all 21 contracts.
+// one skill, so it is declared here instead of in every skill's own contract.
 const RESULT_RECORD_PATHS = ".silver/results/skills/**";
 
 // Activating a canonical artifact also updates the manifest that indexes it and
@@ -425,7 +426,7 @@ function representationCoverage(providers) {
   const portable = used.find(({ provider }) => provider === "silver-portable");
   const external = used.find(({ provider }) => provider !== "silver-portable");
   const localView = used.find(({ capability }) =>
-    ["sketch-renderer", "prototype-renderer", "presentation-renderer"].includes(
+    ["visual-renderer", "prototype-renderer", "presentation-renderer"].includes(
       capability,
     ),
   );

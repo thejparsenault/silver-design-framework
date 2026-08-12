@@ -19,6 +19,9 @@ inputs:
   - kind: map
     required: false
     role: working
+  - kind: structure
+    required: false
+    role: working
 outputs:
   - kind: design-specification
     scope: product
@@ -74,7 +77,7 @@ checks:
     required: true
     blocks: &a1
       - flow
-      - sketch
+      - visualize
       - prototype
       - component
       - implement
@@ -90,9 +93,9 @@ handoffs:
     readiness: flow
     requires:
       - design-specification
-  - id: specify-to-sketch
-    target: sketch
-    readiness: sketch
+  - id: specify-to-visualize
+    target: visualize
+    readiness: visualize
     requires:
       - design-specification
   - id: specify-to-prototype

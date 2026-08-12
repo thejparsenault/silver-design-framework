@@ -104,7 +104,7 @@ test("a provider that cannot take an action does not support the activity", asyn
 
   // Artifact kinds narrow further: pushing a token source and pushing a flow
   // are both (design-file, write) and must stay distinguishable.
-  const framesOnly = transport("frames-only", { supported_artifact_kinds: ["flow", "sketch"] });
+  const framesOnly = transport("frames-only", { supported_artifact_kinds: ["flow", "visualization"] });
   assert.equal(providerSupportsActivity(framesOnly, push), true);
   assert.equal(
     providerSupportsActivity(framesOnly, findActivity(catalog, "push-design-tokens")),

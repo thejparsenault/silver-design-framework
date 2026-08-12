@@ -22,7 +22,7 @@ capabilities:
   - repository
   - canonical-artifact
   - flow
-  - sketch-renderer
+  - visual-renderer
   - map-renderer
   - prototype-renderer
   - presentation-renderer
@@ -58,6 +58,9 @@ supported_artifact_kinds:
   - design-specification
   - flow
   - sketch
+  - visualization
+  - structure
+  - measurement
   - evaluation
   - observation
   - component-proposal
