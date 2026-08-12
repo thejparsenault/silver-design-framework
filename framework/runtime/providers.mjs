@@ -1,4 +1,5 @@
 import { access, readdir, readFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -91,6 +92,12 @@ const PACKAGE_ONLY_CAPABILITIES = new Set([
   "canonical-artifact",
   "production-source",
   "artifact-codec",
+  // The renderer capabilities (visual/map/prototype/presentation) are
+  // deliberately NOT here: 0.9 ships real external declarations for them
+  // (Excalidraw, Miro, Canva, Webflow) precisely so a designer has more than
+  // silver-portable to choose from. PACKAGE_ONLY is for capabilities where a
+  // declaration cannot be trusted to act — writing something Silver is
+  // answerable for — not for "only silver-portable happens to do this today."
 ]);
 
 function assertDeclarationIsHonest(manifest, file) {
@@ -128,6 +135,22 @@ async function declaredAvailability(manifest, options = {}) {
       level: "unknown",
       reason: `${manifest.id} is built into an agent host. Only the agent can confirm it is there.`,
     };
+  }
+  if (manifest.interface?.detection) {
+    const { detectInterface } = await import("./tool-detection.mjs");
+    const found = await detectInterface(manifest.interface.detection, options);
+    const hits = [
+      ...found.executables.map((name) => `executable ${name}`),
+      ...found.env.map((name) => `env ${name}`),
+      ...found.files.map((name) => `file ${name}`),
+    ];
+    return hits.length > 0
+      ? { available: true, level: "configured", reason: `Detected via ${hits.join(", ")}.` }
+      : {
+          available: false,
+          level: "absent",
+          reason: `${manifest.id} declares detection for this machine, but none of it was found.`,
+        };
   }
   return {
     available: false,
@@ -225,12 +248,21 @@ async function loadDeclarations(directory, origin, options) {
 export async function discoverProviders(options = {}) {
   const providerRoot = await providerRootFor(options.root, options.providerRoot);
   const workspace = options.root ? path.resolve(options.root) : null;
+  const home = options.home ?? homedir();
 
-  // Three origins, most-general first, so a project declaration wins a name
-  // clash with the shipped catalog — the local answer is the more specific one.
+  // Four origins, most-general first, so each later one wins a name clash with
+  // an earlier one — the more local answer is the more specific one. This is
+  // about which *declaration* wins an id collision, not which *transport a
+  // designer prefers*: preference ordering (personal ahead of project ahead of
+  // team ahead of framework) is a separate question, answered by `sources` in
+  // framework/runtime/transports.mjs, not by this list. My Practice is last
+  // here for the same reason project-declared is ahead of the shipped catalog:
+  // it is the most locally-scoped place a designer can describe a transport,
+  // even though it is the least project-scoped preference source.
   const catalogRoot = workspace
     ? path.join(workspace, ".silver", "transports")
     : path.resolve(runtimeRoot, "../transports");
+  const practiceTransportsRoot = path.join(home, "Silver", "My Practice", "transports");
   const discovered = [
     ...(await loadPackages(providerRoot, options)),
     ...(await loadDeclarations(catalogRoot, "catalog", options)),
@@ -241,6 +273,7 @@ export async function discoverProviders(options = {}) {
           options,
         )
       : []),
+    ...(await loadDeclarations(practiceTransportsRoot, "personal-declared", options)),
   ];
 
   const byId = new Map();

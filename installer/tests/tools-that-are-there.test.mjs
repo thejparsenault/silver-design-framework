@@ -55,9 +55,16 @@ function transport(id, overrides = {}) {
     directions: ["read", "write"],
     available: true,
     availability_level: "configured",
-    setup: [],
+    activities: [],
     ...overrides,
   };
+}
+
+// A provider that declares full support for `design.pull-file` — the shared
+// shape most of the tests below reuse so they read as "this transport, doing
+// this one job" rather than reconstructing a declaration each time.
+function pullFileSupport() {
+  return [{ id: "design.pull-file", support: "full", actions: ["read", "inspect"] }];
 }
 
 test("every named activity is served by a shipped provider and performed by a skill", async () => {
@@ -85,57 +92,66 @@ test("every named activity is served by a shipped provider and performed by a sk
   const lying = {
     ...catalog,
     activities: catalog.activities.map((activity) =>
-      activity.id === "pull-design-file" ? { ...activity, status: "planned" } : activity,
+      activity.id === "design.pull-file" ? { ...activity, status: "planned" } : activity,
     ),
   };
   const findings = auditActivityCatalog({ catalog: lying, providers, skills });
   assert.equal(findings.length, 1);
-  assert.match(findings[0], /pull-design-file is marked planned/);
+  assert.match(findings[0], /design\.pull-file is marked planned/);
 });
 
 test("a provider that cannot take an action does not support the activity", async () => {
   const catalog = await loadActivityCatalog();
-  const pull = findActivity(catalog, "pull-design-file");
-  const push = findActivity(catalog, "push-design-frames");
+  const pull = findActivity(catalog, "design.pull-file");
+  const editComponents = findActivity(catalog, "system.edit-components");
+  const pushTokens = findActivity(catalog, "design.push-tokens");
 
-  const readOnly = transport("read-only", { directions: ["read"] });
+  // Declaring the activity is necessary but not sufficient: directions must
+  // still cover the declared actions.
+  const readOnly = transport("read-only", { directions: ["read"], activities: pullFileSupport() });
   assert.equal(providerSupportsActivity(readOnly, pull), true);
-  assert.equal(providerSupportsActivity(readOnly, push), false);
+  assert.equal(providerSupportsActivity(readOnly, editComponents), false);
 
-  // Artifact kinds narrow further: pushing a token source and pushing a flow
-  // are both (design-file, write) and must stay distinguishable.
-  const framesOnly = transport("frames-only", { supported_artifact_kinds: ["flow", "visualization"] });
-  assert.equal(providerSupportsActivity(framesOnly, push), true);
-  assert.equal(
-    providerSupportsActivity(framesOnly, findActivity(catalog, "push-design-tokens")),
-    false,
-  );
+  // Artifact kinds narrow further: editing components and pushing tokens are
+  // both (design-file, write) and must stay distinguishable.
+  const componentsOnly = transport("components-only", {
+    supported_artifact_kinds: ["component-catalog"],
+    activities: [
+      { id: "system.edit-components", support: "full", actions: ["create", "write", "update"] },
+      { id: "design.push-tokens", support: "full", actions: ["write", "update"] },
+    ],
+  });
+  assert.equal(providerSupportsActivity(componentsOnly, editComponents), true);
+  assert.equal(providerSupportsActivity(componentsOnly, pushTokens), false);
 });
 
 test("pull and push resolve to different transports in one workspace", async () => {
   const catalog = await loadActivityCatalog();
   const providers = [
-    transport("reader", { directions: ["read"] }),
-    transport("writer", { directions: ["read", "write"] }),
+    transport("reader", { directions: ["read"], activities: pullFileSupport() }),
+    transport("writer", {
+      directions: ["read", "write"],
+      activities: [{ id: "design.push-tokens", support: "full", actions: ["write", "update"] }],
+    }),
   ];
   const sources = [
     {
       source: "project",
       preferences: {
         activities: {
-          "pull-design-file": { use: ["reader"] },
-          "push-design-frames": { use: ["writer"] },
+          "design.pull-file": { use: ["reader"] },
+          "design.push-tokens": { use: ["writer"] },
         },
       },
     },
   ];
   const pull = resolveActivityTransport({
-    activity: findActivity(catalog, "pull-design-file"),
+    activity: findActivity(catalog, "design.pull-file"),
     providers,
     sources,
   });
   const push = resolveActivityTransport({
-    activity: findActivity(catalog, "push-design-frames"),
+    activity: findActivity(catalog, "design.push-tokens"),
     providers,
     sources,
   });
@@ -146,17 +162,20 @@ test("pull and push resolve to different transports in one workspace", async () 
 
 test("a project order beats the framework default", async () => {
   const catalog = await loadActivityCatalog();
-  const providers = [transport("alpha"), transport("zulu")];
-  const activity = findActivity(catalog, "pull-design-file");
+  const providers = [
+    transport("alpha", { activities: pullFileSupport() }),
+    transport("zulu", { activities: pullFileSupport() }),
+  ];
+  const activity = findActivity(catalog, "design.pull-file");
 
-  // Framework order is alphabetical once availability and build cost tie.
+  // Framework order is alphabetical once availability and evidence tie.
   assert.equal(resolveActivityTransport({ activity, providers }).selected, "alpha");
   assert.equal(
     resolveActivityTransport({
       activity,
       providers,
       sources: [
-        { source: "project", preferences: { activities: { "pull-design-file": { use: ["zulu"] } } } },
+        { source: "project", preferences: { activities: { "design.pull-file": { use: ["zulu"] } } } },
       ],
     }).selected,
     "zulu",
@@ -165,20 +184,21 @@ test("a project order beats the framework default", async () => {
 
 test("an unavailable first choice asks rather than substituting", async () => {
   const catalog = await loadActivityCatalog();
-  const activity = findActivity(catalog, "pull-design-file");
+  const activity = findActivity(catalog, "design.pull-file");
   const providers = [
     transport("preferred", {
       available: false,
       availability_level: "absent",
       availability_reason: "Not configured in this agent host.",
-      setup: [{ id: "host-config", kind: "silver-managed", title: "x", verify: { kind: "host-mcp-entry", by: "silver" } }],
+      connection: { kind: "mcp", server: "preferred" },
+      activities: pullFileSupport(),
     }),
-    transport("second"),
+    transport("second", { activities: pullFileSupport() }),
   ];
   const sources = [
     {
       source: "project",
-      preferences: { activities: { "pull-design-file": { use: ["preferred", "second"] } } },
+      preferences: { activities: { "design.pull-file": { use: ["preferred", "second"] } } },
     },
   ];
 
@@ -187,7 +207,7 @@ test("an unavailable first choice asks rather than substituting", async () => {
   assert.equal(asked.selected, null, "the second transport must not be chosen for the designer");
   assert.deepEqual(asked.options, ["second"]);
   assert.equal(asked.removed[0].reason, "unavailable");
-  assert.equal(asked.removed[0].failing_step, "host-config");
+  assert.equal(asked.removed[0].failing_step, "connection");
   assert.equal(asked.removed[0].fixable_by, "designer");
 
   // Opting in is what allows the chain to be walked.
@@ -199,7 +219,7 @@ test("an unavailable first choice asks rather than substituting", async () => {
         source: "project",
         preferences: {
           activities: {
-            "pull-design-file": { use: ["preferred", "second"], on_unavailable: "use_next" },
+            "design.pull-file": { use: ["preferred", "second"], on_unavailable: "use_next" },
           },
         },
       },
@@ -212,15 +232,19 @@ test("an unavailable first choice asks rather than substituting", async () => {
 test("with nobody to ask, the run stops instead of choosing", async () => {
   const catalog = await loadActivityCatalog();
   const stopped = resolveActivityTransport({
-    activity: findActivity(catalog, "pull-design-file"),
+    activity: findActivity(catalog, "design.pull-file"),
     providers: [
-      transport("preferred", { available: false, availability_reason: "down" }),
-      transport("second"),
+      transport("preferred", {
+        available: false,
+        availability_reason: "down",
+        activities: pullFileSupport(),
+      }),
+      transport("second", { activities: pullFileSupport() }),
     ],
     sources: [
       {
         source: "project",
-        preferences: { activities: { "pull-design-file": { use: ["preferred", "second"] } } },
+        preferences: { activities: { "design.pull-file": { use: ["preferred", "second"] } } },
       },
     ],
     interactive: false,
@@ -234,12 +258,12 @@ test("with nobody to ask, the run stops instead of choosing", async () => {
 test("a veto is never overridable and always names its source", async () => {
   const catalog = await loadActivityCatalog();
   const resolution = resolveActivityTransport({
-    activity: findActivity(catalog, "pull-design-file"),
-    providers: [transport("remote")],
+    activity: findActivity(catalog, "design.pull-file"),
+    providers: [transport("remote", { activities: pullFileSupport() })],
     sources: [
       {
         source: "project",
-        preferences: { activities: { "pull-design-file": { use: ["remote"] } } },
+        preferences: { activities: { "design.pull-file": { use: ["remote"] } } },
       },
       {
         source: "team",
@@ -335,22 +359,24 @@ test("Silver refuses to rewrite a host config that already holds a secret", asyn
   );
 });
 
-test("no setup step outside silver-managed is ever executed", async () => {
-  // The ceiling, asserted against the source rather than by observation: no
-  // code path runs a transport's terminal or background-process commands.
-  const source = await readFile(
-    path.join(repositoryRoot, "installer/host-mcp-config.mjs"),
-    "utf8",
-  );
-  assert.equal(/exec|spawn|child_process/.test(source), false);
+test("post-setup notes are informational only — nothing shells out to satisfy them", async () => {
+  // 0.9 replaced the authored setup ladder with generically derived rungs plus
+  // freeform `post_setup` notes. The ceiling still holds and is asserted
+  // against the source rather than by observation: no code path runs a
+  // transport's commands, in either the file that used to and the one that
+  // derives diagnosis today.
+  for (const file of ["installer/host-mcp-config.mjs", "framework/runtime/transport-diagnosis.mjs"]) {
+    const source = await readFile(path.join(repositoryRoot, file), "utf8");
+    assert.equal(
+      /child_process|\bspawn\(|\bexecFile\(|[^.\w]exec\(/.test(source),
+      false,
+      `${file} must not shell out`,
+    );
+  }
   const providers = await shippedProviders();
   for (const provider of providers) {
-    for (const step of provider.setup ?? []) {
-      if (step.kind === "silver-managed") continue;
-      assert.ok(
-        step.verify,
-        `${provider.id}/${step.id} must declare how it is verified rather than being run`,
-      );
+    for (const note of provider.post_setup ?? []) {
+      assert.equal(typeof note, "string", `${provider.id}'s post_setup entries must be plain notes`);
     }
   }
 });

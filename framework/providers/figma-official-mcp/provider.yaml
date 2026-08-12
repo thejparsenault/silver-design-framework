@@ -1,83 +1,142 @@
-# Figma's official MCP server — a read-oriented transport to Figma.
+# Figma's official MCP server — the default general Figma integration.
 #
-# Good at structured reads: pulling variables, styles, and design structure back
-# out. It does not build frames, so it declares `directions: [read]` and is not
-# a candidate for any push activity. That is the whole point of splitting Figma
-# into transports — this one and figma-console-mcp are good at opposite jobs, and
-# a designer can bind each activity to the right one.
+# As of 0.9, this genuinely reads and writes: it can pull structure, tokens, and
+# styles, and it can create and update frames, flows, and variables directly on
+# the canvas via its `use_figma` tool. That write path is beta, remote-only, and
+# moving to usage-based pricing — record that as a constraint on the activities
+# that use it, not as a reason to under-declare what it does. The earlier
+# `directions: [read]` here was a deliberate 0.8 scoping decision made before
+# that write path existed publicly; it no longer reflects the tool.
 #
-# It needs no local build and no background process, so its setup ladder is one
-# rung. That is why the default heuristic prefers it wherever it can serve.
+# It needs no local build and no background process, so post-setup is a single
+# authorization step handled the first time the host calls it.
 schema: silver/provider/v1
 id: figma-official-mcp
-version: 0.8.0
+version: 0.9.0
 kind: external
 target: figma
 variant: official
 aliases:
   - official figma mcp
   - figma official
-  - figma dev mode
+  - figma remote mcp
 source:
   publisher: Figma
   homepage: https://www.figma.com
-  docs: https://help.figma.com/hc/en-us/articles/32132100833559
+  docs: https://developers.figma.com/docs/figma-mcp-server/
   distribution:
     kind: remote
     ref: https://mcp.figma.com/mcp
-  # Declared from Figma's published endpoint. Nobody has exercised it here, and
-  # saying so is the difference between a description and a claim.
+  # Declared from Figma's published documentation. Nobody has exercised the
+  # write path here yet — see docs/silver-0.9-acceptance.md S09-MIGRATE-04 for
+  # the manual round trip that would move this to `verified`.
   evidence: declared
-  verified_at: 2026-08-11
+  verified_at: 2026-08-12
   verified_against: published remote endpoint documentation
 guidance:
   good_at:
     - Structured reads of variables, styles, and design structure
+    - Creating and editing frames, flows, and variables directly on the canvas
     - Pulling token values out of a file you do not have open
   not_for:
-    - Creating or editing frames — it declares no write direction
+    - Working entirely offline — canvas writes are remote-only and beta
   prefer_when:
+    - The requested output is editable, native Figma content
     - You want design-system values back out of Figma without opening it
   compare_to:
     - transport: figma-console-mcp
       difference: >-
-        Reads without needing the file open and needs no local plugin; the
-        console transport can build in the document but requires it running.
-capabilities: [design-file, representation-sync]
+        Figma's first-party hosted server, usable without the file open; the
+        console transport reaches whichever document is open in the app and
+        needs its plugin running.
+capabilities: [design-file, flow, visual-renderer, representation-sync]
 connection:
   kind: mcp
   server: figma
   tool_prefix: mcp__figma__
-  # A remote endpoint: nothing to install and no process to supervise, which is
-  # why the ladder below is two rungs and neither is a terminal.
   config:
     url: https://mcp.figma.com/mcp
 availability:
   script: scripts/health.mjs
-setup:
-  - id: host-config
-    kind: silver-managed
-    title: Declare the figma MCP server in this agent host
-    verify: { kind: host-mcp-entry, by: silver }
-    troubleshoot:
-      - symptom: Silver reports no MCP server named figma
-        means: No host configuration file declares it yet.
-        do: Run `silver tools --connect figma-official-mcp`, then restart your agent host.
-  - id: authorize
-    kind: external-app
-    title: Authorize the connection when the host first calls it
-    verify: { kind: handshake, by: agent }
-    troubleshoot:
-      - symptom: Configured, but calls come back unauthorized
-        means: The remote endpoint has not been authorized for this machine.
-        do: Ask the agent to call it once and complete the browser authorization it opens.
+post_setup:
+  - Authorize the connection the first time your agent calls it — it opens a browser window to complete the authorization.
+activities:
+  - id: design.pull-file
+    support: full
+    actions: [read, inspect]
+  - id: design.pull-tokens
+    support: full
+    actions: [read]
+    outputs: [{format: json, editable: false, native: true}]
+  - id: system.inspect-components
+    support: full
+    actions: [read, inspect]
+  - id: brand.inspect-assets
+    support: full
+    actions: [read, inspect]
+  - id: flow.create-user-flow
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Canvas writes are beta, remote-only, and moving to usage-based pricing.
+    evidence: declared
+  - id: visual.create-rough
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Canvas writes are beta, remote-only, and moving to usage-based pricing.
+    evidence: declared
+  - id: visual.create-wireframe
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Canvas writes are beta, remote-only, and moving to usage-based pricing.
+    evidence: declared
+  - id: visual.create-high-fidelity-ui
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Canvas writes are beta, remote-only, and moving to usage-based pricing.
+    evidence: declared
+  - id: visual.create-variants
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Canvas writes are beta, remote-only, and moving to usage-based pricing.
+    evidence: declared
+  - id: diagram.create-conceptual
+    support: partial
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+    constraints:
+      - Best suited to FigJam boards, not standard design files.
+  - id: system.edit-components
+    support: full
+    actions: [create, write, update]
+  - id: system.map-design-to-code
+    support: partial
+    actions: [read, inspect]
+    constraints:
+      - Reads Code Connect mappings where published; does not publish new mappings itself.
 permissions:
   - capability: design-file
-    actions: [read, inspect]
+    actions: [read, inspect, create, write, update]
     default: ask
-supported_artifact_kinds: [token-source, design-specification, component-proposal]
-directions: [read]
-fidelity: partial
+  - capability: flow
+    actions: [create, write, update]
+    default: ask
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+supported_artifact_kinds: [token-source, design-specification, component-proposal, flow, visualization, component-catalog, asset-catalog, representation-binding, concept]
+directions: [read, write-preview, write]
+fidelity: semantic
+maturity: beta
 probe:
   tool: mcp__figma__get_variable_defs
   expects: variable definitions from a Figma file, or an explicit empty result

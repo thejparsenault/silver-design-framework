@@ -22,7 +22,7 @@ const sourceCatalogPath = path.resolve(runtimeRoot, "../activities/catalog.yaml"
 // Which provider `directions` let an action happen. `permissions` is not
 // consulted: its `allow | ask | deny` is a prompting default, not a statement
 // about what the provider can do.
-const READ_ACTIONS = new Set(["read", "inspect", "execute"]);
+const READ_ACTIONS = new Set(["read", "inspect", "search", "execute"]);
 const WRITE_ACTIONS = new Set([
   "create",
   "write",
@@ -30,13 +30,14 @@ const WRITE_ACTIONS = new Set([
   "delete",
   "publish",
   "present",
+  "comment",
   "send",
   "commit",
   "push",
   "open-pr",
 ]);
 
-function directionSatisfies(directions, action) {
+export function directionSatisfies(directions, action) {
   if (directions.includes("portable")) return true;
   if (READ_ACTIONS.has(action)) return directions.includes("read");
   if (WRITE_ACTIONS.has(action)) return directions.includes("write");
@@ -77,18 +78,47 @@ export function findActivity(catalog, id) {
   return catalog.activities.find((activity) => activity.id === id);
 }
 
-// A provider serves an activity when it declares the capability, its declared
-// directions cover every action the activity needs, and — when the activity
-// names artifact kinds — it supports at least one of them.
+// A provider serves an activity when it *declares* the activity (0.9: support
+// is declared, not derived — a pure derivation from capabilities/directions/
+// artifact-kinds cannot express "creates a high-fidelity design" vs. "creates
+// a rough sketch", which is the whole reason the catalog grew fine-grained),
+// the declared actions cover every action the activity needs, its declared
+// directions are consistent with those actions, and — when the activity names
+// artifact kinds — it supports at least one of them.
+//
+// `binding: internal` does not change matching or resolution — silver-portable
+// still declares and serves these activities exactly like any other. It only
+// gates *rebinding*: `installer/tools.mjs`'s `bindActivityTransport` refuses to
+// point one at a different transport, because nothing else is a legitimate
+// candidate (typically because the capability is PACKAGE_ONLY, see
+// framework/runtime/providers.mjs). Treating "internal" as unmatched here would
+// make every skill that needs `canonical-artifact` unrunnable, which is not
+// what internal means.
 //
 // Every action must be covered rather than any, because an activity is one unit
 // of work. A transport that can read but not write has not done "push the
 // tokens", and claiming otherwise is the kind of optimistic reporting 0.7 spent
 // a release removing.
 export function providerSupportsActivity(provider, activity) {
+  // `unnamed` marks a synthetic pseudo-activity built when a caller resolves
+  // without a catalog (see `pseudoActivity` in framework/runtime/permissions.mjs).
+  // There is no fine-grained id to have declared support for in that case, so
+  // this falls back to the coarse pre-0.9 question: does the provider claim the
+  // capability at all. Deliberately permissive, and only reachable with no
+  // catalog supplied.
+  if (activity.unnamed) {
+    return Boolean(provider.capabilities?.includes(activity.capability));
+  }
+  const declared = (provider.activities ?? []).find((entry) => entry.id === activity.id);
+  if (!declared) return false;
   if (!provider.capabilities?.includes(activity.capability)) return false;
   const directions = provider.directions ?? [];
-  if (!activity.actions.every((action) => directionSatisfies(directions, action))) {
+  const declaredActions = new Set(declared.actions ?? []);
+  if (
+    !activity.actions.every(
+      (action) => declaredActions.has(action) && directionSatisfies(directions, action),
+    )
+  ) {
     return false;
   }
   if (!activity.artifact_kinds) return true;
@@ -145,6 +175,42 @@ export function activitiesForSkill(catalog, skill) {
 
 export function activitiesForCapability(catalog, capability) {
   return catalog.activities.filter((activity) => activity.capability === capability);
+}
+
+// Declaring support reintroduces the drift risk the pre-0.9 pure derivation
+// made structurally impossible. This is the replacement guarantee: every
+// provider's declared `activities[]` entry must name a real catalog id, claim
+// a capability the provider actually holds, and claim only actions the
+// activity itself allows — three ways a typo or a copy-paste from another
+// provider would otherwise fail silently (the entry just never matches
+// anything, which looks identical to "not implemented yet").
+export function auditProviderActivities({ catalog, providers }) {
+  const findings = [];
+  const byId = new Map(catalog.activities.map((activity) => [activity.id, activity]));
+  for (const provider of providers) {
+    for (const entry of provider.activities ?? []) {
+      const activity = byId.get(entry.id);
+      if (!activity) {
+        findings.push(
+          `${provider.id} declares support for ${entry.id}, which does not exist in the activity catalog.`,
+        );
+        continue;
+      }
+      if (!provider.capabilities?.includes(activity.capability)) {
+        findings.push(
+          `${provider.id} declares support for ${entry.id} (capability: ${activity.capability}), but does not hold that capability.`,
+        );
+      }
+      const allowed = new Set(activity.actions);
+      const overreach = (entry.actions ?? []).filter((action) => !allowed.has(action));
+      if (overreach.length > 0) {
+        findings.push(
+          `${provider.id} declares actions [${overreach.join(", ")}] for ${entry.id}, which the activity does not define.`,
+        );
+      }
+    }
+  }
+  return findings;
 }
 
 // Drift check, run by validate-contracts. `status` is verified in both

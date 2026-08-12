@@ -168,55 +168,92 @@
       "uniqueItems": true,
       "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 100 }
     },
-    "setup": {
-      "description": "The ladder a designer climbs to make this transport work. Steps are typed by who owns them, so `doctor` can say which rung is missing instead of reporting the whole transport unavailable. Silver executes `silver-managed` steps only.",
+    "post_setup": {
+      "description": "Non-derivable facts a designer needs after this transport is otherwise detected as available — a command that must be run once, a mode to enable in the tool itself. Everything derivable (host-config presence, probe freshness, required env vars, executable detection) is diagnosed generically instead; see framework/runtime/transport-diagnosis.mjs. This replaces the pre-0.9 `setup` ladder, which was load-bearing in exactly one place (`--diagnose` rung reporting) and decorative everywhere else.",
       "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "activities": {
+      "description": "Which activities (framework/activities/catalog.yaml) this provider serves, and how well. This is declared, not derived: the pre-0.9 model inferred support purely from capabilities/directions/artifact-kinds, which cannot express fine distinctions like \"creates a high-fidelity design\" vs. \"creates a rough sketch.\" Declaring it here reintroduces drift risk, so framework/scripts/validate-contracts.mjs checks it: every id must exist in the catalog, declared actions must be satisfiable by `directions`, the activity's coarse `capability` must be in this provider's `capabilities`, and package-only or `internal`-bound activities may never be claimed.",
+      "type": "array",
+      "uniqueItems": false,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "kind", "title", "verify"],
+        "required": ["id", "support", "actions"],
         "properties": {
-          "id": { "$ref": "common.schema.json#/$defs/id" },
-          "kind": {
-            "description": "external-app: the designer does it in another application. terminal: the designer runs commands Silver prints. background-process: a long-running process Silver never launches or supervises. silver-managed: Silver performs it, with approval.",
-            "enum": ["external-app", "terminal", "background-process", "silver-managed"]
+          "id": { "$ref": "common.schema.json#/$defs/namespacedId" },
+          "support": {
+            "description": "full: does the whole activity. partial: does some of it, or only under conditions stated in `constraints`. representational: can describe or spec the activity's output but not produce the real thing.",
+            "enum": ["full", "partial", "representational"]
           },
-          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-          "url": { "type": "string", "maxLength": 500 },
-          "commands": {
+          "actions": {
             "type": "array",
-            "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "common.schema.json#/$defs/action" }
           },
-          "troubleshoot": {
-            "description": "What goes wrong at this rung and what to do about it. Rendered by `silver tools --diagnose` when the step fails, so the answer arrives with the problem instead of living in a wiki.",
+          "outputs": {
+            "description": "What this provider actually produces for this activity. This is what makes \"create an editable Figma design\" resolvable and \"create a high-fidelity mockup\" ambiguous when more than one provider claims the activity.",
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["symptom", "means", "do"],
+              "required": ["format"],
               "properties": {
-                "symptom": { "type": "string", "minLength": 1, "maxLength": 300 },
-                "means": { "type": "string", "minLength": 1, "maxLength": 400 },
-                "do": { "type": "string", "minLength": 1, "maxLength": 500 }
+                "format": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 40 },
+                "editable": { "type": "boolean" },
+                "native": { "type": "boolean" }
               }
             }
           },
-          "verify": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["kind", "by"],
-            "properties": {
-              "kind": { "enum": ["path", "host-mcp-entry", "env", "handshake", "probe"] },
-              "by": {
-                "description": "silver: Silver's own process can check this. agent: only the agent can, because only the agent can call the tool.",
-                "enum": ["silver", "agent"]
-              },
-              "path": { "$ref": "common.schema.json#/$defs/relativePath" },
-              "url": { "type": "string", "maxLength": 500 }
+          "constraints": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 2, "maxLength": 300 }
+          },
+          "evidence": {
+            "description": "Defaults to this provider's `source.evidence` when absent. Lets a specific activity claim be flagged unverified even when the provider's general metadata is verified, or vice versa.",
+            "enum": ["declared", "verified"]
+          }
+        }
+      }
+    },
+    "interface": {
+      "description": "For a CLI/API/SDK provider with no `connection` block for Silver to inspect. Generic detection (executables on PATH, env vars present, marker files) is what makes a CLI tool visible without per-provider scaffolding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["cli", "api", "sdk"] },
+        "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "base_url": { "type": "string", "maxLength": 500 },
+        "docs": { "type": "string", "maxLength": 500 },
+        "detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "executables": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+            },
+            "env": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+            },
+            "files": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 300 }
             }
           }
         }
       }
+    },
+    "maturity": {
+      "description": "Recorded for a designer's judgment, not used for ranking (Silver does not maintain a cross-vendor league table).",
+      "enum": ["stable", "preview", "beta", "experimental"]
     },
     "capabilities": {
       "type": "array", "minItems": 1, "uniqueItems": true,

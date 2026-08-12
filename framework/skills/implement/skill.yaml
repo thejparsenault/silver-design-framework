@@ -70,6 +70,7 @@ effects:
       - create
       - write
       - update
+      - execute
     paths:
       - production/**
   - capability: version-control

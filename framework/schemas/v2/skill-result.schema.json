@@ -102,7 +102,7 @@
           },
           "activity": {
             "description": "The named activity that decided this transport, when the catalog had a name for it. Lets a report say \"pushing design-system updates\" rather than \"design-file\".",
-            "$ref": "common.schema.json#/$defs/id"
+            "$ref": "common.schema.json#/$defs/namespacedId"
           },
           "provider": {
             "$ref": "common.schema.json#/$defs/id"
@@ -121,7 +121,7 @@
         "additionalProperties": false,
         "required": ["activity", "title", "ordered_by", "chain", "removed", "decision"],
         "properties": {
-          "activity": { "$ref": "common.schema.json#/$defs/id" },
+          "activity": { "$ref": "common.schema.json#/$defs/namespacedId" },
           "title": { "type": "string", "minLength": 1, "maxLength": 160 },
           "ordered_by": { "enum": ["personal", "project", "team", "framework"] },
           "chain": {

@@ -92,7 +92,7 @@
       "properties": {
         "activities": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/id" },
+          "propertyNames": { "$ref": "#/$defs/namespacedId" },
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
@@ -242,6 +242,11 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "maxLength": 80
+    },
+    "namespacedId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$",
+      "maxLength": 100
     },
     "relativePath": {
       "type": "string",

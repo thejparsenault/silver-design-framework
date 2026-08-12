@@ -19,9 +19,9 @@
     "activity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "capability", "actions", "status"],
+      "required": ["id", "title", "capability", "actions", "status", "fallback"],
       "properties": {
-        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "id": { "$ref": "common.schema.json#/$defs/namespacedId" },
         "title": {
           "description": "What a designer would call this. Shown wherever a transport is chosen or reported.",
           "type": "string",
@@ -46,6 +46,38 @@
         "status": {
           "description": "served: at least one shipped provider supports this activity. planned: a named gap with no shipped provider yet. Checked in both directions, so a new provider forces the status to be corrected.",
           "enum": ["served", "planned"]
+        },
+        "phrases": {
+          "description": "What a designer would actually say. Matched by `silver tools --for \"<phrase>\"`; required because id/capability substring matching produces mass ambiguity across a namespaced vocabulary this size.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+        },
+        "binding": {
+          "description": "bindable (default): a designer can choose and re-bind a transport for this activity. internal: no other provider can meaningfully serve this (typically because its capability is PACKAGE_ONLY, or no alternative is credible even in principle) — `silver tools --bind` refuses to bind these.",
+          "enum": ["bindable", "internal"],
+          "default": "bindable"
+        },
+        "fallback": {
+          "description": "The native answer used when no provider matches this activity's capability. This is a separate resolution path, not a ranked-last provider: silver-portable answers it without needing to hold the activity's capability at all. Guarantees every activity has a Silver-native answer, however degraded.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "provider", "format", "note"],
+          "properties": {
+            "mode": {
+              "description": "native: silver-portable performs the activity itself, fully. input-required: silver-portable can proceed only if given the missing input (an export, a URL, credentials). representational: silver-portable can describe or spec the thing but not produce the actual external artifact.",
+              "enum": ["native", "input-required", "representational"]
+            },
+            "provider": { "$ref": "common.schema.json#/$defs/id" },
+            "format": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "note": {
+              "description": "The plain-language assumption or instruction that goes with this fallback, e.g. \"Analyze exported data if supplied; never invent live analytics results.\"",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
         }
       }
     }

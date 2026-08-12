@@ -509,6 +509,23 @@ are the next recommended milestones.
 - [ ] Localization and content resilience
   - Long text, bidirectionality, pluralization, date/number formats, and pseudo-localization.
 
+- [ ] Docs & work-tracking transport family (W7 follow-up)
+  - Notion, Linear, and similar. Deliberately out of scope for 0.9's W7:
+    several would need capabilities that do not exist yet (a real
+    `work-item`/`document` concept beyond `external-artifact`), and none was
+    load-bearing for the tool families the user actually wanted (Design
+    tools, Browser & QA).
+
+- [ ] Data & code transport family (W7 follow-up)
+  - PostHog (`product-analytics`), Sentry, GitHub (`version-control`),
+    Storybook, shadcn, Mermaid-as-a-service. Storybook and a hosted Vercel
+    deploy were considered and rejected specifically: both would need to
+    claim `production-source`, which `PACKAGE_ONLY_CAPABILITIES` forbids any
+    declaration from claiming — a declaration is a name and an address, and
+    nobody here wrote or reviewed the code behind it, so it may not be
+    trusted to produce Silver's canonical production source. A real adapter
+    package, not a declaration, would be required for any of these.
+
 ## Parking Lot
 
 - Hosted collaborative service.
@@ -517,3 +534,5 @@ are the next recommended milestones.
 - General-purpose design-file version control.
 - Automatic lifecycle enforcement.
 - Silent production code generation or external synchronization.
+- A maintained cross-vendor tool ranking (see DECISIONS.md, 2026-07-31 —
+  Silver has no vetted source of tool recommendations).

@@ -52,12 +52,19 @@ permissions:
     default: ask
 directions: [read]
 fidelity: partial
-setup:
-  - id: confirm-host-support
-    kind: external-app
-    title: Confirm your agent has browser tools
-    verify: { kind: handshake, by: agent }
-    troubleshoot:
-      - symptom: Silver says it cannot tell whether this is available
-        means: That is expected. Silver cannot see an agent's built-in tools.
-        do: Ask the agent to open a page and record the result with `silver tools --record-probe`.
+maturity: stable
+post_setup:
+  - Silver cannot see an agent's built-in tools. Ask the agent to open a page and record the result with `silver tools --record-probe`.
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: partial
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: partial
+    actions: [inspect]

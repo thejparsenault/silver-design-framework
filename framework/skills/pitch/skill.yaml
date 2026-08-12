@@ -73,6 +73,7 @@ effects:
       - inspect
       - write
       - update
+      - comment
     external: true
 guardrails:
   - authority-respected

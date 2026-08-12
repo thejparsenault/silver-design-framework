@@ -33,10 +33,22 @@ capability. 24 skills total. Every automated `S10-*` criterion is also done
 and gate-green, uncommitted on top of `8a92437` — next action is review and
 commit.
 
-Only two `S09-*` criteria remain, both explicitly out of automated scope:
-`S09-CURATE-01` (W7, the guided transport-curation pass — needs the user
-directly) and `S09-MIGRATE-04` (manual end-to-end verification against a
-real workspace).
+A W7 pass followed, also on top of that commit: `S09-CURATE-01`'s guided
+transport-curation pass happened directly with the user, and grew into the
+largest workstream in the release — the activity catalog went from 20 to 67
+namespaced entries, each carrying a `fallback` that guarantees a Silver-native
+answer; provider support moved from derived to declared
+(`provider.activities`); `interface.detection` makes CLI-only transports
+detectable for the first time; the authored `setup` ladder was replaced by
+generically derived diagnosis plus freeform `post_setup` notes; `silver tools
+--for "<phrase>"` resolves a task description to what will serve it; and nine
+new declarations shipped alongside corrections to `figma-official-mcp` (reads
+and writes, not read-only) and `figma-console-mcp`'s publisher metadata.
+`S09-TOOLS-01` through `S09-TOOLS-07` are done and gate-green.
+
+Only one `S09-*` criterion remains, explicitly out of automated scope:
+`S09-MIGRATE-04` (manual end-to-end verification against a real workspace,
+including a live Figma write-to-canvas round trip now that write is real).
 
 Silver `0.8.0`, **Tools That Are Actually There**, is the previous release,
 also unpublished, and made the provider selection layer real: activities
@@ -503,11 +515,12 @@ adoption.
 
 ## Next 3 Actions
 
-1. Review the uncommitted W10 pass (everything in `git status` on top of
-   `8a92437`) and commit it as the next checkpoint.
-2. Do the W7 transport curation pass with the user directly (`S09-CURATE-01`)
-   and the manual end-to-end verification (`S09-MIGRATE-04`): blank install,
-   adjacent/adopted workspace, and one live Figma round trip.
+1. Review the uncommitted W10 and W7 passes (everything in `git status` on
+   top of `8a92437`) and commit them as the next checkpoint(s).
+2. Do the manual end-to-end verification (`S09-MIGRATE-04`): blank install,
+   adjacent/adopted workspace, and one live Figma round trip — now a genuine
+   write-to-canvas test, since `figma-official-mcp`'s write path is real.
+   Flip its `source.evidence` to `verified` if it passes.
 3. Select one representative existing product repository and run
    `silver adopt inspect | apply` against it for real (also
    `S09-MIGRATE-04`), then decide on publishing `0.9.0`.

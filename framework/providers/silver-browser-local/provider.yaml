@@ -6,12 +6,12 @@
 # capability and never quietly becomes a prerequisite.
 #
 # Scope note worth keeping straight: this transport is what the deterministic
-# browser *check* suite already uses. Resolving it for `inspect-in-browser`
-# means an agent can look at a running prototype the same way. "An agent looked"
-# and "a check passed" stay different claims.
+# browser *check* suite already uses. Resolving it for `browser.navigate` and
+# `browser.inspect-structure` means an agent can look at a running prototype
+# the same way. "An agent looked" and "a check passed" stay different claims.
 schema: silver/provider/v1
 id: silver-browser-local
-version: 0.8.0
+version: 0.9.0
 kind: portable
 target: browser
 variant: local-chrome
@@ -42,16 +42,30 @@ connection:
   kind: local
 availability:
   script: scripts/health.mjs
-setup:
-  - id: install-chrome
-    kind: external-app
-    title: Install Google Chrome or Chromium
-    url: https://www.google.com/chrome/
-    verify: { kind: path, by: silver }
-    troubleshoot:
-      - symptom: Silver reports no Chrome executable
-        means: Chrome is installed somewhere this list does not cover.
-        do: Set SILVER_CHROME_PATH to the executable and run `silver tools --diagnose silver-browser-local`.
+post_setup:
+  - Install Google Chrome or Chromium (google.com/chrome). If Silver reports no executable, set SILVER_CHROME_PATH to it.
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]
 permissions:
   - capability: browser
     actions: [inspect, execute]

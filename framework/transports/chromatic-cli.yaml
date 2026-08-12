@@ -1,0 +1,57 @@
+# Chromatic CLI — a declaration, not an adapter.
+#
+# Visual regression against captured baselines, typically from Storybook.
+# Answers "did this change visually" with a diff, not "does this look right" —
+# that judgment is evaluate.review-design's job, not this tool's.
+schema: silver/provider/v1
+id: chromatic-cli
+version: 0.9.0
+kind: external
+target: chromatic
+variant: cli
+aliases:
+  - chromatic
+  - chromatic cli
+source:
+  publisher: Chromatic (Storybook)
+  homepage: https://www.chromatic.com
+  repository: https://github.com/chromaui/chromatic-cli
+  license: MIT
+  distribution:
+    kind: npm
+    ref: chromatic
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published package documentation
+guidance:
+  good_at:
+    - Detecting visual differences against a captured baseline across stories or pages
+  not_for:
+    - Judging whether a design looks right — it diffs pixels, it does not review design
+  prefer_when:
+    - A visual regression baseline already exists and you want to know what changed
+capabilities: [browser]
+interface:
+  kind: cli
+  command: chromatic
+  docs: https://www.chromatic.com/docs/cli
+  detection:
+    executables: [chromatic]
+    env: [CHROMATIC_PROJECT_TOKEN]
+activities:
+  - id: evaluate.compare-visual
+    support: full
+    actions: [inspect]
+    outputs: [{format: json, editable: false, native: false}]
+    constraints:
+      - Requires a Chromatic project and an existing baseline to diff against.
+permissions:
+  - capability: browser
+    actions: [inspect]
+    default: ask
+requires_env: [CHROMATIC_PROJECT_TOKEN]
+directions: [read]
+fidelity: partial
+maturity: stable
+post_setup:
+  - Requires a Chromatic project token and an existing baseline (typically from Storybook) to diff against.

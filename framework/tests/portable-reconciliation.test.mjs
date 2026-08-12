@@ -183,7 +183,20 @@ test("provider packages and canonical codecs are registered and executable", asy
   );
   assert.deepEqual(
     providers.filter(({ origin }) => origin === "catalog").map(({ id }) => id).sort(),
-    ["agent-native-browser", "chrome-devtools-mcp", "playwright-mcp"],
+    [
+      "agent-native-browser",
+      "axe-core-cli",
+      "canva-connect-api",
+      "chromatic-cli",
+      "chrome-devtools-mcp",
+      "excalidraw-mcp",
+      "figma-official-desktop-mcp",
+      "lighthouse-cli",
+      "miro-mcp",
+      "playwright-mcp",
+      "v0-api",
+      "webflow-mcp",
+    ],
   );
   assert.equal(
     providers.find(({ id }) => id === "chrome-devtools-mcp").execution,

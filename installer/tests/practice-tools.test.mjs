@@ -52,16 +52,16 @@ test("bindActivityTransport writes a valid, revisioned personal binding", async 
     root,
     home: emptyHome,
     practiceRoot,
-    activity: "pull-design-tokens",
+    activity: "design.pull-tokens",
     transport: "figma-official-mcp",
   });
-  assert.equal(bound.activity, "pull-design-tokens");
+  assert.equal(bound.activity, "design.pull-tokens");
   assert.equal(bound.transport, "figma-official-mcp");
 
   const written = parse(await readUtf8(path.join(practiceRoot, "tools.yaml")));
   assert.equal(written.schema, "silver/tool-preferences/v1");
   assert.equal(written.revision, "r1");
-  assert.deepEqual(written.activities["pull-design-tokens"], { use: ["figma-official-mcp"] });
+  assert.deepEqual(written.activities["design.pull-tokens"], { use: ["figma-official-mcp"] });
 
   // Binding a second activity preserves the first and bumps the revision —
   // an edit, not a replacement of the whole file.
@@ -69,13 +69,13 @@ test("bindActivityTransport writes a valid, revisioned personal binding", async 
     root,
     home: emptyHome,
     practiceRoot,
-    activity: "push-design-tokens",
+    activity: "design.push-tokens",
     transport: "figma-console-mcp",
   });
   const rewritten = parse(await readUtf8(second.path));
   assert.equal(rewritten.revision, "r2");
-  assert.deepEqual(rewritten.activities["pull-design-tokens"], { use: ["figma-official-mcp"] });
-  assert.deepEqual(rewritten.activities["push-design-tokens"], { use: ["figma-console-mcp"] });
+  assert.deepEqual(rewritten.activities["design.pull-tokens"], { use: ["figma-official-mcp"] });
+  assert.deepEqual(rewritten.activities["design.push-tokens"], { use: ["figma-console-mcp"] });
 
   // inspectTools reads it back as the personal source, first in order —
   // resolveActivityTransport's own ordering guarantee, exercised end to end
@@ -90,21 +90,22 @@ test("a personal binding wins ordering over the framework default", async () => 
     "../../framework/runtime/transports.mjs"
   );
   const activity = {
-    id: "pull-design-tokens",
+    id: "design.pull-tokens",
     title: "Pull design-system values from a design tool",
     capability: "design-file",
     actions: ["read"],
   };
+  const declared = [{ id: "design.pull-tokens", support: "full", actions: ["read"] }];
   const providers = [
-    { id: "transport-a", capabilities: ["design-file"], directions: ["read", "write"], available: true, availability_level: "configured", setup: [] },
-    { id: "transport-b", capabilities: ["design-file"], directions: ["read", "write"], available: true, availability_level: "configured", setup: [] },
+    { id: "transport-a", capabilities: ["design-file"], directions: ["read", "write"], available: true, availability_level: "configured", activities: declared },
+    { id: "transport-b", capabilities: ["design-file"], directions: ["read", "write"], available: true, availability_level: "configured", activities: declared },
   ];
   const resolution = resolveActivityTransport({
     activity,
     providers,
     sources: [
-      { source: "personal", preferences: { activities: { "pull-design-tokens": { use: ["transport-b"] } } } },
-      { source: "framework", preferences: { activities: { "pull-design-tokens": { use: ["transport-a"] } } } },
+      { source: "personal", preferences: { activities: { "design.pull-tokens": { use: ["transport-b"] } } } },
+      { source: "framework", preferences: { activities: { "design.pull-tokens": { use: ["transport-a"] } } } },
     ],
   });
   assert.equal(resolution.selected, "transport-b");
@@ -132,7 +133,7 @@ test("bindActivityTransport refuses an unknown activity or transport", async (t)
         root,
         home: emptyHome,
         practiceRoot,
-        activity: "pull-design-tokens",
+        activity: "design.pull-tokens",
         transport: "not-a-real-transport",
       }),
     /No transport named/,

@@ -116,8 +116,9 @@ export function scaffoldDeclaration({ server, host, toolPrefix }) {
     `    - ${DECLARE_PLACEHOLDER}     # what this is actually good at`,
     "  prefer_when:",
     `    - ${DECLARE_PLACEHOLDER}     # when you would reach for it over another`,
-    "# Which activities this can serve is derived from what you declare below.",
-    "# See `silver tools` for the activity list.",
+    "# The coarse permission surface. Does not by itself decide what this can",
+    "# serve below — activities: does that, one entry per activity id from",
+    "# `silver tools` (see framework/activities/catalog.yaml).",
     `capabilities: [${DECLARE_PLACEHOLDER}]`,
     "connection:",
     "  kind: mcp",
@@ -128,11 +129,17 @@ export function scaffoldDeclaration({ server, host, toolPrefix }) {
     "    actions: [read, inspect]",
     "    default: ask",
     "directions: [read]",
-    "setup:",
-    "  - id: host-config",
-    "    kind: external-app",
-    `    title: ${server} is already configured in ${host ?? "your agent host"}`,
-    "    verify: { kind: host-mcp-entry, by: silver }",
+    "# Which activities this actually serves, and how well. `silver tools` will",
+    "# not select this for anything until at least one entry is here.",
+    "activities:",
+    `  - id: ${DECLARE_PLACEHOLDER}   # an activity id, e.g. design.pull-file`,
+    "    support: full               # full | partial | representational",
+    "    actions: [read, inspect]",
+    "# Anything Silver could not derive on its own — a one-time command, a mode",
+    "# to enable in the tool itself. Host config presence, required env vars, and",
+    "# probe freshness are all derived automatically and do not belong here.",
+    "post_setup:",
+    `  - ${server} is already configured in ${host ?? "your agent host"}.`,
     "",
   ].join("\n");
 }
@@ -282,6 +289,10 @@ export async function inspectTools(options = {}) {
 
   const activities = [];
   for (const activity of catalog.activities) {
+    // `internal` activities have no choice to report — silver-portable is the
+    // only possible provider by construction, so listing them among things a
+    // designer could bind would describe a choice that does not exist.
+    if (activity.binding === "internal") continue;
     // Only report activities this workspace's skills can actually perform.
     // Listing a transport choice for work nobody here does is noise.
     const performers = skills.filter(
@@ -304,6 +315,7 @@ export async function inspectTools(options = {}) {
         provider: providers.find(({ id }) => id === resolution.selected),
         orderedBy: resolution.ordered_by,
         decision: resolution.decision,
+        activity: activity.id,
       }),
     });
   }
@@ -321,12 +333,7 @@ export async function inspectTools(options = {}) {
       available: provider.available,
       level: provider.availability_level,
       reason: provider.availability_reason,
-      setup: (provider.setup ?? []).map((step) => ({
-        id: step.id,
-        kind: step.kind,
-        verified_by: step.verify?.by,
-        ...(step.url ? { url: step.url } : {}),
-      })),
+      ...(provider.post_setup?.length ? { post_setup: provider.post_setup } : {}),
       ...(provider.requires_env ? { requires_env: provider.requires_env } : {}),
     })),
     // Servers the host has that no shipped adapter claims. Silver knows they
@@ -365,6 +372,101 @@ export async function resolveTools(options = {}) {
   return resolveToolAlias(options.phrase, providers);
 }
 
+async function preferenceSources(root, practiceRoot) {
+  const sources = [];
+  const personal = await personalPreferences(practiceRoot);
+  if (personal) sources.push({ source: "personal", preferences: personal });
+  const project = await projectPreferences(root);
+  if (project) sources.push({ source: "project", preferences: project });
+  return sources;
+}
+
+function phraseMatches(catalog, phrase) {
+  const normalized = phrase.toLowerCase();
+  return catalog.activities.filter((activity) =>
+    (activity.phrases ?? []).some(
+      (candidate) =>
+        normalized.includes(candidate.toLowerCase()) || candidate.toLowerCase().includes(normalized),
+    ),
+  );
+}
+
+// "What tool do I use to do X" — matches free text against the catalog's
+// `phrases`, then resolves the activity it names the same way an invocation
+// would. Reuses `resolveToolAlias`'s outcome vocabulary
+// (resolved | ambiguous | unresolved) for naming a tool directly, but not its
+// matching: a phrase naming a *transport* ("use the official Figma MCP") and
+// a phrase naming a *task* ("make a wireframe") are different questions, and
+// an explicit tool name always wins — it is a stronger signal than any default,
+// and bypasses whatever a preference binding would otherwise choose.
+export async function resolveActivityForTask(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const practiceRoot = path.resolve(options.practiceRoot ?? defaultPracticeRoot());
+  const providers = await discoverProviders({ root, home: options.home });
+
+  const toolMatch = resolveToolAlias(options.phrase, providers);
+  if (toolMatch.status !== "unresolved") {
+    return { ...toolMatch, matched: "transport" };
+  }
+
+  const catalog = await loadActivityCatalog({ root });
+  const matches = phraseMatches(catalog, options.phrase);
+
+  if (matches.length === 0) {
+    return {
+      status: "unresolved",
+      phrase: options.phrase,
+      nearest_activities: catalog.activities
+        .filter((activity) => activity.binding !== "internal")
+        .slice(0, 8)
+        .map(({ id, title }) => ({ id, title })),
+    };
+  }
+  if (matches.length > 1) {
+    return {
+      status: "ambiguous-activity",
+      phrase: options.phrase,
+      candidates: matches.map(({ id, title }) => ({ id, title })),
+    };
+  }
+
+  const activity = matches[0];
+  const sources = await preferenceSources(root, practiceRoot);
+  const resolution = resolveActivityTransport({
+    activity,
+    providers,
+    sources,
+    interactive: options.interactive ?? true,
+  });
+
+  if (resolution.decision === "none") {
+    // Matched a real activity, but nothing installed here serves it. The
+    // catalog's own fallback answers rather than a bare "no provider": every
+    // activity has a native path, however degraded.
+    return {
+      status: "fallback",
+      phrase: options.phrase,
+      matched: "activity",
+      activity: activity.id,
+      title: activity.title,
+      fallback: activity.fallback,
+    };
+  }
+
+  return {
+    status: resolution.decision === "ask" || resolution.decision === "stop" ? "ask" : "resolved",
+    phrase: options.phrase,
+    matched: "activity",
+    ...resolution,
+    why: explainSelection({
+      provider: providers.find(({ id }) => id === resolution.selected),
+      orderedBy: resolution.ordered_by,
+      decision: resolution.decision,
+      activity: activity.id,
+    }),
+  };
+}
+
 function nextPreferencesRevision(revision) {
   const value = Number(revision.slice(1));
   return Number.isInteger(value) ? `r${value + 1}` : "r1";
@@ -381,8 +483,14 @@ export async function bindActivityTransport(options = {}) {
   const { activity, transport } = options;
 
   const catalog = await loadActivityCatalog({ root });
-  if (!catalog.activities.some(({ id }) => id === activity)) {
+  const found = catalog.activities.find(({ id }) => id === activity);
+  if (!found) {
     throw new Error(`No activity named ${activity}. See \`silver tools\` for the activity list.`);
+  }
+  if (found.binding === "internal") {
+    throw new Error(
+      `${activity} is internal — nothing else can serve it, so there is nothing to bind. See \`silver tools\` for bindable activities.`,
+    );
   }
   const providers = await discoverProviders({ root, home: options.home });
   if (!providers.some(({ id }) => id === transport)) {

@@ -50,6 +50,7 @@ effects:
     actions:
       - read
       - inspect
+      - search
     external: true
 guardrails:
   - authority-respected

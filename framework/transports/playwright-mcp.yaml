@@ -54,22 +54,28 @@ permissions:
     default: ask
 directions: [read]
 fidelity: partial
-setup:
-  - id: host-config
-    kind: silver-managed
-    title: Declare the playwright MCP server in this agent host
-    verify: { kind: host-mcp-entry, by: silver }
-    troubleshoot:
-      - symptom: Silver reports the server is not configured
-        means: No host config file declares it yet.
-        do: Run `silver tools --connect playwright-mcp`, then restart your agent host.
-  - id: install-browsers
-    kind: terminal
-    title: Install the browser binaries Playwright drives
-    commands:
-      - npx playwright install
-    verify: { kind: handshake, by: agent }
-    troubleshoot:
-      - symptom: Calls fail saying an executable is missing
-        means: The MCP server is running but its browsers were never downloaded.
-        do: Run `npx playwright install` yourself. Silver prints this and never runs it.
+maturity: stable
+post_setup:
+  - Install the browser binaries Playwright drives — `npx playwright install`. Silver prints this and never runs it.
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]

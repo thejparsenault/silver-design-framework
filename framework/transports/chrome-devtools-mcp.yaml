@@ -38,7 +38,7 @@ guidance:
       difference: >-
         Drives a browser you can see and reuses your real profile; the local
         transport launches a throwaway headless Chrome for repeatable checks.
-capabilities: [browser]
+capabilities: [browser, research-evidence]
 connection:
   kind: mcp
   server: chrome-devtools
@@ -54,22 +54,51 @@ permissions:
   - capability: browser
     actions: [inspect, execute]
     default: ask
+  - capability: research-evidence
+    actions: [search, read, inspect]
+    default: ask
 directions: [read]
 fidelity: partial
-setup:
-  - id: host-config
-    kind: silver-managed
-    title: Declare the chrome-devtools MCP server in this agent host
-    verify: { kind: host-mcp-entry, by: silver }
-    troubleshoot:
-      - symptom: Silver reports the server is not configured
-        means: No host config file declares it yet.
-        do: Run `silver tools --connect chrome-devtools-mcp`, then restart your agent host.
-  - id: handshake
-    kind: external-app
-    title: Let the agent call the server once so it starts
-    verify: { kind: handshake, by: agent }
-    troubleshoot:
-      - symptom: Configured, but calls time out
-        means: The package downloads on first run, or Chrome is not installed.
-        do: Run `npx -y chrome-devtools-mcp@latest` once in a terminal and watch what it prints.
+maturity: stable
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-network
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-accessibility
+    support: partial
+    actions: [inspect, execute]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]
+  - id: evaluate.audit-performance
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.compare-visual
+    support: full
+    actions: [inspect]
+  - id: research.search-web
+    support: partial
+    actions: [search]
+    constraints:
+      - Uses browser navigation to public web pages rather than a dedicated search-index API.
+  - id: research.inspect-competitor
+    support: full
+    actions: [read, inspect]

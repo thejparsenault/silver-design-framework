@@ -33,14 +33,15 @@ Where a criterion is inherently unautomatable (a human decision, a live
 external call), it is marked **manual** instead, and never counted toward the
 automated release gate.
 
-As of this writing: `npm run build` passes 174/174 tests and
-`npm run test:package` passes, on `release/silver-0.8-tools`. Every
-automated criterion below (`CONFORM`,
+As of this writing: `npm run build` passes and `npm run test:package` passes,
+on `release/silver-0.8-tools`. Every automated criterion below (`CONFORM`,
 `LINK`, `PRACTICE`, `REF`, `FIGMA-PULL`, `FIGMA-PUSH`, `ROUNDTRIP`,
-`MIGRATE-01`, `MIGRATE-03`, and the `S10-*` skill-taxonomy criteria added
-mid-release once 0.9's own thesis exposed a producer-less required input)
-is done. Only the two manual criteria remain: `S09-CURATE-01` (W7, needs the
-user directly) and `S09-MIGRATE-04` (manual end-to-end verification).
+`MIGRATE-01`, `MIGRATE-03`, the `S10-*` skill-taxonomy criteria added
+mid-release once 0.9's own thesis exposed a producer-less required input, and
+the `S09-TOOLS-*` criteria added for W7) is done. `S09-CURATE-01` (W7) closed
+through direct work with the user rather than an automated pass — see
+"Tool registry and capability vocabulary (W7)" below for what that produced.
+Only `S09-MIGRATE-04` (manual end-to-end verification) remains.
 
 ## Criteria
 
@@ -80,23 +81,42 @@ user directly) and `S09-MIGRATE-04` (manual end-to-end verification).
 
 ### Browser (W4) — done
 
-- **S09-BROWSER-01** `inspect-in-browser` and `drive-browser` are separate
-  activities so a read-only check and an automated interaction are never
-  conflated.
+- **S09-BROWSER-01** Browser work is split into separate activities
+  (`browser.navigate`, `browser.interact`, `browser.inspect-structure`, and
+  the rest of the `browser.*`/`evaluate.*` family added in W7) so a read-only
+  check and an automated interaction are never conflated. *Superseded by W7:*
+  the original two-activity split (`inspect-in-browser`/`drive-browser`) grew
+  into this finer family so "audit performance" and "click through a flow"
+  are distinguishable requests against the same running page.
 - **S09-BROWSER-02** Portable local Chrome, `chrome-devtools-mcp`, and
   `playwright-mcp` are all declared transports; `connection.kind: host-native`
   distinguishes a host-owned connection from one Silver could configure
   itself.
 
-### Troubleshooting (W5) — done
+### Troubleshooting (W5) — done, revised by W7
 
-- **S09-TROUBLESHOOT-01** `silver tools --diagnose` walks the full setup
-  ladder for an activity and reports the first failing step.
+- **S09-TROUBLESHOOT-01** *(revised)* `silver tools --diagnose` reports every
+  rung it can derive for a transport — host-config presence, required env
+  vars, executable/env/file detection, probe freshness — plus that transport's
+  `post_setup` notes for whatever it could not derive. The authored `setup`
+  ladder this originally described was removed in W7: it was load-bearing in
+  exactly this one place and decorative everywhere else (`--connect` never
+  consulted it; availability never consulted it), and every rung it typed by
+  hand is now either derived automatically or, when it genuinely cannot be
+  (a one-time command, a mode to enable in the tool itself), a plain
+  `post_setup` note. See `framework/runtime/transport-diagnosis.mjs`.
 - **S09-TROUBLESHOOT-02** An agent probe result can mark a transport
   `responding`, because only the agent host can call an MCP server — Silver
   itself only ever claims `configured`.
-- **S09-TROUBLESHOOT-03** `doctor` reports transport diagnostics using the
-  same ladder, live-verified against a real Figma MCP connection.
+- **S09-TROUBLESHOOT-03** *(corrected)* `doctor` reports transport
+  availability and the diagnostics above; it does not walk a "ladder" — no
+  such structure exists as of W7, and none existed as authored steps `doctor`
+  interpreted before it either. This criterion previously claimed live
+  verification against a real Figma MCP connection; no such live connection
+  is exercised by the automated suite, which pins `home` to
+  `fixtures/host/empty` specifically so results do not depend on what is
+  actually configured on the machine running the tests. Live verification is
+  `S09-MIGRATE-04`'s job, not this criterion's.
 
 ### Semantic role vocabulary (W9a) — done
 
@@ -298,13 +318,70 @@ user directly) and `S09-MIGRATE-04` (manual end-to-end verification).
   `silver trace` surfaces each citation as `collection@revision (ids)`.
   *(framework/tests/skill-invocation.test.mjs)*
 
-### Transport curation (W7) — manual
+### Tool registry and capability vocabulary (W7) — done
 
-- **S09-CURATE-01** `framework/transports/*.yaml` gains guided, user-authored
-  declarations for common tools beyond what shipped in 0.8, each carrying
-  `evidence: declared | verified` and `verified_at`. This is deliberately
-  not automatable: it is the user's own judgment about which real-world
-  tools to declare, not a mechanism Silver can generate.
+- **S09-CURATE-01** *(closed manually, as designed)* `framework/transports/*.yaml`
+  gained nine guided, user-authored declarations beyond 0.8's three
+  (`figma-official-desktop-mcp`, `excalidraw-mcp`, `miro-mcp`,
+  `canva-connect-api`, `webflow-mcp`, `v0-api`, `lighthouse-cli`,
+  `axe-core-cli`, `chromatic-cli`), each carrying `evidence: declared` and
+  `verified_at`. This criterion was deliberately never meant to be
+  automatable — it names the user's own judgment about which real-world
+  tools to declare — and it stayed that way: the work happened through a
+  direct working session, not a generator. What *did* get built from that
+  session is W7's larger surface, below.
+- **S09-TOOLS-01** The activity catalog grew from 20 to 67 entries
+  (`framework/activities/catalog.yaml`, `silver/activity-catalog/v1`),
+  namespaced by family (`visual.create-high-fidelity-ui`,
+  `evaluate.audit-performance`, …) so "make a wireframe" and "make an
+  editable, high-fidelity design" are different, nameable requests rather
+  than one coarse `design-file` write. The coarse `capability` enum is
+  unchanged — activities are instances of a capability, not a competing
+  vocabulary. See `CONTEXT.md`'s Activity/Tool capability definitions.
+- **S09-TOOLS-02** Every activity carries a `fallback` — the native answer
+  silver-portable gives when no provider holds the activity's capability at
+  all, not a ranked-last provider. This is what makes "there is always a
+  Silver-native answer" true by construction: `fallback.mode` is `native`
+  (silver-portable does the whole job), `input-required` (needs an export or
+  URL first), or `representational` (can spec the thing, not produce it).
+- **S09-TOOLS-03** Provider support for an activity is *declared*
+  (`provider.activities: [{id, support, actions, outputs?, constraints?}]`),
+  not derived from capabilities/directions/artifact-kinds alone — the pre-0.9
+  derivation cannot express a fidelity distinction. Declaring reintroduces
+  drift risk, so `framework/scripts/validate-contracts.mjs` gained assertions
+  covering activity-id existence, action/direction/capability consistency,
+  artifact-kind intersection, package-only-capability overreach, fallback
+  provider existence, and bidirectional coverage.
+  *(framework/runtime/activities.mjs, `providerSupportsActivity`)*
+- **S09-TOOLS-04** `provider.interface.detection` (`executables`, `env`,
+  `files`) makes a CLI-only transport detectable at all — before this,
+  `declaredAvailability()` returned "declares no connection Silver can
+  inspect" for anything without an MCP or host-native connection, so every
+  CLI tool (axe-core, lighthouse, chromatic) was permanently undetectable.
+  Detection is injectable (`pathEntries`/`env` options) so a test's result
+  does not depend on what happens to be on the machine running it.
+  *(framework/runtime/tool-detection.mjs)*
+- **S09-TOOLS-05** `silver tools --for "<phrase>"` matches free text against
+  each activity's `phrases` and resolves it exactly as an invocation would:
+  resolved, a native fallback when nothing installed serves it, ambiguous
+  across more than one named activity, or unresolved with the nearest named
+  activities. An explicit transport name in the phrase always wins and
+  bypasses any preference binding. *(installer/tools.mjs,
+  `resolveActivityForTask`)*
+- **S09-TOOLS-06** `silver tools --bind` refuses an activity marked
+  `binding: internal` — currently `artifact.write-canonical` alone, the one
+  activity whose capability (`canonical-artifact`) a declaration may never
+  claim (see `PACKAGE_ONLY_CAPABILITIES`). Every other activity, including
+  the four renderer capabilities, is an ordinary bindable choice: 0.9 ships
+  real alternatives for three of them (Excalidraw for `visual-renderer`,
+  Miro for `map-renderer`, Canva for `presentation-renderer`), so "internal"
+  is reserved for "cannot be otherwise," not "isn't, yet."
+- **S09-TOOLS-07** `doctor` reports an activity id that no longer exists in
+  the catalog wherever one could be silently ignored: a project's
+  `design/manifest.yaml` `tool_preferences.activities`, and My Practice's
+  `tools.yaml`, which lives outside every workspace and previously had a
+  schema mismatch drop the whole file with no message anywhere
+  (`personalPreferences()`'s `try { } catch { return null }`).
 
 ### Migration and release (W8) — mostly done
 

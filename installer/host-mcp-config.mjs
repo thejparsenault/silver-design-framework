@@ -34,16 +34,11 @@ export function connectableTransports(providers) {
   );
 }
 
+// 0.9: what a designer still has to do by hand is whatever Silver could not
+// derive, recorded as plain notes rather than a typed ladder of steps. Host
+// config itself — the one rung Silver does perform — is never in this list.
 function manualSteps(provider) {
-  return (provider.setup ?? [])
-    .filter((step) => step.kind !== "silver-managed")
-    .map((step) => ({
-      id: step.id,
-      kind: step.kind,
-      title: step.title,
-      ...(step.url ? { url: step.url } : {}),
-      ...(step.commands ? { commands: step.commands } : {}),
-    }));
+  return provider.post_setup ?? [];
 }
 
 async function readProjectConfig(root) {

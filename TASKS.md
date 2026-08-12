@@ -492,13 +492,25 @@ automated gate by design.
 
 ### Manual — needs the user directly, run after the automated pass
 
-- [ ] W7 Curated transport catalog entries
+- [x] W7 Tool registry and capability vocabulary
   - type: design
   - priority: medium
-  - context: medium
-  - notes: Guided, user-authored `framework/transports/*.yaml` beyond what
-    shipped in 0.8. This is a judgment call about real third-party tools,
-    not something Silver can generate for itself. `S09-CURATE-01`.
+  - context: large
+  - notes: Closed through a direct working session with the user, as
+    designed — `S09-CURATE-01` was never meant to be automatable. Grew into
+    the largest workstream in the release: the activity catalog went from 20
+    to 67 namespaced entries, each with a `fallback` guaranteeing a native
+    answer; provider support moved from derived to declared
+    (`provider.activities`); `interface.detection` makes CLI-only transports
+    visible for the first time; authored `setup` ladders were replaced by
+    generically derived diagnosis plus freeform `post_setup` notes; `silver
+    tools --for "<phrase>"` resolves a task description to an activity and
+    what will serve it; and nine new declarations shipped
+    (`figma-official-desktop-mcp`, `excalidraw-mcp`, `miro-mcp`,
+    `canva-connect-api`, `webflow-mcp`, `v0-api`, `lighthouse-cli`,
+    `axe-core-cli`, `chromatic-cli`), plus corrections to `figma-official-mcp`
+    (it reads and writes, not read-only) and `figma-console-mcp`'s publisher
+    metadata. `S09-CURATE-01`, `S09-TOOLS-01` through `S09-TOOLS-07`, done.
 
 - [ ] Manual end-to-end: blank workspace
   - type: test

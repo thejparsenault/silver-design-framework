@@ -1,0 +1,69 @@
+# Figma's Dev Mode MCP server — the desktop app, not the remote one.
+#
+# Genuinely different from figma-official-mcp, not a redundant entry: this
+# reaches whatever is selected in the Figma desktop app over a local server,
+# requires Dev Mode and a Dev or Full seat, and is read-only. The remote
+# server (figma-official-mcp) needs neither the desktop app nor a selection,
+# and as of 0.9 can write. Pick this one when you are already working in the
+# desktop app and want the agent to see exactly what is selected.
+schema: silver/provider/v1
+id: figma-official-desktop-mcp
+version: 0.9.0
+kind: external
+target: figma
+variant: official-desktop
+aliases:
+  - figma desktop mcp
+  - figma dev mode
+  - the desktop figma server
+source:
+  publisher: Figma
+  homepage: https://www.figma.com
+  docs: https://developers.figma.com/docs/figma-mcp-server/
+  distribution:
+    kind: host-native
+    ref: Built into the Figma desktop app; enabled from its Dev Mode preferences.
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published documentation
+guidance:
+  good_at:
+    - Reading exactly what is selected in the Figma desktop app right now
+  not_for:
+    - Working without the desktop app open, or without a Dev or Full seat
+    - Writing or editing — this server is read-only
+  prefer_when:
+    - You are already working in the Figma desktop app and want the agent to see the current selection
+  compare_to:
+    - transport: figma-official-mcp
+      difference: >-
+        Reaches the desktop app's current selection and needs Dev Mode plus a
+        paid seat; the remote server needs neither the app open nor a
+        selection, and can write.
+capabilities: [design-file]
+connection:
+  kind: mcp
+  server: figma-desktop
+  tool_prefix: mcp__figma-desktop__
+  config:
+    url: http://127.0.0.1:3845/mcp
+activities:
+  - id: design.pull-file
+    support: full
+    actions: [read, inspect]
+  - id: design.pull-tokens
+    support: full
+    actions: [read]
+  - id: system.inspect-components
+    support: full
+    actions: [read, inspect]
+permissions:
+  - capability: design-file
+    actions: [read, inspect]
+    default: ask
+supported_artifact_kinds: [token-source, design-specification, component-proposal, component-catalog]
+directions: [read]
+fidelity: partial
+maturity: stable
+post_setup:
+  - Requires the Figma desktop app, Dev Mode enabled, and a Dev or Full seat. Select what you want the agent to see before asking it to read.

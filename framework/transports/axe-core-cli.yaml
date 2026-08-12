@@ -1,0 +1,55 @@
+# axe-core CLI (@axe-core/cli) — a declaration, not an adapter.
+#
+# The deterministic half of an accessibility check: automatable rule
+# violations against a running page, not a substitute for expert or
+# assistive-technology review. A CLI tool, detected generically like
+# lighthouse-cli rather than through a host configuration entry.
+schema: silver/provider/v1
+id: axe-core-cli
+version: 0.9.0
+kind: external
+target: axe-core
+variant: cli
+aliases:
+  - axe
+  - axe-core
+  - axe cli
+source:
+  publisher: Deque Systems
+  homepage: https://www.deque.com/axe/
+  repository: https://github.com/dequelabs/axe-core-npm
+  license: MPL-2.0
+  distribution:
+    kind: npm
+    ref: "@axe-core/cli"
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published package documentation
+guidance:
+  good_at:
+    - Automated WCAG rule checks against a running page, with specific violations named
+  not_for:
+    - Judgment calls a rule cannot express — keyboard flow sense, labeling clarity
+  prefer_when:
+    - You want a deterministic pass/fail accessibility check rather than an expert read
+capabilities: [browser]
+interface:
+  kind: cli
+  command: axe
+  docs: https://github.com/dequelabs/axe-core-npm/tree/develop/packages/cli
+  detection:
+    executables: [axe]
+activities:
+  - id: evaluate.check-accessibility
+    support: full
+    actions: [inspect, execute]
+    outputs: [{format: json, editable: false, native: false}]
+    constraints:
+      - Checks automatable WCAG rules only; does not replace expert or assistive-technology review.
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+directions: [read]
+fidelity: partial
+maturity: stable

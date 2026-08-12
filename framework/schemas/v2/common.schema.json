@@ -8,6 +8,12 @@
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "maxLength": 100
     },
+    "namespacedId": {
+      "description": "An id with one or more dot-separated segments, each kebab-case (e.g. `visual.create-high-fidelity-ui`). Used for activity ids, which are namespaced by family; never for provider or transport ids, which are derived from filenames and must stay dot-free.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$",
+      "maxLength": 100
+    },
     "revision": {
       "type": "string",
       "pattern": "^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
@@ -162,6 +168,7 @@
       "enum": [
         "read",
         "inspect",
+        "search",
         "execute",
         "create",
         "write",
@@ -169,6 +176,7 @@
         "delete",
         "publish",
         "present",
+        "comment",
         "send",
         "commit",
         "push",

@@ -19,13 +19,15 @@ import { providersForActivity } from "./activities.mjs";
 
 export const PREFERENCE_SOURCES = ["personal", "project", "team", "framework"];
 
-// Prefer what is already configured, then what needs no local build. This is
-// deliberately thin: there is no vetted source of tool rankings, and a heuristic
-// that cannot be defended is worse than none. It gets stronger from real use.
-function localBuildSteps(provider) {
-  return (provider.setup ?? []).filter(
-    (step) => step.kind === "terminal" || step.kind === "background-process",
-  ).length;
+// Prefer what is already configured, then what Silver actually knows works —
+// `verified` (someone ran it and a probe recorded a response) before `declared`
+// (written from documentation, never exercised here). This is deliberately
+// thin: there is no vetted source of cross-vendor tool rankings, and a
+// heuristic that cannot be defended is worse than none. It ranks how much
+// Silver actually knows, not which vendor is better, and gets stronger as more
+// transports move from declared to verified through real use.
+function evidenceRank(provider) {
+  return provider.source?.evidence === "verified" ? 0 : 1;
 }
 
 export function frameworkOrder(providers, activity) {
@@ -33,8 +35,8 @@ export function frameworkOrder(providers, activity) {
     .slice()
     .sort((left, right) => {
       if (left.available !== right.available) return left.available ? -1 : 1;
-      const build = localBuildSteps(left) - localBuildSteps(right);
-      if (build !== 0) return build;
+      const evidence = evidenceRank(left) - evidenceRank(right);
+      if (evidence !== 0) return evidence;
       return left.id.localeCompare(right.id);
     })
     .map((provider) => provider.id);
@@ -43,12 +45,12 @@ export function frameworkOrder(providers, activity) {
 // Why this transport and not another. A resolver with an order and two filters
 // is undebuggable without an answer, and "alphabetical" is an answer a designer
 // deserves to be told rather than left to infer.
-export function explainSelection({ provider, orderedBy, decision }) {
+export function explainSelection({ provider, orderedBy, decision, activity }) {
   if (!provider) return null;
   const reasons = [];
   if (orderedBy === "framework") {
     if (provider.available) reasons.push("it is configured");
-    if (localBuildSteps(provider) === 0) reasons.push("it needs no local build");
+    if (evidenceRank(provider) === 0) reasons.push("it has been verified to respond, not just declared");
     // Say the quiet part. A tie broken by name is not a judgement about quality,
     // and letting a designer believe otherwise is the whole problem with an
     // unexplained default.
@@ -63,6 +65,11 @@ export function explainSelection({ provider, orderedBy, decision }) {
     because: reasons,
     ...(decision === "fallback" ? { note: "This is a fallback, not the first choice." } : {}),
     ...(provider.guidance?.prefer_when ? { prefer_when: provider.guidance.prefer_when } : {}),
+    // A designer must always know they can change this. Named explicitly rather
+    // than left to be inferred from the existence of `--bind` in --help.
+    change_with: activity
+      ? `silver tools --bind ${activity} <transport> to change this, or name a transport explicitly to use it once.`
+      : undefined,
   };
 }
 
@@ -93,18 +100,14 @@ function vetoesFor(sources) {
   return vetoes;
 }
 
-// Availability said the transport is not usable; the ladder says where it
-// stopped. Report a rung Silver actually checked in preference to one it merely
-// could not rule out — "the server is not declared in your host" is actionable,
-// "the plugin might not be running" is a guess.
+// Availability said the transport is not usable; this names which generically
+// derived rung stopped it — see framework/runtime/transport-diagnosis.mjs for
+// the full ladder. "connection" covers both an undeclared MCP server and
+// undetected CLI interface, since both mean "Silver looked and found nothing".
 function firstFailingStep(provider) {
-  const steps = provider.setup ?? [];
-  const silverVerified = steps.find((step) => step.verify?.by === "silver");
-  if (silverVerified && provider.availability_level === "absent") {
-    return silverVerified.id;
-  }
-  const agentVerified = steps.find((step) => step.verify?.by === "agent");
-  return (agentVerified ?? silverVerified ?? steps[steps.length - 1])?.id;
+  if (provider.connection || provider.interface) return "connection";
+  if (provider.requires_env?.length) return "env";
+  return "availability";
 }
 
 // Resolve one activity. Returns what was chosen, what was removed and why, and

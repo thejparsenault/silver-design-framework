@@ -9,7 +9,10 @@ import {
 import { inspectGuidanceSources } from "./guidance.mjs";
 import { inspectLinkedSources } from "./sources.mjs";
 import { findFiles, workspacePath } from "../framework/skills/design-check/scripts/check-lib.mjs";
+import { loadActivityCatalog } from "../framework/runtime/activities.mjs";
+import { assertV2 } from "../framework/runtime/contracts.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
+import { defaultPracticeRoot } from "./practice.mjs";
 import {
   CLAUDE_BLOCK_BEGIN,
   CLAUDE_MEMORY_PATH,
@@ -685,10 +688,30 @@ async function inspectTransports(root, manifest, diagnostics, options = {}) {
   }
   const byId = new Map(providers.map((provider) => [provider.id, provider]));
 
+  let catalog = null;
+  try {
+    catalog = await loadActivityCatalog({ root });
+  } catch (error) {
+    diagnostics.push(
+      diagnostic("warning", "activity-catalog-invalid", error.message),
+    );
+  }
+  const knownActivityIds = new Set((catalog?.activities ?? []).map(({ id }) => id));
+
   // A preference naming a transport nobody installed silently does nothing.
   for (const [activityId, binding] of Object.entries(
     manifest.tool_preferences?.activities ?? {},
   )) {
+    if (catalog && !knownActivityIds.has(activityId)) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "preferred-activity-unknown",
+          `design/manifest.yaml prefers a transport for ${activityId}, but no activity with that id exists in the catalog. If this project predates a rename, update the key.`,
+          "design/manifest.yaml",
+        ),
+      );
+    }
     for (const id of binding.use ?? []) {
       if (!byId.has(id)) {
         diagnostics.push(
@@ -700,6 +723,44 @@ async function inspectTransports(root, manifest, diagnostics, options = {}) {
           ),
         );
       }
+    }
+  }
+
+  // My Practice's tools.yaml lives outside every workspace, so `silver migrate`
+  // never sees it and a schema mismatch (e.g. from an activity-id rename) would
+  // otherwise silently drop the whole file with no message anywhere — see
+  // `personalPreferences()` in installer/tools.mjs, which treats a parse or
+  // validation failure as "no preferences" rather than an error. This is the
+  // one place that failure becomes visible.
+  const practiceRoot = path.resolve(options.practiceRoot ?? defaultPracticeRoot());
+  const personalToolsPath = path.join(practiceRoot, "tools.yaml");
+  if (await exists(personalToolsPath)) {
+    try {
+      const personal = parse(await readUtf8(personalToolsPath));
+      await assertV2("tool-preferences.schema.json", personal);
+      if (catalog) {
+        for (const activityId of Object.keys(personal.activities ?? {})) {
+          if (!knownActivityIds.has(activityId)) {
+            diagnostics.push(
+              diagnostic(
+                "warning",
+                "personal-preferred-activity-unknown",
+                `My Practice's tools.yaml prefers a transport for ${activityId}, but no activity with that id exists in the catalog. If this predates a rename, update the key with \`silver tools --bind\`.`,
+                personalToolsPath,
+              ),
+            );
+          }
+        }
+      }
+    } catch (error) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          "personal-tools-invalid",
+          `My Practice's tools.yaml does not match its schema, so every personal transport preference in it is silently ignored: ${error.message}`,
+          personalToolsPath,
+        ),
+      );
     }
   }
 

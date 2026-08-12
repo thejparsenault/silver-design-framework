@@ -117,28 +117,33 @@ An abstract operation a skill needs, such as reading a design file or inspecting
 _Avoid_: MCP server when provider choice is not relevant
 
 **Activity**:
-A human-named unit of tool-using design work — "build flows in a design tool",
+A human-named unit of tool-using design work — "make a wireframe",
 "push design-system updates" — naming a capability, the actions taken with it,
 and sometimes the artifact kinds involved. It is what a transport preference
 binds to, and what lets a designer express a choice without knowing what a
-capability is. Which providers and skills serve an activity is derived from
-their contracts, never declared.
+capability is. There are 67, namespaced by family
+(`visual.create-high-fidelity-ui`, `evaluate.audit-performance`). As of 0.9,
+which providers serve an activity is *declared* on the provider
+(`activities: [{id, support, actions}]`) rather than derived from its
+capabilities and directions alone — the pre-0.9 derivation could not express
+a fidelity distinction like "creates a rough sketch" vs. "creates an
+editable, high-fidelity design," which is the reason the catalog grew
+fine-grained in the first place. Every activity also carries a `fallback`: the
+native answer silver-portable gives when nothing holds the activity's
+capability at all, which is what makes "there is always a Silver-native
+answer" true by construction rather than by silver-portable collecting
+capabilities it doesn't otherwise need. `binding: internal` marks the rare
+activity nobody can meaningfully rebind — currently only
+`artifact.write-canonical`, whose capability a declaration may never claim.
 _Avoid_: Capability when the designer-facing name is what matters
 
 **Transport**:
 One way of reaching an external system. Several transports may share a target —
 Figma has more than one — and be good at genuinely different jobs, so they are
-separate providers with their own directions, artifact kinds, and setup ladder.
+separate providers with their own directions, artifact kinds, and (from 0.9)
+generically derived diagnosis.
 _Avoid_: Provider when the distinction between two routes to the same tool matters,
 Figma when a specific server is meant
-
-**Setup ladder**:
-A transport's typed steps, each declaring who owns it and who can verify it:
-installed in another application, run in a terminal, a background process, or
-Silver-managed. Silver climbs only the Silver-managed rungs, so a failure is
-reported as a specific missing step rather than a whole transport being
-unavailable.
-_Avoid_: Installed as a yes-or-no property
 
 **Unmapped transport**:
 An MCP server present in the agent host that no shipped adapter claims. Silver

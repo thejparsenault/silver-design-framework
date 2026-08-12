@@ -522,3 +522,57 @@ broken tool, and because the framework's premise is that its user stays in
 control of how the work is done.
 
 Status: Accepted
+
+## 2026-08-12 - Activity support is declared, not derived, once the vocabulary is fine-grained
+
+Decision: Before 0.9, whether a provider served an activity was a pure
+function of its existing contract fields (`capabilities`, `directions`,
+`supported_artifact_kinds`) — nothing declared it twice, so the catalog could
+not drift out of agreement with the providers. Growing the activity catalog
+from 20 to 67 entries broke that: a provider's `directions: [portable]` meant
+"any action, for any capability I hold," which is honest at the old coarse
+grain but wrong at the new fine one — under pure derivation, silver-portable
+appeared to serve `production.deploy-preview` (no shipped provider actually
+does) for the same reason it appears to serve `production.write-source`
+(one genuinely does).
+
+So providers now *declare* which activities they serve
+(`provider.activities: [{id, support, actions, outputs?, constraints?}]`),
+and `framework/scripts/validate-contracts.mjs` carries the assertions that
+replace the lost derived guarantee: every declared id must exist in the
+catalog, declared actions must be consistent with `directions` and the
+activity's coarse capability, artifact kinds must intersect, package-only and
+`internal`-bound activities may never be declared, a `fallback.provider` must
+genuinely serve `mode: native`, and coverage is checked in both directions.
+
+Reason: A vocabulary fine enough to separate "make a rough sketch" from "make
+an editable, high-fidelity design" needs a fidelity signal no existing
+contract field carries. Declaring introduces drift risk on paper, but the
+alternative — silently over-claiming support because a coarse direction
+happens to be permissive — is worse and was already happening.
+
+Status: Accepted
+
+## 2026-08-12 - Setup ladders replaced by generically derived diagnosis
+
+Decision: The authored `setup` ladder (typed steps with `kind`, `verify`,
+and `troubleshoot`) is removed from `provider.schema.json`. In practice it
+was load-bearing in exactly one place — `silver tools --diagnose`'s rung
+reporting — and decorative everywhere else: `--connect` never consulted it,
+and availability never consulted it either. `framework/runtime/
+transport-diagnosis.mjs` now derives the same rungs generically from what a
+provider already declares — host-config presence for an MCP connection,
+required env vars, executable/env/file detection for a CLI/API/SDK
+`interface`, and probe freshness — so nothing here can drift out of
+agreement with the manifest, because nothing here is a second copy of it.
+What genuinely cannot be derived (a one-time command, a mode to enable in
+the tool itself) is a small freeform `post_setup: [string]` field, shown
+separately and never treated as verified.
+
+Reason: A typed ladder promises more precision than it delivered here, and
+every rung Silver could actually check was already expressible as a fact
+about the manifest rather than an authored step. The freeform notes field
+covers the genuine remainder — "run `npx playwright install`" — without
+inventing structure for a one-off instruction.
+
+Status: Accepted

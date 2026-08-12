@@ -7,7 +7,11 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { parse } from "yaml";
 
-import { auditActivityCatalog, loadActivityCatalog } from "../runtime/activities.mjs";
+import {
+  auditActivityCatalog,
+  auditProviderActivities,
+  loadActivityCatalog,
+} from "../runtime/activities.mjs";
 import { migrateSkillContractV1 } from "../migrations/v1-to-v2/skill.mjs";
 import { discoverProviders } from "../runtime/providers.mjs";
 import { loadTokenTree, resolveTokenTree } from "../runtime/tokens.mjs";
@@ -294,6 +298,14 @@ async function validateV2(validators) {
   const drift = auditActivityCatalog({ catalog, providers, skills });
   if (drift.length > 0) {
     throw new Error(`Activity catalog drift:\n  ${drift.join("\n  ")}`);
+  }
+
+  // Declaring support (0.9) reintroduces drift risk the pure derivation made
+  // impossible. This is the replacement guarantee, checked per declaration
+  // rather than per catalog entry.
+  const providerDrift = auditProviderActivities({ catalog, providers });
+  if (providerDrift.length > 0) {
+    throw new Error(`Provider activity declarations drift:\n  ${providerDrift.join("\n  ")}`);
   }
 
   // A comparison against a transport that does not exist is worse than no

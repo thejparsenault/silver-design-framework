@@ -12,7 +12,7 @@
     "activities": {
       "description": "Keyed by activity id. The first source that binds an activity wins outright; later sources are not merged into it.",
       "type": "object",
-      "propertyNames": { "$ref": "common.schema.json#/$defs/id" },
+      "propertyNames": { "$ref": "common.schema.json#/$defs/namespacedId" },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,

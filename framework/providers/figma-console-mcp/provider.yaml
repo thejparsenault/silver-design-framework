@@ -6,7 +6,7 @@
 # `doctor` tell you which of those is happening.
 schema: silver/provider/v1
 id: figma-console-mcp
-version: 0.8.0
+version: 0.9.0
 kind: external
 target: figma
 variant: console
@@ -15,15 +15,18 @@ aliases:
   - console mcp
   - the plugin one
 source:
-  publisher: Figma Console MCP
-  repository: https://github.com/figma-console/figma-console-mcp
+  # Independently maintained by Southleft, not by Figma. The repository below
+  # was corrected in 0.9 — the previously recorded figma-console org URL does
+  # not exist.
+  publisher: Southleft
+  repository: https://github.com/southleft/figma-console-mcp
   distribution:
     kind: plugin
     ref: Figma Community plugin plus an MCP server
   # Developed against a live server, so the metadata here was checked rather
   # than read off a README.
   evidence: verified
-  verified_at: 2026-08-11
+  verified_at: 2026-08-12
   verified_against: "0.8 development"
 guidance:
   good_at:
@@ -38,7 +41,7 @@ guidance:
       difference: >-
         Writes into the open document; the official server reads structure
         without needing Figma open and cannot create frames.
-capabilities: [design-file, external-artifact, representation-sync]
+capabilities: [design-file, external-artifact, representation-sync, visual-renderer, flow]
 connection:
   kind: mcp
   server: figma-console
@@ -49,27 +52,42 @@ connection:
   # and the ladder says so rather than pretending otherwise.
 availability:
   script: scripts/health.mjs
-setup:
-  - id: install-plugin
-    kind: external-app
-    title: Install and run the Figma Console plugin in Figma
-    url: https://www.figma.com/community
-    verify: { kind: handshake, by: agent }
-    troubleshoot:
-      - symptom: Configured, but every call times out
-        means: The plugin is not running in Figma right now.
-        do: Open the file in Figma and start the Figma Console plugin, then probe again.
-      - symptom: Calls work, but reach the wrong document
-        means: This transport reaches whichever file is open, not one you name.
-        do: Bring the file you want to the front in Figma before asking for work in it.
-  - id: host-config
-    kind: external-app
-    title: Add the figma-console MCP server to your agent host's configuration
-    verify: { kind: host-mcp-entry, by: silver }
-    troubleshoot:
-      - symptom: Silver reports no MCP server named figma-console
-        means: No host configuration file declares it.
-        do: Add it to your agent host's MCP configuration by hand. Silver does not know this server's launch command and will not guess one.
+post_setup:
+  - Install and run the Figma Console plugin (figma.com/community) in the file you want to work in — this transport reaches whichever document is open, not one you name.
+  - Add the figma-console MCP server to your agent host's configuration by hand. Silver does not know this server's launch command and will not guess one.
+activities:
+  - id: design.pull-file
+    support: full
+    actions: [read, inspect]
+  - id: visual.create-rough
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-wireframe
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-high-fidelity-ui
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-variants
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: flow.create-user-flow
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: design.push-tokens
+    support: full
+    actions: [write, update]
+  - id: external.read-artifact
+    support: partial
+    actions: [read, inspect]
+  - id: external.publish-artifact
+    support: partial
+    actions: [create, write, update, publish]
 probe:
   tool: mcp__figma-console__figma_get_status
   expects: a status object naming the connected file
@@ -83,6 +101,12 @@ permissions:
     default: ask
   - capability: external-artifact
     actions: [read, inspect, write, update]
+    default: ask
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: flow
+    actions: [create, write, update]
     default: ask
 supported_artifact_kinds: [flow, visualization, design-specification, component-proposal, token-source]
 directions: [read, write-preview, write]

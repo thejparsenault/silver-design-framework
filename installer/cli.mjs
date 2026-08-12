@@ -24,6 +24,7 @@ import {
   inspectTools,
   listTransports,
   requestProbe,
+  resolveActivityForTask,
   resolveTools,
   saveProbe,
 } from "./tools.mjs";
@@ -47,7 +48,7 @@ Usage:
   silver tools [directory] --probe [transport-id]
   silver tools [directory] --record-probe <result.json | ->
   silver tools [directory] --declare <server> | --connect <transport-id>
-  silver tools [directory] --resolve "<phrase>" | --bind <activity> <transport-id>
+  silver tools [directory] --resolve "<phrase>" | --for "<phrase>" | --bind <activity> <transport-id>
   silver practice apply <proposal.json> [--practice <directory>] [--json]
   silver trace <artifact-id-or-path> [directory] [--json]
   silver doctor [directory] [--json]
@@ -83,9 +84,12 @@ Commands:
            project's .mcp.json. Silver never installs, launches, or authorizes
            anything, and never writes a credential. --resolve turns a phrase
            like "use the official Figma MCP instead" into a transport id
-           through its declared aliases. --bind writes a resolved choice into
-           My Practice's tools.yaml, the first ordering source, so it survives
-           past this one conversation.
+           through its declared aliases. --for turns a phrase describing a
+           task, like "make a wireframe", into the activity it names and what
+           will be used for it — an explicit transport name in the phrase
+           always wins and bypasses any binding. --bind writes a resolved
+           choice into My Practice's tools.yaml, the first ordering source, so
+           it survives past this one conversation.
   doctor   Diagnose workspace contracts and managed files without changing them.
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
@@ -152,6 +156,7 @@ function parseArguments(args) {
     "connect",
     "declare",
     "diagnose",
+    "for",
     "help",
     "id",
     "json",
@@ -491,6 +496,51 @@ function printTools(report, write) {
   }
   write("");
   write(`Read outside this project: ${report.external_paths.join(", ")}`);
+}
+
+function printActivityForTask(result, write) {
+  if (result.matched === "transport") {
+    if (result.status === "resolved") {
+      write(`"${result.phrase}" -> ${result.transport} (matched "${result.matched_alias}")`);
+    } else {
+      write(`"${result.phrase}" matches more than one transport:`);
+      for (const candidate of result.candidates) {
+        write(`  ${candidate.transport} (matched "${candidate.alias}")`);
+      }
+    }
+    return;
+  }
+  if (result.status === "unresolved") {
+    write(`"${result.phrase}" did not match any known activity.`);
+    if (result.nearest_activities.length > 0) {
+      write("Closest named activities:");
+      for (const activity of result.nearest_activities) {
+        write(`  ${activity.id} — ${activity.title}`);
+      }
+    }
+    return;
+  }
+  if (result.status === "ambiguous-activity") {
+    write(`"${result.phrase}" matches more than one activity:`);
+    for (const candidate of result.candidates) {
+      write(`  ${candidate.id} — ${candidate.title}`);
+    }
+    return;
+  }
+  if (result.status === "fallback") {
+    write(`"${result.phrase}" -> ${result.activity} (${result.title})`);
+    write(`  No installed transport serves this here. Native answer (${result.fallback.mode}):`);
+    write(`  ${result.fallback.note}`);
+    return;
+  }
+  write(`"${result.phrase}" -> ${result.activity} (${result.title})`);
+  if (result.status === "ask") {
+    write(`  waiting on you — choose from ${result.options?.join(", ") ?? result.would_select}`);
+  } else {
+    write(`  uses: ${result.selected} (ordered by ${result.ordered_by})`);
+  }
+  if (result.why?.because) write(`  why: ${result.why.because.join("; ")}`);
+  if (result.why?.change_with) write(`  ${result.why.change_with}`);
 }
 
 function printConnect(result, write) {
@@ -854,6 +904,19 @@ export async function runCli(
           stdout(`"${result.phrase}" did not match any declared transport alias.`);
         }
         return result.status === "resolved" ? 0 : 1;
+      }
+      if (flags.for) {
+        const result = await resolveActivityForTask({
+          root: toolsRoot,
+          phrase: String(flags.for),
+          interactive: Boolean(process.stdout.isTTY),
+        });
+        if (flags.json) {
+          stdout(JSON.stringify(result, null, 2));
+        } else {
+          printActivityForTask(result, stdout);
+        }
+        return result.status === "resolved" || result.status === "fallback" ? 0 : 1;
       }
       if (flags.bind) {
         const [activity, transport] = flags.bind;

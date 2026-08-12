@@ -1,0 +1,57 @@
+# Lighthouse CLI — a declaration, not an adapter.
+#
+# A CLI tool, not an MCP server: no host configuration entry, and no way to
+# detect it before 0.9's `interface.detection` — generic executable detection
+# is what makes it visible at all. The agent runs it directly; Silver's job is
+# to resolve it for performance-audit activities and stay out of the way.
+schema: silver/provider/v1
+id: lighthouse-cli
+version: 0.9.0
+kind: external
+target: lighthouse
+variant: cli
+aliases:
+  - lighthouse
+  - lighthouse cli
+source:
+  publisher: Google Chrome
+  homepage: https://developer.chrome.com/docs/lighthouse
+  repository: https://github.com/GoogleChrome/lighthouse
+  license: Apache-2.0
+  distribution:
+    kind: npm
+    ref: lighthouse
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published package documentation
+guidance:
+  good_at:
+    - Auditing page load performance, accessibility, and best practices with a scored report
+  not_for:
+    - Interactive browsing or driving a flow — it audits a URL, it does not click through one
+  prefer_when:
+    - You want a scored, reproducible performance or accessibility audit rather than a live look
+capabilities: [browser]
+interface:
+  kind: cli
+  command: lighthouse
+  docs: https://developer.chrome.com/docs/lighthouse/overview
+  detection:
+    executables: [lighthouse]
+activities:
+  - id: evaluate.audit-performance
+    support: full
+    actions: [inspect, execute]
+    outputs: [{format: json, editable: false, native: false}]
+  - id: evaluate.check-accessibility
+    support: partial
+    actions: [inspect, execute]
+    constraints:
+      - Checks automatable accessibility rules; does not replace expert or assistive-technology review.
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+directions: [read]
+fidelity: partial
+maturity: stable

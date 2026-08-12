@@ -30,7 +30,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 
 async function blankWorkspace(t, name = "regression-product") {
   const directory = await mkdtemp(path.join(os.tmpdir(), `silver-${name}-`));
-  t.after(() => rm(directory, { force: true, recursive: true }));
+  // Retry cleanup: a test that runs real `git` commands (the atomicity test
+  // below) can race a background `mdworker`/Spotlight scan of `.git/objects`
+  // right after `git commit`, which briefly holds a directory entry open and
+  // makes a non-retried recursive rm fail with ENOTEMPTY. `rm`'s own retry
+  // option is built for exactly this class of transient race.
+  t.after(() => rm(directory, { force: true, recursive: true, maxRetries: 5, retryDelay: 100 }));
   await setupWorkspace({ root: directory, name, id: name });
   return directory;
 }

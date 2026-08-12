@@ -82,8 +82,15 @@ try {
     // resolves every capability by the pre-0.8 fallback and silently loses the
     // names a designer binds preferences to.
     "framework/activities/catalog.yaml",
+    // Shipped declarations are payload too: without this directory in the
+    // package, every CLI-only or declaration-only transport (chrome-devtools,
+    // playwright, the Design-tools and Browser & QA additions) silently
+    // vanishes for anyone who installed from npm rather than this repo.
+    "framework/transports/chrome-devtools-mcp.yaml",
     "framework/runtime/activities.mjs",
+    "framework/runtime/tool-detection.mjs",
     "framework/runtime/transports.mjs",
+    "framework/runtime/transport-diagnosis.mjs",
     "framework/runtime/host-mcp.mjs",
     "installer/tools.mjs",
     "installer/host-mcp-config.mjs",

@@ -360,6 +360,21 @@ to do. Silver never installs software, never launches a process, and never
 writes a credential — where it does not know how a server starts, it says so and
 hands you the steps.
 
+To ask what will be used for a piece of work rather than reading the whole
+list:
+
+```sh
+.silver/bin/silver tools . --for "make a wireframe"
+```
+
+This matches the phrase against the 67-entry activity catalog and answers the
+same way an invocation would: what will be used, Silver's own native answer
+when nothing installed serves it, or the nearest named activities when
+nothing matches at all. Naming a transport directly in the phrase — "use the
+official Figma MCP" — always wins over any preference. `--bind <activity>
+<transport>` records a standing choice in My Practice so it survives past one
+conversation.
+
 Checks cover artifact contracts, flow structure, semantic styles, prototype
 policy, evidence provenance, presentations, production readiness, assets,
 accessibility, responsive behavior, critical interactions, bindings,
