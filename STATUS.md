@@ -97,6 +97,9 @@ adoption.
 
 ## Recent Progress
 
+- 2026-08-16: Added `docs/brand/silver-logo.jpg` as the repository logo and
+  displayed it at the top of the GitHub README.
+
 - 2026-08-12: Silver 0.9 W10 — skill taxonomy
   - `sketch` renamed `visualize` end to end: skill id, artifact kind
     (`sketch` → `visualization`), output path, capability (`sketch-renderer`

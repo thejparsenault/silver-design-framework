@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/brand/silver-logo.jpg" alt="Silver logo" width="560">
+</p>
+
 # The Silver Design Framework
 
 Silver is an agentic product-design workspace. It gives designers and their
