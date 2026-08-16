@@ -22,14 +22,17 @@ import {
   structuredSchemaFor,
 } from "./artifact-kinds.mjs";
 
-let contracts;
-try {
-  contracts = await import("silver-design-framework/framework/runtime/contracts.mjs");
-} catch {
-  contracts = null;
+let contractsPromise;
+
+async function runtimeContracts() {
+  contractsPromise ??= import(
+    "silver-design-framework/framework/runtime/contracts.mjs",
+  ).catch(() => null);
+  return contractsPromise;
 }
 
 async function validateV2(name, value) {
+  const contracts = await runtimeContracts();
   if (contracts) {
     await contracts.assertV2(name, value);
     return;
@@ -371,10 +374,10 @@ async function main() {
   }
 }
 
-if (
+if (import.meta.main ?? (
   process.argv[1] &&
   realpathSync(path.resolve(process.argv[1])) ===
     realpathSync(fileURLToPath(import.meta.url))
-) {
-  await main();
+)) {
+  void main();
 }

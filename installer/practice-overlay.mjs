@@ -21,7 +21,6 @@
 // drops in between them later without changing any contract.
 import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
@@ -33,8 +32,8 @@ import {
 } from "./practice.mjs";
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
+import { payloadPath } from "./payload.mjs";
 
-const installerRoot = path.dirname(fileURLToPath(import.meta.url));
 
 // The resolved practice, materialized into a workspace so an agent working there
 // can read it. Untracked on purpose: AGENTS.md and CLAUDE.md are committed and
@@ -53,7 +52,7 @@ export {
 };
 
 export function frameworkStudioVoicePath() {
-  return path.resolve(installerRoot, "..", "framework", "studio-voice", "default.md");
+  return payloadPath("framework/studio-voice/default.md", import.meta.url);
 }
 
 function splitFrontmatter(content) {

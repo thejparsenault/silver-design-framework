@@ -1,6 +1,5 @@
 import { mkdir, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { parse, stringify } from "yaml";
 
@@ -38,10 +37,10 @@ import {
   FRAMEWORK_VERSION,
   LOCAL_SOURCE_REFERENCE,
 } from "./version.mjs";
+import { payloadPath, payloadRoot } from "./payload.mjs";
 
-const installerRoot = path.dirname(fileURLToPath(import.meta.url));
-const repositoryRoot = path.resolve(installerRoot, "..");
-const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
+const repositoryRoot = payloadRoot(import.meta.url);
+const templateRoot = payloadPath("installer/templates/blank-workspace", import.meta.url);
 export const INITIAL_SKILL_IDS = [
   "what-now",
   "brand",

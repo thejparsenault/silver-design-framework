@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { parse, stringify } from "yaml";
 
@@ -44,9 +43,9 @@ import {
   resolveSharedStudioVoice,
   writeWorkspacePracticeOverlay,
 } from "./practice-overlay.mjs";
+import { payloadPath } from "./payload.mjs";
 
-const installerRoot = path.dirname(fileURLToPath(import.meta.url));
-const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
+const templateRoot = payloadPath("installer/templates/blank-workspace", import.meta.url);
 const newProjectFiles = [
   "design/TRACE.md",
   "design/contexts/README.md",

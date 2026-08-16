@@ -176,10 +176,10 @@ async function main() {
   }
 }
 
-if (
+if (import.meta.main ?? (
   process.argv[1] &&
   realpathSync(path.resolve(process.argv[1])) ===
     realpathSync(fileURLToPath(import.meta.url))
-) {
-  await main();
+)) {
+  void main();
 }

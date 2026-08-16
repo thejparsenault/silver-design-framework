@@ -10,14 +10,13 @@
 // is served without anyone editing this file.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
+import { payloadPath } from "../../installer/payload.mjs";
 
-const runtimeRoot = path.dirname(fileURLToPath(import.meta.url));
-const sourceCatalogPath = path.resolve(runtimeRoot, "../activities/catalog.yaml");
+const sourceCatalogPath = payloadPath("framework/activities/catalog.yaml", import.meta.url);
 
 // Which provider `directions` let an action happen. `permissions` is not
 // consulted: its `allow | ask | deny` is a prompting default, not a statement

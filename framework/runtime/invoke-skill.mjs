@@ -13,6 +13,7 @@ import { parse } from "yaml";
 
 import { loadActivityCatalog } from "./activities.mjs";
 import { assertV2 } from "./contracts.mjs";
+import { payloadPath } from "../../installer/payload.mjs";
 import {
   checkpointAcceptedOutputs,
   checkpointPreflight,
@@ -26,11 +27,7 @@ import {
   resolveCapabilities,
 } from "./permissions.mjs";
 
-const runtimeRoot = path.dirname(fileURLToPath(import.meta.url));
-const sourceRegistryPath = path.resolve(
-  runtimeRoot,
-  "../guardrails/registry.yaml",
-);
+const sourceRegistryPath = payloadPath("framework/guardrails/registry.yaml", import.meta.url);
 
 async function exists(filePath) {
   try {

@@ -98,6 +98,17 @@ adoption.
 
 ## Recent Progress
 
+- 2026-08-16: Native macOS distribution proof for Silver `0.9.0`
+  - Added repeatable builds for compiled Bun executables targeting Apple Silicon
+    and Intel Macs, plus versioned payloads that preserve framework integrity
+    without requiring Node.js or npm at runtime.
+  - Added macOS 13+ `.pkg` builds that install `silver` at
+    `/usr/local/bin/silver` and keep each payload under
+    `/usr/local/lib/silver/<version>/`.
+  - Local unsigned packages and a no-Node native setup/doctor smoke test pass.
+    Public release still requires Developer ID signing and Apple notarization;
+    `docs/native-macos-distribution.md` records the handoff.
+
 - 2026-08-16: Added `docs/brand/silver-logo.jpg` as the repository logo and
   displayed it at the top of the GitHub README.
 

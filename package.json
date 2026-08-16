@@ -51,6 +51,7 @@
     "installer/invoke.mjs",
     "installer/lib/",
     "installer/migrate.mjs",
+    "installer/payload.mjs",
     "installer/practice-overlay.mjs",
     "installer/practice.mjs",
     "installer/repair.mjs",
@@ -68,8 +69,10 @@
   "scripts": {
     "validate:contracts": "node framework/scripts/validate-contracts.mjs",
     "build": "npm run validate:contracts && npm test",
+    "build:native": "node installer/scripts/build-native.mjs --all",
     "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
     "postinstall": "node installer/scripts/postinstall.mjs",
+    "package:macos": "node installer/scripts/build-macos-package.mjs",
     "test": "node --test --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
     "test:package": "node installer/tests/package-smoke.mjs",
     "prepublishOnly": "npm run build",

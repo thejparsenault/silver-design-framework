@@ -49,7 +49,7 @@ export async function renderMap({ root = process.cwd(), map, output, replace = f
   return { output: destination, map: { id: artifact.id, revision: artifact.revision }, context: primaryContext };
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main ?? (process.argv[1] === fileURLToPath(import.meta.url))) {
   const args = process.argv.slice(2);
   const options = {};
   for (let index = 0; index < args.length; index += 1) {

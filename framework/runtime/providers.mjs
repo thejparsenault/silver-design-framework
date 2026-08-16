@@ -1,14 +1,14 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
+import { payloadPath } from "../../installer/payload.mjs";
 
-const runtimeRoot = path.dirname(fileURLToPath(import.meta.url));
-const sourceProviderRoot = path.resolve(runtimeRoot, "../providers");
+const sourceProviderRoot = payloadPath("framework/providers", import.meta.url);
 
 async function exists(filePath) {
   try {
@@ -261,7 +261,7 @@ export async function discoverProviders(options = {}) {
   // even though it is the least project-scoped preference source.
   const catalogRoot = workspace
     ? path.join(workspace, ".silver", "transports")
-    : path.resolve(runtimeRoot, "../transports");
+    : payloadPath("framework/transports");
   const practiceTransportsRoot = path.join(home, "Silver", "My Practice", "transports");
   const discovered = [
     ...(await loadPackages(providerRoot, options)),

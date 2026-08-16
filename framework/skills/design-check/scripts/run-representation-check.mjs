@@ -19,11 +19,11 @@ export async function runRepresentationCheckCli(args = process.argv.slice(2)) {
   return result;
 }
 
-if (
+if (import.meta.main ?? (
   process.argv[1] &&
   realpathSync(path.resolve(process.argv[1])) ===
     realpathSync(fileURLToPath(import.meta.url))
-) {
+)) {
   try {
     const result = await runRepresentationCheckCli();
     console.log(JSON.stringify(result, null, 2));

@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 
+import { payloadPath } from "./payload.mjs";
+
 const DARK_TERMINAL_SILVER = {
   rgb: [199, 203, 209],
   ansi256: 251,
@@ -17,7 +19,7 @@ const UNKNOWN_TERMINAL_SILVER = {
   ansi16: 90,
 };
 const RESET = "\u001B[0m";
-const markUrl = new URL("../docs/brand/ag-mark.txt", import.meta.url);
+const markPath = payloadPath("docs/brand/ag-mark.txt", import.meta.url);
 
 export function terminalGround(env = process.env) {
   const colorFgbg = env.COLORFGBG?.trim();
@@ -77,7 +79,7 @@ export function silverEscape({
 }
 
 export async function renderBrandMark(options = {}) {
-  const mark = (await readFile(markUrl, "utf8")).trimEnd();
+  const mark = (await readFile(markPath, "utf8")).trimEnd();
   const color = silverEscape(options);
   return color ? `${color}${mark}${RESET}` : mark;
 }

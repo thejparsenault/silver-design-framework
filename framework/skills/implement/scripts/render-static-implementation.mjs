@@ -117,7 +117,7 @@ function parseArgs(args) {
   }
   return options;
 }
-if (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
+if (import.meta.main ?? (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url)))) {
   try { const result = await renderStaticImplementation(parseArgs(process.argv.slice(2))); console.log(path.relative(process.cwd(), result.outputRoot)); }
   catch (error) { console.error(`Error: ${error.message}`); process.exitCode = 1; }
 }

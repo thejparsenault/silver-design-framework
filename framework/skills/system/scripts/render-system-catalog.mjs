@@ -5,28 +5,14 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolveActiveStylesheet } from "../../../runtime/expression.mjs";
+
 const escapeHtml = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
-// This script runs from an installed workspace where a bare specifier may not
-// resolve, hence the ladder — the same one framework/skills/design-check/
-// scripts/run-browser.mjs uses for chrome.mjs.
+// This script runs through the CLI, which bundles the framework runtime with
+// the native executable. The copied workspace script remains an unsupported
+// direct entrypoint; `.silver/bin/silver` is its supported route.
 async function resolveStylesheetHref(root, fromDirectory) {
-  let resolveActiveStylesheet;
-  for (const specifier of [
-    "silver-design-framework/framework/runtime/expression.mjs",
-    "../../../.silver/runtime/expression.mjs",
-    "../../../runtime/expression.mjs",
-  ]) {
-    try {
-      ({ resolveActiveStylesheet } = await import(specifier));
-      break;
-    } catch {
-      // Try the next resolution path.
-    }
-  }
-  if (!resolveActiveStylesheet) {
-    throw new Error("Could not resolve the design-system runtime module.");
-  }
   const stylesheet = await resolveActiveStylesheet(root);
   return path.relative(fromDirectory, path.join(root, stylesheet)).split(path.sep).join("/");
 }
@@ -86,15 +72,17 @@ table { width: 100%; border-collapse: collapse; } th, td { text-align: left; pad
   return { outputPath, tokenCount: leaves(tokenSource).length };
 }
 
-if (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
-  const args = process.argv.slice(2);
-  const rootIndex = args.indexOf("--root");
-  const replace = args.includes("--replace");
-  try {
-    const result = await renderSystemCatalog({ root: rootIndex >= 0 ? args[rootIndex + 1] : process.cwd(), replace });
-    console.log(path.relative(process.cwd(), result.outputPath));
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exitCode = 1;
-  }
+if (import.meta.main ?? (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url)))) {
+  (async () => {
+    const args = process.argv.slice(2);
+    const rootIndex = args.indexOf("--root");
+    const replace = args.includes("--replace");
+    try {
+      const result = await renderSystemCatalog({ root: rootIndex >= 0 ? args[rootIndex + 1] : process.cwd(), replace });
+      console.log(path.relative(process.cwd(), result.outputPath));
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      process.exitCode = 1;
+    }
+  })();
 }

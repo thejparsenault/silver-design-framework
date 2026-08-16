@@ -3,36 +3,12 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 import {
   isDirectoryKind,
   isInactiveKind,
 } from "../../design-check/scripts/artifact-kinds.mjs";
-
-// This file is copied into `.skills/what-now/scripts/`, where a bare `yaml`
-// import cannot resolve: Node walks ancestor node_modules from the importing
-// file and never looks inside a sibling package's private tree. Ask the
-// installed package for it instead, which does resolve from a workspace that
-// installed Silver from npm. Running through `.silver/bin/silver` always works
-// because the CLI executes from inside the package.
-async function loadYamlParser() {
-  const candidates = [
-    "yaml",
-    "silver-design-framework/framework/runtime/yaml.mjs",
-  ];
-  for (const candidate of candidates) {
-    try {
-      return (await import(candidate)).parse;
-    } catch {
-      continue;
-    }
-  }
-  throw new Error(
-    "Could not resolve a YAML parser. Run this through the workspace launcher instead: `.silver/bin/silver what-now .`",
-  );
-}
-
-const parseYaml = await loadYamlParser();
 
 const ACTION_TITLES = {
   "repair-workspace": "Repair the Silver workspace",
@@ -519,15 +495,17 @@ async function inspectWorkspace(root, now) {
 
 export { inspectWorkspace };
 
-if (
+if (import.meta.main ?? (
   process.argv[1] &&
   path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
-) {
-  try {
+)) {
+  (async () => {
+    try {
     const { root, now } = parseArgs(process.argv.slice(2));
     console.log(JSON.stringify(await inspectWorkspace(root, now), null, 2));
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exitCode = 1;
-  }
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      process.exitCode = 1;
+    }
+  })();
 }
