@@ -527,22 +527,23 @@ never start recommended design tasks automatically.
 
 ## Current limitations
 
-Silver `0.8.0`, **Tools That Are Actually There**, is validated for guided setup,
+Silver `0.9.0`, **Meet the Work Where It Is**, is validated for guided setup,
 integrated and separate repository topology, My Practice and the studio voice,
 linked local or Git guidance, multiple design contexts, maps, provenance tracing,
 Claude Code discovery, CLI-routed guarded invocation with self-running checks,
 atomic canonical activation, activity-based transport selection with veto and
-availability filtering, and reviewable migration from 0.6.
+availability filtering, existing-workspace adoption, personal tool preferences,
+external references, and reviewable migration from 0.6.
 
 - Silver knows about the tools it ships and the ones already configured in your
   agent host. It does not search for tools and will not recommend one it has not
   shipped, because there is no vetted source for that and a suggestion carries
   the weight of an endorsement. An unrecognized MCP server is reported and left
   alone until you say what it is for.
-- Personal tool preferences are not authored yet. Personal is the first ordering
-  source and the resolver reads it, but `My Practice/tools.yaml` and the
-  conversational path that writes it arrive in 0.9. Project-level preferences
-  work now, in `design/manifest.yaml`.
+- Personal tool preferences are authored in `My Practice/tools.yaml`. Use
+  `silver tools --resolve` to inspect the applicable transport order and
+  `silver tools --bind` to record a preference. Project-level preferences also
+  work in `design/manifest.yaml`.
 - Silver cannot tell you an MCP transport is *responding*, only that it is
   *configured*. Your agent host owns the connection, so results verify the
   artifacts that came back rather than the transport that claimed to make them.

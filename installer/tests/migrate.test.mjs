@@ -141,7 +141,7 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.8.0");
+  assert.equal(lock.framework.version, "0.9.0");
   // 0.9 adds the silver-browser-local provider, the shipped transport
   // catalog, and W10's collect/structure/measure skills (visualize replaces
   // sketch rather than adding to the count).
@@ -223,7 +223,7 @@ test("0.4-to-current migration preserves an edited legacy policy as inactive and
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.4.0");
-  assert.equal(preview.toVersion, "0.8.0");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.ok(
     preview.changes.some(({ action }) => action === "bootstrap-provenance"),
   );
@@ -349,7 +349,7 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.8.0");
+  assert.equal(migrated.framework.version, "0.9.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma-console-mcp", "figma-official-mcp", "silver-browser-local", "silver-portable"],
@@ -409,7 +409,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.5.0");
-  assert.equal(preview.toVersion, "0.8.0");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.equal(preview.applied, false);
   for (const expected of ["CLAUDE.md", ".claude/skills", ".silver/bin/silver"]) {
     assert.ok(
@@ -661,7 +661,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   const lock = parse(await readFile(lockPath, "utf8"));
   lock.framework.version = "0.6.0";
   for (const installed of lock.packages) {
-    if (installed.version === "0.8.0") installed.version = "0.6.0";
+    if (installed.version === "0.9.0") installed.version = "0.6.0";
   }
   await writeFile(lockPath, stringify(lock), "utf8");
   const launcherPath = path.join(root, ".silver", "bin", "silver");
@@ -675,7 +675,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.6.0");
-  assert.equal(preview.toVersion, "0.8.0");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.equal(preview.applied, false);
 
   const applied = await migrateWorkspace({ root, apply: true });
@@ -684,7 +684,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   // pin on the superseded 0.6.0 release artifact is gone either way.
   const launcher = await readFile(launcherPath, "utf8");
   assert.doesNotMatch(launcher, /releases\/download\/v0\.6\.0/);
-  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.8\.0)/m);
+  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.9\.0)/m);
   assert.ok((await readFile(voicePath, "utf8")).endsWith(ownedNote));
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

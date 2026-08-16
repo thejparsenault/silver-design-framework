@@ -45,7 +45,7 @@ function result({ id, skill, inputs = [], outputs = [] }) {
   return {
     schema: "silver/skill-result/v2",
     invocation_id: id,
-    skill: { id: skill, version: "0.8.0" },
+    skill: { id: skill, version: "0.9.0" },
     started_at: time.start,
     completed_at: time.start,
     inputs,
@@ -75,7 +75,7 @@ test("default playbook is a valid graph of pinned leaf skills with bounded auton
   await assertV2("playbook.schema.json", playbook);
   assertPlaybookGraph(playbook);
   assert.ok(
-    playbook.nodes.every(({ skill }) => skill.version === "0.8.0"),
+    playbook.nodes.every(({ skill }) => skill.version === "0.9.0"),
   );
   assert.deepEqual(playbook.autonomy.forbidden_effects, [
     "canonical-write",

@@ -2,9 +2,10 @@
 
 ## Current Focus
 
-Silver `0.9`, **Meet the Work Where It Is**, is in progress on
-`release/silver-0.8-tools` (`package.json` still declares `0.8.0`; the
-version bumps at release, per `docs/silver-0.9-acceptance.md`). The thesis:
+Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
+`release/silver-0.8-tools`. The release version is now declared consistently
+in the package and framework metadata, per `docs/silver-0.9-acceptance.md`.
+The thesis:
 Silver meets work it did not author — existing repositories, tools it does
 not ship, references from outside, and a design system that belongs to the
 team rather than to Silver.

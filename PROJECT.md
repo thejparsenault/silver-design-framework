@@ -8,7 +8,7 @@ visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-30
+updated: 2026-08-16
 ---
 
 # The Silver Design Framework
@@ -59,20 +59,21 @@ build
 
 ## Latest Release
 
-Silver `0.8.0`, **Tools That Are Actually There**, is in progress on
-`release/silver-0.8-tools`. It makes the provider selection layer real. Before
-it, `resolveCapabilities` mapped a capability to a provider by alphabetical
-first-wins, `selectProvider` had no callers, the tool profile contract was never
-read from disk, and the only external provider reported itself permanently
-unavailable — so there was nothing to choose between and nothing doing the
-choosing.
+Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
+`release/silver-0.8-tools`. It extends the provider-selection work into the
+repositories, references, design systems, and tools a team already owns:
+existing-workspace adoption, declared transport support and diagnosis,
+personal tool preferences, external references, a workspace-owned design
+system, and a reviewable 0.8-to-0.9 migration.
 
-0.8 names the units of tool-using work as *activities*, splits Figma from one
-provider into separate *transports* that are good at different jobs, and
-resolves each activity through one order and two filters. Nothing is removed
-from a designer's options without being named and attributed. Personal
-preference files, presets, and the team layer follow in 0.9;
-`docs/silver-0.8-acceptance.md` is the release boundary.
+The release will add signed macOS native CLI delivery for both Apple Silicon
+and Intel Macs. Windows and Linux delivery are explicitly deferred.
+`docs/silver-0.9-acceptance.md` is the release boundary.
+
+Silver `0.8.0`, **Tools That Are Actually There**, is the previous release.
+It made the provider-selection layer real: `resolveCapabilities` no longer
+picked alphabetically, transports became distinct ways of reaching a tool, and
+each activity resolved through an explicit order and two filters.
 
 Silver `0.7.0`, **One Good Step**, is the previous release. It answers the
 22-issue field report from the first real product session: invocations run their
