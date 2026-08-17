@@ -131,6 +131,18 @@ adoption.
 
 ## Recent Progress
 
+- 2026-08-17: Public README rewritten for Silver 0.9
+  - Replaced the developer-first install guide (including stale 0.6.1 commands)
+    with a designer- and agent-first release guide. It leads with the signed
+    macOS package, supplies a copyable inspect-before-apply prompt, explains
+    the single-folder workspace, groups all 25 skills by outcome, lists shipped
+    adapters, and makes synchronization, safety, and recovery understandable
+    without hiding their boundaries.
+  - The GitHub-rendered `Ag` brand mark remains at the top. The README describes
+    Codex, Claude Code, and comparable local agents without preferring a host;
+    it correctly calls Claude Cowork unsupported rather than implying the
+    installed CLI alone makes it work.
+
 - 2026-08-17: Live Figma round-trip verification
   - Desktop Bridge probed healthy against `Test File`, page `Page 1`.
   - Created a primitive color and a semantic alias, pulled the alias, no-op
@@ -621,4 +633,4 @@ adoption.
 
 ## Last Updated
 
-2026-08-12
+2026-08-17

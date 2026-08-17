@@ -554,6 +554,25 @@ automated gate by design.
     port allocation, one launch/readiness retry, bounded stderr, verified
     cleanup, distinct exit codes, and repeated real/injected browser coverage.
 
+- [x] Rewrite the public README for the Silver 0.9 release
+  - type: docs
+  - priority: high
+  - context: medium
+  - notes: Reoriented the README to product designers and local agents: signed
+    macOS package first, a copyable chat-first install path second, then the
+    workspace model, 25 skill groups, included adapters, linked-source/Figma
+    reconciliation, and the safety/recovery boundary. Claude Cowork is named
+    accurately as unsupported.
+
+- [ ] Produce signed and notarized macOS 0.9 installer packages
+  - type: release
+  - priority: high
+  - context: medium
+  - notes: Build the already-verified native payloads, sign executables and
+    packages with the appropriate Developer ID identities, notarize/staple,
+    run `spctl` verification, and attach only final packages plus checksums to
+    the GitHub release. See `docs/native-macos-distribution.md`.
+
 - [ ] Restore or exceed the pre-hardening branch and function coverage percentages
   - type: quality
   - priority: medium
