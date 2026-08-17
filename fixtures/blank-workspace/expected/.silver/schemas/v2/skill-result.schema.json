@@ -1,0 +1,506 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/skill-result.schema.json",
+  "title": "Silver skill invocation result v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "invocation_id",
+    "skill",
+    "started_at",
+    "completed_at",
+    "inputs",
+    "outputs",
+    "providers",
+    "representation_coverage",
+    "freshness_blockers",
+    "degraded_capabilities",
+    "execution",
+    "acceptance",
+    "readiness",
+    "checks",
+    "guardrails",
+    "unresolved_questions",
+    "recommended_next_actions"
+  ],
+    "properties": {
+    "schema": {
+      "const": "silver/skill-result/v2"
+    },
+    "invocation_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/version"
+        }
+      }
+    },
+    "provenance": {
+      "$ref": "provenance.schema.json"
+    },
+    "declared_effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    },
+    "observed_effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    },
+    "effect_findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "git_checkpoint": {
+      "$ref": "git-checkpoint.schema.json"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "provider", "status"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "activity": {
+            "description": "The named activity that decided this transport, when the catalog had a name for it. Lets a report say \"pushing design-system updates\" rather than \"design-file\".",
+            "$ref": "common.schema.json#/$defs/namespacedId"
+          },
+          "provider": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["used", "fallback", "unavailable", "denied"]
+          }
+        }
+      }
+    },
+    "transports": {
+      "description": "How each named activity resolved: the chain considered, which source ordered it, what was selected, and every transport removed from the running with the reason and who can fix it. Nothing is removed from a designer's options without appearing here.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["activity", "title", "ordered_by", "chain", "removed", "decision"],
+        "properties": {
+          "activity": { "$ref": "common.schema.json#/$defs/namespacedId" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "ordered_by": { "enum": ["personal", "project", "team", "framework"] },
+          "chain": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "selected": {
+            "anyOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }]
+          },
+          "decision": {
+            "description": "selected: the preferred transport was used. fallback: something further down the chain was used, and which one is recorded. ask: the designer has a choice to make and nothing ran. stop: nothing may be substituted. none: nothing can serve this activity.",
+            "enum": ["selected", "fallback", "ask", "stop", "none"]
+          },
+          "on_unavailable": { "enum": ["ask", "use_next", "stop"] },
+          "would_select": { "$ref": "common.schema.json#/$defs/id" },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "candidates": {
+            "description": "Shipped transports that could serve this activity if they were set up. What Silver offers instead of inventing a recommendation.",
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" }
+          },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "removed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["transport", "reason"],
+              "properties": {
+                "transport": { "$ref": "common.schema.json#/$defs/id" },
+                "reason": {
+                  "description": "`undetermined` is distinct from `unavailable`: Silver cannot see an agent's own built-in tools, so a host-native transport is not missing, it is unverifiable from here. Collapsing the two would send a designer hunting a fault that may not exist.",
+                  "enum": [
+                    "unavailable",
+                    "undetermined",
+                    "vetoed",
+                    "unsupported",
+                    "unknown"
+                  ]
+                },
+                "source": {
+                  "description": "Who forbade it. `machine-policy` covers an operating-system or enterprise policy Silver can observe but not change.",
+                  "enum": ["project", "team", "organization", "machine-policy"]
+                },
+                "detail": { "type": "string", "minLength": 1, "maxLength": 500 },
+                "failing_step": {
+                  "description": "Which rung of the transport's setup ladder did not hold.",
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "fixable_by": {
+                  "description": "Whether this is the designer's to fix, and if not, who to ask.",
+                  "enum": ["designer", "project-owner", "policy-owner"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "representation_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "status"],
+        "properties": {
+          "role": { "enum": ["portable-artifact", "local-view", "external-view"] },
+          "status": { "enum": ["complete", "degraded", "unavailable", "stale", "unverified"] },
+          "provider": { "$ref": "common.schema.json#/$defs/id" },
+          "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "freshness_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["binding_id", "state", "blocks"],
+        "properties": {
+          "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+          "state": { "enum": ["view-stale", "external-changed", "diverged", "unmapped", "unverified", "conflict"] },
+          "blocks": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/id" } }
+        }
+      }
+    },
+    "degraded_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "reason", "coverage"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "coverage": {
+            "enum": ["local-fallback", "degraded", "not-run"]
+          }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary"],
+      "properties": {
+        "status": {
+          "description": "complete-awaiting-verification separates 'the output was generated' from 'the output was verified': the work produced no findings, but a required check could not be run, so its correctness is unestablished rather than confirmed.",
+          "enum": [
+            "complete",
+            "complete-awaiting-verification",
+            "complete-with-findings",
+            "blocked",
+            "failed",
+            "not-run"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["not-required", "awaiting-review", "accepted", "rejected"]
+        },
+        "reviewer": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "readiness": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "reasons"],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["ready", "not-ready", "blocked", "not-applicable"]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "description": "Verified check outcomes. A recorded pass means its evidence file exists and agrees; a status the runtime could not corroborate is degraded to not-run with a reason.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "result_path"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["pass", "fail", "not-run"]
+          },
+          "result_path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "reason": {
+            "description": "Why a claimed status was not believed, or why a check could not run.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "pending_outputs": {
+      "description": "Declared contract outputs this skill has not produced yet. A skill may build its output set across several invocations; downstream readiness waits until the set is complete.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path_pattern"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/artifactKind"
+          },
+          "path_pattern": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "resume_request": {
+      "description": "A submittable request that retries this invocation after it failed with its outputs already written. Its expected_integrity values describe what is actually on disk.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "reason"],
+      "properties": {
+        "path": {
+          "$ref": "common.schema.json#/$defs/relativePath"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "guardrails": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "status": {
+            "enum": ["pass", "fail", "not-run", "relaxed"]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "decision_reference": {
+            "$ref": "common.schema.json#/$defs/artifactReference"
+          }
+        }
+      }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question", "blocks"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          }
+        }
+      }
+    },
+    "recommended_next_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "reason", "automatic"],
+        "properties": {
+          "action": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "automatic": {
+            "const": false
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "action"],
+      "properties": {
+        "capability": {
+          "$ref": "common.schema.json#/$defs/capability"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "path": {
+          "$ref": "common.schema.json#/$defs/relativePath"
+        },
+        "reference": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": {
+              "status": {
+                "enum": ["blocked", "failed", "not-run"]
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "readiness": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "status": {
+                    "const": "ready"
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": {
+              "status": {
+                "const": "not-run"
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outputs": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

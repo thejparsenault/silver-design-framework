@@ -1,0 +1,187 @@
+schema: silver/guardrail-registry/v2
+version: 0.9.0
+guardrails:
+  - id: privacy-sanitized-evidence
+    summary: Store only sanitized observations and evidence appropriate for the repository.
+    enforcement: agent-review
+    failure:
+      behavior: stop-execution
+      blocks:
+        - evidence-write
+        - production
+    scope:
+      - framework
+      - workspace
+      - artifact
+      - skill
+    relaxable: false
+  - id: authority-respected
+    summary: Change canonical or externally authoritative artifacts only with resolved authority.
+    enforcement: deterministic-check
+    failure:
+      behavior: stop-execution
+      blocks:
+        - canonical-write
+        - external-write
+    scope:
+      - framework
+      - workspace
+      - artifact
+      - skill
+      - invocation
+    relaxable: false
+  - id: provenance-required
+    summary: Claims, findings, and derived artifacts pin the identities and revisions of their sources.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - acceptance
+        - pitch
+        - production
+    scope:
+      - framework
+      - artifact
+      - skill
+    relaxable: false
+  - id: permission-bounded
+    summary: Legacy alias for effects-declared; repository authorization belongs to the environment.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - unreviewed-effect
+    scope:
+      - framework
+      - workspace
+      - skill
+      - invocation
+    relaxable: false
+  - id: effects-declared
+    summary: Durable results compare declared effects with the paths and external operations actually observed.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - unreviewed-effect
+    scope:
+      - framework
+      - workspace
+      - skill
+      - invocation
+    relaxable: false
+  - id: no-silent-mutation
+    summary: Never rewrite accepted upstream, canonical, external, or edited framework-managed work implicitly.
+    enforcement: deterministic-check
+    failure:
+      behavior: stop-execution
+      blocks:
+        - mutation
+        - update
+        - migration
+    scope:
+      - framework
+      - workspace
+      - artifact
+      - skill
+    relaxable: false
+  - id: no-fabricated-evidence
+    summary: Label assumptions and estimates and never represent planned or invented research as observed evidence.
+    enforcement: agent-review
+    failure:
+      behavior: block-handoff
+      blocks:
+        - acceptance
+        - pitch
+        - production
+    scope:
+      - framework
+      - artifact
+      - skill
+    relaxable: false
+  - id: revision-pinned
+    summary: Durable handoffs reference stable artifact identities and exact revisions.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - downstream-readiness
+        - production
+    scope:
+      - framework
+      - artifact
+      - skill
+    relaxable: false
+  - id: followups-recommended-only
+    summary: A leaf skill may recommend contract-declared next actions but never starts them automatically.
+    enforcement: deterministic-check
+    failure:
+      behavior: stop-execution
+      blocks:
+        - automatic-followup
+    scope:
+      - framework
+      - skill
+    relaxable: false
+  - id: semantic-styles-only
+    summary: Rendered work uses approved semantic styles rather than invented raw visual values.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - prototype-review
+        - production
+    scope:
+      - workspace
+      - artifact
+      - skill
+    relaxable: true
+    relaxation:
+      allowed_profiles:
+        - prototype-partial
+        - prototype-suspended
+      record: Record the explicit profile and approved scope in prototype metadata.
+  - id: approved-components-only
+    summary: Production work uses registered primitives and patterns; prototypes may explicitly explore proposals.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - production
+    scope:
+      - workspace
+      - artifact
+      - skill
+    relaxable: true
+    relaxation:
+      allowed_profiles:
+        - prototype-partial
+        - prototype-suspended
+      record: Record proposed components and the explicit prototype profile.
+  - id: constraint-profile-explicit
+    summary: Partial or suspended design-system constraints require an explicit invocation choice and durable record.
+    enforcement: deterministic-check
+    failure:
+      behavior: stop-execution
+      blocks:
+        - prototype-write
+    scope:
+      - framework
+      - workspace
+      - artifact
+      - skill
+      - invocation
+    relaxable: false
+  - id: production-readiness-required
+    summary: Production implementation requires accepted intent and all policy-required checks.
+    enforcement: deterministic-check
+    failure:
+      behavior: block-handoff
+      blocks:
+        - production
+    scope:
+      - framework
+      - workspace
+      - artifact
+      - skill
+    relaxable: false

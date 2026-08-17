@@ -232,6 +232,7 @@ test("accepted outputs create a local Git checkpoint without pushing", async () 
     path.join(os.tmpdir(), "silver-invoke-git-"),
   );
   await run("git", ["-C", workspace, "init"]);
+  await run("git", ["-C", workspace, "config", "commit.gpgSign", "true"]);
   await seedCheckEvidence(workspace, [
     "contract-integrity",
     "evidence-provenance",

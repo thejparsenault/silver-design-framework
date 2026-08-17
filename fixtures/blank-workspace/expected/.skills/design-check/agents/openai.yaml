@@ -1,0 +1,4 @@
+interface:
+  display_name: Check design
+  short_description: Run applicable independent checks without performing design work.
+  default_prompt: Use $design-check to run applicable independent checks without performing design work.

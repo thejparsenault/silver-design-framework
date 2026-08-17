@@ -65,6 +65,19 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
   }
 });
 
+test("a selected fast check runs alone and unknown ids are refused", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const selected = await runFastSuite({ root, only: ["semantic-styles"] });
+  assert.deepEqual(
+    selected.results.map(({ checker }) => checker),
+    ["semantic-styles"],
+  );
+  await assert.rejects(
+    runFastSuite({ root, only: ["not-a-check"] }),
+    /Unknown fast check: not-a-check/,
+  );
+});
+
 test("artifact checker rejects malformed canonical metadata", async (t) => {
   const root = await temporaryWorkspace(t);
   const brandPath = path.join(root, "design", "brand.md");

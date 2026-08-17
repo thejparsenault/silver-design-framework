@@ -1,0 +1,140 @@
+schema: silver/skill/v2
+id: ideate
+version: 0.9.0
+summary: Generate distinct concepts and testable hypotheses.
+context_budget: small
+inputs:
+  - kind: problem-frame
+    required: true
+    role: working
+  - kind: finding
+    required: false
+    role: working
+  - kind: design-principles
+    required: false
+    role: canonical
+  - kind: map
+    required: false
+    role: working
+outputs:
+  - kind: concept
+    scope: product
+    path_pattern: design/work/concepts/**
+    authority: project-owned
+  - kind: hypothesis
+    scope: product
+    path_pattern: design/work/hypotheses/**
+    authority: project-owned
+  - kind: decision
+    scope: product
+    path_pattern: design/decisions/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/concepts/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/hypotheses/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+  - semantic-styles-only
+completion:
+  invariants:
+    - concepts-distinct
+    - hypotheses-testable
+    - selection-explicit
+  quality_criteria:
+    - id: task-quality
+      description: Alternatives differ in mechanism or product bet, not merely surface
+        treatment.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - specify
+      - visualize
+      - pitch
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: ideate-to-specify
+    target: specify
+    readiness: specify
+    requires:
+      - concept
+      - hypothesis
+      - decision
+  - id: ideate-to-visualize
+    target: visualize
+    readiness: visualize
+    requires:
+      - concept
+      - hypothesis
+      - decision
+  - id: ideate-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - concept
+      - hypothesis
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

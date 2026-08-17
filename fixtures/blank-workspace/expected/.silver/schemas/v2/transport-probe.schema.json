@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/transport-probe.schema.json",
+  "title": "Silver transport probe result v1",
+  "description": "Evidence that a transport actually responded, recorded by the agent that called it.\n\nSilver never opens a socket, so for an MCP transport it can only ever establish `configured` — the host owns the connection. The agent can call the tool, and this is where it says what happened. Availability then reports `responding` only while a fresh, agreeing probe exists, which is the 0.7 rule applied to tools: a claimed pass with no evidence is not believed.\n\nA probe is a measurement with a timestamp, not a permanent fact. It goes stale on purpose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "transport", "outcome", "recorded_at", "recorded_by"],
+  "properties": {
+    "schema": { "const": "silver/transport-probe/v1" },
+    "transport": { "$ref": "common.schema.json#/$defs/id" },
+    "tool": {
+      "description": "The tool the agent actually called. Recorded so a probe against the wrong tool is visible rather than counted.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "outcome": {
+      "description": "responded: the call returned something matching what the transport said to expect. failed: it was reached and did not work. refused: the call was declined — no permission, no authorization, or the tool is not in the agent's namespace at all.",
+      "enum": ["responded", "failed", "refused"]
+    },
+    "detail": {
+      "description": "What came back, or what went wrong. This is what `--diagnose` shows a designer, so it should read like an answer rather than a stack trace.",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "recorded_by": {
+      "description": "Which agent made the call. A probe is somebody's observation, and an unattributed one cannot be weighed.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    }
+  }
+}

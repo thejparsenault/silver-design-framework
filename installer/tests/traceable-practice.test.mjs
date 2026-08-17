@@ -40,7 +40,12 @@ const fixedTime = "2026-07-30T12:00:00.000Z";
 
 async function temporaryDirectory(t, prefix) {
   const root = await mkdtemp(path.join(os.tmpdir(), prefix));
-  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(() => rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  }));
   return root;
 }
 
@@ -607,6 +612,7 @@ test("checkpoints commit only selected changes and pause on overlapping staged w
     "-m",
     "Fixture",
   ]);
+  await git(root, ["config", "commit.gpgSign", "true"]);
   await writeFile(path.join(root, "accepted.md"), "r2\n");
   await writeFile(path.join(root, "unrelated.md"), "unrelated edit\n");
   const committed = await createCheckpoint({

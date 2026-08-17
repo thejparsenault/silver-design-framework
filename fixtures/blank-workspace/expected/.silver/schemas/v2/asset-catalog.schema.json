@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/asset-catalog.schema.json",
+  "title": "Silver asset catalog v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "revision", "updated", "assets"],
+  "properties": {
+    "schema": { "const": "silver/asset-catalog/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "updated": { "type": "string", "format": "date-time" },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "revision",
+          "kind",
+          "ownership",
+          "authority",
+          "provenance",
+          "license",
+          "restrictions",
+          "renditions"
+        ],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "revision": { "$ref": "common.schema.json#/$defs/revision" },
+          "kind": {
+            "enum": ["image", "illustration", "icon", "logo", "video", "audio", "font", "data"]
+          },
+          "ownership": {
+            "enum": ["project-shared", "prototype-local", "production-projection"]
+          },
+          "authority": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type"],
+            "properties": {
+              "type": { "enum": ["project", "external", "generated"] },
+              "owner": { "type": "string", "minLength": 1 }
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "recorded_at"],
+            "properties": {
+              "source": { "type": "string", "minLength": 1 },
+              "recorded_at": { "type": "string", "format": "date-time" },
+              "source_url": { "type": "string", "format": "uri" }
+            }
+          },
+          "license": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "usage"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "usage": { "enum": ["internal", "prototype", "production", "unrestricted"] },
+              "attribution": { "type": "string" }
+            }
+          },
+          "restrictions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "promoted_from": {
+            "$ref": "common.schema.json#/$defs/artifactReference"
+          },
+          "renditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "path", "media_type", "integrity"],
+              "properties": {
+                "id": { "$ref": "common.schema.json#/$defs/id" },
+                "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+" },
+                "media_type": { "type": "string", "minLength": 3 },
+                "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+                "width": { "type": "integer", "minimum": 1 },
+                "height": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

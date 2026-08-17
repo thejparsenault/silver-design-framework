@@ -145,8 +145,8 @@ test("migration preview is read-only and apply upgrades the installed shape with
   // 0.9 adds the silver-browser-local provider, the shipped transport
   // catalog, and W10's collect/structure/measure skills (visualize replaces
   // sketch rather than adding to the count).
-  assert.equal(lock.packages.length, 35);
-  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 24);
+  assert.equal(lock.packages.length, 36);
+  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 25);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "presentation-kit"));
@@ -425,7 +425,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
     await readFile(path.join(root, "CLAUDE.md"), "utf8"),
     /^@AGENTS\.md$/m,
   );
-  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 24);
+  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 25);
   assert.ok(await exists(path.join(root, ".silver", "bin", "silver")));
   assert.ok(
     (await readFile(brandPath, "utf8")).endsWith(ownedNote),
@@ -664,6 +664,14 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
     if (installed.version === "0.9.0") installed.version = "0.6.0";
   }
   await writeFile(lockPath, stringify(lock), "utf8");
+  // The published 0.6 expression had no stylesheet field and still referenced
+  // the HTML-contract catalog. This exact shape was reproduced from the real
+  // task-tracker workspace during the audit.
+  const expressionPath = path.join(root, "design", "contexts", "default-expression.yaml");
+  const expression = parse(await readFile(expressionPath, "utf8"));
+  delete expression.stylesheet;
+  expression.component_catalog.path = "reference-system/html-contracts";
+  await writeFile(expressionPath, stringify(expression), "utf8");
   const launcherPath = path.join(root, ".silver", "bin", "silver");
   await writeFile(
     launcherPath,
@@ -677,6 +685,13 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   assert.equal(preview.fromVersion, "0.6.0");
   assert.equal(preview.toVersion, "0.9.0");
   assert.equal(preview.applied, false);
+  assert.ok(
+    preview.changes.some(
+      ({ action, path: changedPath }) =>
+        action === "upgrade-component-expression" &&
+        changedPath === "design/contexts/default-expression.yaml",
+    ),
+  );
 
   const applied = await migrateWorkspace({ root, apply: true });
   assert.equal(applied.applied, true);
@@ -686,5 +701,14 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   assert.doesNotMatch(launcher, /releases\/download\/v0\.6\.0/);
   assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.9\.0)/m);
   assert.ok((await readFile(voicePath, "utf8")).endsWith(ownedNote));
+  const migratedExpression = parse(await readFile(expressionPath, "utf8"));
+  assert.equal(
+    migratedExpression.stylesheet,
+    "design/system/expressions/html/styles/ds.css",
+  );
+  assert.equal(
+    migratedExpression.component_catalog.path,
+    "design/system/components.json",
+  );
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

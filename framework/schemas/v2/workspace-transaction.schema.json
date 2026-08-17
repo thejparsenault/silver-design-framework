@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/workspace-transaction.schema.json",
+  "title": "Silver workspace transaction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "command", "root", "root_identity", "phase", "created_at", "updated_at", "metadata", "validation", "operations"],
+  "properties": {
+    "schema": { "const": "silver/workspace-transaction/v1" },
+    "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "root": { "type": "string", "minLength": 1 },
+    "root_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realpath", "device", "inode"],
+      "properties": {
+        "realpath": { "type": "string", "minLength": 1 },
+        "device": { "type": "string", "minLength": 1 },
+        "inode": { "type": "string", "minLength": 1 }
+      }
+    },
+    "phase": { "enum": ["prepared", "committing", "validating", "committed", "rolling-back", "rolled-back"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "metadata": { "type": "object" },
+    "validation": { "type": "array", "items": { "type": "object" } },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "path", "state", "before", "stage", "staged", "backup", "lock_last"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "type": { "enum": ["write", "replace-tree", "convert-tree", "delete", "managed-link", "delete-managed-link"] },
+          "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "state": { "enum": ["prepared", "activating", "activated", "rolling-back", "rolled-back"] },
+          "before": { "$ref": "#/$defs/identity" },
+          "stage": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "staged": { "$ref": "#/$defs/identity" },
+          "backup": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "target": { "type": "string", "minLength": 1 },
+          "lock_last": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identity": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "const": "missing" } } },
+        { "type": "object", "additionalProperties": false, "required": ["state", "integrity"], "properties": { "state": { "enum": ["file", "directory"] }, "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } } },
+        { "type": "object", "additionalProperties": false, "required": ["state", "target"], "properties": { "state": { "const": "link" }, "target": { "type": "string", "minLength": 1 } } }
+      ]
+    }
+  }
+}

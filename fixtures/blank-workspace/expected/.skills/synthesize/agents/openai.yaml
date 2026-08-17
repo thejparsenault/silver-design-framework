@@ -1,0 +1,4 @@
+interface:
+  display_name: Synthesize evidence
+  short_description: Turn sanitized evidence into traceable findings and problem frames.
+  default_prompt: Use $synthesize to turn sanitized evidence into traceable findings and problem frames.

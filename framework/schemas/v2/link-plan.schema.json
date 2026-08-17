@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/link-plan.schema.json",
+  "title": "Silver reviewed link plan v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "workspace", "source", "bindings", "unresolved", "expected_effects", "inspected_at"],
+  "properties": {
+    "schema": { "const": "silver/link-plan/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "workspace": {
+      "type": "object", "additionalProperties": false,
+      "required": ["root", "registry_integrity"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "registry_integrity": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }] }
+      }
+    },
+    "source": { "$ref": "linked-source-v2.schema.json" },
+    "bindings": { "type": "array", "items": { "$ref": "representation-binding-v2.schema.json" } },
+    "unresolved": { "type": "array", "items": { "type": "object", "required": ["path", "reason"], "properties": { "path": { "type": "string" }, "reason": { "type": "string" } }, "additionalProperties": false } },
+    "expected_effects": { "type": "array", "items": { "type": "object", "required": ["action", "path"], "properties": { "action": { "enum": ["create", "update", "delete", "read"] }, "path": { "type": "string" } }, "additionalProperties": false } },
+    "inspected_at": { "type": "string", "format": "date-time" }
+  }
+}

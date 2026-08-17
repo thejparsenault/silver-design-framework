@@ -1,0 +1,125 @@
+schema: silver/skill/v2
+id: visualize
+version: 0.9.0
+summary: Create static visual representations of a proposed product experience at
+  whatever fidelity is useful.
+context_budget: small
+inputs:
+  - kind: concept
+    required: false
+    role: working
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: structure
+    required: false
+    role: working
+  - kind: flow
+    required: false
+    role: working
+  - kind: prototype
+    required: false
+    role: working
+outputs:
+  - kind: visualization
+    scope: product
+    path_pattern: design/work/visualizations/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - visual-renderer
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/visualizations/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - semantic-styles-only
+  - constraint-profile-explicit
+completion:
+  invariants:
+    - fidelity-declared
+    - alternatives-distinguishable
+    - constraint-profile-honored
+  quality_criteria:
+    - id: task-quality
+      description: Visualizations make consequential structure and behavior choices
+        reviewable without overstating fidelity.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - evaluate
+      - prototype
+      - component
+  - id: semantic-styles
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: visualize-to-evaluate
+    target: evaluate
+    readiness: evaluate
+    requires:
+      - visualization
+  - id: visualize-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - visualization
+  - id: visualize-to-component
+    target: component
+    readiness: component
+    requires:
+      - visualization
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+  - id: render-visualization
+    path: scripts/render-visualization.mjs
+    purpose: Bundled deterministic visualization operation.
+recommend_after: *a1

@@ -429,8 +429,9 @@ Only `S09-MIGRATE-04` (manual end-to-end verification) remains.
   (missed when it was renamed to `showcase.html`) was also blocking the
   packed smoke test and is fixed. Both gates are green.)*
 - **S09-MIGRATE-04** End-to-end verification against a real workspace,
-  the way every prior release records in `STATUS.md`. *(manual — not run
-  in this pass)*
+  the way every prior release records in `STATUS.md`. *(manual — live Figma
+  pull/push/structural-edit/restore round trip passed 2026-08-17 in `Test
+  File`; blank and adjacent/adopted workspace reviews remain)*
 
 ### Skill taxonomy (W10) — done
 
@@ -538,16 +539,82 @@ had no home, and nothing closed the loop after `implement`.
   before `collect` existed; the test now holds, and the framework cannot
   quietly grow another producer-less required input.
 
+### Safety and synchronization release hardening — done
+
+- **S09-SAFE-01** All managed writes accept a canonical workspace root and a
+  workspace-relative path, reject linked/junction ancestors and real-path
+  escapes immediately before mutation, and limit link creation to verified
+  `.claude/skills/silver-*` leaves resolving into `.skills/`.
+  *(framework/tests/workspace-mutations.test.mjs,
+  installer/tests/workspace-safety.test.mjs)*
+- **S09-SAFE-02** `doctor` reports unsafe managed paths and incomplete
+  transactions as hard errors. Migration stops before writes when
+  `design/system` is linked and returns a reviewed conversion plan; an accepted
+  synchronization can transactionally replace only that leaf with a real local
+  representation while preserving the external target.
+- **S09-TXN-01** Migration and update prepare the complete file delta in
+  lifecycle staging and activate through `silver/workspace-transaction/v1`
+  journals with exclusive locking, flushed phase/operation state, staged
+  integrity, preimages, lock-last ordering, post-activation validation, caught-
+  failure rollback, and explicit resume/rollback recovery.
+  *(framework/tests/workspace-transactions.test.mjs, installer/tests/migrate.test.mjs)*
+- **S09-SYNC-01** Reviewed linking emits strict `silver/link-plan/v1`, v2
+  linked sources, and v2 representation bindings for design systems, component
+  catalogs, and codebases. Unknown binary data is unmapped; structured formats
+  are codec-validated; other UTF-8 files use honest whole-file proposals.
+- **S09-SYNC-02** `sync status` is read-only, `sync inspect` persists a state-
+  pinned proposal, and `sync apply --only` rejects stale bindings/state,
+  conflicts, findings, and missing approval. Successful imports atomically
+  advance the artifact, affected design contexts, binding base, and source pin.
+- **S09-SYNC-03** Repository exports touch mapped paths only, run argv-based
+  checks with bounded per-command and aggregate deadlines, and either restore
+  non-Git preimages or create a path-isolated commit on one reusable local Git
+  branch. They never push. A durable saga resumes metadata forward after an
+  external Git commit and never rewrites Git history.
+  *(installer/tests/sync-repository.test.mjs)*
+- **S09-SYNC-04** Captured Figma semantic-token reconciliation uses the same
+  public interface and v2 proposal/result contracts. Import uses workspace
+  transactions; export returns `external-action-required`, then accepts only a
+  recorded result plus a fresh advanced capture. Alias-preserving writes remain
+  intact. *(installer/tests/sync-figma.test.mjs)*
+- **S09-SYNC-05** The installed `reconcile` skill explains and groups changes,
+  records explicit operation acceptance, performs agent-owned provider actions,
+  and hands off partial/unmapped work instead of mutating it. Artifact codecs
+  and reconciliation are no longer executable-reachability exceptions.
+
 ## Evidence
 
-Automated: `npm run build` (174 tests, 24 skills) and `npm run test:package`,
-both green. New suites added for the criteria above:
+Automated on 2026-08-17: contract validation is green for 54 v2 schemas and
+25 v2 skills; the serialized source/coverage suite passes 226/226 with no
+failures, skips, or todos; and `npm run test:package` passes against the exact
+5,861-file release archive. The final coverage result is 83.30% lines, 74.41%
+branches, and 88.83% functions. Line coverage improved over the audit baseline;
+the percentage-only branch/function baseline did not survive the addition of
+the transaction and synchronization state machines, so targeted branch work
+remains follow-up rather than being misreported as complete. Direct tests do
+cover symlink escape/swap, every transaction phase and recovery direction,
+stale/conflicting synchronization, required-check failure/timeout, non-Git
+rollback, and Git forward recovery.
+
+The fully gated `npm run release` also passes and produces the 5,861-file,
+12,609,292-byte archive with
+`sha256:f9f570f8ad76a182456d7dce6525fc6fc85f483bd792c699f4d49633c279f892`.
+Both native macOS binaries and both `.pkg` installers build successfully, and
+`npm audit --omit=dev` reports zero vulnerabilities.
+
+New suites added for the criteria above:
 `framework/tests/figma-tokens.test.mjs`,
 `framework/tests/figma-round-trip.test.mjs`,
 `framework/tests/reference-integrity.test.mjs`,
 `installer/tests/link.test.mjs`, `installer/tests/practice-tools.test.mjs`,
 `framework/tests/structure.test.mjs`,
 `framework/tests/skill-taxonomy.test.mjs`,
+`framework/tests/workspace-mutations.test.mjs`,
+`framework/tests/workspace-transactions.test.mjs`,
+`installer/tests/workspace-safety.test.mjs`,
+`installer/tests/sync-link.test.mjs`,
+`installer/tests/sync-repository.test.mjs`,
+`installer/tests/sync-figma.test.mjs`,
 plus extensions to `framework/tests/design-check.test.mjs`,
 `framework/tests/skill-invocation.test.mjs`,
 `framework/tests/guardrail-negative.test.mjs`, and

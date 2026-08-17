@@ -1,0 +1,127 @@
+# Figma Console MCP — a plugin-backed transport to Figma.
+#
+# Reaches the document you have open, so it can build frames, flows, and
+# visualizations in place. It needs a plugin running in Figma, which means it
+# can be configured and still not respond; the setup ladder below is what lets
+# `doctor` tell you which of those is happening.
+schema: silver/provider/v1
+id: figma-console-mcp
+version: 0.9.0
+kind: external
+target: figma
+variant: console
+aliases:
+  - figma console
+  - console mcp
+  - the plugin one
+source:
+  # Independently maintained by Southleft, not by Figma. The repository below
+  # was corrected in 0.9 — the previously recorded figma-console org URL does
+  # not exist.
+  publisher: Southleft
+  repository: https://github.com/southleft/figma-console-mcp
+  distribution:
+    kind: plugin
+    ref: Figma Community plugin plus an MCP server
+  # Developed against a live server, so the metadata here was checked rather
+  # than read off a README.
+  evidence: verified
+  verified_at: 2026-08-12
+  verified_against: "0.8 development"
+guidance:
+  good_at:
+    - Building frames, flows, and visualizations in the document you have open
+    - Reading the current selection while you are working in it
+  not_for:
+    - Reading a file you do not have open — it reaches the running editor, not the API
+  prefer_when:
+    - You are working in Figma and want the agent to build alongside you
+  compare_to:
+    - transport: figma-official-mcp
+      difference: >-
+        Writes into the open document; the official server reads structure
+        without needing Figma open and cannot create frames.
+capabilities: [design-file, external-artifact, representation-sync, visual-renderer, flow]
+connection:
+  kind: mcp
+  server: figma-console
+  tool_prefix: mcp__figma-console__
+  # Deliberately no `config`. Silver does not know how this server is launched,
+  # and guessing a command would put an invented package name into someone's
+  # agent configuration. Without a config it cannot be declared by `--connect`,
+  # and the ladder says so rather than pretending otherwise.
+availability:
+  script: scripts/health.mjs
+post_setup:
+  - Install and run the Figma Console plugin (figma.com/community) in the file you want to work in — this transport reaches whichever document is open, not one you name.
+  - Add the figma-console MCP server to your agent host's configuration by hand. Silver does not know this server's launch command and will not guess one.
+activities:
+  - id: design.pull-file
+    support: full
+    actions: [read, inspect]
+  - id: visual.create-rough
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-wireframe
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-high-fidelity-ui
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: visual.create-variants
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: flow.create-user-flow
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: figma, editable: true, native: true}]
+  - id: design.push-tokens
+    support: full
+    actions: [write, update]
+  - id: external.read-artifact
+    support: partial
+    actions: [read, inspect]
+  - id: external.publish-artifact
+    support: partial
+    actions: [create, write, update, publish]
+probe:
+  tool: mcp__figma-console__figma_get_status
+  expects: a status object naming the connected file
+  freshness_hours: 24
+permissions:
+  - capability: design-file
+    actions: [read, inspect]
+    default: ask
+  - capability: design-file
+    actions: [write, update]
+    default: ask
+  - capability: external-artifact
+    actions: [read, inspect, write, update]
+    default: ask
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: flow
+    actions: [create, write, update]
+    default: ask
+supported_artifact_kinds: [flow, visualization, design-specification, component-proposal, token-source]
+directions: [read, write-preview, write]
+fidelity: partial
+operations:
+  - id: figma-console-health
+    script: scripts/health.mjs
+    effect: inspect
+  - id: figma-console-snapshot
+    script: adapter.mjs
+    effect: read
+  - id: figma-console-token-preview
+    script: adapter.mjs
+    effect: preview-write
+adapter:
+  id: silver-figma
+  version: 0.4.0
+  script: adapter.mjs

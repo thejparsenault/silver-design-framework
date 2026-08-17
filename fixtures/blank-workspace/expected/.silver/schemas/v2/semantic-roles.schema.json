@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/semantic-roles.schema.json",
+  "title": "Silver semantic role vocabulary v1",
+  "description": "A published list of role names a design system can be described in terms of. It names roles and holds no values: what `action.primary.bg` *is* lives here, what it *looks like* lives in whichever design system a workspace uses.\n\nIts purpose is to be a pivot. Figma may encode semantics, a production codebase may not, and Silver has its own names; without a shared vocabulary that is N×N translation between them, and with one it is two mappings per system. That only works while the vocabulary stays small enough that mapping onto it completely is realistic, so growth is deliberately hard: a new role needs a recorded adoption that could not map, and renaming one is a migration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "roles"],
+  "properties": {
+    "schema": { "const": "silver/semantic-roles/v1" },
+    "version": { "$ref": "common.schema.json#/$defs/version" },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type"],
+        "properties": {
+          "id": {
+            "description": "Dotted role name, such as `action.primary.bg`. The first segment is its family.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$",
+            "maxLength": 120
+          },
+          "type": {
+            "description": "DTCG type. `typography` and `shadow` are composites — the unit a designer actually chooses and a design tool actually stores.",
+            "enum": ["color", "dimension", "typography", "shadow", "duration", "number"]
+          },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    }
+  }
+}

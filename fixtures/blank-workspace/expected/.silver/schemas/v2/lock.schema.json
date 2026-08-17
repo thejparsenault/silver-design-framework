@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/lock.schema.json",
+  "title": "Silver installed framework lock v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "framework", "packages", "managed_files"],
+  "properties": {
+    "schema": {
+      "const": "silver/lock/v2"
+    },
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "source"],
+      "properties": {
+        "version": {
+          "$ref": "common.schema.json#/$defs/version"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "reference"],
+          "properties": {
+            "type": {
+              "enum": ["npm", "github-release", "local"]
+            },
+            "reference": {
+              "type": "string",
+              "minLength": 1
+            },
+            "integrity": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "path",
+          "version",
+          "ownership",
+          "integrity"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "type": {
+            "description": "\"reference-system\" is what every v2 lock written before 0.9 used; \"design-system-seed\" is what 0.9 writes. Both stay valid so an existing lock can still be read and migrated rather than rejected outright.",
+            "enum": [
+              "skill",
+              "schema-bundle",
+              "guardrail-registry",
+              "runtime",
+              "playbook",
+              "provider",
+              "activity-catalog",
+              "transport-catalog",
+              "design-system-seed",
+              "reference-system"
+            ]
+          },
+          "path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/version"
+          },
+          "ownership": {
+            "enum": [
+              "generated",
+              "framework-managed",
+              "copied-and-owned",
+              "project-owned"
+            ]
+          },
+          "integrity": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "managed_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "owner", "ownership", "base_integrity"],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "owner": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "ownership": {
+            "enum": ["generated", "framework-managed"]
+          },
+          "base_integrity": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

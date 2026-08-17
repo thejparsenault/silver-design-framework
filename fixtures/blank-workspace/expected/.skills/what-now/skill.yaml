@@ -1,0 +1,91 @@
+schema: silver/skill/v2
+id: what-now
+version: 0.9.0
+summary: Recommend next actions from current workspace evidence.
+context_budget: small
+inputs: []
+outputs: []
+capabilities:
+  required:
+    - repository
+  optional: []
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  # Analysis alone changes nothing. `--record` additionally persists the
+  # normalized result, which is a real write and is declared as one.
+  - capability: repository
+    actions:
+      - write
+    paths:
+      - .silver/results/skills/**
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - workspace-state-inspected
+    - recommendations-evidence-linked
+    - structured-state-prioritized
+    - no-action-started
+  quality_criteria:
+    - id: task-quality
+      description: Recommendations are ranked, actionable, traceable to current
+        workspace evidence, and never substitute timestamps for readiness or
+        acceptance.
+      evaluation: deterministic
+  unresolved_questions: warn
+  review:
+    required: false
+    reviewer: none
+    checkpoint: Review the ranked options before choosing a separate skill or
+      administrative action.
+checks: []
+handoffs: []
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+  - id: analyze-workspace
+    path: scripts/analyze-workspace.mjs
+    purpose: Bundled deterministic what-now operation.
+recommend_after:
+  - repair-workspace
+  - resume-playbook
+  - reconcile
+  - review-result
+  - design-check
+  - brand
+  - product
+  - voice
+  - principles
+  - theme
+  - system
+  - research
+  - collect
+  - synthesize
+  - ideate
+  - specify
+  - structure
+  - flow
+  - visualize
+  - component
+  - prototype
+  - evaluate
+  - pitch
+  - implement
+  - measure

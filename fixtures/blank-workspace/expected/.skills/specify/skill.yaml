@@ -1,0 +1,122 @@
+schema: silver/skill/v2
+id: specify
+version: 0.9.0
+summary: Create or revise a living, revision-linked design specification.
+context_budget: small
+inputs:
+  - kind: concept
+    required: false
+    role: working
+  - kind: hypothesis
+    required: false
+    role: working
+  - kind: decision
+    required: false
+    role: working
+  - kind: product
+    required: false
+    role: canonical
+  - kind: map
+    required: false
+    role: working
+  - kind: structure
+    required: false
+    role: working
+outputs:
+  - kind: design-specification
+    scope: product
+    path_pattern: design/work/specifications/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional: []
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/specifications/**
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+completion:
+  invariants:
+    - scope-and-nongoals
+    - states-and-edge-cases
+    - success-fixed-before-evaluation
+  quality_criteria:
+    - id: task-quality
+      description: The specification makes missing intent visible and supports design
+        or implementation without prescribing incidental detail.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - flow
+      - visualize
+      - prototype
+      - component
+      - implement
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: specify-to-flow
+    target: flow
+    readiness: flow
+    requires:
+      - design-specification
+  - id: specify-to-visualize
+    target: visualize
+    readiness: visualize
+    requires:
+      - design-specification
+  - id: specify-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - design-specification
+  - id: specify-to-component
+    target: component
+    readiness: component
+    requires:
+      - design-specification
+  - id: specify-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - design-specification
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

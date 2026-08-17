@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/provider.schema.json",
+  "title": "Silver provider package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "A transport Silver can resolve to. Two shapes share this contract. A *package* ships adapter code: it declares `availability` and `operations` and Silver runs them. A *declaration* is metadata only — Silver knows the tool exists, what it is good at, and how to reach it, and the agent calls the server directly. Declarations are how Silver keeps its promise to know what it ships plus what the designer tells it, without pretending to have written an adapter it has not.",
+  "required": ["schema", "id", "version", "kind", "capabilities", "permissions"],
+  "allOf": [
+    {
+      "if": { "required": ["adapter"] },
+      "then": {
+        "required": ["operations", "availability"],
+        "description": "A package that ships an adapter must say how to check it and what it can run."
+      }
+    },
+    {
+      "if": { "required": ["operations"] },
+      "then": { "required": ["availability"] }
+    }
+  ],
+  "properties": {
+    "schema": { "const": "silver/provider/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "version": { "$ref": "common.schema.json#/$defs/version" },
+    "kind": { "enum": ["portable", "external"] },
+    "target": {
+      "description": "The external system this provider reaches, such as `figma`. Several transports may share one target and be good at different things; this is what groups them when a designer is choosing.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "variant": {
+      "description": "Which transport to the target this is, such as `official-remote` or `pilot`. Distinguishes providers that share a target.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "aliases": {
+      "description": "What a designer might call this in conversation. Used to resolve \"use the official Figma MCP instead\" to an id; two matches ask rather than guess.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 2, "maxLength": 80 }
+    },
+    "source": {
+      "description": "Where this transport comes from, so a designer can go and look. Silver ships declarations, not endorsements: recording a repository and a licence is describing a thing that exists, which is different from recommending it.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "publisher": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "homepage": { "type": "string", "maxLength": 500 },
+        "repository": { "type": "string", "maxLength": 500 },
+        "docs": { "type": "string", "maxLength": 500 },
+        "license": { "type": "string", "maxLength": 80 },
+        "distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["npm", "remote", "plugin", "binary", "host-native"] },
+            "ref": { "type": "string", "maxLength": 500 }
+          }
+        },
+        "verified_at": {
+          "description": "When this metadata was last checked against the tool itself. A curated list of third-party tools rots; stating the date makes staleness visible rather than silently wrong.",
+          "type": "string",
+          "format": "date"
+        },
+        "verified_against": { "type": "string", "maxLength": 200 },
+        "evidence": {
+          "description": "declared: written from published documentation. verified: someone ran it here and a probe recorded a response. Most shipped declarations are honestly `declared`.",
+          "enum": ["declared", "verified"],
+          "default": "declared"
+        }
+      }
+    },
+    "guidance": {
+      "description": "How to choose this transport, stated as facts about what it does. Deliberately not a ranking: Silver does not maintain a league table of third-party tools, and a cross-vendor score is a recommendation nobody can stand behind. `compare_to` names a difference, never a preference.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "good_at": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "not_for": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "prefer_when": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "compare_to": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["transport", "difference"],
+            "properties": {
+              "transport": { "$ref": "common.schema.json#/$defs/id" },
+              "difference": { "type": "string", "minLength": 1, "maxLength": 400 }
+            }
+          }
+        }
+      }
+    },
+    "connection": {
+      "description": "How this transport is reached. `mcp` means the agent host owns the connection, its credentials, and its lifecycle; Silver resolves and instructs, and never opens a socket.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "description": "mcp: a server the agent host owns. local: something Silver runs in this process. host-native: the agent's own built-in capability, with no server to configure — how a browser is reached differs per host, and this is what lets that be expressed rather than special-cased.",
+          "enum": ["mcp", "local", "host-native"]
+        },
+        "server": {
+          "description": "The MCP server name as it appears in the host's configuration.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "tool_prefix": {
+          "description": "Prefix the host gives this server's tools, used to recognize it in an agent's tool namespace.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "config": {
+          "description": "What Silver would write into the host's MCP configuration. Never contains a credential; the secret scanner rejects anything that looks like one.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+            "args": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
+            "url": { "type": "string", "maxLength": 500 }
+          }
+        }
+      }
+    },
+    "probe": {
+      "description": "One tool call that proves this transport actually responds, and who makes it. Silver cannot: it never opens a socket, so for an MCP transport it can only ever establish `configured`. The agent can, and `silver tools --probe` asks it to, recording the answer as evidence. This is what makes `responding` knowable without Silver owning a connection.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "expects"],
+      "properties": {
+        "tool": {
+          "description": "The tool the agent should call, named as it appears in the agent's own namespace. Silver never invokes it.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "expects": {
+          "description": "What a working response looks like, in plain language, so the agent can judge whether what came back counts.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "freshness_hours": {
+          "description": "How long a recorded response stays believable. Past this, availability degrades from `responding` back to `configured` — an old success is not a current one.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720,
+          "default": 24
+        }
+      }
+    },
+    "requires_env": {
+      "description": "Environment variables this transport needs. Names only. Silver never reads, writes, or logs their values.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 100 }
+    },
+    "post_setup": {
+      "description": "Non-derivable facts a designer needs after this transport is otherwise detected as available — a command that must be run once, a mode to enable in the tool itself. Everything derivable (host-config presence, probe freshness, required env vars, executable detection) is diagnosed generically instead; see framework/runtime/transport-diagnosis.mjs. This replaces the pre-0.9 `setup` ladder, which was load-bearing in exactly one place (`--diagnose` rung reporting) and decorative everywhere else.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "activities": {
+      "description": "Which activities (framework/activities/catalog.yaml) this provider serves, and how well. This is declared, not derived: the pre-0.9 model inferred support purely from capabilities/directions/artifact-kinds, which cannot express fine distinctions like \"creates a high-fidelity design\" vs. \"creates a rough sketch.\" Declaring it here reintroduces drift risk, so framework/scripts/validate-contracts.mjs checks it: every id must exist in the catalog, declared actions must be satisfiable by `directions`, the activity's coarse `capability` must be in this provider's `capabilities`, and package-only or `internal`-bound activities may never be claimed.",
+      "type": "array",
+      "uniqueItems": false,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "support", "actions"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/namespacedId" },
+          "support": {
+            "description": "full: does the whole activity. partial: does some of it, or only under conditions stated in `constraints`. representational: can describe or spec the activity's output but not produce the real thing.",
+            "enum": ["full", "partial", "representational"]
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "common.schema.json#/$defs/action" }
+          },
+          "outputs": {
+            "description": "What this provider actually produces for this activity. This is what makes \"create an editable Figma design\" resolvable and \"create a high-fidelity mockup\" ambiguous when more than one provider claims the activity.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["format"],
+              "properties": {
+                "format": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 40 },
+                "editable": { "type": "boolean" },
+                "native": { "type": "boolean" }
+              }
+            }
+          },
+          "constraints": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 2, "maxLength": 300 }
+          },
+          "evidence": {
+            "description": "Defaults to this provider's `source.evidence` when absent. Lets a specific activity claim be flagged unverified even when the provider's general metadata is verified, or vice versa.",
+            "enum": ["declared", "verified"]
+          }
+        }
+      }
+    },
+    "interface": {
+      "description": "For a CLI/API/SDK provider with no `connection` block for Silver to inspect. Generic detection (executables on PATH, env vars present, marker files) is what makes a CLI tool visible without per-provider scaffolding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["cli", "api", "sdk"] },
+        "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "base_url": { "type": "string", "maxLength": 500 },
+        "docs": { "type": "string", "maxLength": 500 },
+        "detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "executables": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+            },
+            "env": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+            },
+            "files": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+            }
+          }
+        }
+      }
+    },
+    "maturity": {
+      "description": "Recorded for a designer's judgment, not used for ranking (Silver does not maintain a cross-vendor league table).",
+      "enum": ["stable", "preview", "beta", "experimental"]
+    },
+    "capabilities": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/capability" }
+    },
+    "availability": {
+      "type": "object", "additionalProperties": false, "required": ["script"],
+      "properties": { "script": { "$ref": "common.schema.json#/$defs/relativePath" } }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["capability", "actions", "default"],
+        "properties": {
+          "capability": { "$ref": "common.schema.json#/$defs/capability" },
+          "actions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/action" } },
+          "default": { "enum": ["allow", "ask", "deny"] }
+        }
+      }
+    },
+    "supported_artifact_kinds": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/artifactKind" }
+    },
+    "directions": {
+      "type": "array", "uniqueItems": true,
+      "items": { "enum": ["portable", "read", "write-preview", "write"] }
+    },
+    "fidelity": { "enum": ["lossless", "semantic", "partial"] },
+    "codecs": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/$defs/relativePath" }
+    },
+    "operations": {
+      "description": "Scripts Silver itself runs. Absent on a declaration-only transport, where the agent calls the server's tools directly and Silver's job is to resolve and instruct.",
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "script", "effect"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "script": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "effect": { "enum": ["read", "inspect", "render", "preview-write", "write"] }
+        }
+      }
+    },
+    "adapter": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "script"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "version": { "$ref": "common.schema.json#/$defs/version" },
+        "script": { "$ref": "common.schema.json#/$defs/relativePath" }
+      }
+    }
+  }
+}

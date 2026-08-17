@@ -18,6 +18,7 @@
 import path from "node:path";
 
 import { assertNoSecrets } from "../framework/runtime/representations.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 
 // Claude Code's project-scoped file. Project scope on purpose: a workspace's
@@ -115,6 +116,7 @@ export async function writeHostMcpConfig({ root, providers, transport }) {
   // Gate the whole document, not just the additions: if a project file already
   // carries a credential, Silver must not rewrite it and re-bless it.
   assertNoSecrets(next);
-  await writeUtf8(absolute, `${JSON.stringify(next, null, 2)}\n`);
+  const mutator = await createWorkspaceMutator(root);
+  await mutator.write(mutator.relative(absolute), `${JSON.stringify(next, null, 2)}\n`);
   return { ...plan, written: true };
 }

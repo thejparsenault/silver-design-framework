@@ -19,7 +19,7 @@
 // Voice resolution is an ordered list of sources, first present wins. Two ship
 // today; the list shape is the point, because a workspace-level house voice
 // drops in between them later without changing any contract.
-import { readdir, rm } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { parse } from "yaml";
@@ -30,9 +30,10 @@ import {
   STUDIO_VOICE_SCHEMA,
   defaultPracticeRoot,
 } from "./practice.mjs";
-import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
+import { exists, readUtf8 } from "./lib/files.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
 import { payloadPath } from "./payload.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 
 // The resolved practice, materialized into a workspace so an agent working there
@@ -172,7 +173,8 @@ const GITIGNORE_HEADER =
 
 // Append the entries Silver needs without disturbing a project's own rules.
 export async function ensureGitignoreEntries(root) {
-  const absolute = path.join(path.resolve(root), ".gitignore");
+  const mutator = await createWorkspaceMutator(root);
+  const absolute = mutator.absolute(".gitignore");
   const current = (await exists(absolute)) ? await readUtf8(absolute) : "";
   const lines = current.split("\n").map((line) => line.trim());
   const missing = GITIGNORE_ENTRIES.filter((entry) => !lines.includes(entry));
@@ -183,7 +185,7 @@ export async function ensureGitignoreEntries(root) {
     ...missing,
     "",
   ].join("\n");
-  await writeUtf8(absolute, next);
+  await mutator.write(".gitignore", next);
   return { path: ".gitignore", changed: true, added: missing };
 }
 
@@ -239,7 +241,8 @@ export function renderPracticeOverlay({ practiceRoot, voice, overlays }) {
 // Materialize My Practice into the workspace when there is anything personal to
 // carry, and remove it when there is not, so reverting to defaults is complete.
 export async function writeWorkspacePracticeOverlay(root, { practiceRoot } = {}) {
-  const workspaceRoot = path.resolve(root);
+  const mutator = await createWorkspaceMutator(root);
+  const workspaceRoot = mutator.root;
   const absolute = path.join(workspaceRoot, WORKSPACE_PRACTICE_OVERLAY_PATH);
   const resolvedPracticeRoot = path.resolve(
     practiceRoot ?? defaultPracticeRoot(),
@@ -252,7 +255,7 @@ export async function writeWorkspacePracticeOverlay(root, { practiceRoot } = {})
   // Nothing personal to carry: the framework default already renders into the
   // committed AGENTS.md, so an overlay file would be noise.
   if (!personalVoice && overlays.length === 0) {
-    if (await exists(absolute)) await rm(absolute, { force: true });
+    if (await exists(absolute)) await mutator.remove(WORKSPACE_PRACTICE_OVERLAY_PATH);
     return { source: "framework", written: false, overlays: 0, invalid };
   }
 
@@ -262,7 +265,7 @@ export async function writeWorkspacePracticeOverlay(root, { practiceRoot } = {})
     overlays,
   });
   const existing = (await exists(absolute)) ? await readUtf8(absolute) : null;
-  if (existing !== content) await writeUtf8(absolute, content);
+  if (existing !== content) await mutator.write(WORKSPACE_PRACTICE_OVERLAY_PATH, content);
   await ensureGitignoreEntries(workspaceRoot);
   return {
     source: personalVoice ? personalVoice.source : "practice",

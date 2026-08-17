@@ -1,0 +1,153 @@
+schema: silver/skill/v2
+id: prototype
+version: 0.9.0
+summary: Build and refine a testable, traceable simulation.
+context_budget: medium
+inputs:
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: flow
+    required: false
+    role: working
+  - kind: sketch
+    required: false
+    role: working
+  - kind: visualization
+    required: false
+    role: working
+  - kind: finding
+    required: false
+    role: working
+outputs:
+  - kind: prototype
+    scope: prototype
+    path_pattern: prototypes/**
+    authority: project-owned
+  - kind: x-prototype-render
+    scope: prototype
+    path_pattern: prototypes/**
+    authority: generated
+capabilities:
+  required:
+    - repository
+    - prototype-renderer
+  optional:
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use browser when configured; preserve explicit fallback coverage
+        otherwise.
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - prototypes/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+    external: true
+  - capability: browser
+    actions:
+      - inspect
+      - execute
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - semantic-styles-only
+  - approved-components-only
+  - constraint-profile-explicit
+completion:
+  invariants:
+    - test-question-declared
+    - inputs-pinned
+    - constraint-profile-explicit
+    - accepted-feedback-traced
+  quality_criteria:
+    - id: task-quality
+      description: The simulation is only as complete as needed to answer its test
+        question and exposes meaningful states.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - evaluate
+      - pitch
+      - implement
+  - id: prototype-policy
+    required: true
+    blocks: *a1
+  - id: semantic-styles
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+  - id: responsive-behavior
+    required: true
+    blocks: *a1
+  - id: critical-interactions
+    required: true
+    blocks: *a1
+handoffs:
+  - id: prototype-to-evaluate
+    target: evaluate
+    readiness: evaluate
+    requires:
+      - prototype
+      - x-prototype-render
+  - id: prototype-to-pitch
+    target: pitch
+    readiness: pitch
+    requires:
+      - prototype
+      - x-prototype-render
+  - id: prototype-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - prototype
+      - x-prototype-render
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+  - id: init-prototype
+    path: scripts/init-prototype.mjs
+    purpose: Bundled deterministic prototype operation.
+  - id: render-static-prototype
+    path: scripts/render-static-prototype.mjs
+    purpose: Bundled deterministic prototype operation.
+recommend_after: *a1

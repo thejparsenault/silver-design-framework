@@ -14,7 +14,7 @@ import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
 import { applyAdoptionPlan, inspectAdoption } from "./adopt.mjs";
-import { linkCodebase } from "./sources.mjs";
+import { applySourceLinkPlan, inspectSourceLink, linkCodebase } from "./sources.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import { writeHostMcpConfig } from "./host-mcp-config.mjs";
 import {
@@ -29,6 +29,8 @@ import {
   saveProbe,
 } from "./tools.mjs";
 import { renderTrace, traceArtifact, writeTraceView } from "./trace.mjs";
+import { inspectRecovery, resumeRecovery, rollbackRecovery } from "./recover.mjs";
+import { applySynchronization, inspectSynchronization, syncStatus } from "./sync.mjs";
 
 const usage = `The Silver Design Framework
 
@@ -39,6 +41,8 @@ Usage:
   silver adopt inspect [directory] [--source <path>]
   silver adopt apply <plan.json | -> [--only <ids>] [--json]
   silver link <path> [directory] [--as <id>] [--json]
+  silver link inspect <path> [directory] --kind <design-system|component-catalog|codebase> --as <id> [--answers <json-or-file>] --json
+  silver link apply <plan.json | -> [--allow-unresolved] [--json]
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
@@ -55,6 +59,13 @@ Usage:
   silver repair [directory] [--json]
   silver update [directory] [--json]
   silver migrate [directory] [--apply] [--json]
+  silver recover [directory] [--json]
+  silver recover resume <transaction-id> [directory] [--json]
+  silver recover rollback <transaction-id> [directory] [--json]
+  silver sync status <binding-id> [directory] [--json]
+  silver sync status --all [directory] [--json]
+  silver sync inspect <binding-id> [directory] --direction <external-to-local|local-to-external> [--capture <json-or->] --json
+  silver sync apply <proposal.json | -> [directory] --only <operation-ids> [--external-result <json-or->] [--capture <json-or->] --json
   silver version
 
 Commands:
@@ -94,6 +105,8 @@ Commands:
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
   migrate  Preview or explicitly apply a supported workspace migration.
+  recover  Inspect, resume, or roll back a durable workspace transaction.
+  sync     Inspect and explicitly reconcile portable and external representations.
   version  Print the local framework development version.
 
 Installing into a product:
@@ -149,17 +162,22 @@ async function readStdin(stream = process.stdin) {
 function parseArguments(args) {
   const supportedFlags = new Set([
     "allow-unresolved",
+    "all",
     "answers",
     "apply",
     "as",
     "bind",
     "connect",
+    "capture",
     "declare",
     "diagnose",
+    "direction",
+    "external-result",
     "for",
     "help",
     "id",
     "json",
+    "kind",
     "list",
     "name",
     "only",
@@ -184,7 +202,7 @@ function parseArguments(args) {
       throw new Error(`Unknown option: --${key}`);
     }
     if (
-      ["allow-unresolved", "apply", "json", "help", "list", "record", "scaffold"].includes(
+      ["allow-unresolved", "all", "apply", "json", "help", "list", "record", "scaffold"].includes(
         key,
       )
     ) {
@@ -740,6 +758,47 @@ export async function runCli(
       }
       return 0;
     }
+    if (command === "link" && ["inspect", "apply"].includes(args[1])) {
+      const operation = args[1];
+      const { positionals, flags } = parseArguments(args.slice(2));
+      if (operation === "inspect") {
+        if (positionals.length < 1 || positionals.length > 2) {
+          throw new Error("link inspect requires a source path and accepts an optional workspace directory.");
+        }
+        if (!flags.kind || !flags.as) throw new Error("link inspect requires --kind and --as.");
+        const answers = flags.answers
+          ? JSON.parse(
+              String(flags.answers).trimStart().startsWith("{")
+                ? String(flags.answers)
+                : await readFile(path.resolve(String(flags.answers)), "utf8"),
+            )
+          : {};
+        const result = await inspectSourceLink({
+          root: path.resolve(positionals[1] ?? process.cwd()),
+          targetPath: positionals[0],
+          kind: String(flags.kind),
+          as: String(flags.as),
+          answers,
+          now: now().toISOString(),
+        });
+        stdout(JSON.stringify(result, null, 2));
+        return 0;
+      }
+      if (positionals.length !== 1) {
+        throw new Error("link apply requires one plan JSON file, or - to read the plan from stdin.");
+      }
+      const plan = JSON.parse(
+        positionals[0] === "-"
+          ? await readStdin()
+          : await readFile(path.resolve(positionals[0]), "utf8"),
+      );
+      const result = await applySourceLinkPlan({
+        plan,
+        allowUnresolved: Boolean(flags["allow-unresolved"]),
+      });
+      stdout(flags.json ? JSON.stringify(result, null, 2) : `Linked ${result.source.id} with ${result.bindings.length} binding(s).`);
+      return 0;
+    }
     if (command === "link") {
       const { positionals, flags } = parseArguments(args.slice(1));
       if (positionals.length < 1 || positionals.length > 2) {
@@ -839,7 +898,7 @@ export async function runCli(
       } else {
         printCheck(suite, stdout);
       }
-      return suite.status === "fail" ? 1 : 0;
+      return suite.status === "pass" ? 0 : suite.status === "fail" ? 1 : 2;
     }
     if (command === "tools") {
       const { positionals, flags } = parseArguments(args.slice(1));
@@ -1000,6 +1059,95 @@ export async function runCli(
           : `${renderTrace(result)}\nTrace view: ${traceView}`,
       );
       return 0;
+    }
+    if (command === "recover") {
+      const { positionals, flags } = parseArguments(args.slice(1));
+      if (["resume", "rollback"].includes(positionals[0])) {
+        const operation = positionals[0];
+        if (positionals.length < 2 || positionals.length > 3) {
+          throw new Error(`recover ${operation} requires a transaction id and accepts an optional directory.`);
+        }
+        const input = {
+          id: positionals[1],
+          root: path.resolve(positionals[2] ?? process.cwd()),
+        };
+        const result = operation === "resume"
+          ? await resumeRecovery(input)
+          : await rollbackRecovery(input);
+        stdout(flags.json ? JSON.stringify(result, null, 2) : `Transaction ${result.transaction_id}: ${result.status}`);
+        return result.status === "recovery-required" ? 1 : 0;
+      }
+      if (positionals.length > 1) throw new Error("recover accepts at most one directory.");
+      const result = await inspectRecovery({ root: path.resolve(positionals[0] ?? process.cwd()) });
+      if (flags.json) stdout(JSON.stringify(result, null, 2));
+      else if (result.recoverable.length === 0) stdout(`No incomplete workspace transactions: ${result.root}`);
+      else {
+        stdout(`Incomplete workspace transactions: ${result.root}`);
+        for (const transaction of result.recoverable) {
+          stdout(`  ${transaction.id} ${transaction.command}: ${transaction.phase}`);
+        }
+      }
+      return result.recoverable.length === 0 ? 0 : 2;
+    }
+    if (command === "sync") {
+      const operation = args[1];
+      const { positionals, flags } = parseArguments(args.slice(2));
+      const readJsonInput = async (value, label) => {
+        if (!value) return undefined;
+        const content = value === "-"
+          ? await readStdin()
+          : await readFile(path.resolve(String(value)), "utf8");
+        try { return JSON.parse(content); }
+        catch (error) { throw new Error(`${label} is not valid JSON: ${error.message}`); }
+      };
+      if (operation === "status") {
+        if (flags.all) {
+          if (positionals.length > 1) throw new Error("sync status --all accepts at most one directory.");
+          const result = await syncStatus({ root: path.resolve(positionals[0] ?? process.cwd()), all: true });
+          stdout(JSON.stringify(result, null, 2));
+          return result.bindings.some(({ state }) => ["conflict", "unmapped", "unverified"].includes(state)) ? 2 : 0;
+        }
+        if (positionals.length < 1 || positionals.length > 2) {
+          throw new Error("sync status requires a binding id and accepts an optional directory.");
+        }
+        const result = await syncStatus({
+          root: path.resolve(positionals[1] ?? process.cwd()),
+          bindingId: positionals[0],
+        });
+        stdout(JSON.stringify(result, null, 2));
+        return ["conflict", "unmapped", "unverified"].includes(result.bindings[0]?.state) ? 2 : 0;
+      }
+      if (operation === "inspect") {
+        if (positionals.length < 1 || positionals.length > 2) {
+          throw new Error("sync inspect requires a binding id and accepts an optional directory.");
+        }
+        const result = await inspectSynchronization({
+          root: path.resolve(positionals[1] ?? process.cwd()),
+          bindingId: positionals[0],
+          direction: flags.direction,
+          capture: await readJsonInput(flags.capture, "Capture"),
+          now: now().toISOString(),
+        });
+        stdout(JSON.stringify(result, null, 2));
+        return result.result.status === "blocked" ? 2 : 0;
+      }
+      if (operation === "apply") {
+        if (positionals.length < 1 || positionals.length > 2) {
+          throw new Error("sync apply requires a proposal JSON file and accepts an optional workspace directory.");
+        }
+        const input = await readJsonInput(positionals[0], "Proposal");
+        const result = await applySynchronization({
+          root: path.resolve(positionals[1] ?? process.cwd()),
+          input,
+          only: flags.only ? String(flags.only).split(",").map((id) => id.trim()).filter(Boolean) : [],
+          externalResult: await readJsonInput(flags["external-result"], "External result"),
+          capture: await readJsonInput(flags.capture, "Capture"),
+          now: now().toISOString(),
+        });
+        stdout(JSON.stringify(result, null, 2));
+        return result.status === "external-action-required" ? 2 : result.status === "applied" ? 0 : 1;
+      }
+      throw new Error("sync requires status, inspect, or apply.");
     }
     const { positionals, flags } = parseArguments(args.slice(1));
     if (!command || flags.help || command === "help" || command === "--help") {

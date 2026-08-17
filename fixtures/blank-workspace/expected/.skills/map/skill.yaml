@@ -1,0 +1,115 @@
+schema: silver/skill/v2
+id: map
+version: 0.9.0
+summary: Create evidence-linked journey, service, experience, and ecosystem maps.
+context_budget: medium
+inputs:
+  - kind: evidence
+    required: false
+    role: evidence
+  - kind: finding
+    required: false
+    role: working
+  - kind: problem-frame
+    required: false
+    role: working
+  - kind: product
+    required: false
+    role: canonical
+  - kind: design-context
+    required: true
+    role: canonical
+outputs:
+  - kind: map
+    scope: product
+    path_pattern: design/maps/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - map-renderer
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Render or reconcile an external canvas when available.
+effects:
+  - capability: repository
+    actions: [read, inspect]
+    paths: [design/**, .silver/**]
+  - capability: repository
+    actions: [create, write, update]
+    paths: [design/maps/**]
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+      - write
+      - update
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+  - no-fabricated-evidence
+completion:
+  invariants:
+    - map-structure-valid
+    - evidence-or-assumption-visible
+    - design-context-pinned
+  quality_criteria:
+    - id: task-quality
+      description: The map exposes actors, stages, system relationships, evidence, assumptions, pain points, and opportunities at a useful level.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Accept the map before using it as a downstream decision input.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &handoffs [synthesize, ideate, specify, evaluate, pitch, implement]
+  - id: evidence-provenance
+    required: true
+    blocks: *handoffs
+handoffs:
+  - id: map-to-synthesize
+    target: synthesize
+    readiness: synthesize
+    requires: [map]
+  - id: map-to-ideate
+    target: ideate
+    readiness: ideate
+    requires: [map]
+  - id: map-to-specify
+    target: specify
+    readiness: specify
+    requires: [map]
+  - id: map-to-evaluate
+    target: evaluate
+    readiness: evaluate
+    requires: [map]
+  - id: map-to-pitch
+    target: pitch
+    readiness: pitch
+    requires: [map]
+  - id: map-to-implement
+    target: implement
+    readiness: production
+    requires: [map]
+external_effects: [none]
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run the map skill through the shared guarded runtime.
+  - id: check-map
+    path: scripts/check-map.mjs
+    purpose: Validate references and type-specific lanes.
+  - id: render-map
+    path: scripts/render-map.mjs
+    purpose: Render the portable map as semantic HTML.
+recommend_after: *handoffs

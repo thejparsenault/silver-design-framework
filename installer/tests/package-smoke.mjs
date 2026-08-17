@@ -22,6 +22,8 @@ const expectedVersion = "0.9.0";
 async function command(executable, args, options = {}) {
   return run(executable, args, {
     maxBuffer: 10 * 1024 * 1024,
+    timeout: 10 * 60 * 1000,
+    killSignal: "SIGKILL",
     ...options,
   });
 }
@@ -124,6 +126,10 @@ try {
     "node_modules",
     "silver-design-framework",
   );
+  const installedManifest = JSON.parse(
+    await readFile(path.join(packageRoot, "package.json"), "utf8"),
+  );
+  assert.equal(installedManifest.engines.node, ">=22.0.0");
   const cli = path.join(packageRoot, "bin", "silver.mjs");
   assert.equal(
     (await command(process.execPath, [cli, "version"], { cwd: consumerRoot }))
@@ -269,13 +275,54 @@ try {
     "scripts",
     "invoke.mjs",
   );
-  const { stdout: invocationOutput } = await command(
+  const invocationCommand = await command(
     process.execPath,
     [installedInvocation, invocationPath, "--root", workspaceRoot],
     { cwd: workspaceRoot },
+  ).catch((error) => ({ stdout: error.stdout, exitCode: error.code }));
+  const invocationResult = JSON.parse(invocationCommand.stdout);
+  assert.equal(
+    invocationCommand.exitCode ?? 0,
+    0,
+    JSON.stringify(
+      {
+        execution: invocationResult.execution,
+        failedChecks: invocationResult.checks.filter(({ status }) => status !== "pass"),
+        effectFindings: invocationResult.effect_findings,
+      },
+      null,
+      2,
+    ),
   );
-  const invocationResult = JSON.parse(invocationOutput);
   assert.equal(invocationResult.execution.status, "complete");
+  assert.deepEqual(
+    invocationResult.checks.map(({ id }) => id).sort(),
+    [
+      "accessibility",
+      "asset-integrity",
+      "authority",
+      "binding-integrity",
+      "contract-integrity",
+      "critical-interactions",
+      "evidence-provenance",
+      "flow-structure",
+      "map-structure",
+      "presentation-integrity",
+      "production-readiness",
+      "prototype-policy",
+      "provider-revision-pins",
+      "reference-integrity",
+      "responsive-behavior",
+      "secret-free-configuration",
+      "semantic-mapping",
+      "semantic-styles",
+      "stale-proposals",
+      "structure-integrity",
+      "synchronization-status",
+      "view-provenance",
+    ],
+  );
+  assert.ok(invocationResult.checks.every(({ status }) => status === "pass"));
   assert.ok(
     invocationResult.recommended_next_actions.every(
       ({ automatic }) => automatic === false,
@@ -289,10 +336,10 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 35);
+  assert.equal(lock.packages.length, 36);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
-    24,
+    25,
   );
   assert.ok(
     lock.packages.every(({ version }) => version === expectedVersion),
@@ -407,7 +454,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 35);
+  assert.equal(migratedLock.packages.length, 36);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,

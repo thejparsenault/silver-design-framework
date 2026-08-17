@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/design-context.schema.json",
+  "title": "Silver composed design context v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "title", "revision", "status", "products", "surfaces", "brand", "design_system", "token_source", "component_catalog", "component_expression", "codebase", "provenance"],
+  "properties": {
+    "schema": { "const": "silver/design-context/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "status": { "enum": ["draft", "active", "deprecated", "archived"] },
+    "default": { "type": "boolean", "default": false },
+    "products": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/id" } },
+    "surfaces": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/id" } },
+    "brand": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "design_system": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "token_source": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "component_catalog": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "component_expression": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "asset_catalog": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "presentation_kit": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "codebase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "repository", "branch"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "repository": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "branch": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "linked_source": {
+          "description": "The id of a silver/linked-source/v1 entry in design/sources/sources.yaml that `silver link` registered for this codebase, if any.",
+          "$ref": "common.schema.json#/$defs/id"
+        }
+      }
+    },
+    "provenance": { "$ref": "provenance.schema.json" }
+  }
+}

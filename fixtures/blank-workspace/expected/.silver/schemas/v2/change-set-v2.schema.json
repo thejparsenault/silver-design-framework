@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/change-set-v2.schema.json",
+  "title": "Silver change set v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "binding_id", "direction", "binding_integrity", "base", "local", "external", "adapter", "created_at", "operations", "required_checks"],
+  "properties": {
+    "schema": { "const": "silver/change-set/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "direction": { "enum": ["external-to-local", "local-to-external"] },
+    "binding_integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "base": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "const": "uninitialized" } } }, { "$ref": "#/$defs/base" }] },
+    "local": { "$ref": "#/$defs/identity" },
+    "external": { "$ref": "#/$defs/identity" },
+    "adapter": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "type", "classification", "mapping_fidelity", "source_path", "target_path", "source_identity", "target_identity", "required_approval", "unresolved"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "type": { "enum": ["create", "update", "delete", "no-op", "finding"] },
+          "classification": { "enum": ["structural", "opaque-text", "semantic-style", "component", "unmapped", "conflict"] },
+          "mapping_fidelity": { "enum": ["exact", "semantic", "opaque", "unmapped"] },
+          "source_path": { "type": "string", "minLength": 1 },
+          "target_path": { "type": "string", "minLength": 1 },
+          "source_identity": { "$ref": "#/$defs/identity" },
+          "target_identity": { "$ref": "#/$defs/identity" },
+          "content": { "type": "string" },
+          "encoding": { "const": "utf8" },
+          "structural_diff": { "type": "array", "items": { "type": "string" } },
+          "required_approval": { "type": "boolean" },
+          "unresolved": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "required_checks": { "type": "array", "items": { "type": "object" } },
+    "adapter_payload": { "type": "object" },
+    "transaction_id": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "identity": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "const": "missing" } } }, { "type": "object", "additionalProperties": false, "required": ["state", "revision", "integrity"], "properties": { "state": { "const": "present" }, "revision": { "type": "string", "minLength": 1 }, "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } } }] },
+    "base": { "type": "object", "additionalProperties": false, "required": ["state", "local", "external", "at"], "properties": { "state": { "const": "initialized" }, "local": { "$ref": "#/$defs/identity" }, "external": { "$ref": "#/$defs/identity" }, "at": { "type": "string", "format": "date-time" } } }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/provider-operation-v2.schema.json",
+  "title": "Silver provider operation v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "provider", "adapter", "binding_id", "direction", "operation", "expected_external_revision", "status", "created_at", "payload"],
+  "properties": {
+    "schema": { "const": "silver/provider-operation/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "provider": { "$ref": "common.schema.json#/$defs/id" },
+    "adapter": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } } },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "direction": { "enum": ["external-to-local", "local-to-external"] },
+    "operation": { "enum": ["capture", "apply-write", "verify-write"] },
+    "expected_external_revision": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["external-action-required", "applied", "verified", "blocked", "failed"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "payload": { "type": "object" },
+    "result": { "type": "object" }
+  }
+}

@@ -55,10 +55,12 @@
     "installer/practice-overlay.mjs",
     "installer/practice.mjs",
     "installer/repair.mjs",
+    "installer/recover.mjs",
     "installer/scripts/postinstall.mjs",
     "installer/setup-plan.mjs",
     "installer/setup.mjs",
     "installer/sources.mjs",
+    "installer/sync.mjs",
     "installer/templates/",
     "installer/tools.mjs",
     "installer/trace.mjs",
@@ -73,13 +75,13 @@
     "fixtures:blank": "node installer/scripts/refresh-blank-fixture.mjs",
     "postinstall": "node installer/scripts/postinstall.mjs",
     "package:macos": "node installer/scripts/build-macos-package.mjs",
-    "test": "node --test --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
+    "test": "node --test --test-timeout=120000 --test-concurrency=1 installer/tests/*.test.mjs framework/tests/*.test.mjs",
     "test:package": "node installer/tests/package-smoke.mjs",
     "prepublishOnly": "npm run build",
     "release": "node installer/scripts/build-release.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "ajv": "^8.20.0",

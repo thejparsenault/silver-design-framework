@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/linked-source.schema.json",
+  "title": "Silver manually linked design or code source v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "title", "kind", "source", "authority", "scope", "linked_at", "linked_by"],
+  "properties": {
+    "schema": { "const": "silver/linked-source/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "kind": { "enum": ["design-system", "component-catalog", "codebase"] },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "reference", "revision", "integrity", "paths"],
+      "properties": {
+        "type": { "enum": ["git", "local"] },
+        "reference": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "reference_hint": {
+          "description": "The absolute path reference resolved to at link time. A hint for a human reading the registry after a clone moves the workspace, never authoritative.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "authority": {
+      "enum": ["external-authoritative", "workspace-authoritative", "shared-review"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "products": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/id" }
+        },
+        "surfaces": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/id" }
+        },
+        "contexts": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/id" }
+        }
+      }
+    },
+    "linked_at": { "type": "string", "format": "date-time" },
+    "linked_by": { "type": "string", "minLength": 1, "maxLength": 160 }
+  }
+}

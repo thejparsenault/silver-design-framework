@@ -189,9 +189,41 @@ _Avoid_: Automatically discovered company foundation
 **Linked source**:
 A manually registered local or Git design-system, component-catalog, or
 codebase source with declared authority, selected paths, and an exact revision
-or integrity pin. Availability, drift, and stale dependents are inspected
-without importing or semantically synchronizing the source.
+or integrity pin. Its selected representations may be imported, compared, and
+explicitly exported through bindings; the source never receives a Silver
+installation and is never changed merely because drift was observed.
 _Avoid_: Live dependency, automatic pull
+
+**Representation binding**:
+The versioned connection between one ordinary workspace-local artifact and one
+provider object or selected linked-source path, including adapter, authority,
+synchronization policy, and the last shared local/external base.
+_Avoid_: Context-dependent artifact path, live mount
+
+**Shared base**:
+The paired local and external revision/integrity identities last accepted as
+equivalent for a representation binding. Reconciliation compares both current
+sides to this base; it never chooses a winner when both changed.
+_Avoid_: Latest file, implicit source of truth
+
+**Workspace mutation**:
+A single symlink-aware write, replacement, deletion, directory creation, or
+constrained generated adapter link beneath a canonical workspace root. It
+rejects linked ancestors and real-path escapes immediately before activation.
+_Avoid_: Direct filesystem write to a managed path
+
+**Workspace transaction**:
+A durable, locked, journaled set of workspace mutations with staged content,
+preimages, per-operation activation state, validation, and explicit resume or
+rollback. It promises complete-or-recoverable behavior, not simultaneous
+multi-file visibility.
+_Avoid_: Atomic migration when referring to the whole multi-file operation
+
+**Synchronization coordinator**:
+The product interface that resolves bindings and adapters, persists pinned
+proposals, requires explicit operation selection, runs checks and transactions,
+and advances the shared base after repository or provider reconciliation.
+_Avoid_: Adapter when referring to the end-to-end workflow
 
 **Design context**:
 A revisioned composition of product or brand, design system, component catalog,

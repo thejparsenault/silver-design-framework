@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/studio-voice.schema.json",
+  "title": "Silver studio voice v1",
+  "description": "How the agent talks while doing design work. This is a separate layer from the skills: skill packages say what to do and can be upgraded or optimized independently, while the studio voice sets register once and applies to all of them. It is distinct from the `voice` artifact kind, which is the product's voice to its audience.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "title", "revision"],
+  "properties": {
+    "schema": {
+      "const": "silver/studio-voice/v1"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "summary": {
+      "description": "One line describing this voice, shown by `silver doctor`.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    }
+  }
+}

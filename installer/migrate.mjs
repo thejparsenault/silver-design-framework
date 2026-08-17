@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, rm, stat } from "node:fs/promises";
+import { lstat, readlink, readdir, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { parse, stringify } from "yaml";
@@ -36,6 +36,7 @@ import {
   writeLauncher,
 } from "./agent-adapters.mjs";
 import { planManifestStatusSync } from "../framework/runtime/manifest-sync.mjs";
+import { assertV2 } from "../framework/runtime/contracts.mjs";
 import { buildDesignSystemTokens } from "../framework/runtime/tokens.mjs";
 import { renderSystemCatalog } from "../framework/skills/system/scripts/render-system-catalog.mjs";
 import {
@@ -44,8 +45,14 @@ import {
   writeWorkspacePracticeOverlay,
 } from "./practice-overlay.mjs";
 import { payloadPath } from "./payload.mjs";
+import { doctorWorkspace } from "./doctor.mjs";
+import { runLifecycleTransaction } from "./lib/lifecycle-transaction.mjs";
+import { inspectWorkspacePath } from "../framework/runtime/workspace-mutations.mjs";
+import { migrateLinkedSourceV1 } from "./sources.mjs";
+import { migrateRepresentationBindingV1 } from "./sync.mjs";
 
 const templateRoot = payloadPath("installer/templates/blank-workspace", import.meta.url);
+const DEFAULT_STYLESHEET = "design/system/expressions/html/styles/ds.css";
 const newProjectFiles = [
   "design/TRACE.md",
   "design/contexts/README.md",
@@ -335,6 +342,39 @@ function migrateDesignContext(value) {
   return changed ? next : null;
 }
 
+// Component expressions shipped before 0.9 predate the explicit stylesheet
+// contract and may still point at the retired HTML-contract catalog. Migration
+// must upgrade this generated compatibility surface before any renderer tries
+// to consume it.
+function migrateComponentExpression(value) {
+  if (value?.schema !== "silver/component-expression/v1") return null;
+  let changed = false;
+  const next = clone(value);
+  if (!next.stylesheet) {
+    next.stylesheet = DEFAULT_STYLESHEET;
+    changed = true;
+  }
+  if (next.component_catalog?.path === "reference-system/html-contracts") {
+    next.component_catalog = {
+      ...next.component_catalog,
+      path: "design/system/components.json",
+    };
+    changed = true;
+  }
+  return changed ? next : null;
+}
+
+async function componentExpressionFiles(root, manifest) {
+  const files = [];
+  for (const artifact of manifest.artifacts.filter(
+    ({ kind }) => kind === "x-component-expression",
+  )) {
+    const file = path.join(root, artifact.path);
+    if (await exists(file)) files.push(file);
+  }
+  return [...new Set(files)];
+}
+
 function legacyPath(installed) {
   if (installed.path) return installed.path;
   if (installed.type === "skill") return `.skills/${installed.id}`;
@@ -497,6 +537,15 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       });
     }
   }
+  for (const file of await componentExpressionFiles(root, nextManifest)) {
+    const value = parse(await readUtf8(file));
+    if (migrateComponentExpression(value)) {
+      changes.push({
+        action: "upgrade-component-expression",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
   for (const relative of newProjectFiles) {
     if (await exists(path.join(root, relative))) {
       preserved.push({ path: relative, reason: "Existing project-owned file is preserved." });
@@ -566,7 +615,7 @@ const RETIRED_PACKAGES = [
   },
 ];
 
-export async function migrateWorkspace(options = {}) {
+async function migrateWorkspaceDirect(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const version = options.version ?? FRAMEWORK_VERSION;
   const sourceReference = options.sourceReference ?? LOCAL_SOURCE_REFERENCE;
@@ -654,6 +703,48 @@ export async function migrateWorkspace(options = {}) {
       throw new Error(`Migrated design context is invalid: ${contextValidation.errors.join("; ")}`);
     }
     await writeUtf8(file, stringify(patched));
+  }
+
+  for (const file of await componentExpressionFiles(root, plan.nextManifest)) {
+    const value = parse(await readUtf8(file));
+    const patched = migrateComponentExpression(value);
+    if (!patched) continue;
+    const expressionValidation = await validateSchema(
+      "v2/component-expression.schema.json",
+      patched,
+    );
+    if (!expressionValidation.valid) {
+      throw new Error(
+        `Migrated component expression is invalid: ${expressionValidation.errors.join("; ")}`,
+      );
+    }
+    await writeUtf8(file, stringify(patched));
+  }
+
+  const sourceRegistryPath = path.join(root, "design/sources/sources.yaml");
+  if (await exists(sourceRegistryPath)) {
+    const registry = parse(await readUtf8(sourceRegistryPath));
+    if (registry.schema === "silver/source-registry/v1") {
+      const migratedRegistry = {
+        schema: "silver/source-registry/v2",
+        sources: (registry.sources ?? []).map(migrateLinkedSourceV1),
+      };
+      await assertV2("source-registry-v2.schema.json", migratedRegistry);
+      await writeUtf8(sourceRegistryPath, stringify(migratedRegistry));
+    }
+  }
+
+  const integrationsRoot = path.join(root, "design/integrations");
+  if (await exists(integrationsRoot)) {
+    for (const entry of await readdir(integrationsRoot, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".yaml")) continue;
+      const bindingPath = path.join(integrationsRoot, entry.name);
+      const binding = parse(await readUtf8(bindingPath));
+      if (binding.schema !== "silver/representation-binding/v1") continue;
+      const migratedBinding = migrateRepresentationBindingV1(binding);
+      await assertV2("representation-binding-v2.schema.json", migratedBinding);
+      await writeUtf8(bindingPath, stringify(migratedBinding));
+    }
   }
 
   // Remove superseded packages before installing the new ones, so a retired
@@ -787,4 +878,74 @@ export async function migrateWorkspace(options = {}) {
   }
   await writeUtf8(workspace.lockPath, stringify(nextLock));
   return { ...base, applied: true };
+}
+
+export async function migrateWorkspace(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const systemInspection = await inspectWorkspacePath(root, "design/system");
+  if (!systemInspection.safe && systemInspection.unsafe_at === "design/system") {
+    const linkPath = path.join(root, "design/system");
+    let target = "unresolved";
+    try {
+      if ((await lstat(linkPath)).isSymbolicLink()) {
+        const link = await readlink(linkPath);
+        target = path.resolve(path.dirname(linkPath), link);
+      }
+    } catch {}
+    let fromVersion = "unknown";
+    try {
+      fromVersion = parse(await readFile(path.join(root, ".silver/lock.yaml"), "utf8")).framework.version;
+    } catch {}
+    return {
+      ok: false,
+      root,
+      fromVersion,
+      toVersion: options.version ?? FRAMEWORK_VERSION,
+      needed: true,
+      applied: false,
+      changes: [],
+      preserved: [],
+      conflicts: [{
+        package: "design-system",
+        path: "design/system",
+        reason: "design/system is a linked directory and migration will not traverse or replace it.",
+      }],
+      inactiveArtifacts: [],
+      conversion_plan: {
+        schema: "silver/symlink-conversion-plan/v1",
+        link: "design/system",
+        target,
+        steps: [
+          "Inspect the target as a design-system linked source.",
+          "Apply the reviewed source link and import its selected representations.",
+          "Remove only the design/system symlink leaf after the import is accepted.",
+          "Resume silver migrate --apply after design/system is a real local directory.",
+        ],
+        commands: [
+          `silver link inspect ${JSON.stringify(target)} . --kind design-system --as primary-design-system --json`,
+          "silver sync inspect <binding-id> . --direction external-to-local --json",
+        ],
+      },
+    };
+  }
+  if (!options.apply || options.transaction === false) {
+    return migrateWorkspaceDirect({ ...options, root });
+  }
+  const { stagedResult, transaction } = await runLifecycleTransaction({
+    root,
+    command: `silver migrate ${options.version ?? FRAMEWORK_VERSION}`,
+    metadata: { workflow: "migrate", target_version: options.version ?? FRAMEWORK_VERSION },
+    mutate: (stagingRoot) =>
+      migrateWorkspaceDirect({ ...options, root: stagingRoot, apply: true, transaction: false }),
+    validate: async ({ journal }) => {
+      const diagnosis = await doctorWorkspace({ root, ignoreTransactionId: journal.id });
+      return {
+        status: diagnosis.ok ? "pass" : "fail",
+        check: "doctor",
+        diagnostics: diagnosis.diagnostics,
+      };
+    },
+    hooks: options.transactionHooks,
+  });
+  return { ...stagedResult, root, transaction };
 }

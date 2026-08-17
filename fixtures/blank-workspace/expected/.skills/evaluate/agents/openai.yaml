@@ -1,0 +1,4 @@
+interface:
+  display_name: Evaluate design
+  short_description: Evaluate a design and produce sanitized product findings.
+  default_prompt: Use $evaluate to evaluate a design and produce sanitized product findings.

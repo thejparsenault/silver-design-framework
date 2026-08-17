@@ -1,0 +1,230 @@
+schema: silver/provider/v1
+id: silver-portable
+version: 0.9.0
+kind: portable
+source:
+  publisher: The Silver Design Framework
+  repository: https://github.com/thejparsenault/silver-design-framework
+  license: MIT
+  distribution:
+    kind: npm
+    ref: silver-design-framework
+  evidence: verified
+  verified_at: 2026-08-11
+  verified_against: shipped with this release
+guidance:
+  good_at:
+    - Every general design task, using only files in the workspace
+    - Working with no network, no credential, and no external tool configured
+  prefer_when:
+    - Always. This is the baseline an external transport adds to, never replaces
+capabilities:
+  - repository
+  - canonical-artifact
+  - flow
+  - visual-renderer
+  - map-renderer
+  - prototype-renderer
+  - presentation-renderer
+  - production-source
+  - artifact-codec
+  - representation-sync
+availability:
+  script: scripts/health.mjs
+permissions:
+  - capability: repository
+    actions: [read, inspect, execute, create, write, update]
+    default: allow
+  - capability: canonical-artifact
+    actions: [read, inspect, create, write, update]
+    default: ask
+  - capability: production-source
+    actions: [read, inspect, create, write, update]
+    default: ask
+supported_artifact_kinds:
+  - brand
+  - product
+  - voice
+  - design-principles
+  - design-system
+  - token-source
+  - component-catalog
+  - research-plan
+  - evidence
+  - problem-frame
+  - finding
+  - concept
+  - hypothesis
+  - design-specification
+  - flow
+  - sketch
+  - visualization
+  - structure
+  - measurement
+  - evaluation
+  - observation
+  - component-proposal
+  - decision
+  - prototype
+  - change-case
+  - presentation-view
+  - implementation-handoff
+  - implementation
+  - asset-catalog
+  - presentation-kit
+  - map
+  - practice-change
+  - design-context
+  - component-expression
+  - x-prototype-render
+directions: [portable]
+fidelity: semantic
+maturity: stable
+# Every activity below is one silver-portable holds natively (its `fallback.mode`
+# in framework/activities/catalog.yaml is `native`) and whose coarse capability is
+# already in the `capabilities` list above. Activities gated behind a capability
+# silver-portable does not hold (design-file, browser, external-artifact,
+# research-evidence, product-analytics, version-control) are never declared here —
+# they are served, if at all, only by an external provider; silver-portable still
+# answers them, but through `fallback`, not through this list.
+activities:
+  - id: repository.read-workspace
+    support: full
+    actions: [read, inspect, search]
+  - id: repository.write-workspace
+    support: full
+    actions: [create, write, update]
+  - id: repository.inspect-codebase
+    support: full
+    actions: [read, inspect, search]
+  - id: work.manage-tasks
+    support: full
+    actions: [read, create, write, update]
+  - id: analysis.cluster-evidence
+    support: full
+    actions: [read, create, write, update]
+  - id: analysis.generate-findings
+    support: full
+    actions: [read, create, write, update]
+  - id: analysis.compare-products
+    support: full
+    actions: [read, create, write, update]
+  - id: analysis.analyze-tabular-data
+    support: full
+    actions: [read, inspect]
+  - id: structure.model-entities
+    support: full
+    actions: [create, write, update]
+  - id: structure.create-information-architecture
+    support: full
+    actions: [create, write, update]
+  - id: structure.create-navigation
+    support: full
+    actions: [create, write, update]
+  - id: spec.create-requirements
+    support: full
+    actions: [create, write, update]
+  - id: content.create-ui-copy
+    support: full
+    actions: [create, write, update]
+  - id: content.localize
+    support: full
+    actions: [create, write, update]
+  - id: measure.define-instrumentation
+    support: full
+    actions: [create, write, update]
+  - id: measure.analyze-funnel
+    support: full
+    actions: [read, inspect]
+  - id: measure.analyze-experiment
+    support: full
+    actions: [read, inspect]
+  - id: measure.monitor-outcomes
+    support: partial
+    actions: [read, inspect]
+    constraints:
+      - Without a connected live source, analyzes a provided snapshot rather than observing ongoing outcomes.
+  - id: evaluate.review-design
+    support: full
+    actions: [read, inspect]
+  - id: evaluate.analyze-usability
+    support: full
+    actions: [read, inspect]
+  - id: evaluate.check-system-conformance
+    support: full
+    actions: [read, inspect]
+  - id: artifact.write-canonical
+    support: full
+    actions: [create, write, update]
+  - id: flow.create-user-flow
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: mermaid, editable: true, native: false}]
+  - id: flow.create-state-model
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: mermaid, editable: true, native: false}]
+  - id: visual.create-rough
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: visual.create-wireframe
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: visual.create-high-fidelity-ui
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: visual.create-variants
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: diagram.create-conceptual
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: mermaid, editable: true, native: false}]
+  - id: map.render
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: mermaid, editable: true, native: false}]
+  - id: prototype.create-clickable
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: prototype.create-code
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: prototype.connect-data
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: json, editable: true, native: false}]
+  - id: prototype.simulate-ai
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: presentation.render
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: html, editable: true, native: false}]
+  - id: production.write-source
+    support: full
+    actions: [create, write, update]
+  - id: production.run-tests
+    support: partial
+    actions: [execute]
+    constraints:
+      - Runs project-local tests only if a runner is already configured in the workspace.
+codecs:
+  - codecs/prose.yaml
+  - codecs/graph.yaml
+  - codecs/structured.yaml
+  - codecs/tokens.yaml
+operations:
+  - id: portable-health
+    script: scripts/health.mjs
+    effect: inspect
+  - id: portable-artifact
+    script: scripts/portable-artifact.mjs
+    effect: read

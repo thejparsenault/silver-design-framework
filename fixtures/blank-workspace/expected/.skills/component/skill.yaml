@@ -1,0 +1,137 @@
+schema: silver/skill/v2
+id: component
+version: 0.9.0
+summary: Explore and specify accessible component anatomy and behavior.
+context_budget: small
+inputs:
+  - kind: component-catalog
+    required: false
+    role: canonical
+  - kind: design-specification
+    required: false
+    role: working
+  - kind: flow
+    required: false
+    role: working
+  - kind: sketch
+    required: false
+    role: working
+  - kind: visualization
+    required: false
+    role: working
+  - kind: structure
+    required: false
+    role: working
+outputs:
+  - kind: component-proposal
+    scope: product
+    path_pattern: design/work/components/**
+    authority: project-owned
+  - kind: flow
+    scope: product
+    path_pattern: design/flows/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - flow
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use design-file when configured; preserve explicit fallback
+        coverage otherwise.
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/work/components/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/flows/**
+  - capability: design-file
+    actions:
+      - read
+      - inspect
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - approved-components-only
+  - semantic-styles-only
+completion:
+  invariants:
+    - catalog-inspected
+    - classification-explicit
+    - states-complete
+    - accessibility-documented
+  quality_criteria:
+    - id: task-quality
+      description: The proposal separates primitive, reusable pattern, and
+        domain-specific composition with a usable state contract.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - system
+      - prototype
+      - implement
+  - id: flow-structure
+    required: true
+    blocks: *a1
+  - id: accessibility
+    required: true
+    blocks: *a1
+handoffs:
+  - id: component-to-system
+    target: system
+    readiness: system
+    requires:
+      - component-proposal
+      - flow
+  - id: component-to-prototype
+    target: prototype
+    readiness: prototype
+    requires:
+      - component-proposal
+      - flow
+  - id: component-to-implement
+    target: implement
+    readiness: production
+    requires:
+      - component-proposal
+      - flow
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

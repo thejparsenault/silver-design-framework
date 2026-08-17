@@ -1,0 +1,4 @@
+interface:
+  display_name: Review My Practice
+  short_description: Propose a sanitized improvement to personal design practice.
+  default_prompt: Use the project-local practice-review skill and do not update My Practice without approval.

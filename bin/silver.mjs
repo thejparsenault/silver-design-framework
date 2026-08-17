@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 // Fail with an explanation rather than a syntax error on older runtimes. The
-// installer uses import.meta.dirname, which landed in Node 20.11.
-const [major, minor] = process.versions.node.split(".").map(Number);
-if (major < 20 || (major === 20 && minor < 11)) {
+// The token build uses Style Dictionary 5, whose supported runtime starts at
+// Node 22. Fail here with an explanation rather than an engine warning followed
+// by an obscure dependency error.
+const [major] = process.versions.node.split(".").map(Number);
+if (major < 22) {
   console.error(
     [
-      `Silver needs Node.js 20.11 or newer; this is ${process.versions.node}.`,
+      `Silver needs Node.js 22 or newer; this is ${process.versions.node}.`,
       "",
       "Install a supported Node.js, then run this command again:",
       "  macOS with Homebrew:  brew install node",

@@ -2,6 +2,32 @@
 
 ## Current Focus
 
+The two release-blocking findings from the 2026-08-16 audit are implemented on
+the working tree. Managed writes now use one symlink-aware mutation interface;
+migration and update activate staged deltas through durable recoverable
+transactions; and `silver recover` handles both workspace journals and cross-
+repository synchronization sagas. Adversarial linked-path, race, rollback,
+process-death, contention, lock-order, and Git forward-recovery tests pass.
+
+The reconciliation foundation is now stable 0.9 product surface:
+`silver link inspect|apply`, `silver sync status|inspect|apply`, strict v2
+source/representation contracts, repository and captured-Figma adapters, and
+the 25th installed skill, `reconcile`. A shared repository remains an external
+linked source with no Silver install; validated imports remain ordinary local
+artifacts. Explicit exports touch only mapped paths, run bounded declared
+checks, never push, and advance the shared base only after success. A reviewed
+import can convert a legacy `design/system` symlink by replacing only the link
+leaf and leaving its external target untouched.
+
+Final automated verification is green: 226/226 serialized source tests, 54 v2
+schemas, 25 v2 skills, exact packed-package smoke, both native macOS binaries,
+both macOS installer packages, and a production dependency audit with zero
+vulnerabilities. The release tarball contains 5,861 files and its sidecar pins
+`sha256:f9f570f8ad76a182456d7dce6525fc6fc85f483bd792c699f4d49633c279f892`.
+Line coverage is 83.30%, slightly above the audit baseline; branch and function
+percentages are 74.41% and 88.83%, below the percentage baseline after adding
+the new state machines, and remain explicit follow-up coverage work.
+
 Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
 `release/silver-0.8-tools`. The release version is now declared consistently
 in the package and framework metadata, per `docs/silver-0.9-acceptance.md`.
@@ -30,7 +56,7 @@ deprecated for pre-0.9 artifacts); new `collect` closes
 research → collect → synthesize; new `structure` gives information
 architecture a home distinct from `flow` and `map`; new `measure` closes
 implement → measure → synthesize with a new `product-analytics` named-gap
-capability. 24 skills total. Every automated `S10-*` criterion is also done
+capability. The catalog now totals 25 skills with `reconcile`. Every automated `S10-*` criterion is also done
 and gate-green, uncommitted on top of `8a92437` — next action is review and
 commit.
 
@@ -48,8 +74,8 @@ and writes, not read-only) and `figma-console-mcp`'s publisher metadata.
 `S09-TOOLS-01` through `S09-TOOLS-07` are done and gate-green.
 
 Only one `S09-*` criterion remains, explicitly out of automated scope:
-`S09-MIGRATE-04` (manual end-to-end verification against a real workspace,
-including a live Figma write-to-canvas round trip now that write is real).
+`S09-MIGRATE-04` (manual end-to-end verification against blank and adopted
+workspaces). Its live Figma write-to-canvas subtask is now verified.
 
 Silver `0.8.0`, **Tools That Are Actually There**, is the previous release,
 also unpublished, and made the provider selection layer real: activities
@@ -97,6 +123,33 @@ support depends on, external-source synchronization, and deep existing-codebase
 adoption.
 
 ## Recent Progress
+
+- 2026-08-17: Live Figma round-trip verification
+  - Desktop Bridge probed healthy against `Test File`, page `Page 1`.
+  - Created a primitive color and a semantic alias, pulled the alias, no-op
+    pushed it, changed the primitive, deliberately changed the semantic value
+    to a literal, restored the alias, and independently read each state back.
+  - A visible swatch bound to the semantic variable resolves through the
+    updated primitive. Section `Silver Roundtrip Audit — PASS` remains in the
+    file as reviewable evidence; the manual Figma task is complete.
+
+- 2026-08-16: Full working-tree code and test audit
+  - Added executable reachability coverage and removed one dead runtime module;
+    three tested architecture libraries without a product caller are now named
+    exceptions pending a product decision.
+  - Made `design-check` execute and persist all 22 fast checks through both the
+    CLI and installed skill shim; unknown or empty selections no longer pass.
+  - Bounded browser, Git, build, package, release, and test subprocesses; fixed
+    Node's EventTarget WebSocket fallback and hardened transport probes.
+  - Migrated a clean copy of the real task-tracker `0.6.1` commit through 0.9,
+    fixed its legacy component-expression upgrade, and passed doctor, all fast
+    checks, live Chrome at mobile and desktop viewports, and repeat migration.
+  - Full coverage: 201 passed, 0 failed/skipped/todo; 83.16% lines, 75.04%
+    branches, 90.09% functions. Two high-severity bundled transitive
+    advisories were updated within compatible ranges; the production audit now
+    reports zero vulnerabilities. Live Figma subsequently passed on 2026-08-17.
+  - Open high-severity recommendations: one symlink-aware mutation boundary
+    and staged/journaled transactional migration.
 
 - 2026-08-16: Native macOS distribution proof for Silver `0.9.0`
   - Added repeatable builds for compiled Bun executables targeting Apple Silicon
@@ -532,10 +585,9 @@ adoption.
 
 1. Review the uncommitted W10 and W7 passes (everything in `git status` on
    top of `8a92437`) and commit them as the next checkpoint(s).
-2. Do the manual end-to-end verification (`S09-MIGRATE-04`): blank install,
-   adjacent/adopted workspace, and one live Figma round trip — now a genuine
-   write-to-canvas test, since `figma-official-mcp`'s write path is real.
-   Flip its `source.evidence` to `verified` if it passes.
+2. Finish the remaining manual end-to-end verification (`S09-MIGRATE-04`):
+   blank install and adjacent/adopted workspace. The live Figma round trip is
+   complete.
 3. Select one representative existing product repository and run
    `silver adopt inspect | apply` against it for real (also
    `S09-MIGRATE-04`), then decide on publishing `0.9.0`.

@@ -18,6 +18,57 @@ Decision: Keep `.skills/` and `AGENTS.md` as the canonical, agent-neutral entry 
 Reason: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and discovers skills only under `.claude/skills/`. A workspace that stopped at `AGENTS.md` and `.skills/` was invisible to its most likely host. Installing natively into `.claude/skills/` would have fixed Claude Code by abandoning agent-neutrality; adapters keep both. An adapter must never become a prerequisite for running a skill.
 Status: Accepted
 
+## 2026-08-17 - Managed workspace writes cross one symlink-aware mutation seam
+
+Decision: Production writes name a canonical workspace root and only relative
+paths. Existing ancestors are checked with `lstat` and `realpath` immediately
+before activation; links, junctions, and escapes beneath the root are rejected.
+The sole generated-link operation is a `.claude/skills/silver-*` leaf whose
+relative target resolves into `.skills/`. A symlink used only as the workspace
+root is canonicalized once.
+
+Reason: Lexical containment cannot prevent a pre-existing managed-directory
+link from redirecting writes. Centralizing the invariant gives setup, skills,
+renderers, evidence, lifecycle, and synchronization one implementation and one
+adversarial test surface. Standard portable Node primitives cannot promise to
+defeat a hostile nanosecond TOCTOU swap, so the supported guarantee is repeated
+immediate checks plus serialized Silver mutations.
+
+Status: Accepted
+
+## 2026-08-17 - Lifecycle mutations are complete-or-recoverable
+
+Decision: Migration, update, and synchronization activate through durable
+workspace transactions. They stage and validate first, record preimages and
+per-operation state under `.silver/transactions/`, serialize through one
+exclusive lock, activate the framework lock last, roll back caught failures,
+and leave killed processes resumable or rollbackable through `silver recover`.
+Cross-repository Git export is a saga: after an external commit recovery moves
+forward and never rewrites history.
+
+Reason: Portable filesystems do not provide one atomic multi-file visibility
+boundary. A durable journal makes partial visibility recoverable and auditable
+without claiming an impossible guarantee across filesystems or repositories.
+
+Status: Accepted
+
+## 2026-08-17 - Shared repositories synchronize through local representations
+
+Decision: A design-system, component-catalog, or codebase repository without a
+Silver install is a linked source, not a workspace. Each selected external path
+binds to an ordinary validated local artifact. Status and inspection are read-
+only; apply requires explicit operation ids. `external-authoritative`,
+`workspace-authoritative`, and `shared-review` affect proposal behavior but
+never silently choose a dual-edit winner. Imports are transactional; exports
+touch mapped paths only, run declared bounded checks, create a local Git commit
+when possible, and never push.
+
+Reason: Local artifact paths stay portable and design contexts remain simple,
+while independent repositories keep their own ownership and history. Multiple
+designers share commits and pins rather than one mutable physical checkout.
+
+Status: Accepted
+
 ## 2026-07-30 - Skill execution routes through the CLI
 
 Decision: `silver invoke <skill-id> <request.json>` and `silver what-now` are the sanctioned ways to run an installed skill. Setup generates `.silver/bin/silver` as the workspace's stable command. The workspace lock records the CLI version, never a filesystem path to a Silver checkout. The per-skill `scripts/invoke.mjs` shim remains for workspaces nested inside a Silver npm installation and otherwise fails with a message naming the CLI.

@@ -1,11 +1,11 @@
-import { execFile } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import { parse, stringify } from "yaml";
 
 import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { runGit } from "../framework/runtime/git.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import {
   exists,
   readUtf8,
@@ -14,8 +14,6 @@ import {
   writeUtf8,
 } from "./lib/files.mjs";
 import { slugify } from "./setup.mjs";
-
-const run = promisify(execFile);
 
 export function defaultPracticeRoot() {
   return path.join(homedir(), "Silver", "My Practice");
@@ -33,9 +31,7 @@ export const STUDIO_VOICE_SCHEMA = "silver/studio-voice/v1";
 
 async function git(root, args, { allowFailure = false } = {}) {
   try {
-    const result = await run("git", ["-C", root, ...args], {
-      encoding: "utf8",
-    });
+    const result = await runGit(root, args);
     return result.stdout.trim();
   } catch (error) {
     if (allowFailure) return null;
@@ -89,7 +85,9 @@ async function backupState(root, now = new Date().toISOString()) {
 }
 
 export async function initializePractice(options = {}) {
-  const root = path.resolve(options.root ?? defaultPracticeRoot());
+  let root = path.resolve(options.root ?? defaultPracticeRoot());
+  const mutator = await createWorkspaceMutator(root, { createRoot: true });
+  root = mutator.root;
   const now = options.now ?? new Date().toISOString();
   const manifestPath = path.join(root, ".silver", "practice.yaml");
   if (await exists(manifestPath)) {
@@ -149,14 +147,14 @@ project rule disagree, the project rule wins.
 
 - Personal methods do not override product facts or required linked guidance.
 `;
-  await writeNewFile(path.join(root, "PRACTICE.md"), practice);
-  await writeNewFile(
-    path.join(root, "README.md"),
+  await mutator.create("PRACTICE.md", practice);
+  await mutator.create(
+    "README.md",
     "# My Practice\n\nReadable methods, playbooks, rubrics, and decisions used across Silver workspaces.\n",
   );
   for (const directory of directories) {
-    await writeNewFile(
-      path.join(root, directory, "README.md"),
+    await mutator.create(
+      `${directory}/README.md`,
       `# ${directory[0].toUpperCase()}${directory.slice(1)}\n`,
     );
   }
@@ -164,8 +162,8 @@ project rule disagree, the project rule wins.
   // An override point nobody can find is not an override point. Seed both with
   // commented-out starters so the shape is obvious and neither is active until
   // the designer means it.
-  await writeNewFile(
-    path.join(root, "studio-voice.md"),
+  await mutator.create(
+    "studio-voice.md",
     `<!--
 Your studio voice: how you want the agent to talk to you while designing.
 
@@ -187,8 +185,8 @@ For example: be blunt. Lead with the idea, not the process. Show me two options
 before you commit to one, and tell me which you would pick.
 `,
   );
-  await writeNewFile(
-    path.join(root, "methods", "example.yaml.txt"),
+  await mutator.create(
+    "methods/example.yaml.txt",
     `# A method overlay: your personal refinement to one or more skills.
 #
 # Rename this to something.yaml to activate it, then run \`silver repair\` in a
@@ -234,7 +232,7 @@ before you commit to one, and tell me which you would pick.
     backup: await backupState(root, now),
   };
   await assertV2("practice.schema.json", manifest);
-  await writeNewFile(manifestPath, stringify(manifest));
+  await mutator.create(".silver/practice.yaml", stringify(manifest));
   const commit = await commitPractice(root, "Initialize My Practice", [
     "README.md",
     "PRACTICE.md",
@@ -253,7 +251,8 @@ function nextRevision(revision) {
 }
 
 export async function applyPracticeChange({ root, proposal, now = new Date().toISOString() }) {
-  const practiceRoot = path.resolve(root ?? defaultPracticeRoot());
+  const mutator = await createWorkspaceMutator(root ?? defaultPracticeRoot());
+  const practiceRoot = mutator.root;
   await assertV2("practice-change.schema.json", proposal);
   if (!proposal.sanitization.reviewed) {
     throw new Error("Practice change must record a completed sanitization review.");
@@ -279,8 +278,8 @@ export async function applyPracticeChange({ root, proposal, now = new Date().toI
   for (const item of proposal.updates) {
     if (item.section !== "studio-voice") continue;
     const voicePath = resolveInside(practiceRoot, PRACTICE_STUDIO_VOICE_FILE);
-    await writeUtf8(
-      voicePath,
+    await mutator.write(
+      PRACTICE_STUDIO_VOICE_FILE,
       [
         "---",
         `schema: ${STUDIO_VOICE_SCHEMA}`,
@@ -320,17 +319,17 @@ export async function applyPracticeChange({ root, proposal, now = new Date().toI
           ],
     ),
   ].join("\n");
-  await writeUtf8(practicePath, `${current.trimEnd()}\n${update}`);
+  await mutator.write("PRACTICE.md", `${current.trimEnd()}\n${update}`);
   const decisionPath = `decisions/${proposal.id}-${next}.md`;
-  await writeNewFile(
-    resolveInside(practiceRoot, decisionPath),
+  await mutator.create(
+    decisionPath,
     `# ${proposal.summary}\n\nRevision: ${next}\n\nReason: ${proposal.reason}\n\nSanitization reviewed: yes\n`,
   );
   manifest.revision = next;
   manifest.updated_at = now;
   manifest.backup = await backupState(practiceRoot, now);
   await assertV2("practice.schema.json", manifest);
-  await writeUtf8(manifestPath, stringify(manifest));
+  await mutator.write(".silver/practice.yaml", stringify(manifest));
   const commit = await commitPractice(
     practiceRoot,
     `Update My Practice: ${proposal.summary}`,

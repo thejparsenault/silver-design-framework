@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/change-set.schema.json",
+  "title": "Silver normalized change set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "binding_id", "artifact", "base", "local", "external", "adapter", "created_at", "changes"],
+  "properties": {
+    "schema": { "const": "silver/change-set/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "artifact": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "base": { "$ref": "#/$defs/revisionState" },
+    "local": { "$ref": "#/$defs/revisionState" },
+    "external": { "$ref": "#/$defs/revisionState" },
+    "adapter": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version"],
+      "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "provider_entity", "artifact_kind", "artifact_id", "classification", "operation", "confidence", "mapping_fidelity", "dependencies", "unresolved", "required_checks", "required_approval", "proposal"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "provider_entity": { "type": "string", "minLength": 1 },
+          "artifact_kind": { "$ref": "common.schema.json#/$defs/artifactKind" },
+          "artifact_id": { "$ref": "common.schema.json#/$defs/id" },
+          "classification": { "enum": ["presentation", "content", "specification", "flow", "component", "asset", "semantic-style", "unknown-style", "unknown-component", "unmapped"] },
+          "value_kind": {
+            "description": "Whether this change is a reference (an alias to another token) or a literal value. A change that stops being an alias and becomes a literal is a structural edit, a different risk class from an ordinary value edit, even though both share the same classification.",
+            "enum": ["alias", "literal"]
+          },
+          "operation": { "enum": ["propose-create", "propose-update", "finding", "no-op"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "mapping_fidelity": { "enum": ["exact", "semantic", "partial", "unmapped"] },
+          "dependencies": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/artifactReference" } },
+          "unresolved": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "required_checks": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/id" } },
+          "required_approval": { "type": "boolean" },
+          "proposal": {
+            "type": "object", "additionalProperties": false, "required": ["target_path", "expected_integrity", "patch"],
+            "properties": {
+              "target_path": { "$ref": "common.schema.json#/$defs/relativePath" },
+              "expected_integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+              "patch": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["op", "path"], "properties": { "op": { "enum": ["add", "replace", "remove"] }, "path": { "type": "string", "pattern": "^/" }, "value": {} } } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "revisionState": {
+      "type": "object", "additionalProperties": false, "required": ["revision", "integrity"],
+      "properties": {
+        "revision": { "type": "string", "minLength": 1 },
+        "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

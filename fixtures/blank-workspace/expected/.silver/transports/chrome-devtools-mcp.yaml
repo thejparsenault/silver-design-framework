@@ -1,0 +1,104 @@
+# Chrome DevTools MCP — a declaration, not an adapter.
+#
+# Silver ships no code for this. The agent calls the server's tools directly;
+# Silver's job is to know it exists, know what it is good at, and resolve it when
+# a designer prefers it for browser work.
+#
+# Declared from published documentation. Nobody has exercised it here, and
+# `evidence: declared` says so rather than implying otherwise.
+schema: silver/provider/v1
+id: chrome-devtools-mcp
+version: 0.9.0
+kind: external
+target: browser
+variant: devtools-mcp
+aliases:
+  - chrome devtools mcp
+  - chrome mcp
+  - devtools mcp
+source:
+  publisher: Google Chrome DevTools
+  repository: https://github.com/ChromeDevTools/chrome-devtools-mcp
+  distribution:
+    kind: npm
+    ref: chrome-devtools-mcp
+  evidence: declared
+  verified_at: 2026-08-11
+  verified_against: published package documentation
+guidance:
+  good_at:
+    - Driving a real Chrome the designer can watch, including a signed-in profile
+    - Inspecting network activity, console output, and performance traces
+  not_for:
+    - Deterministic pass/fail checks — that is what silver-browser-local is for
+  prefer_when:
+    - You want to look at a running application interactively rather than measure it
+  compare_to:
+    - transport: silver-browser-local
+      difference: >-
+        Drives a browser you can see and reuses your real profile; the local
+        transport launches a throwaway headless Chrome for repeatable checks.
+capabilities: [browser, research-evidence]
+connection:
+  kind: mcp
+  server: chrome-devtools
+  tool_prefix: mcp__chrome-devtools__
+  config:
+    command: npx
+    args: ["-y", "chrome-devtools-mcp@latest"]
+probe:
+  tool: mcp__chrome-devtools__list_pages
+  expects: a list of open pages, empty or otherwise
+  freshness_hours: 24
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+  - capability: research-evidence
+    actions: [search, read, inspect]
+    default: ask
+directions: [read]
+fidelity: partial
+maturity: stable
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-network
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-accessibility
+    support: partial
+    actions: [inspect, execute]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]
+  - id: evaluate.audit-performance
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.compare-visual
+    support: full
+    actions: [inspect]
+  - id: research.search-web
+    support: partial
+    actions: [search]
+    constraints:
+      - Uses browser navigation to public web pages rather than a dedicated search-index API.
+  - id: research.inspect-competitor
+    support: full
+    actions: [read, inspect]

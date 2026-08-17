@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/skill.schema.json",
+  "title": "Silver project-local skill contract v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "summary",
+    "context_budget",
+    "inputs",
+    "outputs",
+    "capabilities",
+    "guardrails",
+    "completion",
+    "checks",
+    "handoffs",
+    "external_effects",
+    "recommend_after"
+  ],
+  "properties": {
+    "schema": {
+      "const": "silver/skill/v2"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/version"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "context_budget": {
+      "enum": ["small", "medium", "large"]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "required", "role"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/artifactKind"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "role": {
+            "enum": ["canonical", "supporting", "evidence", "working", "selection"]
+          },
+          "multiple": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "scope", "path_pattern"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/artifactKind"
+          },
+          "scope": {
+            "enum": ["organization", "product", "codebase", "prototype"]
+          },
+          "path_pattern": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "authority": {
+            "enum": ["project-owned", "canonical-with-approval", "generated"]
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "optional"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/capability"
+          }
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability", "fallback"],
+            "properties": {
+              "capability": {
+                "$ref": "common.schema.json#/$defs/capability"
+              },
+              "providers": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "common.schema.json#/$defs/id"
+                }
+              },
+              "fallback": {
+                "enum": ["local", "degraded", "not-run"]
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300
+              }
+            }
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common.schema.json#/$defs/action"
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/relativePath"
+            }
+          },
+          "decision": {
+            "enum": ["allow", "ask", "deny"],
+            "default": "ask"
+          }
+        }
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common.schema.json#/$defs/action"
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/relativePath"
+            }
+          },
+          "external": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invariants",
+        "quality_criteria",
+        "unresolved_questions",
+        "review"
+      ],
+      "properties": {
+        "invariants": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          }
+        },
+        "quality_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description", "evaluation"],
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "evaluation": {
+                "enum": ["deterministic", "agent", "human"]
+              }
+            }
+          }
+        },
+        "unresolved_questions": {
+          "enum": ["allow", "warn", "block-handoff", "block-execution"]
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "reviewer"],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "reviewer": {
+              "enum": ["none", "agent", "human", "policy"]
+            },
+            "checkpoint": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "required", "blocks"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "blocks": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          }
+        }
+      }
+    },
+    "handoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "target", "readiness", "requires"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "target": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "readiness": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/artifactKind"
+            }
+          }
+        }
+      }
+    },
+    "external_effects": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "none",
+          "read-external",
+          "create-external",
+          "modify-external",
+          "publish",
+          "present",
+          "send-message",
+          "version-control"
+        ]
+      }
+    },
+    "scripts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "path": {
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      }
+    },
+    "recommend_after": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      }
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  }
+}

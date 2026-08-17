@@ -1,0 +1,4 @@
+interface:
+  display_name: Develop flow
+  short_description: Create and revise portable, revision-aware behavior graphs.
+  default_prompt: Use $flow to create and revise portable, revision-aware behavior graphs.

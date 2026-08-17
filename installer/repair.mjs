@@ -22,6 +22,7 @@ import {
   writeClaudeSkillLinks,
   writeLauncher,
 } from "./agent-adapters.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 async function loadValidatedYaml(root, relativePath, schemaName) {
   const absolute = path.join(root, relativePath);
@@ -50,7 +51,9 @@ function managedFileOwner(relativePath) {
 }
 
 export async function repairWorkspace(options = {}) {
-  const root = path.resolve(options.root ?? process.cwd());
+  let root = path.resolve(options.root ?? process.cwd());
+  const mutator = await createWorkspaceMutator(root);
+  root = mutator.root;
   const manifest = await loadValidatedYaml(
     root,
     "design/manifest.yaml",
@@ -79,8 +82,8 @@ export async function repairWorkspace(options = {}) {
   }
   if (statusChanges.length > 0) {
     const manifestPath = path.join(root, "design", "manifest.yaml");
-    await writeUtf8(
-      manifestPath,
+    await mutator.write(
+      "design/manifest.yaml",
       applyStatusChangesToSource(await readUtf8(manifestPath), statusChanges),
     );
   }
@@ -120,7 +123,7 @@ export async function repairWorkspace(options = {}) {
     if ((await exists(absolute)) && (await readUtf8(absolute)) === content) {
       unchanged.push(relativePath);
     } else {
-      await writeUtf8(absolute, content);
+      await mutator.write(relativePath, content);
       repaired.push(relativePath);
     }
     const managed = lock.managed_files.find(
@@ -141,7 +144,7 @@ export async function repairWorkspace(options = {}) {
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const nextLock = stringify(lock);
   if ((await readUtf8(lockPath)) !== nextLock) {
-    await writeUtf8(lockPath, nextLock);
+    await mutator.write(".silver/lock.yaml", nextLock);
     repaired.push(".silver/lock.yaml");
   } else {
     unchanged.push(".silver/lock.yaml");

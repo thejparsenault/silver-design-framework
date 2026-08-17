@@ -487,8 +487,73 @@ automated gate by design.
     gives information architecture a home distinct from `flow` and `map`.
     New `measure` (implement → measure → synthesize) closes the loop after
     production, with a new `product-analytics` named-gap capability
-    matching the existing `research-evidence` pattern. 24 skills total.
+    matching the existing `research-evidence` pattern. W10 produced 24 skills;
+    the synchronization hardening subsequently added `reconcile` as the 25th.
     `S10-*`, done.
+
+### Release hardening found by the 2026-08-16 audit
+
+- [x] Audit code, executable reachability, tests, package, and native paths
+  - type: test
+  - priority: high
+  - context: large
+  - notes: Fixed bounded defects in check invocation, selective checking,
+    browser completion, built-in WebSocket support, transport probes, real
+    `0.6.1` migration, Git subprocesses, Node engine metadata, and test
+    cleanup. Updated two vulnerable bundled transitives within compatible
+    ranges; the production dependency audit reports zero vulnerabilities.
+    Full coverage passes 201/201 with no skips or todos. Evidence and
+    recommendations are in `docs/code-and-test-audit-2026-08-16.md`.
+
+- [x] Make every Silver-managed mutation symlink-safe
+  - type: architecture
+  - priority: high
+  - context: large
+  - notes: Added the canonical relative-path-only workspace mutation runtime,
+    immediate ancestor/realpath checks, constrained Claude adapter links,
+    doctor diagnostics, safe renderers and evidence writers, and adversarial
+    linked-path/race tests. A symlinked workspace root is canonicalized; links
+    beneath it are rejected.
+
+- [x] Make migration apply transactional and recoverable
+  - type: architecture
+  - priority: high
+  - context: large
+  - notes: Migration and update now render into lifecycle staging and activate
+    through a flushed durable journal with preimages, per-operation state,
+    lock-last ordering, validation, automatic rollback, and explicit
+    `silver recover` resume/rollback. Generated Claude links participate in the
+    transaction; process-death gaps and contention have direct tests.
+
+- [x] Expose reconciliation and codecs through a stable synchronization surface
+  - type: design
+  - priority: medium
+  - context: medium
+  - notes: `silver link inspect|apply`, `silver sync status|inspect|apply`, and
+    the 25th `reconcile` skill now exercise artifact codecs and reconciliation
+    for linked repositories and captured Figma tokens. Playbooks and browser-
+    evidence ownership remain separate findings rather than synchronization
+    blockers.
+
+- [x] Implement linked-source and Figma synchronization
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Strict v2 source/binding/snapshot/change/result/adapter contracts,
+    explicit partial acceptance, structural and honest whole-file adapters,
+    authority and shared-base drift handling, source-native bounded checks,
+    transactional imports, two-pass Figma writes, recoverable external Git
+    sagas, and reviewed `design/system` symlink conversion are implemented.
+
+- [ ] Restore or exceed the pre-hardening branch and function coverage percentages
+  - type: quality
+  - priority: medium
+  - context: medium
+  - notes: The final 226-test run improves line coverage from 83.16% to 83.30%
+    and directly covers the new high-risk recovery states, but aggregate branch
+    coverage is 74.41% (baseline 75.04%) and function coverage is 88.83%
+    (baseline 90.09%). Add targeted tests for the remaining transaction,
+    recovery CLI, source-adapter, and synchronization error branches.
 
 ### Manual — needs the user directly, run after the automated pass
 
@@ -527,13 +592,16 @@ automated gate by design.
     components, render a prototype, confirm it uses the product's own
     classes and CSS. `S09-MIGRATE-04`.
 
-- [ ] Manual live Figma round trip
+- [x] Manual live Figma round trip
   - type: test
   - priority: medium
   - context: small
-  - notes: Interactive only, never a CI step — the figma-console MCP
-    operates on whatever file is open and node ids are session-specific.
-    `S09-MIGRATE-04`.
+  - notes: Passed 2026-08-17 in `Test File`. A primitive and semantic alias
+    survived pull, no-op push, primitive propagation, a deliberate literal
+    structural edit, and alias restoration. Canvas swatch `5:11` is bound to
+    semantic variable `VariableID:5:4`, which aliases primitive
+    `VariableID:5:3`; section `5:5` remains as visible evidence. Interactive
+    only, never a CI step. `S09-MIGRATE-04`.
 
 ## Following Milestone — Existing Codebase Adoption
 

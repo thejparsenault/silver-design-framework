@@ -1,0 +1,101 @@
+schema: silver/skill/v2
+id: brand
+version: 0.9.0
+summary: Define or refine audience-facing brand foundations.
+context_budget: small
+inputs:
+  - kind: product
+    required: false
+    role: canonical
+  - kind: brand
+    required: false
+    role: canonical
+outputs:
+  - kind: brand
+    scope: product
+    path_pattern: design/brand.md
+    authority: canonical-with-approval
+  - kind: decision
+    scope: product
+    path_pattern: design/decisions/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+    - canonical-artifact
+  optional: []
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: canonical-artifact
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/brand.md
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/decisions/**
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+completion:
+  invariants:
+    - audience-named
+    - claims-grounded
+    - visual-changes-proposed-only
+  quality_criteria:
+    - id: task-quality
+      description: Guidance is specific enough to guide product and communication choices.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - theme
+      - voice
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: brand-to-theme
+    target: theme
+    readiness: theme
+    requires:
+      - brand
+      - decision
+  - id: brand-to-voice
+    target: voice
+    readiness: voice
+    requires:
+      - brand
+      - decision
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

@@ -9,7 +9,12 @@ import { promisify } from "node:util";
 
 import { FRAMEWORK_VERSION } from "../version.mjs";
 
-const run = promisify(execFile);
+const execute = promisify(execFile);
+const run = (file, args, options = {}) => execute(file, args, {
+  timeout: 10 * 60 * 1000,
+  killSignal: "SIGKILL",
+  ...options,
+});
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const nativeRoot = path.join(repositoryRoot, "dist", "native");
 const packageRoot = path.join(repositoryRoot, "dist", "pkg");

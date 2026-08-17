@@ -1,0 +1,715 @@
+# Activities: human-named units of tool-using design work.
+#
+# An activity names a combination that already exists in the contracts —
+# a capability, the actions taken with it, and sometimes the artifact kinds
+# involved. Naming it is what lets a designer say "use the official Figma MCP
+# for that" without knowing what a capability is.
+#
+# `capability` is the coarse permission surface a provider must hold to be a
+# normal-path candidate (see framework/runtime/activities.mjs). It is *not*
+# where the native answer comes from: every activity also carries `fallback`,
+# a second, separate resolution path that silver-portable answers directly
+# without needing to hold the activity's capability at all. That is what
+# makes "there is always a Silver-native answer" true by construction rather
+# than by silver-portable collecting capabilities it doesn't otherwise need.
+#
+# `phrases` are what a designer would actually say; `silver tools --for`
+# matches against these, not against ids.
+#
+# `binding: internal` (default is `bindable`) marks an activity nobody can
+# meaningfully re-bind — either because Silver's own contracts forbid any
+# other provider from claiming its capability (canonical-artifact is
+# PACKAGE_ONLY, see framework/runtime/providers.mjs), or because no
+# alternative is credible even in principle. Everything else is bindable:
+# where this release ships more than one plausible provider for a capability
+# (Figma vs. Excalidraw for visual-renderer, Figma vs. Miro for map-renderer,
+# silver-portable vs. Canva for presentation-renderer, silver-portable vs.
+# Webflow for prototype-renderer), the activity stays an ordinary bindable
+# choice rather than being declared internal — internal is for "cannot be
+# otherwise," not "isn't, yet."
+#
+# Status is still a derived fact, not declared here: which providers and
+# skills serve an activity comes from their contracts (declared `activities`
+# as of 0.9, replacing the pre-0.9 pure derivation from capabilities/
+# directions/artifact-kinds — see framework/runtime/activities.mjs and the
+# audit in framework/scripts/validate-contracts.mjs). `status: planned` marks
+# a named gap — an activity worth having a word for that no shipped provider
+# serves yet, softened by its `fallback` rather than left silent.
+schema: silver/activity-catalog/v1
+version: 0.9.0
+activities:
+  # --- Design tool file operations ----------------------------------------
+  # Raw reads/writes against a connected design tool's own file — as opposed
+  # to producing a rendered design artifact, which is the visual-renderer /
+  # flow / map-renderer / prototype-renderer / presentation-renderer families
+  # below. A provider needs `design-file` to be a normal-path candidate here.
+  - id: design.pull-file
+    title: Pull designs from a design tool
+    summary: Read frames, components, or structure out of a design file.
+    capability: design-file
+    actions: [read, inspect]
+    phrases: [pull from figma, read the design file, inspect the design file]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Ask for an export, screenshot, or description of the design file; Silver cannot read a design tool's file without a connected transport."}
+    status: served
+
+  - id: design.pull-tokens
+    title: Pull design-system values from a design tool
+    summary: Read variables, styles, or token sources back out of a design tool.
+    capability: design-file
+    actions: [read]
+    artifact_kinds: [token-source]
+    phrases: [pull tokens from figma, read design variables, sync tokens down]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Read the workspace's own token-source files directly."}
+    status: served
+
+  - id: design.push-tokens
+    title: Push design-system updates to a design tool
+    summary: Write token or style updates into a design tool.
+    capability: design-file
+    actions: [write, update]
+    artifact_kinds: [token-source]
+    phrases: [push tokens to figma, sync tokens up, update figma variables]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Write the workspace's own token-source files directly."}
+    status: served
+
+  - id: system.inspect-components
+    title: Inspect components in a design tool
+    summary: Read component anatomy, variants, states, and usage from a connected design tool's library.
+    capability: design-file
+    artifact_kinds: [component-catalog]
+    actions: [read, inspect]
+    phrases: [inspect figma components, read the component library, check component variants]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Read local component/system artifacts or source code instead."}
+    status: served
+
+  - id: system.edit-components
+    title: Edit component definitions in a design tool
+    summary: Create or modify component definitions, variants, and states in a connected design tool.
+    capability: design-file
+    artifact_kinds: [component-catalog]
+    actions: [create, write, update]
+    phrases: [edit figma components, update a component variant, add a component state]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Modify Silver's own component/system artifacts; production code changes remain implementation work."}
+    status: served
+
+  - id: system.map-design-to-code
+    title: Map design to code
+    summary: Read links between design components or tokens and their source-code counterparts.
+    capability: design-file
+    artifact_kinds: [representation-binding]
+    actions: [read, inspect]
+    phrases: [code connect, map figma to code, link component to source]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Maintain a portable representation-binding artifact when both sides are locally identifiable."}
+    status: served
+
+  - id: brand.inspect-assets
+    title: Inspect brand assets in a design tool
+    summary: Find and inspect logos, imagery, icons, and other declared brand assets.
+    capability: design-file
+    artifact_kinds: [asset-catalog]
+    actions: [read, inspect]
+    phrases: [find brand assets, inspect logo assets, check icon set]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Inspect local or user-provided assets; ask for the asset source if it is not accessible."}
+    status: served
+
+  # --- Flow --------------------------------------------------------------
+  - id: flow.create-user-flow
+    title: Author a user or task flow
+    summary: Model user or task steps, decisions, branches, and paths.
+    capability: flow
+    actions: [create, write, update]
+    artifact_kinds: [flow]
+    phrases: [create a user flow, map the task flow, build a screen flow]
+    fallback: {mode: native, provider: silver-portable, format: mermaid, note: "Create a portable Silver flow graph or Mermaid representation."}
+    status: served
+
+  - id: flow.create-state-model
+    title: Author a state model
+    summary: Model interface states, transitions, triggers, and resulting behavior.
+    capability: flow
+    actions: [create, write, update]
+    artifact_kinds: [flow]
+    phrases: [state machine, state diagram, model interaction states]
+    fallback: {mode: native, provider: silver-portable, format: mermaid, note: "Create a structured state model or Mermaid state diagram."}
+    status: served
+
+  # --- Rendered visual design work ----------------------------------------
+  # Producing a design artifact at a given fidelity. The fidelity range is
+  # the point of separating these rather than keeping one coarse activity:
+  # a provider that only produces rough sketches is not a match for "create
+  # an editable, high-fidelity design," and the two are genuinely different
+  # requests even when the same tool could technically do both.
+  - id: visual.create-rough
+    title: Create a rough visual exploration
+    summary: Low-fidelity sketches, boxes-and-arrows, or exploratory visual arrangements.
+    capability: visual-renderer
+    actions: [create, write, update]
+    artifact_kinds: [visualization]
+    phrases: [rough sketch, lofi exploration, quick visual exploration]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create lightweight HTML/SVG visual representations with minimal styling."}
+    status: served
+
+  - id: visual.create-wireframe
+    title: Create a wireframe
+    summary: Static screen structure, layout, hierarchy, and basic content at low or medium fidelity.
+    capability: visual-renderer
+    actions: [create, write, update]
+    artifact_kinds: [visualization]
+    phrases: [wireframe, lofi ui, layout study]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create responsive HTML/CSS wireframes viewable in a browser."}
+    status: served
+
+  - id: visual.create-high-fidelity-ui
+    title: Create a high-fidelity UI design
+    summary: Polished, editable interface designs with realistic typography, color, components, and content. Applies the accepted design system when one exists.
+    capability: visual-renderer
+    actions: [create, write, update]
+    artifact_kinds: [visualization]
+    phrases: [high fidelity design, hifi ui, polished mockup, editable figma design]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create polished HTML/CSS using accepted tokens and components; the output is editable code rather than a native canvas artifact."}
+    status: served
+
+  - id: visual.create-variants
+    title: Create visual variants
+    summary: Alternate visual directions, states, breakpoints, modes, or treatments.
+    capability: visual-renderer
+    actions: [create, write, update]
+    artifact_kinds: [visualization]
+    phrases: [design variants, responsive variants, alternate states]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create multiple structured HTML/CSS or SVG variants and label the differences."}
+    status: served
+
+  - id: diagram.create-conceptual
+    title: Create a conceptual diagram
+    summary: A system, relationship, architecture, or conceptual diagram — not a task flow or an experience map.
+    capability: visual-renderer
+    actions: [create, write, update]
+    artifact_kinds: [concept]
+    phrases: [draw a diagram, system diagram, concept map]
+    fallback: {mode: native, provider: silver-portable, format: mermaid, note: "Create a Mermaid diagram or structured text that stays editable and portable."}
+    status: served
+
+  - id: map.render
+    title: Render an experience map
+    summary: A journey map, service blueprint, ecosystem map, or other experience-oriented map.
+    capability: map-renderer
+    actions: [create, write, update]
+    artifact_kinds: [map]
+    phrases: [journey map, service blueprint, experience map]
+    fallback: {mode: native, provider: silver-portable, format: mermaid, note: "Create a portable structured map using Mermaid or SVG."}
+    status: served
+
+  - id: prototype.create-clickable
+    title: Create a clickable prototype
+    summary: An interactive prototype that supports the declared tasks and transitions, without functional code behind it.
+    capability: prototype-renderer
+    actions: [create, write, update]
+    artifact_kinds: [prototype]
+    phrases: [clickable prototype, interactive mockup, prototype the interactions]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create HTML/CSS/JS with the minimum interaction needed to answer the prototype question."}
+    status: served
+
+  - id: prototype.create-code
+    title: Create a coded prototype
+    summary: A functional coded prototype using real web or application code.
+    capability: prototype-renderer
+    actions: [create, write, update]
+    artifact_kinds: [prototype]
+    phrases: [code prototype, working prototype, frontend prototype]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create portable local code with no required external service."}
+    status: served
+
+  - id: prototype.connect-data
+    title: Connect a prototype to data
+    summary: Connect a prototype to mock data, local fixtures, or an accessible API.
+    capability: prototype-renderer
+    actions: [create, write, update]
+    artifact_kinds: [prototype]
+    phrases: [prototype with mock data, connect prototype to an api, wire up sample data]
+    fallback: {mode: native, provider: silver-portable, format: json, note: "Use local fixtures or mock data by default; live data requires an accessible provider or credentials."}
+    status: served
+
+  - id: prototype.simulate-ai
+    title: Simulate AI or agent behavior
+    summary: Prototype AI/agent responses, uncertainty, progress, failures, and tool-driven states.
+    capability: prototype-renderer
+    actions: [create, write, update]
+    artifact_kinds: [prototype]
+    phrases: [simulate an llm, ai prototype, agent simulation]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Use deterministic fixtures or clearly labeled simulated responses; never imply a live model call occurred."}
+    status: served
+
+  - id: presentation.render
+    title: Render a presentation
+    summary: A structured presentation or stakeholder narrative view.
+    capability: presentation-renderer
+    actions: [create, write, update]
+    artifact_kinds: [presentation-view]
+    phrases: [create a deck, build slides, presentation view]
+    fallback: {mode: native, provider: silver-portable, format: html, note: "Create a portable HTML or Markdown presentation; native slide formats require an external provider."}
+    status: served
+
+  # --- Production source ---------------------------------------------------
+  - id: production.write-source
+    title: Write production source
+    summary: Implement or change production-facing interface code, including new reusable components.
+    capability: production-source
+    actions: [create, write, update]
+    artifact_kinds: [implementation]
+    phrases: [implement the design, edit ui code, build a component, build the frontend]
+    fallback: {mode: native, provider: silver-portable, format: source-code, note: "Modify local source under Silver's write rules using local patterns and components."}
+    status: served
+
+  - id: production.run-tests
+    title: Run implementation tests
+    summary: Execute unit, component, interaction, or accessibility tests against production code.
+    capability: production-source
+    actions: [execute]
+    phrases: [run tests, test the ui, component tests]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Run project-local tests if a runner is configured; otherwise produce test cases without claiming execution."}
+    status: served
+
+  - id: production.deploy-preview
+    title: Deploy an implementation preview
+    summary: Deploy a branch or build to a shareable preview environment.
+    capability: production-source
+    actions: [create, publish]
+    artifact_kinds: [implementation-handoff]
+    phrases: [preview deploy, deploy a branch, host a preview]
+    fallback: {mode: representational, provider: silver-portable, format: html, note: "Always produce a runnable local artifact; hosting requires an external deployment provider, which this release does not ship."}
+    status: planned
+
+  # --- Workspace and codebase -----------------------------------------------
+  - id: repository.read-workspace
+    title: Read the workspace
+    summary: Search project files, read local documents, and inspect existing product or brand context.
+    capability: repository
+    actions: [read, inspect, search]
+    phrases: [search project files, read project docs, find a document, understand the product context, read brand guidelines]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Search and read the workspace directly."}
+    status: served
+
+  - id: repository.write-workspace
+    title: Write working files in the workspace
+    capability: repository
+    actions: [create, write, update]
+    phrases: [write a working file, save to the workspace]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Write the workspace directly."}
+    status: served
+
+  - id: repository.inspect-codebase
+    title: Inspect the codebase
+    summary: Search and understand application architecture, routes, components, styles, and conventions.
+    capability: repository
+    actions: [read, inspect, search]
+    phrases: [inspect the codebase, read the repo, understand the architecture]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Use the local repository available to the agent."}
+    status: served
+
+  - id: work.manage-tasks
+    title: Manage product or design work items
+    summary: Find, create, update, and organize issues, tasks, or milestones.
+    capability: repository
+    actions: [read, create, write, update]
+    phrases: [manage tickets, create a task, track work]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Track work locally in Silver artifacts; synchronize with an external work system only when one is connected."}
+    status: served
+
+  # --- Canonical artifacts: analysis, structure, spec, content, measurement,
+  # evaluation --------------------------------------------------------------
+  # Producing or judging a Silver-owned artifact. `canonical-artifact` is
+  # PACKAGE_ONLY (see framework/runtime/providers.mjs): no declaration may
+  # ever claim it, so every activity here is, in practice, always answered
+  # by silver-portable — the fallback is not a fallback so much as the only
+  # path, which is exactly why `artifact.write-canonical` is `internal`.
+  - id: analysis.cluster-evidence
+    title: Cluster qualitative evidence
+    summary: Code, group, and organize qualitative evidence into recurring patterns or themes.
+    capability: repository
+    actions: [read, create, write, update]
+    artifact_kinds: [evidence]
+    phrases: [affinity mapping, cluster feedback, code interviews]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Cluster local or user-provided evidence and preserve links back to source items."}
+    status: served
+
+  - id: analysis.generate-findings
+    title: Generate evidence-backed findings
+    summary: Summarize evidence and turn it into findings, opportunities, or hypotheses with explicit support and uncertainty.
+    capability: repository
+    actions: [read, create, write, update]
+    artifact_kinds: [finding]
+    phrases: [summarize research, generate findings, derive opportunities]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Use only available evidence; separate observation, interpretation, and hypothesis."}
+    status: served
+
+  - id: analysis.compare-products
+    title: Compare products or patterns
+    summary: Compare observed products, flows, features, or design patterns across consistent dimensions.
+    capability: repository
+    actions: [read, create, write, update]
+    artifact_kinds: [finding]
+    phrases: [competitive matrix, compare products, pattern comparison]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Build the comparison from available evidence and flag unknown dimensions."}
+    status: served
+
+  - id: analysis.analyze-tabular-data
+    title: Analyze tabular data
+    summary: Analyze supplied CSV, JSON, or tabular evidence for distributions, segments, trends, or anomalies.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [evidence]
+    phrases: [analyze a csv, analyze a spreadsheet, quant analysis]
+    fallback: {mode: native, provider: silver-portable, format: csv, note: "Analyze local or user-provided data; live retrieval is a separate activity."}
+    status: served
+
+  - id: structure.model-entities
+    title: Model product entities
+    summary: Define objects, attributes, ownership, and relationships in a product domain.
+    capability: repository
+    actions: [create, write, update]
+    artifact_kinds: [structure]
+    phrases: [object model, entity model, domain model]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Represent the model as structured YAML plus a diagram when useful."}
+    status: served
+
+  - id: structure.create-information-architecture
+    title: Create information architecture
+    summary: Define hierarchy, taxonomy, grouping, and information relationships.
+    capability: repository
+    actions: [create, write, update]
+    artifact_kinds: [structure]
+    phrases: [information architecture, site structure, taxonomy]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Create a structured IA plus an optional diagram."}
+    status: served
+
+  - id: structure.create-navigation
+    title: Create a navigation structure
+    summary: Define navigation, browsing, search and filter entry points, and cross-product pathways.
+    capability: repository
+    actions: [create, write, update]
+    artifact_kinds: [structure]
+    phrases: [navigation model, nav structure, site navigation]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Create a structured navigation model and optional diagram."}
+    status: served
+
+  - id: spec.create-requirements
+    title: Create product or design requirements
+    summary: Define requirements, constraints, acceptance criteria, assumptions, and success criteria.
+    capability: repository
+    actions: [create, write, update]
+    artifact_kinds: [design-specification]
+    phrases: [write a spec, requirements, acceptance criteria]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Use Silver specification artifacts and structured Markdown."}
+    status: served
+
+  - id: content.create-ui-copy
+    title: Create interface content
+    summary: Labels, instructions, errors, empty states, onboarding, and other interface language.
+    capability: repository
+    actions: [create, write, update]
+    phrases: [ux writing, ui copy, microcopy]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Generate copy using accepted voice, terminology, and interface constraints."}
+    status: served
+
+  - id: content.localize
+    title: Localize interface content
+    summary: Translate or adapt interface content while preserving intent, constraints, and placeholders.
+    capability: repository
+    actions: [create, write, update]
+    phrases: [localization, translate ui, localize copy]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Produce structured localized strings when source content and target locale are supplied."}
+    status: served
+
+  - id: measure.define-instrumentation
+    title: Define measurement instrumentation
+    summary: Define events, properties, success metrics, funnels, and measurement requirements.
+    capability: repository
+    actions: [create, write, update]
+    artifact_kinds: [measurement]
+    phrases: [analytics plan, event tracking, instrumentation plan]
+    fallback: {mode: native, provider: silver-portable, format: yaml, note: "Create a portable measurement plan; actual instrumentation changes are implementation work."}
+    status: served
+
+  - id: measure.analyze-funnel
+    title: Analyze a funnel or cohort
+    summary: Analyze conversion, retention, adoption, cohorts, or behavioral sequences.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [measurement]
+    phrases: [funnel analysis, cohort analysis, conversion analysis]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Analyze provided or local data; live retrieval is a separate activity."}
+    status: served
+
+  - id: measure.analyze-experiment
+    title: Analyze an experiment
+    summary: Evaluate an A/B test or other experiment against its declared hypothesis and uncertainty.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [measurement]
+    phrases: [ab test analysis, experiment results, variant analysis]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Analyze provided experiment data and state statistical or causal limitations."}
+    status: served
+
+  - id: measure.monitor-outcomes
+    title: Monitor product outcomes
+    summary: Inspect trends, anomalies, regressions, or other post-launch outcomes over time.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [measurement]
+    phrases: [monitor metrics, post launch monitoring, track outcomes]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Without a connected live source, define monitoring criteria or analyze a provided snapshot rather than claiming ongoing observation."}
+    status: served
+
+  - id: evaluate.review-design
+    title: Review a design
+    summary: Expert UX/UI review against goals, heuristics, conventions, and declared principles.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [evaluation]
+    phrases: [design critique, ux review, heuristic review]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Review supplied or local artifacts and clearly distinguish judgment from deterministic checks."}
+    status: served
+
+  - id: evaluate.analyze-usability
+    title: Analyze usability evidence
+    summary: Analyze task observations, usability sessions, failures, and participant feedback.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [evaluation]
+    phrases: [usability analysis, analyze testing, test findings]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Analyze user-provided or collected session evidence; never claim a session occurred without evidence."}
+    status: served
+
+  - id: evaluate.check-system-conformance
+    title: Check design-system conformance
+    summary: Check token, component, spacing, typography, content, and pattern conformance.
+    capability: repository
+    actions: [read, inspect]
+    artifact_kinds: [evaluation]
+    phrases: [design system audit, token conformance, component conformance]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Compare local design and implementation artifacts against accepted Silver system artifacts."}
+    status: served
+
+  - id: artifact.write-canonical
+    title: Write a canonical design artifact
+    summary: Create or update an artifact that defines design intent for its scope. Every skill that produces a Silver artifact ultimately resolves here.
+    capability: canonical-artifact
+    actions: [create, write, update]
+    binding: internal
+    phrases: [write the artifact, save the design decision]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "This is the native path; there is no other provider by design (see PACKAGE_ONLY_CAPABILITIES)."}
+    status: served
+
+  # --- Browser -------------------------------------------------------------
+  # Split fine in 0.9: a provider serving only some of these does not
+  # support "the browser," and "audit performance" and "click through a
+  # flow" are different requests even against the same running page.
+  - id: browser.navigate
+    title: Navigate a browser target
+    summary: Open and navigate pages or local render targets.
+    capability: browser
+    actions: [inspect, execute]
+    phrases: [open a page, navigate to a url, browse the app]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Use a connected browser transport when available; otherwise ask for screenshots, HTML, or a reachable target."}
+    status: served
+
+  - id: browser.interact
+    title: Interact with a browser target
+    summary: Click, type, submit, scroll, and exercise interface behavior.
+    capability: browser
+    actions: [execute]
+    phrases: [click through the flow, interact with the page, exercise the ui]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Use a connected browser transport for reachable targets; otherwise request a recording, prototype, or structured description."}
+    status: served
+
+  - id: browser.inspect-structure
+    title: Inspect page structure
+    summary: Inspect DOM-like structure, semantics, layout, and rendered page hierarchy.
+    capability: browser
+    actions: [inspect]
+    phrases: [inspect the dom, inspect page structure, inspect the html]
+    fallback: {mode: input-required, provider: silver-portable, format: html, note: "Inspect local HTML or source when available; otherwise request HTML or a browser-capable provider."}
+    status: served
+
+  - id: browser.inspect-accessibility-tree
+    title: Inspect the accessibility tree
+    summary: Inspect semantic roles, names, states, and accessible structure of a rendered interface.
+    capability: browser
+    actions: [inspect]
+    phrases: [accessibility tree, inspect semantics, a11y snapshot]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Analyze supplied HTML or semantics; never infer a live accessibility tree."}
+    status: served
+
+  - id: browser.inspect-network
+    title: Inspect network activity
+    summary: Inspect requests, responses, resources, and runtime network behavior.
+    capability: browser
+    actions: [inspect]
+    phrases: [network requests, inspect api calls, network panel]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "No text-only equivalent exists; request logs, a HAR file, or an external browser provider."}
+    status: served
+
+  - id: browser.capture-screenshot
+    title: Capture a rendered screenshot
+    summary: Capture the visual output of a page, viewport, component, or state.
+    capability: browser
+    actions: [inspect]
+    phrases: [take a screenshot, capture the page, render a screenshot]
+    fallback: {mode: input-required, provider: silver-portable, format: png, note: "Render local HTML through an available viewer when possible; otherwise ask for an image."}
+    status: served
+
+  - id: evaluate.check-accessibility
+    title: Check accessibility
+    summary: Evaluate semantic, keyboard, focus, contrast, labeling, and other accessibility requirements against a running interface.
+    capability: browser
+    actions: [inspect, execute]
+    artifact_kinds: [evaluation]
+    phrases: [a11y audit, accessibility check, wcag check]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Perform a design or spec review from available artifacts; deterministic runtime checks need browser or source access."}
+    status: served
+
+  - id: evaluate.check-responsive
+    title: Check responsive behavior
+    summary: Evaluate layouts and interactions across declared viewport sizes.
+    capability: browser
+    actions: [inspect, execute]
+    artifact_kinds: [evaluation]
+    phrases: [responsive check, breakpoint test, mobile and desktop check]
+    fallback: {mode: input-required, provider: silver-portable, format: html, note: "Render local HTML at declared sizes when possible; otherwise review provided variants or specs."}
+    status: served
+
+  - id: evaluate.test-interaction
+    title: Test interaction behavior
+    summary: Exercise interface interactions, states, forms, and task paths for correctness.
+    capability: browser
+    actions: [execute]
+    artifact_kinds: [evaluation]
+    phrases: [interaction test, ui test, functional ui test]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Use a local runnable prototype when available; otherwise evaluate declared flows and states without claiming execution."}
+    status: served
+
+  - id: evaluate.audit-performance
+    title: Audit interface performance
+    summary: Measure or inspect page loading, rendering, responsiveness, and runtime performance.
+    capability: browser
+    actions: [inspect, execute]
+    artifact_kinds: [evaluation]
+    phrases: [performance audit, lighthouse, web performance]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Runtime performance needs a runnable target; otherwise provide a measurement plan, not fabricated metrics."}
+    status: served
+
+  - id: evaluate.compare-visual
+    title: Compare visual implementation
+    summary: Compare rendered output against a design or reference and identify visual differences.
+    capability: browser
+    actions: [inspect]
+    artifact_kinds: [evaluation]
+    phrases: [visual diff, compare screenshot, design implementation diff]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Requires both comparable visuals; ask for the missing design or rendered reference rather than inventing differences."}
+    status: served
+
+  # --- External artifacts and references ------------------------------------
+  - id: external.read-artifact
+    title: Read a linked external document
+    capability: external-artifact
+    actions: [read, inspect]
+    phrases: [read the doc, open the linked document]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Read files already available in the workspace or supplied by the user."}
+    status: served
+
+  - id: external.publish-artifact
+    title: Publish to an external document, deck, or shared record
+    capability: external-artifact
+    actions: [create, write, update, publish]
+    phrases: [write a shared doc, create a doc, publish to the wiki]
+    fallback: {mode: native, provider: silver-portable, format: markdown, note: "Create a portable Markdown document; a native external format requires a connected provider."}
+    status: served
+
+  - id: external.comment-artifact
+    title: Participate in review comments
+    summary: Read, create, reply to, or resolve comments tied to a collaborative artifact.
+    capability: external-artifact
+    actions: [comment]
+    phrases: [leave a comment, reply to feedback, resolve a comment]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Capture review notes locally; an external comment thread needs access to its host system."}
+    status: planned
+
+  - id: reference.search-visual
+    title: Search visual references
+    summary: Search a reference source for relevant UI, interaction, brand, or visual examples.
+    capability: external-artifact
+    actions: [search]
+    phrases: [find design references, search inspiration, find ui examples]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Without an external reference source, ask for examples or work from user-provided references."}
+    status: planned
+
+  - id: reference.retrieve-pattern
+    title: Retrieve design patterns
+    summary: Retrieve concrete examples of a named product or interaction pattern.
+    capability: external-artifact
+    actions: [search, read]
+    phrases: [find a pattern, ui pattern examples, interaction reference]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Use local or user-provided references; never claim access to an external pattern library."}
+    status: planned
+
+  - id: system.search-component-registry
+    title: Search a component registry
+    summary: Find reusable components, patterns, examples, or installable UI building blocks.
+    capability: external-artifact
+    actions: [search]
+    phrases: [find a component, search a registry, component library search]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Search local component catalogs; an external registry requires an accessible provider."}
+    status: planned
+
+  # --- Named gaps: research, analytics, version control ---------------------
+  # No shipped provider fully serves these. They are named anyway so a
+  # missing tool is a specific absence rather than an unexplained degraded
+  # capability, and each carries a fallback so the absence is never silent.
+  - id: research.search-web
+    title: Search the web
+    summary: Find current public sources relevant to a design or product research question.
+    capability: research-evidence
+    actions: [search]
+    artifact_kinds: [evidence]
+    phrases: [web research, search the internet, desk research]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "If the runtime has no web access, ask for sources or URLs; never fabricate external research."}
+    status: served
+
+  - id: research.inspect-competitor
+    title: Inspect a competing product
+    summary: Observe and document a competitor or adjacent product's structure, behavior, and patterns.
+    capability: research-evidence
+    actions: [read, inspect]
+    artifact_kinds: [evidence]
+    phrases: [competitive audit, inspect a competitor, competitor research]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Work from accessible public pages or user-provided screenshots and distinguish observation from inference."}
+    status: served
+
+  - id: research.retrieve-qualitative-evidence
+    title: Retrieve qualitative evidence
+    summary: Retrieve interviews, notes, tickets, feedback, support records, or research repository evidence.
+    capability: research-evidence
+    actions: [read]
+    artifact_kinds: [evidence]
+    phrases: [get interview notes, retrieve feedback, support evidence]
+    fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Use local or user-provided evidence; ask for an export or connection if the source is inaccessible."}
+    status: planned
+
+  - id: measure.query-analytics
+    title: Query product analytics
+    summary: Query an analytics system for behavioral or product data — funnels, cohorts, experiment results, or other live figures.
+    capability: product-analytics
+    actions: [read]
+    artifact_kinds: [measurement]
+    phrases: [query analytics, get analytics, analytics query, retrieve metrics]
+    fallback: {mode: input-required, provider: silver-portable, format: csv, note: "Analyze exported data if supplied; never invent live analytics results."}
+    status: planned
+
+  - id: vcs.manage
+    title: Manage version control
+    summary: Inspect commits and branches, and create commits, branches, or pull requests.
+    capability: version-control
+    actions: [read, inspect, commit, push, open-pr]
+    phrases: [git workflow, pull request, commit changes]
+    fallback: {mode: input-required, provider: silver-portable, format: source-code, note: "Use local Git when a repository is present; remote operations need a connected provider, which this release does not ship."}
+    status: planned

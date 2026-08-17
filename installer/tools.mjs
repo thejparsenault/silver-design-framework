@@ -28,6 +28,7 @@ import {
 } from "../framework/runtime/transports.mjs";
 import { defaultPracticeRoot } from "./practice.mjs";
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 async function projectPreferences(root) {
   const manifestPath = path.join(root, "design", "manifest.yaml");
@@ -233,6 +234,7 @@ export async function saveProbe(options = {}) {
 
 export async function declareTransport(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
+  const mutator = await createWorkspaceMutator(root);
   const providers = await discoverProviders({ root, home: options.home });
   const server = options.server;
 
@@ -263,7 +265,7 @@ export async function declareTransport(options = {}) {
     host: found.host,
     toolPrefix: `mcp__${server}__`,
   });
-  await writeUtf8(file, content);
+  await mutator.create(`${DECLARED_TRANSPORT_DIR}/${server}.yaml`, content);
   return {
     path: `${DECLARED_TRANSPORT_DIR}/${server}.yaml`,
     absolute: file,
@@ -512,6 +514,7 @@ export async function bindActivityTransport(options = {}) {
     },
   };
   await assertV2("tool-preferences.schema.json", next);
-  await writeUtf8(file, stringify(next));
+  const mutator = await createWorkspaceMutator(practiceRoot);
+  await mutator.write("tools.yaml", stringify(next));
   return { activity, transport, path: file, preferences: next };
 }

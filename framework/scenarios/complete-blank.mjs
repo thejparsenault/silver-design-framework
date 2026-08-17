@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { realpathSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 
 import { parse, stringify } from "yaml";
+
+import { runGit } from "../runtime/git.mjs";
 
 import { invokeSkill } from "../runtime/invoke-skill.mjs";
 import {
@@ -32,7 +32,6 @@ import { inspectWorkspace } from "../skills/what-now/scripts/analyze-workspace.m
 import { writeGuidanceRegistry } from "../../installer/guidance.mjs";
 import { traceArtifact } from "../../installer/trace.mjs";
 
-const run = promisify(execFile);
 const time = "2026-07-24T20:00:00Z";
 const completed = "2026-07-24T20:00:01Z";
 const allActions = ["read", "inspect", "execute", "create", "write", "update"];
@@ -340,7 +339,7 @@ function artifactOutputs() {
 
 export async function runCompleteBlankScenario(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
-  await run("git", ["-C", root, "init"], { encoding: "utf8" });
+  await runGit(root, ["init"]);
   const workspaceId = parse(
     await readFile(path.join(root, "design/manifest.yaml"), "utf8"),
   ).workspace.id;

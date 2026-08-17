@@ -8,7 +8,7 @@ visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-08-16
+updated: 2026-08-17
 ---
 
 # The Silver Design Framework
@@ -38,6 +38,10 @@ A designer can:
     personal paths or overriding required product and company guidance.
 12. Trace durable work through its evidence, practice methods, linked guidance,
     design context, external views, acceptance, and local Git checkpoint.
+13. Import, compare, and explicitly export selected representations from linked
+    repositories or Figma without installing Silver into the external source,
+    silently overwriting either side, or leaving lifecycle mutations
+    unrecoverably half-applied.
 
 ## First Iteration
 
@@ -64,7 +68,9 @@ Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
 repositories, references, design systems, and tools a team already owns:
 existing-workspace adoption, declared transport support and diagnosis,
 personal tool preferences, external references, a workspace-owned design
-system, and a reviewable 0.8-to-0.9 migration.
+system, a reviewable 0.8-to-0.9 migration, symlink-safe managed writes,
+recoverable lifecycle transactions, and explicit linked-source/Figma
+synchronization.
 
 The release will add signed macOS native CLI delivery for both Apple Silicon
 and Intel Macs. Windows and Linux delivery are explicitly deferred.

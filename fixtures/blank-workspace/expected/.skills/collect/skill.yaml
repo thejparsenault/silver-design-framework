@@ -1,0 +1,125 @@
+schema: silver/skill/v2
+id: collect
+version: 0.9.0
+summary: Gather evidence from declared sources, preserving provenance and separating
+  direct observation from interpretation.
+context_budget: small
+inputs:
+  - kind: research-plan
+    required: false
+    role: working
+  - kind: product
+    required: false
+    role: canonical
+  - kind: problem-frame
+    required: false
+    role: working
+outputs:
+  - kind: evidence
+    scope: product
+    path_pattern: design/evidence/**
+    authority: project-owned
+capabilities:
+  required:
+    - repository
+  optional:
+    - capability: research-evidence
+      providers: []
+      fallback: degraded
+      description: Use research-evidence when configured; preserve explicit fallback
+        coverage otherwise.
+    - capability: browser
+      providers: []
+      fallback: degraded
+      description: Use a browser transport to inspect live products when configured;
+        preserve explicit fallback coverage otherwise.
+    - capability: external-artifact
+      providers: []
+      fallback: degraded
+      description: Use a linked external document when configured; preserve
+        explicit fallback coverage otherwise.
+effects:
+  - capability: repository
+    actions:
+      - read
+      - inspect
+    paths:
+      - design/**
+      - prototypes/**
+      - presentations/**
+      - production/**
+      - reference-system/**
+      - .silver/**
+  - capability: repository
+    actions:
+      - create
+      - write
+      - update
+    paths:
+      - design/evidence/**
+  - capability: research-evidence
+    actions:
+      - read
+      - inspect
+    external: true
+  - capability: browser
+    actions:
+      - inspect
+    external: true
+  - capability: external-artifact
+    actions:
+      - read
+      - inspect
+      - search
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - privacy-sanitized-evidence
+  - no-fabricated-evidence
+  - provenance-required
+completion:
+  invariants:
+    - sources-declared
+    - observation-separated-from-interpretation
+    - collection-occurred
+  quality_criteria:
+    - id: task-quality
+      description: Evidence preserves where it came from and keeps direct
+        observation distinguishable from interpretation.
+      evaluation: human
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Review and accept the result before a readiness-gated handoff.
+checks:
+  - id: contract-integrity
+    required: true
+    blocks: &a1
+      - synthesize
+      - map
+  - id: evidence-provenance
+    required: true
+    blocks: *a1
+handoffs:
+  - id: collect-to-synthesize
+    target: synthesize
+    readiness: synthesize
+    requires:
+      - evidence
+  - id: collect-to-map
+    target: map
+    readiness: map
+    requires:
+      - evidence
+external_effects:
+  - none
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: *a1

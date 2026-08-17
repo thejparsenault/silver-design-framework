@@ -28,6 +28,8 @@ import {
   resolveInside,
   treeIntegrity,
 } from "./lib/files.mjs";
+import { inspectWorkspacePath } from "../framework/runtime/workspace-mutations.mjs";
+import { listWorkspaceTransactions } from "../framework/runtime/workspace-transactions.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
 import {
@@ -168,12 +170,15 @@ async function inspectArtifact(root, mapping, diagnostics) {
   if (registry) {
     const value = await loadStructured(root, mapping.path, diagnostics);
     if (!value) return;
-    if (value.schema !== registry.schema || !Array.isArray(value.sources)) {
+    const variant = (registry.variants ?? [registry]).find(
+      ({ schema }) => schema === value.schema,
+    );
+    if (!variant || !Array.isArray(value.sources)) {
       diagnostics.push(
         diagnostic(
           "error",
           "schema-invalid",
-          `${registry.label} does not declare the v1 schema.`,
+          `${registry.label} does not declare a supported schema.`,
           mapping.path,
         ),
       );
@@ -181,7 +186,7 @@ async function inspectArtifact(root, mapping, diagnostics) {
     }
     for (const source of value.sources) {
       await applySchema(
-        `v2/${registry.entrySchema}`,
+        `v2/${variant.entrySchema}`,
         source,
         mapping.path,
         diagnostics,
@@ -236,6 +241,19 @@ async function inspectArtifact(root, mapping, diagnostics) {
 export async function doctorWorkspace(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const diagnostics = [];
+  for (const managedPath of [".silver", ".skills", "design", "design/system", ".claude", ".claude/skills"]) {
+    const inspection = await inspectWorkspacePath(root, managedPath);
+    if (!inspection.safe) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "unsafe-managed-path",
+          `Managed writes are blocked because ${inspection.unsafe_at} is a ${inspection.reason}. Replace it with a real workspace path or use a reviewed linked-source import.`,
+          managedPath,
+        ),
+      );
+    }
+  }
   const manifest = await loadStructured(
     root,
     "design/manifest.yaml",
@@ -256,6 +274,18 @@ export async function doctorWorkspace(options = {}) {
 
   const artifactIds = new Set();
   for (const mapping of manifest.artifacts) {
+    const pathInspection = await inspectWorkspacePath(root, mapping.path);
+    if (!pathInspection.safe) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "unsafe-managed-path",
+          `Artifact destination crosses ${pathInspection.reason} at ${pathInspection.unsafe_at}; Silver will not read or write through it.`,
+          mapping.path,
+        ),
+      );
+      continue;
+    }
     if (artifactIds.has(mapping.id)) {
       diagnostics.push(
         diagnostic(
@@ -303,6 +333,27 @@ export async function doctorWorkspace(options = {}) {
       ".silver/lock.yaml",
       diagnostics,
     );
+    if (lockValid) {
+      for (const managedPath of [
+        ...(lock.packages ?? []).map(({ path: packagePath, type, id }) =>
+          packagePath ?? (type === "skill" ? `.skills/${id}` : null),
+        ),
+        ...(lock.managed_files ?? []).map(({ path: managedFile }) => managedFile),
+        ".silver/results",
+      ].filter(Boolean)) {
+        const inspection = await inspectWorkspacePath(root, managedPath);
+        if (!inspection.safe) {
+          diagnostics.push(
+            diagnostic(
+              "error",
+              "unsafe-managed-path",
+              `Managed destination crosses ${inspection.reason} at ${inspection.unsafe_at}; Silver will not mutate it.`,
+              managedPath,
+            ),
+          );
+        }
+      }
+    }
     if (lockValid) {
       const skillIds = lock.packages
         .filter(({ type }) => type === "skill")
@@ -658,6 +709,29 @@ export async function doctorWorkspace(options = {}) {
   }
 
   await inspectTransports(root, manifest, diagnostics, options);
+
+  for (const transaction of await listWorkspaceTransactions(root)) {
+    if (transaction.id === options.ignoreTransactionId) continue;
+    if (transaction.recoverable) {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "workspace-transaction-incomplete",
+          `Transaction ${transaction.id} (${transaction.command}) stopped in ${transaction.phase}; run \`silver recover resume ${transaction.id}\` or \`silver recover rollback ${transaction.id}\`.`,
+          `.silver/transactions/${transaction.id}/journal.json`,
+        ),
+      );
+    } else if (transaction.phase === "invalid") {
+      diagnostics.push(
+        diagnostic(
+          "error",
+          "workspace-transaction-invalid",
+          `Transaction journal ${transaction.id} is invalid and cannot be trusted.`,
+          `.silver/transactions/${transaction.id}/journal.json`,
+        ),
+      );
+    }
+  }
 
   return {
     ok: diagnostics.every(({ level }) => level !== "error"),

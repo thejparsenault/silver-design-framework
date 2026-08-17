@@ -12,8 +12,11 @@
 // only verifies the evidence, so neither half has to trust the other.
 import path from "node:path";
 
-import { runFastSuite } from "../framework/skills/design-check/scripts/run-fast.mjs";
-import { writeUtf8 } from "./lib/files.mjs";
+import {
+  FAST_CHECK_IDS,
+  runFastSuite,
+} from "../framework/skills/design-check/scripts/run-fast.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 export const CHECK_RESULT_DIRECTORY = ".silver/results/checks";
 
@@ -32,15 +35,14 @@ const BROWSER_ONLY_CHECKS = new Set([
 
 // Run the fast suite and persist one evidence file per checker.
 export async function runCheckSuite({ root, only } = {}) {
-  const workspaceRoot = path.resolve(root);
-  const suite = await runFastSuite({ root: workspaceRoot });
-  const selected = only
-    ? suite.results.filter(({ checker }) => only.includes(checker))
-    : suite.results;
+  const mutator = await createWorkspaceMutator(root);
+  const workspaceRoot = mutator.root;
+  const suite = await runFastSuite({ root: workspaceRoot, ...(only ? { only } : {}) });
+  const selected = suite.results;
 
   for (const result of selected) {
-    await writeUtf8(
-      path.join(workspaceRoot, checkResultPath(result.checker)),
+    await mutator.write(
+      checkResultPath(result.checker),
       `${JSON.stringify(result, null, 2)}\n`,
     );
   }
@@ -64,14 +66,20 @@ export async function runContractChecks({ root, contract }) {
 
   const runnable = required
     .map(({ id }) => id)
-    .filter((id) => !BROWSER_ONLY_CHECKS.has(id));
+    // The design-check skill owns the fast suite, whose responsive and
+    // interaction checks are deterministic source inspections. Other skills
+    // declare these ids as live verification requirements, so they remain
+    // not-run until a browser suite actually exercises their render target.
+    .filter(
+      (id) => contract.id === "design-check" || !BROWSER_ONLY_CHECKS.has(id),
+    );
   const suite = await runCheckSuite({ root, only: runnable });
   const byChecker = new Map(
     suite.results.map((result) => [result.checker, result]),
   );
 
   const checks = required.map(({ id }) => {
-    if (BROWSER_ONLY_CHECKS.has(id)) {
+    if (contract.id !== "design-check" && BROWSER_ONLY_CHECKS.has(id)) {
       return {
         id,
         status: "not-run",
@@ -103,3 +111,5 @@ export async function runContractChecks({ root, contract }) {
 
   return { checks };
 }
+
+export { FAST_CHECK_IDS };

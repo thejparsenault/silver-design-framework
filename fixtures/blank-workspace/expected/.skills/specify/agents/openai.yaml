@@ -1,0 +1,4 @@
+interface:
+  display_name: Specify design
+  short_description: Create or revise a living, revision-linked design specification.
+  default_prompt: Use $specify to create or revise a living, revision-linked design specification.

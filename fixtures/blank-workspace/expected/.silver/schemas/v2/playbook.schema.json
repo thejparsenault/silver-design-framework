@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/playbook.schema.json",
+  "title": "Silver optional skill playbook v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "summary",
+    "autonomy",
+    "inputs",
+    "entry_nodes",
+    "nodes",
+    "edges",
+    "stopping_rules"
+  ],
+  "properties": {
+    "schema": {
+      "const": "silver/playbook/v2"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/version"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "autonomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "allowed_effects", "forbidden_effects"],
+      "properties": {
+        "mode": {
+          "enum": ["single-step", "safe-local-until-checkpoint"]
+        },
+        "allowed_effects": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["read-local", "write-working-artifacts", "render-local", "run-local-checks"]
+          }
+        },
+        "forbidden_effects": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "canonical-write",
+              "external-write",
+              "production-write",
+              "destructive-operation",
+              "version-control",
+              "publish",
+              "present",
+              "send"
+            ]
+          }
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "required"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "kind": {
+            "$ref": "common.schema.json#/$defs/artifactKind"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "entry_nodes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "skill", "optional", "readiness"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "skill": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "version"],
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "version": {
+                "$ref": "common.schema.json#/$defs/version"
+              }
+            }
+          },
+          "optional": {
+            "type": "boolean"
+          },
+          "when": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "key"],
+            "properties": {
+              "type": {
+                "enum": ["invocation-option", "artifact-present", "readiness"]
+              },
+              "key": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "equals": {}
+            }
+          },
+          "readiness": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "checkpoint": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "timing", "type", "prompt"],
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "timing": {
+                "enum": ["before", "after"]
+              },
+              "type": {
+                "enum": ["human", "permission", "policy"]
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "from", "to", "type", "artifacts", "required"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "from": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "to": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "type": {
+            "enum": ["handoff", "branch", "feedback", "retry"]
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/artifactKind"
+            }
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "condition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "key"],
+            "properties": {
+              "type": {
+                "enum": ["invocation-option", "accepted", "readiness", "finding-present"]
+              },
+              "key": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "equals": {}
+            }
+          },
+          "max_traversals": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "stopping_rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "when", "action"],
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "when": {
+            "enum": [
+              "checkpoint",
+              "permission-unresolved",
+              "required-capability-missing",
+              "unresolved-question",
+              "max-retries",
+              "manual-stop"
+            ]
+          },
+          "action": {
+            "enum": ["pause", "stop"]
+          }
+        }
+      }
+    }
+  }
+}

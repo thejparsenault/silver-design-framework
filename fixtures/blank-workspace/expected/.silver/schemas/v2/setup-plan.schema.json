@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/setup-plan.schema.json",
+  "title": "Silver agent-led setup plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "created_at", "framework_version", "target", "discovered", "workspace", "topology", "practice", "guidance", "linked_sources", "codebases", "tools", "design_contexts", "planned_writes", "git_actions", "external_actions", "unresolved_questions", "state_integrity"],
+  "properties": {
+    "schema": { "const": "silver/setup-plan/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "framework_version": { "$ref": "common.schema.json#/$defs/version" },
+    "target": { "type": "string", "minLength": 1 },
+    "discovered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exists", "git_repository", "git_branch", "silver_workspace", "top_level_entries"],
+      "properties": {
+        "exists": { "type": "boolean" },
+        "git_repository": { "type": "boolean" },
+        "git_branch": { "type": ["string", "null"], "maxLength": 300 },
+        "silver_workspace": { "type": "boolean" },
+        "top_level_entries": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "workspace": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "root"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "topology": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recommended", "selected", "reasons"],
+      "properties": {
+        "recommended": { "enum": ["integrated", "separate"] },
+        "selected": { "enum": ["integrated", "separate"] },
+        "reasons": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1, "maxLength": 500 } }
+      }
+    },
+    "practice": {
+      "type": "object", "additionalProperties": false,
+      "required": ["root", "action"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "action": { "enum": ["create", "connect", "none"] }
+      }
+    },
+    "guidance": { "type": "array", "items": { "$ref": "guidance-source.schema.json" } },
+    "linked_sources": { "type": "array", "items": { "$ref": "linked-source.schema.json" } },
+    "codebases": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "role": { "enum": ["preferred", "available", "required"] },
+          "reference": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        }
+      }
+    },
+    "design_contexts": { "type": "array", "items": { "$ref": "design-context.schema.json" } },
+    "planned_writes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "git_actions": { "type": "array", "items": { "enum": ["init-practice", "commit-practice", "init-workspace", "checkpoint-workspace"] } },
+    "external_actions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["action", "automatic"],
+        "properties": {
+          "action": { "enum": ["create-private-github-repository", "push-remote"] },
+          "automatic": { "const": false },
+          "reason": { "type": "string", "maxLength": 500 },
+          "repository_name": { "$ref": "common.schema.json#/$defs/id" },
+          "visibility": { "const": "private" }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "action": { "const": "create-private-github-repository" }
+              }
+            },
+            "then": {
+              "required": ["repository_name", "visibility"]
+            }
+          }
+        ]
+      }
+    },
+    "unresolved_questions": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "questions": {
+      "description": "Setup decisions in a form a human can answer without knowing Silver's vocabulary. Each carries a plain-language explanation, what each option actually does, any paths outside the project it touches, and whether the choice can be changed later. Explanations belong here rather than only in README or --help so that whatever presents the question has them.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question", "explanation", "options", "reversible"],
+        "properties": {
+          "id": {
+            "description": "Matches the setup answer key this question resolves, so an interface can map an answer back without a translation table.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+          },
+          "question": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "explanation": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "options": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "summary", "effect"],
+              "properties": {
+                "value": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "effect": { "type": "string", "minLength": 1, "maxLength": 1000 }
+              }
+            }
+          },
+          "recommended": { "type": ["string", "null"] },
+          "recommendation_reasons": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+          },
+          "reversible": { "type": "boolean" },
+          "how_to_change": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "external_paths": {
+            "description": "Absolute paths outside the target directory that answering this way reads, creates, or modifies.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "backup_note": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "state_integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

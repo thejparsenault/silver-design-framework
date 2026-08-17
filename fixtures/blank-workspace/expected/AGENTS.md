@@ -15,6 +15,7 @@ Available design skills:
 - [principles](.skills/principles/SKILL.md)
 - [theme](.skills/theme/SKILL.md)
 - [system](.skills/system/SKILL.md)
+- [reconcile](.skills/reconcile/SKILL.md)
 - [research](.skills/research/SKILL.md)
 - [collect](.skills/collect/SKILL.md)
 - [synthesize](.skills/synthesize/SKILL.md)

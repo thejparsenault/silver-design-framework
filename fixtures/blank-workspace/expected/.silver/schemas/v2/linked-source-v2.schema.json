@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/linked-source-v2.schema.json",
+  "title": "Silver linked source v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "title", "kind", "source", "authority", "sync_policy", "mappings", "scope", "linked_at", "linked_by"],
+  "properties": {
+    "schema": { "const": "silver/linked-source/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "kind": { "enum": ["design-system", "component-catalog", "codebase"] },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "reference", "revision", "integrity", "paths"],
+      "properties": {
+        "type": { "enum": ["git", "local"] },
+        "reference": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "reference_hint": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/relativePath" } }
+      }
+    },
+    "authority": { "enum": ["external-authoritative", "workspace-authoritative", "shared-review"] },
+    "sync_policy": { "enum": ["manual", "notify", "propose"] },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "external_path", "local_path", "format", "artifact_kind"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "external_path": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "local_path": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "format": { "enum": ["json", "yaml", "dtcg-json", "markdown-frontmatter", "text", "binary"] },
+          "artifact_kind": { "$ref": "common.schema.json#/$defs/artifactKind" }
+        }
+      }
+    },
+    "writeback": {
+      "type": "object", "additionalProperties": false,
+      "required": ["branch", "checks"],
+      "properties": {
+        "branch": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "argv", "cwd", "required", "timeout_seconds"],
+            "properties": {
+              "id": { "$ref": "common.schema.json#/$defs/id" },
+              "argv": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "cwd": { "$ref": "common.schema.json#/$defs/relativePath" },
+              "required": { "type": "boolean" },
+              "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 900 }
+            }
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "products": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/id" } },
+        "surfaces": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/id" } },
+        "contexts": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/id" } }
+      }
+    },
+    "linked_at": { "type": "string", "format": "date-time" },
+    "linked_by": { "type": "string", "minLength": 1, "maxLength": 160 }
+  }
+}

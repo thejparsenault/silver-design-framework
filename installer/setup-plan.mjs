@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto";
-import { execFile } from "node:child_process";
 import { mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import { parse, stringify } from "yaml";
 
 import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { runGit } from "../framework/runtime/git.mjs";
 import { createCheckpoint } from "./checkpoint.mjs";
 import { writeGuidanceRegistry } from "./guidance.mjs";
 import { exists, treeIntegrity, writeUtf8 } from "./lib/files.mjs";
@@ -14,8 +13,7 @@ import { defaultPracticeRoot, initializePractice } from "./practice.mjs";
 import { writeSourceRegistry } from "./sources.mjs";
 import { setupWorkspace, slugify } from "./setup.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
-
-const run = promisify(execFile);
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 // A plan describes a working tree at a moment. Adoption reuses this for the same
 // reason setup needs it: if the tree moved underneath the plan, every path and
@@ -27,16 +25,10 @@ export async function stateIntegrity(root) {
   }
   const hash = createHash("sha256");
   if (await exists(path.join(resolved, ".git"))) {
-    const head = await run(
-      "git",
-      ["-C", resolved, "rev-parse", "HEAD"],
-      { encoding: "utf8" },
-    ).then(({ stdout }) => stdout.trim()).catch(() => "unborn");
-    const status = await run(
-      "git",
-      ["-C", resolved, "status", "--porcelain", "--untracked-files=all"],
-      { encoding: "utf8" },
-    ).then(({ stdout }) => stdout).catch(() => "unavailable");
+    const head = await runGit(resolved, ["rev-parse", "HEAD"])
+      .then(({ stdout }) => stdout.trim()).catch(() => "unborn");
+    const status = await runGit(resolved, ["status", "--porcelain", "--untracked-files=all"])
+      .then(({ stdout }) => stdout).catch(() => "unavailable");
     hash.update(head);
     hash.update("\0");
     hash.update(status);
@@ -53,11 +45,8 @@ function valueIntegrity(value) {
 }
 
 async function gitBranch(root) {
-  return run(
-    "git",
-    ["-C", root, "branch", "--show-current"],
-    { encoding: "utf8" },
-  ).then(({ stdout }) => stdout.trim() || null).catch(() => null);
+  return runGit(root, ["branch", "--show-current"])
+    .then(({ stdout }) => stdout.trim() || null).catch(() => null);
 }
 
 function topologyRecommendation(answers) {
@@ -294,7 +283,7 @@ export async function inspectSetup({
 
 async function initGit(root) {
   if (await exists(path.join(root, ".git"))) return false;
-  await run("git", ["-C", root, "init"], { encoding: "utf8" });
+  await runGit(root, ["init"]);
   return true;
 }
 
@@ -302,22 +291,13 @@ async function repositoryBackupState(root, now = new Date().toISOString()) {
   if (!(await exists(path.join(root, ".git")))) {
     return { status: "not-a-repository" };
   }
-  const remote = await run(
-    "git",
-    ["-C", root, "remote", "get-url", "origin"],
-    { encoding: "utf8" },
-  ).then(({ stdout }) => stdout.trim()).catch(() => null);
+  const remote = await runGit(root, ["remote", "get-url", "origin"])
+    .then(({ stdout }) => stdout.trim()).catch(() => null);
   if (!remote) return { status: "local-only" };
-  const head = await run(
-    "git",
-    ["-C", root, "rev-parse", "HEAD"],
-    { encoding: "utf8" },
-  ).then(({ stdout }) => stdout.trim()).catch(() => null);
-  const upstream = await run(
-    "git",
-    ["-C", root, "rev-parse", "@{upstream}"],
-    { encoding: "utf8" },
-  ).then(({ stdout }) => stdout.trim()).catch(() => null);
+  const head = await runGit(root, ["rev-parse", "HEAD"])
+    .then(({ stdout }) => stdout.trim()).catch(() => null);
+  const upstream = await runGit(root, ["rev-parse", "@{upstream}"])
+    .then(({ stdout }) => stdout.trim()).catch(() => null);
   return head && upstream && head === upstream
     ? { status: "verified", remote, verified_at: now }
     : { status: "remote-configured", remote };
@@ -362,6 +342,7 @@ export async function applySetupPlan({ plan, allowUnresolved = false }) {
     id: plan.workspace.id,
     allowExistingCodebase: plan.topology.selected === "integrated",
   });
+  const mutator = await createWorkspaceMutator(plan.workspace.root);
   const practice = await initializePractice({ root: plan.practice.root });
   if (plan.guidance.length > 0) {
     await writeGuidanceRegistry(plan.workspace.root, plan.guidance);
@@ -388,12 +369,12 @@ export async function applySetupPlan({ plan, allowUnresolved = false }) {
     context.provenance.change.reason =
       "Created by the reviewed Silver setup plan.";
     await assertV2("design-context.schema.json", context);
-    await writeUtf8(defaultContextPath, stringify(context));
+    await mutator.write(mutator.relative(defaultContextPath), stringify(context));
   }
   for (const context of plan.design_contexts) {
     await assertV2("design-context.schema.json", context);
-    await writeUtf8(
-      path.join(plan.workspace.root, "design", "contexts", `${context.id}.yaml`),
+    await mutator.write(
+      `design/contexts/${context.id}.yaml`,
       stringify(context),
     );
   }
@@ -423,8 +404,8 @@ export async function applySetupPlan({ plan, allowUnresolved = false }) {
     ),
     external_actions: plan.external_actions,
   };
-  await writeUtf8(
-    applicationPath,
+  await mutator.write(
+    mutator.relative(applicationPath),
     `${JSON.stringify(
       { plan_integrity: valueIntegrity(plan), result },
       null,

@@ -23,6 +23,7 @@
 // `register-in-place` exists precisely so a design system can be named where it
 // already sits rather than relocated into a layout Silver prefers.
 import { createHash } from "node:crypto";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
@@ -432,6 +433,7 @@ export async function applyAdoptionPlan(options = {}) {
   await assertV2("adoption-plan.schema.json", plan);
 
   const root = path.resolve(options.root ?? plan.target);
+  const mutator = await createWorkspaceMutator(root);
   const now = options.now ?? new Date().toISOString();
   const decidedBy = options.decidedBy ?? "silver-adopt";
 
@@ -510,7 +512,7 @@ export async function applyAdoptionPlan(options = {}) {
         assertContentHasNoSecrets(item.content, item.target_path);
         // `wx` — writeNewFile fails if the path exists. The additive-only rule
         // is a property of the write call, not a check that could be forgotten.
-        await writeNewFile(destination, item.content);
+        await mutator.create(item.target_path, item.content);
         written.push(item.target_path);
         break;
       }
@@ -549,7 +551,7 @@ export async function applyAdoptionPlan(options = {}) {
     const manifestAbsolute = path.join(root, MANIFEST_PATH);
     const source = await readUtf8(manifestAbsolute);
     const updated = appendArtifactsToSource(source, registered);
-    await writeUtf8(manifestAbsolute, updated);
+    await mutator.write(MANIFEST_PATH, updated);
     written.push(MANIFEST_PATH);
 
     // design/INDEX.md lists every mapped artifact, so a manifest that gained
@@ -562,7 +564,7 @@ export async function applyAdoptionPlan(options = {}) {
         .filter(({ type }) => type === "skill")
         .map(({ id }) => id);
       const indexContent = renderIndex(parse(updated), skillIds);
-      await writeUtf8(path.join(root, INDEX_PATH), indexContent);
+      await mutator.write(INDEX_PATH, indexContent);
       written.push(INDEX_PATH);
 
       // The lock records the integrity of every generated file it manages, so
@@ -574,7 +576,7 @@ export async function applyAdoptionPlan(options = {}) {
       );
       if (managed) {
         managed.base_integrity = integrity(indexContent);
-        await writeUtf8(lockPath, stringify(lock));
+        await mutator.write(".silver/lock.yaml", stringify(lock));
         written.push(".silver/lock.yaml");
       }
     }
@@ -585,8 +587,8 @@ export async function applyAdoptionPlan(options = {}) {
     const existing = (await exists(registryPath))
       ? (parse(await readUtf8(registryPath))?.sources ?? [])
       : [];
-    await writeUtf8(
-      registryPath,
+    await mutator.write(
+      "design/sources/sources.yaml",
       stringify({
         schema: "silver/source-registry/v1",
         sources: [...existing, ...linked],
@@ -599,8 +601,8 @@ export async function applyAdoptionPlan(options = {}) {
     const previous = await readAdoptionRecord(root);
     const byId = new Map(previous.map((entry) => [entry.id, entry]));
     for (const entry of recorded) byId.set(entry.id, entry);
-    await writeUtf8(
-      path.join(root, ADOPTION_PATH),
+    await mutator.write(
+      ADOPTION_PATH,
       stringify({
         schema: "silver/adoption-record/v1",
         updated: now,

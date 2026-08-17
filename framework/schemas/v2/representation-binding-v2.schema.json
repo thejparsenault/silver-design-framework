@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/representation-binding-v2.schema.json",
+  "title": "Silver representation binding v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "artifact", "counterpart", "adapter", "authority", "round_trip", "sync_policy", "base"],
+  "properties": {
+    "schema": { "const": "silver/representation-binding/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "artifact": { "$ref": "common.schema.json#/$defs/artifactReference" },
+    "counterpart": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "provider", "object_id", "revision"],
+          "properties": {
+            "type": { "const": "provider" },
+            "provider": { "$ref": "common.schema.json#/$defs/id" },
+            "object_id": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "source_id", "path", "format"],
+          "properties": {
+            "type": { "const": "linked-source" },
+            "source_id": { "$ref": "common.schema.json#/$defs/id" },
+            "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+            "format": { "enum": ["json", "yaml", "dtcg-json", "markdown-frontmatter", "text", "binary"] }
+          }
+        }
+      ]
+    },
+    "adapter": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } } },
+    "authority": { "enum": ["workspace-authoritative", "external-authoritative", "shared-review"] },
+    "round_trip": { "enum": ["lossless", "partial", "read-only", "write-only"] },
+    "sync_policy": { "enum": ["manual", "notify", "propose"] },
+    "base": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "const": "uninitialized" } } },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "local", "external", "at"],
+          "properties": {
+            "state": { "const": "initialized" },
+            "local": { "$ref": "#/$defs/identity" },
+            "external": { "$ref": "#/$defs/identity" },
+            "at": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "identity": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "const": "missing" } } }, { "type": "object", "additionalProperties": false, "required": ["state", "revision", "integrity"], "properties": { "state": { "const": "present" }, "revision": { "type": "string", "minLength": 1 }, "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } } }] }
+  }
+}

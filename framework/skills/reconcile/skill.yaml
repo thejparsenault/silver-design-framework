@@ -1,0 +1,83 @@
+schema: silver/skill/v2
+id: reconcile
+version: 0.9.0
+summary: Review and explicitly reconcile a portable artifact with a linked repository or external view.
+context_budget: small
+inputs:
+  - kind: representation-binding
+    required: false
+    role: supporting
+  - kind: external-snapshot
+    required: false
+    role: evidence
+  - kind: change-set
+    required: false
+    role: working
+outputs: []
+capabilities:
+  required: [repository, representation-sync]
+  optional:
+    - capability: design-file
+      providers: []
+      fallback: degraded
+      description: Use the binding's provider for an approved external action; otherwise return a resumable handoff.
+effects:
+  - capability: repository
+    actions: [read, inspect]
+    paths: [design/**, .silver/results/reconciliation/**]
+  - capability: repository
+    actions: [create, write, update, delete]
+    paths: [design/system/**, design/integrations/**, design/sources/**, .silver/results/reconciliation/**]
+  - capability: design-file
+    actions: [read, inspect, write]
+    external: true
+  - capability: version-control
+    actions: [read, inspect, create, write, commit]
+    external: true
+guardrails:
+  - authority-respected
+  - effects-declared
+  - no-silent-mutation
+  - revision-pinned
+  - followups-recommended-only
+  - provenance-required
+completion:
+  invariants:
+    - proposal-pinned-before-review
+    - selected-operations-explicit
+    - conflicts-never-auto-resolved
+    - external-action-verified-before-advancement
+  quality_criteria:
+    - id: task-quality
+      description: Every applied operation was individually selected, fresh, mapped, and verified; unresolved changes remain visible as handoffs.
+      evaluation: deterministic
+  unresolved_questions: block-handoff
+  review:
+    required: true
+    reviewer: human
+    checkpoint: Approve the exact operation ids before sync apply.
+checks:
+  - id: binding-integrity
+    required: true
+    blocks: &apply [sync-apply]
+  - id: provider-revision-pins
+    required: true
+    blocks: *apply
+  - id: semantic-mapping
+    required: true
+    blocks: *apply
+  - id: stale-proposals
+    required: true
+    blocks: *apply
+  - id: authority
+    required: true
+    blocks: *apply
+handoffs: []
+external_effects:
+  - modify-external
+  - version-control
+scripts:
+  - id: invoke
+    path: scripts/invoke.mjs
+    purpose: Run this skill through the shared guarded invocation runtime.
+recommend_after: []

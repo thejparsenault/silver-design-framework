@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/practice.schema.json",
+  "title": "Silver My Practice manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "name", "revision", "updated_at", "methods", "playbooks", "backup"],
+  "properties": {
+    "schema": { "const": "silver/practice/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "studio_voice": {
+      "description": "Relative path to this practice's studio voice, when the designer has written one. Absent means the framework default applies.",
+      "$ref": "common.schema.json#/$defs/relativePath"
+    },
+    "methods": {
+      "description": "Relative paths to method overlays this practice applies. Personal refinements that add to a skill's instructions and never relax project facts, guardrails, or required guidance.",
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/relativePath" },
+      "uniqueItems": true
+    },
+    "playbooks": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/relativePath" },
+      "uniqueItems": true
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["local-only", "remote-configured", "verified"] },
+        "remote": { "type": "string", "maxLength": 500 },
+        "verified_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

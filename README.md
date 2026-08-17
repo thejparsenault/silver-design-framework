@@ -51,7 +51,7 @@ but are not prerequisites for ordinary design work.
 
 ## Requirements
 
-- Node.js 20.11 or newer;
+- Node.js 22 or newer;
 - an agent that can work with repository files and project instructions; and
 - Git, only if you install from source rather than from a release.
 
@@ -63,7 +63,7 @@ Open your product folder in a file-capable chat agent and paste this:
 
 > Install the Silver Design Framework in this folder.
 >
-> First check that Node.js 20.11 or newer is available by running
+> First check that Node.js 22 or newer is available by running
 > `node --version`. If it is missing or older, stop and tell me how to install
 > it for my operating system.
 >
@@ -130,12 +130,12 @@ cd /path/to/product
 
 ### Do I need to install Node?
 
-Yes, until a standalone binary lands. Silver needs Node.js 20.11 or newer and
+Yes, until a standalone binary lands. Silver needs Node.js 22 or newer and
 tells you so rather than failing obscurely:
 
 ```text
 $ silver setup .
-Silver needs Node.js 20.11 or newer; this is v18.19.0.
+Silver needs Node.js 22 or newer; this is v18.19.0.
 
 Install a supported Node.js, then run this command again:
   macOS with Homebrew:  brew install node
@@ -179,7 +179,7 @@ rather than `AGENTS.md` and discovers skills only under `.claude/skills/`:
 - `CLAUDE.md` importing `@AGENTS.md`, merged into a marked block so a
   project-owned `CLAUDE.md` keeps its content;
 - `.claude/skills/<id>` symlinks into the canonical `.skills/<id>`, so all
-  twenty-four skills appear in autocomplete;
+  twenty-five skills appear in autocomplete;
 - `.silver/bin/silver`, a launcher giving the workspace one stable command.
 
 `.skills/` and `AGENTS.md` remain canonical and agent-neutral. The adapters are
@@ -296,7 +296,7 @@ constraint suspension.
 
 ## Other skills
 
-The installed catalog contains twenty-four independently runnable skills:
+The installed catalog contains twenty-five independently runnable skills:
 
 | Area | Skills |
 | --- | --- |
@@ -305,7 +305,7 @@ The installed catalog contains twenty-four independently runnable skills:
 | Discovery | `research`, `collect`, `synthesize`, `ideate`, `map` |
 | Definition | `specify`, `structure`, `flow`, `component` |
 | Making | `visualize`, `prototype` |
-| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `measure`, `practice-review`, `design-check` |
+| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `measure`, `practice-review`, `design-check`, `reconcile` |
 
 Use `pitch` to create an opportunity, proposal, or outcome case for team
 buy-in. It can generate a branded local presentation view while keeping
@@ -319,6 +319,29 @@ starting any of them.
 Use `implement` only after the relevant design inputs are accepted and
 production readiness is satisfied. Prototype code is evidence and reference
 material by default, not automatically production code.
+
+## Synchronize linked sources
+
+Shared design systems, component catalogs, and codebases remain independent
+repositories. Review a mapping, register it, inspect a pinned proposal, and
+apply only the operations you accept:
+
+```sh
+.silver/bin/silver link inspect ../shared-system . \
+  --kind design-system --as shared-system --answers mappings.json --json
+.silver/bin/silver link apply plan.json --json
+.silver/bin/silver sync status --all . --json
+.silver/bin/silver sync inspect shared-system-tokens . \
+  --direction external-to-local --json
+.silver/bin/silver sync apply proposal.json . --only operation-id --json
+```
+
+Imports remain normal validated artifacts under `design/`; exports touch only
+mapped external paths. Git exports use one local `silver/sync-*` branch and
+commit but never push. Figma export is deliberately two-pass: the first apply
+returns an approved provider action, and the second records its result plus a
+fresh capture. The `reconcile` skill explains and groups proposals but applies
+nothing without explicit operation selection.
 
 ## Run checks
 
@@ -408,7 +431,7 @@ personal belongs in a project, because a project is shared.
 Both are deliberately separate from the skill packages. Skills say *what to do*
 and can be rewritten or upgraded without touching either, so a skill upgrade
 never changes how the agent sounds and a preference change never edits
-twenty-four files.
+twenty-five files.
 
 Silver seeds both files, commented out, when it creates your practice. Fill one
 in and apply it:
@@ -487,6 +510,7 @@ From inside an initialized workspace, use its launcher:
 .silver/bin/silver repair .
 .silver/bin/silver update .
 .silver/bin/silver migrate .
+.silver/bin/silver recover .
 .silver/bin/silver trace artifact-id .
 ```
 
@@ -505,6 +529,9 @@ node /path/to/silver-design-framework/bin/silver.mjs doctor /path/to/workspace
   project-owned proposals.
 - `migrate` previews a supported migration. Add `--apply` only after reviewing
   the plan.
+- `recover` lists interrupted lifecycle transactions and cross-repository
+  synchronization sagas. Use `recover resume <id>` or `recover rollback <id>`;
+  an external Git commit always resumes forward and is never rewritten.
 - `trace` shows the sources, practice revision, linked guidance, design
   contexts, acceptance, and external bindings behind a durable artifact.
 
@@ -564,9 +591,9 @@ external references, and reviewable migration from 0.6.
   than selected by default, but the set to offer from is small.
 - Guided setup can install into an existing repository, but deep semantic
   discovery and adoption of arbitrary codebases remains a following milestone.
-- Silver reports drift for newly linked guidance, design-system, component, and
-  codebase sources. General `silver sync` commands and broader bidirectional
-  Figma/component/document synchronization are intentionally deferred.
+- Silver synchronizes mapped files from linked design-system, component-catalog,
+  and codebase repositories, plus captured Figma semantic tokens. Broader live
+  provider coverage and Figma component/document writes remain deferred.
 - GitHub repository creation is agent-mediated: Silver previews the proposed
   private repository and records a resulting remote, but does not create it
   through a direct built-in API.

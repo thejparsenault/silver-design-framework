@@ -1,0 +1,38 @@
+schema: silver/artifact-codec/v1
+id: silver-structured
+version: 0.9.0
+artifact_kinds:
+  - design-system
+  - component-catalog
+  - research-plan
+  - evidence
+  - problem-frame
+  - finding
+  - concept
+  - hypothesis
+  - design-specification
+  - sketch
+  - visualization
+  - measurement
+  - evaluation
+  - observation
+  - component-proposal
+  - decision
+  - prototype
+  - change-case
+  - presentation-view
+  - implementation-handoff
+  - implementation
+  - asset-catalog
+  - presentation-kit
+  - practice-change
+  - design-context
+  - component-expression
+  - x-prototype-render
+canonical_format: json
+view_formats: [markdown, html, runnable-html]
+compatibility: [silver/working-artifact/v2, silver/map/v1, silver/structure/v1, silver/design-context/v1]
+scripts:
+  read: scripts/portable-artifact.mjs
+  write: scripts/portable-artifact.mjs
+  render: scripts/portable-artifact.mjs

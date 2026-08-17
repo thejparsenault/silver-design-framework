@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/common.schema.json",
+  "title": "Silver v2 shared definitions",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "namespacedId": {
+      "description": "An id with one or more dot-separated segments, each kebab-case (e.g. `visual.create-high-fidelity-ui`). Used for activity ids, which are namespaced by family; never for provider or transport ids, which are derived from filenames and must stay dot-free.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$",
+      "maxLength": 100
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(?:/|[A-Za-z]:[\\\\/])"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|/)\\.\\.(?:/|$)"
+          }
+        }
+      ]
+    },
+    "decisionQuestion": {
+      "description": "A decision put to a human in a form they can answer without knowing Silver's vocabulary: what is being asked, what it means, what each option actually does, what it touches outside the project, and whether it can be changed later. Explanations travel with the question rather than living in --help, so whatever presents it has everything it needs. `silver/setup-plan/v1` carries the same shape inline with a stricter id pattern; new contracts reference this.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "question", "explanation", "options", "reversible"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[_-][a-z0-9]+)*$",
+          "maxLength": 100
+        },
+        "question": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "summary", "effect"],
+            "properties": {
+              "value": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "effect": { "type": "string", "minLength": 1, "maxLength": 1000 }
+            }
+          }
+        },
+        "recommended": { "type": ["string", "null"] },
+        "recommendation_reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "reversible": { "type": "boolean" },
+        "how_to_change": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "external_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "backup_note": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "artifactKind": {
+      "description": "`sketch` is deprecated in favor of `visualization` (Silver 0.9); it stays valid so pre-0.9 artifacts keep validating and is never produced as new output.",
+      "anyOf": [
+        {
+          "enum": [
+            "brand",
+            "product",
+            "voice",
+            "design-principles",
+            "design-system",
+            "token-source",
+            "component-catalog",
+            "check-config",
+            "research-plan",
+            "evidence",
+            "problem-frame",
+            "finding",
+            "concept",
+            "hypothesis",
+            "design-specification",
+            "flow",
+            "sketch",
+            "visualization",
+            "structure",
+            "measurement",
+            "evaluation",
+            "observation",
+            "component-proposal",
+            "decision",
+            "prototype",
+            "change-case",
+            "presentation-view",
+            "implementation-handoff",
+            "implementation",
+            "asset-catalog",
+            "presentation-kit"
+            ,"map"
+            ,"practice-change"
+            ,"design-context"
+            ,"component-expression"
+            ,"guidance-source"
+            ,"provenance-record"
+            ,"git-checkpoint"
+            ,"representation-binding"
+            ,"external-snapshot"
+            ,"change-set"
+            ,"reconciliation-result"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "capability": {
+      "description": "`sketch-renderer` is deprecated in favor of `visual-renderer` (Silver 0.9); it stays valid so pre-0.9 contracts keep validating.",
+      "anyOf": [
+        {
+          "enum": [
+            "repository",
+            "canonical-artifact",
+            "research-evidence",
+            "flow",
+            "sketch-renderer",
+            "visual-renderer",
+            "map-renderer",
+            "prototype-renderer",
+            "presentation-renderer",
+            "production-source",
+            "browser",
+            "design-file",
+            "external-artifact",
+            "version-control",
+            "product-analytics"
+            ,"artifact-codec"
+            ,"representation-sync"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "inspect",
+        "search",
+        "execute",
+        "create",
+        "write",
+        "update",
+        "delete",
+        "publish",
+        "present",
+        "comment",
+        "send",
+        "commit",
+        "push",
+        "open-pr"
+      ]
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "revision", "path"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/artifactKind"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

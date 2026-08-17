@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/reconciliation-result-v2.schema.json",
+  "title": "Silver reconciliation result v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "binding_id", "direction", "status", "state", "proposal_path", "proposal_integrity", "selected_operations", "applied_operations", "checks", "external_action", "transaction", "binding_advancement", "blockers", "created_at", "updated_at"],
+  "properties": {
+    "schema": { "const": "silver/reconciliation-result/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "direction": { "enum": ["external-to-local", "local-to-external"] },
+    "status": { "enum": ["awaiting-acceptance", "external-action-required", "applied", "blocked", "failed"] },
+    "state": { "enum": ["uninitialized", "current", "local-changed", "external-changed", "diverged", "conflict", "unmapped", "unverified"] },
+    "proposal_path": { "$ref": "common.schema.json#/$defs/relativePath" },
+    "proposal_integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "selected_operations": { "type": "array", "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/id" } },
+    "applied_operations": { "type": "array", "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/id" } },
+    "checks": { "type": "array", "items": { "type": "object" } },
+    "external_action": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+    "transaction": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+    "binding_advancement": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

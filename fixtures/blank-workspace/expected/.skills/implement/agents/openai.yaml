@@ -1,0 +1,4 @@
+interface:
+  display_name: Implement design
+  short_description: Rebuild accepted design intent in the local production recipe.
+  default_prompt: Use $implement to rebuild accepted design intent in the local production recipe.

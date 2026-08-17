@@ -1,0 +1,4 @@
+interface:
+  display_name: Decide what to do next
+  short_description: Recommend next actions from current workspace evidence.
+  default_prompt: Use $what-now to recommend next actions from current workspace evidence.

@@ -16,6 +16,7 @@ import {
 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { buildDesignSystemTokens } from "../framework/runtime/tokens.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import { renderSystemCatalog } from "../framework/skills/system/scripts/render-system-catalog.mjs";
 import {
   WORKSPACE_PRACTICE_OVERLAY_PATH,
@@ -49,6 +50,7 @@ export const INITIAL_SKILL_IDS = [
   "principles",
   "theme",
   "system",
+  "reconcile",
   "research",
   "collect",
   "synthesize",
@@ -410,8 +412,10 @@ async function assertSetupTarget(root, { allowExistingCodebase = false } = {}) {
 }
 
 export async function setupWorkspace(options = {}) {
-  const root = path.resolve(options.root ?? process.cwd());
+  let root = path.resolve(options.root ?? process.cwd());
   await mkdir(root, { recursive: true });
+  const workspaceMutator = await createWorkspaceMutator(root);
+  root = workspaceMutator.root;
   const mode = await assertSetupTarget(root, {
     allowExistingCodebase: options.allowExistingCodebase,
   });
@@ -494,7 +498,7 @@ export async function setupWorkspace(options = {}) {
       "design/manifest.yaml",
       variables,
     );
-    await writeNewFile(manifestPath, manifestContent);
+    await workspaceMutator.create("design/manifest.yaml", manifestContent);
     created.push("design/manifest.yaml");
     manifest = parse(manifestContent);
   } else {
@@ -508,16 +512,16 @@ export async function setupWorkspace(options = {}) {
       continue;
     }
     const content = await readTemplate(relativePath, variables);
-    await writeNewFile(destination, content);
+    await workspaceMutator.create(relativePath, content);
     created.push(relativePath);
   }
 
   if (seedPayload) {
     for (const id of INITIAL_SKILL_IDS) {
       const skillDestination = path.join(root, ".skills", id);
-      const copied = await copyNewTree(
+      const copied = await workspaceMutator.copyTree(
         path.join(skillSourceRoot, id),
-        skillDestination,
+        `.skills/${id}`,
       );
       created.push(
         ...copied.map((relativePath) =>
@@ -534,7 +538,7 @@ export async function setupWorkspace(options = {}) {
       [activitySourceRoot, ".silver/activities"],
       [transportSourceRoot, ".silver/transports"],
     ]) {
-      const copied = await copyNewTree(source, path.join(root, destination));
+      const copied = await workspaceMutator.copyTree(source, destination);
       created.push(
         ...copied.map((relativePath) =>
           path.posix.join(
@@ -548,7 +552,7 @@ export async function setupWorkspace(options = {}) {
       [path.join(templateRoot, "design/system/tokens"), "design/system/tokens"],
       [path.join(templateRoot, "design/system/expressions"), "design/system/expressions"],
     ]) {
-      const copied = await copyNewTree(source, path.join(root, destination));
+      const copied = await workspaceMutator.copyTree(source, destination);
       created.push(
         ...copied.map((relativePath) =>
           path.posix.join(destination, relativePath.split(path.sep).join("/")),
@@ -579,7 +583,7 @@ export async function setupWorkspace(options = {}) {
   if (await exists(agentPointerPath)) {
     preserved.push("AGENTS.md");
   } else {
-    await writeNewFile(agentPointerPath, agentPointerContent);
+    await workspaceMutator.create("AGENTS.md", agentPointerContent);
     created.push("AGENTS.md");
   }
 
@@ -595,7 +599,7 @@ export async function setupWorkspace(options = {}) {
   if (existingClaudeMemory === claudeMemoryContent) {
     preserved.push(CLAUDE_MEMORY_PATH);
   } else {
-    await writeUtf8(claudeMemoryPath, claudeMemoryContent);
+    await workspaceMutator.write(CLAUDE_MEMORY_PATH, claudeMemoryContent);
     (existingClaudeMemory === undefined ? created : preserved).push(
       CLAUDE_MEMORY_PATH,
     );
@@ -621,7 +625,7 @@ export async function setupWorkspace(options = {}) {
     preserved.push("design/INDEX.md");
   } else {
     indexContent = expectedIndexContent;
-    await writeNewFile(indexPath, indexContent);
+    await workspaceMutator.create("design/INDEX.md", indexContent);
     created.push("design/INDEX.md");
   }
 
@@ -636,7 +640,7 @@ export async function setupWorkspace(options = {}) {
       claudeMemoryContent,
       payloadRoot,
     });
-    await writeNewFile(lockPath, lockContent);
+    await workspaceMutator.create(".silver/lock.yaml", lockContent);
     created.push(".silver/lock.yaml");
   }
 

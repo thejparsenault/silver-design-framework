@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/working-artifact.schema.json",
+  "title": "Silver working artifact v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "kind",
+    "revision",
+    "scope",
+    "status",
+    "title",
+    "created",
+    "updated",
+    "sources",
+    "payload"
+  ],
+  "properties": {
+    "schema": {
+      "const": "silver/working-artifact/v2"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "kind": {
+      "description": "`sketch` is deprecated in favor of `visualization` (Silver 0.9); it stays valid so pre-0.9 artifacts keep validating and is never produced as new output.",
+      "enum": [
+        "problem-frame",
+        "finding",
+        "concept",
+        "hypothesis",
+        "design-specification",
+        "sketch",
+        "visualization",
+        "measurement",
+        "evidence",
+        "evaluation",
+        "observation",
+        "component-proposal",
+        "decision",
+        "change-case",
+        "presentation-view",
+        "implementation-handoff"
+      ]
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "scope": {
+      "enum": ["organization", "product", "codebase", "prototype"]
+    },
+    "status": {
+      "enum": ["draft", "active", "accepted", "rejected", "stale", "archived"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifactReference"
+      }
+    },
+    "payload": {
+      "type": "object",
+      "minProperties": 1
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "problem-frame"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["problem", "affected_audiences", "desired_outcomes", "open_questions"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "finding"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["statement", "evidence_refs", "confidence"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": ["concept", "hypothesis"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["summary", "testable_claim", "differentiators"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "design-specification"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "outcomes",
+              "hypothesis",
+              "scope",
+              "non_goals",
+              "requirements",
+              "content_and_data",
+              "states",
+              "edge_cases",
+              "accessibility",
+              "success_criteria",
+              "decisions",
+              "open_questions"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": ["sketch", "visualization"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["fidelity", "constraint_profile", "question", "view_path"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "evidence"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["source_pin"],
+            "properties": {
+              "source_pin": {
+                "type": "object",
+                "required": ["source", "query", "retrieved_at", "sanitized"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "measurement"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["hypothesis", "metrics", "instrumentation", "observed", "limitations"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "evaluation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["question", "method", "tasks", "observations", "findings", "recommendations"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "observation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["sanitized", "observation", "interpretation"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "component-proposal"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["classification", "anatomy", "states", "behavior", "accessibility", "catalog_disposition"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "decision"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["decision", "rationale", "consequences", "decided_by"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "change-case"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["mode", "before", "reasons", "after", "impact", "tradeoffs", "decision_request"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "presentation-view"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["format", "view_path", "change_case_revision", "presentation_kit_revision"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "implementation-handoff"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["recipe", "readiness", "accepted_intent", "required_checks", "missing_intent"]
+          }
+        }
+      }
+    }
+  ]
+}
