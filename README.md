@@ -584,6 +584,10 @@ external references, and reviewable migration from 0.6.
 - Browser checks need a reachable local URL. Where a browser cannot open one,
   `responsive-behavior` and `critical-interactions` report `not-run` and the
   work is recorded as `complete-awaiting-verification` rather than verified.
+  If Chrome launches but navigation, the DevTools protocol, inspection, or
+  cleanup fails, the check reports the distinct `error` outcome with stage and
+  process diagnostics. Completed accessibility, responsive, or interaction
+  findings remain `fail`.
 - Playbooks are single-step and cannot chain, but there is still no
   `silver playbook` command; composition is driven by the agent one skill at a
   time.

@@ -13,7 +13,6 @@ import { checkMaps } from "./check-maps.mjs";
 import { checkStructures } from "./check-structures.mjs";
 import {
   checkResult,
-  finding,
   parseArguments,
 } from "./check-lib.mjs";
 import { checkPrototypes } from "./check-prototypes.mjs";
@@ -84,19 +83,16 @@ export async function runFastSuite(options = {}) {
         checkResult({
           checker,
           requested: [checker],
-          completed: [checker],
-          findings: [
-            finding({
-              checker,
-              rule: `${checker}.checker-error`,
-              message: error.message,
-            }),
-          ],
+          completed: [],
+          findings: [],
+          executionError: { stage: "inspection", message: error.message },
         }),
       );
     }
   }
-  const status = results.some(({ status }) => status === "fail")
+  const status = results.some(({ status }) => status === "error")
+    ? "error"
+    : results.some(({ status }) => status === "fail")
     ? "fail"
     : results.some(({ status }) => status === "not-run")
       ? "not-run"
@@ -118,12 +114,7 @@ async function main() {
     }
     const result = await runFastSuite(options);
     console.log(JSON.stringify(result, null, 2));
-    process.exitCode =
-      result.status === "pass"
-        ? 0
-        : result.status === "fail"
-          ? 1
-          : 2;
+    process.exitCode = result.status === "pass" ? 0 : result.status === "fail" ? 1 : result.status === "not-run" ? 2 : 3;
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exitCode = 3;

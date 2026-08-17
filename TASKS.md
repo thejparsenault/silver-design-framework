@@ -545,6 +545,15 @@ automated gate by design.
     transactional imports, two-pass Figma writes, recoverable external Git
     sagas, and reviewed `design/system` symlink conversion are implemented.
 
+- [x] Separate browser mechanism errors from completed design findings
+  - type: quality
+  - priority: high
+  - context: medium
+  - notes: Added the four terminal check outcomes (`pass`, `fail`, `not-run`,
+    `error`), typed browser stage/process diagnostics, Chrome-owned debugging
+    port allocation, one launch/readiness retry, bounded stderr, verified
+    cleanup, distinct exit codes, and repeated real/injected browser coverage.
+
 - [ ] Restore or exceed the pre-hardening branch and function coverage percentages
   - type: quality
   - priority: medium

@@ -23,7 +23,12 @@ try {
     sourceReference: "framework-development-fixture",
   });
   await rm(fixtureRoot, { force: true, recursive: true });
-  await cp(temporaryRoot, fixtureRoot, { recursive: true });
+  await cp(temporaryRoot, fixtureRoot, {
+    recursive: true,
+    // Without this Node resolves each generated relative Claude adapter link
+    // against the temporary workspace and commits a dangling /var/... target.
+    verbatimSymlinks: true,
+  });
   console.log("Refreshed generated blank-workspace fixture files.");
 } finally {
   await rm(temporaryRoot, { force: true, recursive: true });

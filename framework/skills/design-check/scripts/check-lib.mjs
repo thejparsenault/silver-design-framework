@@ -270,14 +270,18 @@ export function finding({
 
 export function checkResult({
   checker,
+  suite = "fast",
   policyProfile = "prototype",
   requested,
   completed,
   findings,
   reason,
+  executionError,
 }) {
   const status =
-    reason && completed.length < requested.length
+    executionError
+      ? "error"
+      : reason && completed.length < requested.length
       ? "not-run"
       : findings.length > 0
         ? "fail"
@@ -285,22 +289,24 @@ export function checkResult({
   return {
     schema: "silver/check-result/v1",
     checker,
-    suite: "fast",
+    suite,
     policy_profile: policyProfile,
     status,
     coverage: {
       requested,
       completed,
-      ...(status === "not-run" ? { reason } : {}),
+      ...(["not-run", "error"].includes(status) ? { reason: reason ?? executionError.message } : {}),
     },
     findings,
+    ...(executionError ? { execution_error: executionError } : {}),
   };
 }
 
 export function exitCode(result) {
   if (result.status === "pass") return 0;
   if (result.status === "fail") return 1;
-  return 2;
+  if (result.status === "not-run") return 2;
+  return 3;
 }
 
 export async function loadManifest(root) {

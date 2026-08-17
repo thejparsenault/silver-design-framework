@@ -3,7 +3,6 @@
 import { spawn } from "node:child_process";
 import { access, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { createServer } from "node:http";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { realpathSync } from "node:fs";
@@ -55,22 +54,37 @@ chromeCandidates ??= [
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const fetchLocal = (url) => fetch(url, { signal: AbortSignal.timeout(1000) });
 
+export class BrowserExecutionError extends Error {
+  constructor(stage, message, diagnostic = {}) {
+    super(message);
+    this.name = "BrowserExecutionError";
+    this.stage = stage;
+    this.diagnostic = { stage, message, ...diagnostic };
+  }
+}
+
+function executionError(stage, error, diagnostic = {}) {
+  if (error instanceof BrowserExecutionError) return error;
+  return new BrowserExecutionError(stage, error.message ?? String(error), diagnostic);
+}
+
+async function atStage(stage, diagnostic, operation) {
+  const started = Date.now();
+  try {
+    return await operation();
+  } catch (error) {
+    throw executionError(stage, error, {
+      ...diagnostic,
+      duration_ms: Date.now() - started,
+    });
+  }
+}
+
 async function firstAccessible(paths) {
   for (const candidate of paths) {
     try { await access(candidate); return candidate; } catch {}
   }
   return null;
-}
-
-function freePort() {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
-      server.close((error) => error ? reject(error) : resolve(port));
-    });
-  });
 }
 
 const mediaTypes = new Map([
@@ -252,22 +266,42 @@ export class DevTools {
   }
 }
 
-async function stopProcess(processHandle) {
-  if (processHandle.exitCode !== null) return;
+function processDiagnostic(processHandle, stderr, forced = false) {
+  const diagnostic = {
+    exit_code: processHandle.exitCode,
+    signal: processHandle.signalCode,
+    forced,
+    stderr,
+  };
+  // Chrome descendants can inherit the launcher's stderr pipe. Keeping that
+  // readable stream open after the owned process exits can keep a Node test
+  // worker alive even though the browser check itself finished.
+  processHandle.stderr?.destroy();
+  processHandle.unref?.();
+  return diagnostic;
+}
+
+async function stopProcess(processHandle, stderr) {
+  if (processHandle.exitCode !== null || processHandle.signalCode !== null) {
+    return processDiagnostic(processHandle, stderr);
+  }
   const exited = new Promise((resolve) => processHandle.once("exit", resolve));
   processHandle.kill("SIGTERM");
   const result = await Promise.race([
     exited.then(() => "exited"),
     delay(2000).then(() => "timeout"),
   ]);
-  if (result === "timeout" && processHandle.exitCode === null) {
+  let forced = false;
+  if (result === "timeout" && processHandle.exitCode === null && processHandle.signalCode === null) {
+    forced = true;
     processHandle.kill("SIGKILL");
     await Promise.race([exited, delay(2000)]);
   }
+  return processDiagnostic(processHandle, stderr, forced);
 }
 
 async function launchChrome(executable) {
-  const port = await freePort();
+  const started = Date.now();
   const profile = await mkdtemp(path.join(os.tmpdir(), "silver-chrome-"));
   const processHandle = spawn(executable, [
     "--headless=new",
@@ -278,13 +312,41 @@ async function launchChrome(executable) {
     "--disable-sync",
     "--no-first-run",
     "--no-default-browser-check",
-    `--remote-debugging-port=${port}`,
+    "--remote-debugging-port=0",
     `--user-data-dir=${profile}`,
     "about:blank",
-  ], { stdio: "ignore" });
+  ], { stdio: ["ignore", "ignore", "pipe"] });
+  let stderr = "";
+  let spawnError;
+  processHandle.stderr.on("data", (chunk) => {
+    stderr = `${stderr}${chunk}`.slice(-8000);
+  });
+  processHandle.once("error", (error) => { spawnError = error; });
+  let port;
+  const activePortPath = path.join(profile, "DevToolsActivePort");
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (spawnError || processHandle.exitCode !== null || processHandle.signalCode !== null) break;
+    try {
+      const [line] = (await readFile(activePortPath, "utf8")).trim().split(/\r?\n/);
+      if (/^[1-9][0-9]*$/.test(line)) { port = Number(line); break; }
+    } catch {}
+    await delay(100);
+  }
+  if (!port) {
+    const process = await stopProcess(processHandle, stderr);
+    await rm(profile, { recursive: true, force: true });
+    const stage = spawnError || process.exit_code !== null || process.signal
+      ? "browser-launch"
+      : "browser-readiness";
+    throw new BrowserExecutionError(
+      stage,
+      spawnError?.message ?? "Local Chrome did not publish its DevToolsActivePort endpoint.",
+      { duration_ms: Date.now() - started, process },
+    );
+  }
   let version;
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    if (processHandle.exitCode !== null) break;
+    if (processHandle.exitCode !== null || processHandle.signalCode !== null) break;
     try {
       const response = await fetchLocal(`http://127.0.0.1:${port}/json/version`);
       if (response.ok) { version = await response.json(); break; }
@@ -292,30 +354,81 @@ async function launchChrome(executable) {
     await delay(100);
   }
   if (!version) {
-    await stopProcess(processHandle);
+    const process = await stopProcess(processHandle, stderr);
     await rm(profile, { recursive: true, force: true });
-    throw new Error("Local Chrome did not expose a DevTools endpoint.");
+    throw new BrowserExecutionError(
+      "browser-readiness",
+      "Local Chrome published a debugging port but did not expose a DevTools endpoint.",
+      { duration_ms: Date.now() - started, process },
+    );
   }
-  const pages = await (await fetchLocal(`http://127.0.0.1:${port}/json/list`)).json();
+  let pages;
+  try {
+    pages = await (await fetchLocal(`http://127.0.0.1:${port}/json/list`)).json();
+  } catch (error) {
+    const process = await stopProcess(processHandle, stderr);
+    await rm(profile, { recursive: true, force: true });
+    throw new BrowserExecutionError("browser-readiness", error.message, {
+      duration_ms: Date.now() - started,
+      process,
+    });
+  }
   const page = pages.find(({ type }) => type === "page");
   if (!page) {
-    await stopProcess(processHandle);
+    const process = await stopProcess(processHandle, stderr);
     await rm(profile, { recursive: true, force: true });
-    throw new Error("Local Chrome did not create a page target.");
+    throw new BrowserExecutionError("browser-readiness", "Local Chrome did not create a page target.", {
+      duration_ms: Date.now() - started,
+      process,
+    });
   }
-  const devtools = new DevTools(page.webSocketDebuggerUrl);
-  await devtools.open();
-  await devtools.send("Page.enable");
-  await devtools.send("Runtime.enable");
+  let devtools;
+  try {
+    devtools = new DevTools(page.webSocketDebuggerUrl);
+    await devtools.open();
+    await devtools.send("Page.enable");
+    await devtools.send("Runtime.enable");
+  } catch (error) {
+    devtools?.close();
+    const process = await stopProcess(processHandle, stderr);
+    await rm(profile, { recursive: true, force: true });
+    throw new BrowserExecutionError("browser-readiness", error.message, {
+      duration_ms: Date.now() - started,
+      process,
+    });
+  }
   return {
     devtools,
     version: version.Browser,
     close: async () => {
       devtools.close();
-      await stopProcess(processHandle);
-      await rm(profile, { recursive: true, force: true });
+      const process = await stopProcess(processHandle, stderr);
+      try {
+        await rm(profile, { recursive: true, force: true });
+      } catch (error) {
+        throw new BrowserExecutionError("cleanup", error.message, { process });
+      }
+      return process;
     },
   };
+}
+
+async function launchChromeWithRetry(executable, factory = launchChrome) {
+  let latest;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return await factory(executable, { attempt });
+    } catch (error) {
+      latest = executionError("browser-launch", error);
+      latest.diagnostic.attempts = attempt;
+      if (attempt < 2 && ["browser-launch", "browser-readiness"].includes(latest.stage)) {
+        await delay(100);
+        continue;
+      }
+      throw latest;
+    }
+  }
+  throw latest;
 }
 
 function targetPath(manifest, target) {
@@ -400,8 +513,25 @@ const inspectionExpression = `(() => {
 
 function notRunResults(reason) {
   return ["accessibility", "responsive-behavior", "critical-interactions"].map((checker) =>
-    checkResult({ checker, requested: ["declared-render-target"], completed: [], findings: [], reason }),
+    checkResult({ checker, suite: "browser", requested: ["declared-render-target"], completed: [], findings: [], reason }),
   );
+}
+
+function browserResults({ requested, completed, findings, error }) {
+  return ["accessibility", "responsive-behavior", "critical-interactions"].map((checker) =>
+    checkResult({
+      checker,
+      suite: "browser",
+      requested,
+      completed,
+      findings: findings[checker],
+      ...(error ? { executionError: error.diagnostic } : {}),
+    }),
+  );
+}
+
+export function browserSuiteExitCode(result) {
+  return result.status === "pass" ? 0 : result.status === "fail" ? 1 : result.status === "not-run" ? 2 : 3;
 }
 
 export async function runBrowserSuite(options = {}) {
@@ -425,33 +555,59 @@ export async function runBrowserSuite(options = {}) {
     return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };
   }
 
-  const server = await staticServer(root);
+  const requested = [];
+  const completed = [];
+  const findings = { "accessibility": [], "responsive-behavior": [], "critical-interactions": [] };
+  let server;
   let browser;
+  let failure;
+  let cleanup;
   try {
-    browser = await launchChrome(executable);
-    const requested = [];
-    const completed = [];
-    const findings = { "accessibility": [], "responsive-behavior": [], "critical-interactions": [] };
+    server = await atStage("browser-readiness", {}, () =>
+      (options.serverFactory ?? staticServer)(root));
+    browser = await launchChromeWithRetry(executable, options.browserFactory ?? launchChrome);
     for (const target of targets) {
       const viewports = target.viewports?.length ? target.viewports : [{ width: 1280, height: 800 }];
       for (const viewport of viewports) {
         const key = `${target.id}@${viewport.width}x${viewport.height}`;
         requested.push(key);
-        await browser.devtools.send("Emulation.setDeviceMetricsOverride", {
-          width: viewport.width,
-          height: viewport.height,
-          deviceScaleFactor: 1,
-          mobile: viewport.width < 600,
+        const diagnostic = { target: target.id, viewport };
+        await atStage("protocol", { ...diagnostic, method: "Emulation.setDeviceMetricsOverride" }, () =>
+          browser.devtools.send("Emulation.setDeviceMetricsOverride", {
+            width: viewport.width,
+            height: viewport.height,
+            deviceScaleFactor: 1,
+            mobile: viewport.width < 600,
+          }));
+        await atStage("navigation", { ...diagnostic, method: "Page.navigate" }, async () => {
+          const loaded = browser.devtools.waitFor("Page.loadEventFired");
+          try {
+            const navigation = await browser.devtools.send("Page.navigate", {
+              url: `${server.origin}/${targetPath(manifest, target)}`,
+            });
+            if (navigation.errorText) throw new Error(navigation.errorText);
+            await loaded;
+          } catch (error) {
+            loaded.catch(() => {});
+            throw error;
+          }
         });
-        const loaded = browser.devtools.waitFor("Page.loadEventFired");
-        await browser.devtools.send("Page.navigate", { url: `${server.origin}/${targetPath(manifest, target)}` });
-        await loaded;
-        const evaluation = await browser.devtools.send("Runtime.evaluate", {
-          expression: inspectionExpression,
-          returnByValue: true,
-          awaitPromise: true,
-        });
-        if (evaluation.exceptionDetails) throw new Error(evaluation.exceptionDetails.text ?? "Browser inspection failed.");
+        const evaluation = await atStage("inspection", { ...diagnostic, method: "Runtime.evaluate" }, () =>
+          browser.devtools.send("Runtime.evaluate", {
+            expression: inspectionExpression,
+            returnByValue: true,
+            awaitPromise: true,
+          }));
+        if (evaluation.exceptionDetails) {
+          throw new BrowserExecutionError(
+            "inspection",
+            evaluation.exceptionDetails.text ?? "Browser inspection failed.",
+            diagnostic,
+          );
+        }
+        if (!evaluation.result?.value) {
+          throw new BrowserExecutionError("inspection", "Browser inspection returned no report.", diagnostic);
+        }
         const report = evaluation.result.value;
         completed.push(key);
         for (const rule of report.accessibility) {
@@ -468,23 +624,44 @@ export async function runBrowserSuite(options = {}) {
         }
       }
     }
-    const results = Object.entries(findings).map(([checker, checkerFindings]) =>
-      checkResult({ checker, requested, completed, findings: checkerFindings }),
-    );
-    return {
-      schema: "silver/check-suite-result/v1",
-      suite: "browser",
-      status: results.some(({ status }) => status === "fail") ? "fail" : "pass",
-      browser: { provider: "chrome-cdp", version: browser.version },
-      results,
-    };
   } catch (error) {
-    const results = notRunResults(`Browser execution failed: ${error.message}`);
-    return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "chrome-cdp" }, results };
-  } finally {
-    await browser?.close();
-    await server.close();
+    failure = executionError("browser-launch", error);
   }
+  try {
+    cleanup = await browser?.close();
+    if (cleanup?.forced && !failure) {
+      failure = new BrowserExecutionError(
+        "cleanup",
+        "Chrome required forced termination after the browser checks completed.",
+        { process: cleanup },
+      );
+    }
+  } catch (error) {
+    failure ??= executionError("cleanup", error);
+  }
+  try {
+    await server?.close();
+  } catch (error) {
+    failure ??= executionError("cleanup", error);
+  }
+  const results = browserResults({ requested, completed, findings, error: failure });
+  const status = failure
+    ? "error"
+    : results.some(({ status: resultStatus }) => resultStatus === "fail")
+      ? "fail"
+      : "pass";
+  return {
+    schema: "silver/check-suite-result/v1",
+    suite: "browser",
+    status,
+    browser: {
+      provider: "chrome-cdp",
+      ...(browser?.version ? { version: browser.version } : {}),
+      ...(cleanup ? { cleanup } : {}),
+    },
+    results,
+    ...(failure ? { errors: [failure.diagnostic] } : {}),
+  };
 }
 
 async function main() {
@@ -492,7 +669,7 @@ async function main() {
     const options = parseArguments(process.argv.slice(2));
     const result = await runBrowserSuite(options);
     console.log(JSON.stringify(result, null, 2));
-    process.exitCode = result.status === "pass" ? 0 : result.status === "fail" ? 1 : 2;
+    process.exitCode = browserSuiteExitCode(result);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exitCode = 3;

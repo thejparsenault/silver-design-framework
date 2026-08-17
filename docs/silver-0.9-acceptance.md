@@ -92,6 +92,13 @@ Only `S09-MIGRATE-04` (manual end-to-end verification) remains.
   `playwright-mcp` are all declared transports; `connection.kind: host-native`
   distinguishes a host-owned connection from one Silver could configure
   itself.
+- **S09-BROWSER-03** Browser results distinguish `not-run` prerequisites,
+  `error` mechanism failures, and completed `fail` findings. Local Chrome owns
+  its debugging port, launch/readiness receives one fresh-profile retry,
+  navigation/protocol/inspection errors carry typed target diagnostics, stderr
+  is bounded, and cleanup records exit signal and forced termination. Three
+  consecutive real-browser cycles plus injected failure stages have direct
+  coverage. *(framework/tests/browser-check.test.mjs)*
 
 ### Troubleshooting (W5) — done, revised by W7
 
@@ -596,9 +603,9 @@ cover symlink escape/swap, every transaction phase and recovery direction,
 stale/conflicting synchronization, required-check failure/timeout, non-Git
 rollback, and Git forward recovery.
 
-The fully gated `npm run release` also passes and produces the 5,861-file,
-12,609,292-byte archive with
-`sha256:f9f570f8ad76a182456d7dce6525fc6fc85f483bd792c699f4d49633c279f892`.
+The fully gated `npm run release` also passes; after browser hardening, the
+independently green gates produce the 5,861-file, 12,612,026-byte archive with
+`sha256:69cb20ad928b29296da61a82ecd76ce01994928ab11ba76ceb8d4033bfbd55dd`.
 Both native macOS binaries and both `.pkg` installers build successfully, and
 `npm audit --omit=dev` reports zero vulnerabilities.
 

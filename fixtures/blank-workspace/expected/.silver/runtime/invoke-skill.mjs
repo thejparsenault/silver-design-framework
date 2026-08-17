@@ -313,7 +313,7 @@ async function verifyChecks({ root, declared = [], ran }) {
     if (evidence.status !== "pass") {
       verified.push({
         ...check,
-        status: evidence.status === "fail" ? "fail" : "not-run",
+        status: ["fail", "error"].includes(evidence.status) ? evidence.status : "not-run",
         reason: `Check evidence at ${check.result_path} records ${evidence.status}, not pass.`,
       });
       continue;
@@ -788,10 +788,14 @@ export async function invokeSkill({
   const checkBlocked = requiredCheckIds.some(
     (id) => !checkById.has(id) || checkById.get(id).status !== "pass",
   );
-  // A check that could not run is different from a check that failed. Only the
-  // second means the work is wrong; the first means it is unverified.
+  // A check that could not start, a checker mechanism that errored, and a
+  // completed check with findings are three different outcomes. Only the last
+  // says the work itself is wrong.
   const checkFailed = requiredCheckIds.some(
     (id) => checkById.get(id)?.status === "fail",
+  );
+  const checkErrored = requiredCheckIds.some(
+    (id) => checkById.get(id)?.status === "error",
   );
   const checkUnverified = requiredCheckIds.some(
     (id) => !checkById.has(id) || checkById.get(id).status === "not-run",
@@ -923,14 +927,16 @@ export async function invokeSkill({
       // saying so is the difference between an honest result and a reassuring
       // one.
       status:
-        checkUnverified && !checkFailed && effectFindings.length === 0
+        (checkUnverified || checkErrored) && !checkFailed && effectFindings.length === 0
           ? "complete-awaiting-verification"
           : checkBlocked || questionBlocked || effectFindings.length > 0
             ? "complete-with-findings"
             : "complete",
       summary: [
         `Completed ${contract.id} with ${prepared.length} durable output(s)`,
-        checkUnverified
+        checkErrored
+          ? "; one or more required checker mechanisms errored"
+          : checkUnverified
           ? "; one or more required checks could not be verified"
           : "",
         ".",
@@ -952,6 +958,9 @@ export async function invokeSkill({
             reasons: [
               ...(!accepted ? ["Human acceptance is unresolved."] : []),
               ...(checkFailed ? ["One or more required checks failed."] : []),
+              ...(checkErrored
+                ? ["One or more required checker mechanisms errored before completing verification."]
+                : []),
               ...(checkUnverified
                 ? [
                     "One or more required checks could not be run or verified, so this work is unverified rather than wrong.",

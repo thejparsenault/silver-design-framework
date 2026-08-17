@@ -261,7 +261,7 @@
             "$ref": "common.schema.json#/$defs/id"
           },
           "status": {
-            "enum": ["pass", "fail", "not-run"]
+            "enum": ["pass", "fail", "not-run", "error"]
           },
           "result_path": {
             "$ref": "common.schema.json#/$defs/relativePath"

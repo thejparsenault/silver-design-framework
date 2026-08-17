@@ -49,7 +49,9 @@ export async function runCheckSuite({ root, only } = {}) {
 
   return {
     suite: suite.suite,
-    status: selected.some(({ status }) => status === "fail")
+    status: selected.some(({ status }) => status === "error")
+      ? "error"
+      : selected.some(({ status }) => status === "fail")
       ? "fail"
       : selected.some(({ status }) => status === "not-run")
         ? "not-run"
@@ -101,9 +103,11 @@ export async function runContractChecks({ root, contract }) {
       id,
       status: result.status,
       result_path: checkResultPath(id),
-      ...(result.status === "fail"
+      ...(["fail", "error"].includes(result.status)
         ? {
-            reason: `${result.findings.length} finding(s); see ${checkResultPath(id)}.`,
+            reason: result.status === "error"
+              ? `Checker execution error; see ${checkResultPath(id)}.`
+              : `${result.findings.length} finding(s); see ${checkResultPath(id)}.`,
           }
         : {}),
     };

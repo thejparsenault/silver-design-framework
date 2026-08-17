@@ -19,14 +19,21 @@ checks, never push, and advance the shared base only after success. A reviewed
 import can convert a legacy `design/system` symlink by replacing only the link
 leaf and leaving its external target untouched.
 
-Final automated verification is green: 226/226 serialized source tests, 54 v2
+Final automated verification is green: 228 serialized source tests, 54 v2
 schemas, 25 v2 skills, exact packed-package smoke, both native macOS binaries,
 both macOS installer packages, and a production dependency audit with zero
 vulnerabilities. The release tarball contains 5,861 files and its sidecar pins
-`sha256:f9f570f8ad76a182456d7dce6525fc6fc85f483bd792c699f4d49633c279f892`.
+`sha256:69cb20ad928b29296da61a82ecd76ce01994928ab11ba76ceb8d4033bfbd55dd`.
 Line coverage is 83.30%, slightly above the audit baseline; branch and function
 percentages are 74.41% and 88.83%, below the percentage baseline after adding
 the new state machines, and remain explicit follow-up coverage work.
+
+Browser checks now distinguish unavailable prerequisites (`not-run`), checker
+mechanism failures (`error`), and completed conformance findings (`fail`). The
+local runner removes the debugging-port race, retries only launch/readiness
+once, captures bounded process evidence, diagnoses navigation/protocol/
+inspection stages separately, and verifies cleanup without leaving inherited
+Chrome pipes holding a test worker open.
 
 Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
 `release/silver-0.8-tools`. The release version is now declared consistently

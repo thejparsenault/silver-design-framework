@@ -33,8 +33,9 @@ browser suite separately after the fast suite:
 node .skills/design-check/scripts/run-browser.mjs --root .
 ```
 
-The browser suite reports `not-run` rather than pass when Chrome or a target is
-unavailable.
+The browser suite reports `not-run` when Chrome or a target is unavailable,
+`error` when the browser/checking mechanism cannot complete, and `fail` only
+when completed accessibility, responsive, or interaction checks find defects.
 
 ## Done
 
@@ -46,4 +47,4 @@ unavailable.
 ## Boundaries
 
 - Do not fix designs or code as part of a check invocation.
-- Never collapse failed or not-run results into a passing suite.
+- Never collapse failed, errored, or not-run results into a passing suite.

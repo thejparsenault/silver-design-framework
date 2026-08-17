@@ -154,7 +154,7 @@ packages:
     path: .skills/design-check
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:8890a127ccf8af3ea695ee54983290caeb1b898ca99f7db7335352ba3144fba1
+    integrity: sha256:bae75645cff7e14d7be32a369d157c9088d02780807a86e706f23100aaa3362e
   - id: figma-console-mcp
     type: provider
     path: .silver/providers/figma-console-mcp
@@ -184,7 +184,7 @@ packages:
     path: .silver/schemas/v2
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:bf2d4a4a3b94034f126b99c47ed00c467afc36f120ccb2a9792eca54c8136786
+    integrity: sha256:e3297998662ee213c04e233a6fd347b6d68f9c450b6e8bc4c5e8a739a6d3def3
   - id: guardrails
     type: guardrail-registry
     path: .silver/guardrails
@@ -196,7 +196,7 @@ packages:
     path: .silver/runtime
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:0741918c27713f4bf8ad48a33b2e5501cd04ce17ed2cee1e97ebf81055bc08d1
+    integrity: sha256:bb61fa7a876d685617815e6ec13b3832a4afc11c21c841dd6c9e74b74f815bd0
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
