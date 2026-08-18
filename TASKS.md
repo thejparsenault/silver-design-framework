@@ -571,9 +571,17 @@ automated gate by design.
   - notes: Complete locally on 2026-08-17: both native payloads were signed
     with Developer ID Application, both packages with Developer ID Installer,
     notarized and stapled by Apple, accepted by `spctl`, and verified against
-    final SHA-256 checksums. The final packages remain untracked in `dist/pkg/`
-    pending a separately authorized GitHub release upload. See
+    final SHA-256 checksums. The final packages, checksum manifest, exact npm
+    tarball, and its checksum are published on GitHub as `v0.9.0`. See
     `docs/native-macos-distribution.md`.
+
+- [ ] Publish `silver-design-framework@0.9.0` to npm
+  - type: release
+  - priority: high
+  - context: small
+  - notes: GitHub `v0.9.0` is public. This release Mac must first authenticate
+    with `npm login`; then publish the already verified exact tarball with
+    `npm publish --access public` and verify it with a fresh `npx` invocation.
 
 - [ ] Restore or exceed the pre-hardening branch and function coverage percentages
   - type: quality
