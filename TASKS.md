@@ -575,13 +575,13 @@ automated gate by design.
     tarball, and its checksum are published on GitHub as `v0.9.0`. See
     `docs/native-macos-distribution.md`.
 
-- [ ] Publish `silver-design-framework@0.9.0` to npm
+- [x] Publish `silver-design-framework@0.9.0` to npm
   - type: release
   - priority: high
   - context: small
-  - notes: GitHub `v0.9.0` is public. This release Mac must first authenticate
-    with `npm login`; then publish the already verified exact tarball with
-    `npm publish --access public` and verify it with a fresh `npx` invocation.
+  - notes: Complete on 2026-08-17. Published the verified exact tarball as
+    `latest`; `npm view` reports `0.9.0`, and a fresh `npx` invocation reports
+    the same version.
 
 - [ ] Restore or exceed the pre-hardening branch and function coverage percentages
   - type: quality

@@ -10,8 +10,9 @@ stapled tickets. Gatekeeper accepts each as a Notarized Developer ID installer,
 and `dist/pkg/SHA256SUMS` verifies both final artifacts. The public
 [`v0.9.0` GitHub release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0)
 contains both packages, their checksum manifest, and the exact npm tarball with
-its checksum. npm publication remains pending because this release Mac is not
-authenticated to npm.
+its checksum. `silver-design-framework@0.9.0` is also published to npm as
+`latest`; a fresh `npx --yes silver-design-framework@0.9.0 version` resolves
+and reports `0.9.0`.
 
 The two release-blocking findings from the 2026-08-16 audit are implemented on
 the working tree. Managed writes now use one symlink-aware mutation interface;
