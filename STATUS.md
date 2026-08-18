@@ -2,6 +2,14 @@
 
 ## Current Focus
 
+The final macOS release artifacts were built locally on 2026-08-17. Both
+architecture-specific native executables carry hardened Developer ID
+Application signatures; both installer packages carry Developer ID Installer
+signatures with trusted timestamps, accepted Apple notarization tickets, and
+stapled tickets. Gatekeeper accepts each as a Notarized Developer ID installer,
+and `dist/pkg/SHA256SUMS` verifies both final artifacts. The packages are
+deliberately untracked and have not been uploaded or published.
+
 The two release-blocking findings from the 2026-08-16 audit are implemented on
 the working tree. Managed writes now use one symlink-aware mutation interface;
 migration and update activate staged deltas through durable recoverable

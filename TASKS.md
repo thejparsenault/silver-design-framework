@@ -564,14 +564,16 @@ automated gate by design.
     reconciliation, and the safety/recovery boundary. Claude Cowork is named
     accurately as unsupported.
 
-- [ ] Produce signed and notarized macOS 0.9 installer packages
+- [x] Produce signed and notarized macOS 0.9 installer packages
   - type: release
   - priority: high
   - context: medium
-  - notes: Build the already-verified native payloads, sign executables and
-    packages with the appropriate Developer ID identities, notarize/staple,
-    run `spctl` verification, and attach only final packages plus checksums to
-    the GitHub release. See `docs/native-macos-distribution.md`.
+  - notes: Complete locally on 2026-08-17: both native payloads were signed
+    with Developer ID Application, both packages with Developer ID Installer,
+    notarized and stapled by Apple, accepted by `spctl`, and verified against
+    final SHA-256 checksums. The final packages remain untracked in `dist/pkg/`
+    pending a separately authorized GitHub release upload. See
+    `docs/native-macos-distribution.md`.
 
 - [ ] Restore or exceed the pre-hardening branch and function coverage percentages
   - type: quality
