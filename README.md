@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/brand/silver-logo.jpg" alt="Silver — Ag mark" style="border-radius: 12px">
+  <img src="docs/brand/silver-logo.jpg" alt="Silver — Ag mark" style="max-width: 100%;border-radius: 12px;max-height: 320px;">
 </p>
 
 # Silver
