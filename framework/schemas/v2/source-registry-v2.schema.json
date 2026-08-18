@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/source-registry-v2.schema.json",
+  "title": "Silver source registry v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "sources"],
+  "properties": {
+    "schema": { "const": "silver/source-registry/v2" },
+    "sources": { "type": "array", "items": { "$ref": "linked-source-v2.schema.json" } }
+  }
+}

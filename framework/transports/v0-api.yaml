@@ -1,0 +1,65 @@
+# Vercel v0 API — a declaration, not an adapter.
+#
+# Generates coded UI from a prompt or a reference image. A REST API, not an
+# MCP server. Scoped to prototype-renderer, not production-source, for the
+# same reason as webflow-mcp: nobody here wrote or reviewed what it generates,
+# so it is a source of prototype code for a person to review, not a shipped
+# path to this project's production source.
+schema: silver/provider/v1
+id: v0-api
+version: 0.9.0
+kind: external
+target: v0
+variant: platform-api
+aliases:
+  - v0
+  - vercel v0
+  - v0 api
+source:
+  publisher: Vercel
+  homepage: https://v0.app
+  docs: https://vercel.com/docs/v0/api
+  distribution:
+    kind: remote
+    ref: https://api.v0.dev/v1
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published documentation
+guidance:
+  good_at:
+    - Generating a coded, high-fidelity UI from a prompt or reference image
+  not_for:
+    - Producing this project's reviewed production source directly
+  prefer_when:
+    - You want a fast, coded starting point to review and adapt rather than write from scratch
+capabilities: [prototype-renderer, visual-renderer]
+interface:
+  kind: api
+  base_url: https://api.v0.dev/v1
+  docs: https://vercel.com/docs/v0/api
+  detection:
+    env: [V0_API_KEY]
+activities:
+  - id: prototype.create-code
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: source-code, editable: true, native: false}]
+  - id: visual.create-high-fidelity-ui
+    support: partial
+    actions: [create, write, update]
+    outputs: [{format: source-code, editable: true, native: false}]
+    constraints:
+      - Generates code from a prompt or reference image; does not apply an existing design system automatically.
+permissions:
+  - capability: prototype-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+requires_env: [V0_API_KEY]
+directions: [read, write]
+fidelity: partial
+maturity: preview
+post_setup:
+  - Requires a Vercel account and a v0 API key.

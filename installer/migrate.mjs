@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
+import { lstat, readlink, readdir, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { parse, stringify } from "yaml";
 
@@ -36,9 +35,24 @@ import {
   writeClaudeSkillLinks,
   writeLauncher,
 } from "./agent-adapters.mjs";
+import { planManifestStatusSync } from "../framework/runtime/manifest-sync.mjs";
+import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { buildDesignSystemTokens } from "../framework/runtime/tokens.mjs";
+import { renderSystemCatalog } from "../framework/skills/system/scripts/render-system-catalog.mjs";
+import {
+  ensureGitignoreEntries,
+  resolveSharedStudioVoice,
+  writeWorkspacePracticeOverlay,
+} from "./practice-overlay.mjs";
+import { payloadPath } from "./payload.mjs";
+import { doctorWorkspace } from "./doctor.mjs";
+import { runLifecycleTransaction } from "./lib/lifecycle-transaction.mjs";
+import { inspectWorkspacePath } from "../framework/runtime/workspace-mutations.mjs";
+import { migrateLinkedSourceV1 } from "./sources.mjs";
+import { migrateRepresentationBindingV1 } from "./sync.mjs";
 
-const installerRoot = path.dirname(fileURLToPath(import.meta.url));
-const templateRoot = path.join(installerRoot, "templates", "blank-workspace");
+const templateRoot = payloadPath("installer/templates/blank-workspace", import.meta.url);
+const DEFAULT_STYLESHEET = "design/system/expressions/html/styles/ds.css";
 const newProjectFiles = [
   "design/TRACE.md",
   "design/contexts/README.md",
@@ -48,8 +62,12 @@ const newProjectFiles = [
   "design/guidance/sources.yaml",
   "design/sources/README.md",
   "design/sources/sources.yaml",
+  "design/references/README.md",
+  "design/evidence/README.md",
+  "design/system/components.json",
   "design/integrations/README.md",
   "design/maps/README.md",
+  "design/structures/README.md",
   "design/assets/catalog.json",
   "design/assets/README.md",
   "design/presentation-kit/kit.json",
@@ -65,12 +83,14 @@ const independentChecks = [
   "contract-integrity",
   "flow-structure",
   "map-structure",
+  "structure-integrity",
   "semantic-styles",
   "prototype-policy",
   "evidence-provenance",
   "presentation-integrity",
   "production-readiness",
   "asset-integrity",
+  "reference-integrity",
   "accessibility",
   "responsive-behavior",
   "critical-interactions",
@@ -107,15 +127,39 @@ function migrateManifest(manifest) {
     next.artifacts.push(artifact);
     mappings.set(artifact.id, artifact);
   }
-  ensureArtifact({
-    id: "component-catalog",
-    kind: "component-catalog",
-    path: "reference-system/html-contracts",
-    scope: "product",
-    role: "canonical",
-    status: "active",
-    authority: { type: "local" },
-  });
+  // 0.9 retired reference-system/html-contracts for a schema-validated
+  // design/system/components.json. A workspace that already had a
+  // component-catalog artifact pointing at the old path gets repointed in
+  // place; the retired directory itself is never touched here — it may
+  // still hold hand-edited content, and only ownership: copied-and-owned
+  // package handling (never auto-deleted) governs whether it survives.
+  const componentCatalogArtifact = mappings.get("component-catalog");
+  if (componentCatalogArtifact) {
+    if (componentCatalogArtifact.path === "reference-system/html-contracts") {
+      componentCatalogArtifact.path = "design/system/components.json";
+    }
+  } else {
+    ensureArtifact({
+      id: "component-catalog",
+      kind: "component-catalog",
+      path: "design/system/components.json",
+      scope: "product",
+      role: "canonical",
+      status: "active",
+      authority: { type: "local" },
+    });
+  }
+  if (!mappings.has("design-system-tokens")) {
+    ensureArtifact({
+      id: "design-system-tokens",
+      kind: "token-source",
+      path: "design/system/tokens.json",
+      scope: "product",
+      role: "canonical",
+      status: "active",
+      authority: { type: "local" },
+    });
+  }
   ensureArtifact({
     id: "default-component-expression",
     kind: "x-component-expression",
@@ -183,15 +227,29 @@ function migrateManifest(manifest) {
   return next;
 }
 
+// Derive a stable, schema-valid id for a legacy file with no recorded identity.
+//
+// Truncating to a fixed width could cut mid-token and leave a trailing or
+// doubled hyphen, producing an id the contract pattern rejects — which failed a
+// whole migration because of one awkward filename. Normalize after slicing, and
+// verify the result rather than assuming it.
 function bootstrapId(relativePath) {
-  const digest = createHash("sha256").update(relativePath).digest("hex").slice(0, 8);
-  const stem = relativePath
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/^[^a-z]+/, "")
-    .slice(0, 48) || "legacy-artifact";
-  return `${stem}-${digest}`;
+  const digest = createHash("sha256")
+    .update(relativePath)
+    .digest("hex")
+    .slice(0, 8);
+  const stem =
+    relativePath
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^[^a-z]+/, "")
+      .slice(0, 48)
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "") || "legacy-artifact";
+  const id = `${stem}-${digest}`;
+  return /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(id)
+    ? id
+    : `legacy-artifact-${digest}`;
 }
 
 async function exactIntegrity(absolute) {
@@ -251,6 +309,72 @@ async function provenanceBootstrap(root, manifest, createdAt) {
   };
 }
 
+async function designContextFiles(root) {
+  const directory = path.join(root, "design", "contexts");
+  if (!(await exists(directory))) return [];
+  const entries = await readdir(directory, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".yaml"))
+    .map((entry) => path.join(directory, entry.name));
+}
+
+// A design context authored before 0.9 has no `token_source` at all (the
+// concept did not exist) and, if it names a component catalog, points it at
+// the retired reference-system/html-contracts. Returns the patched context,
+// or null when nothing needs to change.
+function migrateDesignContext(value) {
+  if (value?.schema !== "silver/design-context/v1") return null;
+  let changed = false;
+  const next = clone(value);
+  if (!next.token_source) {
+    next.token_source = {
+      id: "design-system-tokens",
+      kind: "token-source",
+      revision: "r1",
+      path: "design/system/tokens.json",
+    };
+    changed = true;
+  }
+  if (next.component_catalog?.path === "reference-system/html-contracts") {
+    next.component_catalog = { ...next.component_catalog, path: "design/system/components.json" };
+    changed = true;
+  }
+  return changed ? next : null;
+}
+
+// Component expressions shipped before 0.9 predate the explicit stylesheet
+// contract and may still point at the retired HTML-contract catalog. Migration
+// must upgrade this generated compatibility surface before any renderer tries
+// to consume it.
+function migrateComponentExpression(value) {
+  if (value?.schema !== "silver/component-expression/v1") return null;
+  let changed = false;
+  const next = clone(value);
+  if (!next.stylesheet) {
+    next.stylesheet = DEFAULT_STYLESHEET;
+    changed = true;
+  }
+  if (next.component_catalog?.path === "reference-system/html-contracts") {
+    next.component_catalog = {
+      ...next.component_catalog,
+      path: "design/system/components.json",
+    };
+    changed = true;
+  }
+  return changed ? next : null;
+}
+
+async function componentExpressionFiles(root, manifest) {
+  const files = [];
+  for (const artifact of manifest.artifacts.filter(
+    ({ kind }) => kind === "x-component-expression",
+  )) {
+    const file = path.join(root, artifact.path);
+    if (await exists(file)) files.push(file);
+  }
+  return [...new Set(files)];
+}
+
 function legacyPath(installed) {
   if (installed.path) return installed.path;
   if (installed.type === "skill") return `.skills/${installed.id}`;
@@ -301,8 +425,13 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       reason: "Legacy Silver permission policy is preserved but inactive in 0.5.",
     }));
 
+  const retiredIds = new Set(RETIRED_PACKAGES.map(({ id }) => id));
   for (const installed of lock.packages) {
     if (installed.ownership !== "framework-managed") continue;
+    // A package this release deliberately removes is not an orphan. Without
+    // this, retiring one blocks the whole migration on a conflict describing
+    // the very thing the migration is there to do.
+    if (retiredIds.has(installed.id)) continue;
     if (!targetById.has(installed.id)) {
       conflicts.push({
         package: installed.id,
@@ -376,9 +505,46 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
     changes.push({ action: "replace-clean-managed", package: target.id, path: target.path });
   }
 
+  for (const retired of RETIRED_PACKAGES) {
+    if (!(await exists(path.join(root, retired.path)))) continue;
+    changes.push({
+      action: "retire",
+      package: retired.id,
+      path: retired.path,
+      detail: retired.reason,
+    });
+  }
+
+  // design/system/tokens.json and expressions/ are not lock-tracked packages
+  // — they are generated from (and seeded alongside) design-system-tokens-seed
+  // the same way a blank setup builds them. A workspace migrating in the seed
+  // package for the first time needs this same build step, or it ends up with
+  // an authored token tree and no resolved tokens.json to render against.
+  if (!(await exists(path.join(root, "design", "system", "tokens.json")))) {
+    changes.push({ action: "build-design-system-tokens", path: "design/system/tokens.json" });
+  }
+
   const nextManifest = migrateManifest(manifest);
   if (stringify(nextManifest) !== stringify(manifest)) {
     changes.push({ action: "upgrade-manifest", path: "design/manifest.yaml" });
+  }
+  for (const file of await designContextFiles(root)) {
+    const value = parse(await readUtf8(file));
+    if (migrateDesignContext(value)) {
+      changes.push({
+        action: "upgrade-design-context",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
+  for (const file of await componentExpressionFiles(root, nextManifest)) {
+    const value = parse(await readUtf8(file));
+    if (migrateComponentExpression(value)) {
+      changes.push({
+        action: "upgrade-component-expression",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
   }
   for (const relative of newProjectFiles) {
     if (await exists(path.join(root, relative))) {
@@ -410,6 +576,17 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
   changes.push({ action: "regenerate", path: CLAUDE_MEMORY_PATH });
   changes.push({ action: "link-skills", path: CLAUDE_SKILLS_DIRECTORY });
   changes.push({ action: "regenerate", path: LAUNCHER_PATH });
+  // 0.7: the launcher stops hard-coding an absolute path, adapter links gain the
+  // silver- prefix so generic ids cannot be shadowed, the personal studio voice
+  // is ignored, and manifest status is reconciled with the artifacts themselves.
+  changes.push({ action: "regenerate", path: ".gitignore" });
+  for (const change of await planManifestStatusSync({ root, manifest: nextManifest })) {
+    changes.push({
+      action: "reconcile-status",
+      path: "design/manifest.yaml",
+      detail: `${change.id}: ${change.from} → ${change.to} (from ${change.path})`,
+    });
+  }
 
   return {
     packages,
@@ -421,7 +598,24 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
   };
 }
 
-export async function migrateWorkspace(options = {}) {
+// Packages a release removes rather than replaces. Leaving a superseded provider
+// installed is not harmless: `discoverProviders` reads whatever is on disk, so a
+// retired package keeps competing for the activities it used to serve.
+const RETIRED_PACKAGES = [
+  {
+    id: "figma",
+    path: ".silver/providers/figma",
+    reason:
+      "0.8 split Figma into transports; figma-console-mcp and figma-official-mcp replace it.",
+  },
+  {
+    id: "sketch",
+    path: ".skills/sketch",
+    reason: "0.9 renamed sketch to visualize; visualize replaces it.",
+  },
+];
+
+async function migrateWorkspaceDirect(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const version = options.version ?? FRAMEWORK_VERSION;
   const sourceReference = options.sourceReference ?? LOCAL_SOURCE_REFERENCE;
@@ -500,6 +694,65 @@ export async function migrateWorkspace(options = {}) {
   }
   await writeUtf8(workspace.manifestPath, stringify(plan.nextManifest));
 
+  for (const file of await designContextFiles(root)) {
+    const value = parse(await readUtf8(file));
+    const patched = migrateDesignContext(value);
+    if (!patched) continue;
+    const contextValidation = await validateSchema("v2/design-context.schema.json", patched);
+    if (!contextValidation.valid) {
+      throw new Error(`Migrated design context is invalid: ${contextValidation.errors.join("; ")}`);
+    }
+    await writeUtf8(file, stringify(patched));
+  }
+
+  for (const file of await componentExpressionFiles(root, plan.nextManifest)) {
+    const value = parse(await readUtf8(file));
+    const patched = migrateComponentExpression(value);
+    if (!patched) continue;
+    const expressionValidation = await validateSchema(
+      "v2/component-expression.schema.json",
+      patched,
+    );
+    if (!expressionValidation.valid) {
+      throw new Error(
+        `Migrated component expression is invalid: ${expressionValidation.errors.join("; ")}`,
+      );
+    }
+    await writeUtf8(file, stringify(patched));
+  }
+
+  const sourceRegistryPath = path.join(root, "design/sources/sources.yaml");
+  if (await exists(sourceRegistryPath)) {
+    const registry = parse(await readUtf8(sourceRegistryPath));
+    if (registry.schema === "silver/source-registry/v1") {
+      const migratedRegistry = {
+        schema: "silver/source-registry/v2",
+        sources: (registry.sources ?? []).map(migrateLinkedSourceV1),
+      };
+      await assertV2("source-registry-v2.schema.json", migratedRegistry);
+      await writeUtf8(sourceRegistryPath, stringify(migratedRegistry));
+    }
+  }
+
+  const integrationsRoot = path.join(root, "design/integrations");
+  if (await exists(integrationsRoot)) {
+    for (const entry of await readdir(integrationsRoot, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".yaml")) continue;
+      const bindingPath = path.join(integrationsRoot, entry.name);
+      const binding = parse(await readUtf8(bindingPath));
+      if (binding.schema !== "silver/representation-binding/v1") continue;
+      const migratedBinding = migrateRepresentationBindingV1(binding);
+      await assertV2("representation-binding-v2.schema.json", migratedBinding);
+      await writeUtf8(bindingPath, stringify(migratedBinding));
+    }
+  }
+
+  // Remove superseded packages before installing the new ones, so a retired
+  // provider never coexists with its replacements even for one step.
+  for (const retired of RETIRED_PACKAGES) {
+    await rm(path.join(root, retired.path), { recursive: true, force: true });
+  }
+
   const records = [];
   for (const target of plan.packages) {
     const destination = path.join(root, target.path);
@@ -519,10 +772,69 @@ export async function migrateWorkspace(options = {}) {
     );
   }
 
+  const tokensJsonPath = path.join(root, "design", "system", "tokens.json");
+  if (!(await exists(tokensJsonPath))) {
+    const expressionsDestination = path.join(root, "design", "system", "expressions");
+    if (!(await exists(expressionsDestination))) {
+      await copyNewTree(
+        path.join(templateRoot, "design/system/expressions"),
+        expressionsDestination,
+      );
+    }
+    await buildDesignSystemTokens({ root });
+    await renderSystemCatalog({ root, replace: true });
+  }
+
+  // The seeded presentation kit shipped with an id that disagreed with its own
+  // manifest entry, and a hard-coded exception in the checker hid it. Now that
+  // structured artifacts are all validated the same way, the disagreement is
+  // visible, so align the scaffold's identity with the manifest that maps it.
+  const kitEntry = plan.nextManifest.artifacts.find(
+    ({ kind }) => kind === "presentation-kit",
+  );
+  if (kitEntry) {
+    const kitPath = path.join(root, kitEntry.path);
+    if (await exists(kitPath)) {
+      const kit = JSON.parse(await readFile(kitPath, "utf8"));
+      if (kit.id !== kitEntry.id) {
+        await writeUtf8(
+          kitPath,
+          `${JSON.stringify({ ...kit, id: kitEntry.id }, null, 2)}\n`,
+        );
+      }
+    }
+  }
+
+  // Reconcile manifest status against what each artifact says about itself.
+  //
+  // A workspace that ran 0.6 can have accepted artifacts marked `active` in
+  // their own frontmatter while the manifest still calls them `draft` — the
+  // disagreement that made fast validation fail and forced a hand-edit followed
+  // by `silver repair`. Migration heals that in place rather than expecting the
+  // user to know which files disagree.
+  const statusChanges = await planManifestStatusSync({
+    root,
+    manifest: plan.nextManifest,
+  });
+  for (const change of statusChanges) {
+    const entry = plan.nextManifest.artifacts.find(({ id }) => id === change.id);
+    if (entry) entry.status = change.to;
+  }
+  if (statusChanges.length > 0) {
+    await writeUtf8(workspace.manifestPath, stringify(plan.nextManifest));
+  }
+
   const indexContent = renderIndex(plan.nextManifest, INITIAL_SKILL_IDS);
-  const agentContent = renderAgentPointer(INITIAL_SKILL_IDS);
+  const agentContent = renderAgentPointer(
+    INITIAL_SKILL_IDS,
+    await resolveSharedStudioVoice(),
+  );
   await writeUtf8(path.join(root, "design", "INDEX.md"), indexContent);
   await writeUtf8(path.join(root, "AGENTS.md"), agentContent);
+
+  // Ignore the personal studio voice before it can be committed, then apply it.
+  await ensureGitignoreEntries(root);
+  await writeWorkspacePracticeOverlay(root);
 
   const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
   const claudeMemoryContent = mergeClaudeMemory(
@@ -566,4 +878,74 @@ export async function migrateWorkspace(options = {}) {
   }
   await writeUtf8(workspace.lockPath, stringify(nextLock));
   return { ...base, applied: true };
+}
+
+export async function migrateWorkspace(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  const systemInspection = await inspectWorkspacePath(root, "design/system");
+  if (!systemInspection.safe && systemInspection.unsafe_at === "design/system") {
+    const linkPath = path.join(root, "design/system");
+    let target = "unresolved";
+    try {
+      if ((await lstat(linkPath)).isSymbolicLink()) {
+        const link = await readlink(linkPath);
+        target = path.resolve(path.dirname(linkPath), link);
+      }
+    } catch {}
+    let fromVersion = "unknown";
+    try {
+      fromVersion = parse(await readFile(path.join(root, ".silver/lock.yaml"), "utf8")).framework.version;
+    } catch {}
+    return {
+      ok: false,
+      root,
+      fromVersion,
+      toVersion: options.version ?? FRAMEWORK_VERSION,
+      needed: true,
+      applied: false,
+      changes: [],
+      preserved: [],
+      conflicts: [{
+        package: "design-system",
+        path: "design/system",
+        reason: "design/system is a linked directory and migration will not traverse or replace it.",
+      }],
+      inactiveArtifacts: [],
+      conversion_plan: {
+        schema: "silver/symlink-conversion-plan/v1",
+        link: "design/system",
+        target,
+        steps: [
+          "Inspect the target as a design-system linked source.",
+          "Apply the reviewed source link and import its selected representations.",
+          "Remove only the design/system symlink leaf after the import is accepted.",
+          "Resume silver migrate --apply after design/system is a real local directory.",
+        ],
+        commands: [
+          `silver link inspect ${JSON.stringify(target)} . --kind design-system --as primary-design-system --json`,
+          "silver sync inspect <binding-id> . --direction external-to-local --json",
+        ],
+      },
+    };
+  }
+  if (!options.apply || options.transaction === false) {
+    return migrateWorkspaceDirect({ ...options, root });
+  }
+  const { stagedResult, transaction } = await runLifecycleTransaction({
+    root,
+    command: `silver migrate ${options.version ?? FRAMEWORK_VERSION}`,
+    metadata: { workflow: "migrate", target_version: options.version ?? FRAMEWORK_VERSION },
+    mutate: (stagingRoot) =>
+      migrateWorkspaceDirect({ ...options, root: stagingRoot, apply: true, transaction: false }),
+    validate: async ({ journal }) => {
+      const diagnosis = await doctorWorkspace({ root, ignoreTransactionId: journal.id });
+      return {
+        status: diagnosis.ok ? "pass" : "fail",
+        check: "doctor",
+        diagnostics: diagnosis.diagnostics,
+      };
+    },
+    hooks: options.transactionHooks,
+  });
+  return { ...stagedResult, root, transaction };
 }

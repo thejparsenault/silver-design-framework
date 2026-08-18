@@ -10,7 +10,7 @@ import {
   createFigmaChangeSet,
   normalizeFigmaSnapshot,
   previewSemanticTokenWrite,
-} from "../providers/figma/adapter.mjs";
+} from "../providers/figma-console-mcp/adapter.mjs";
 import {
   acceptReconciliation,
   applyReconciliation,
@@ -75,14 +75,14 @@ export async function runPortableReconciliationScenario({ root }) {
   const workspace = path.resolve(root);
   const paths = {
     flow: "design/flows/guided/flow.json",
-    sketch: "design/work/sketches/guided/sketch.json",
+    visualization: "design/work/visualizations/guided/visualization.json",
     specification: "design/work/specifications/guided.json",
     tokens: "design/work/tokens/guided.json",
     component: "design/work/components/guided.json",
   };
   const artifacts = {
     flow,
-    sketch: working("guided-sketch", "sketch", { fidelity: "low", constraint_profile: "constrained", question: "Clear?", view_path: "design/work/sketches/guided/index.html", alternatives: [{ title: "A", summary: "A", tradeoff: "A" }, { title: "B", summary: "B", tradeoff: "B" }] }),
+    visualization: working("guided-visualization", "visualization", { fidelity: "low", constraint_profile: "constrained", question: "Clear?", view_path: "design/work/visualizations/guided/index.html", alternatives: [{ title: "A", summary: "A", tradeoff: "A" }, { title: "B", summary: "B", tradeoff: "B" }] }),
     specification: working("guided-specification", "design-specification", { requirements: ["Review"], states: ["ready", "complete"] }),
     tokens: working("guided-tokens", "token-source", { format: "dtcg", semantic_tokens: { "surface.canvas": "{color.neutral.0}" } }),
     component: working("guided-component", "component-proposal", { classification: "product-composition", anatomy: ["Summary", "Action"] }),
@@ -113,7 +113,7 @@ export async function runPortableReconciliationScenario({ root }) {
     id: "guided-figma",
     artifact: { id: "guided-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-123", revision: "v18" },
+    provider: { id: "figma-console-mcp", object_id: "file-123", revision: "v18" },
     adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web", authority: "local", round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
@@ -134,7 +134,7 @@ export async function runPortableReconciliationScenario({ root }) {
   });
   const targets = {
     local: { integrity: writes.flow.integrity },
-    flow: target("flow", ["flow-structure"]), sketch: target("sketch", ["semantic-styles"]),
+    flow: target("flow", ["flow-structure"]), visualization: target("visualization", ["semantic-styles"]),
     specification: target("specification"), tokens: target("tokens", ["semantic-styles"]),
     component: target("component"),
   };
@@ -157,7 +157,7 @@ export async function runPortableReconciliationScenario({ root }) {
     root: workspace, result: accepted,
     approvals: [{ operation_id: visual.id, approved: true }], appliedAt: time,
   });
-  assert.equal(JSON.parse(await readFile(path.join(workspace, paths.sketch), "utf8")).revision, "r2");
+  assert.equal(JSON.parse(await readFile(path.join(workspace, paths.visualization), "utf8")).revision, "r2");
   assert.equal(JSON.parse(await readFile(path.join(workspace, paths.flow), "utf8")).revision, 1);
   const prototypeRoot = path.join(workspace, "prototypes/guided");
   await mkdir(prototypeRoot, { recursive: true });
@@ -176,7 +176,7 @@ extensions:
   silver.reconciliation:
     external_revision: v19
     accepted_artifacts:
-      - guided-sketch@r2
+      - guided-visualization@r2
       - guided-flow@r1
 `, "utf8");
   await renderStaticPrototype({ root: workspace, prototype: "prototypes/guided", flow: paths.flow });
@@ -188,7 +188,7 @@ extensions:
     external: { revision: "v19", integrity: valueIntegrity(current), completeness: "complete" },
     changeSet: changes, createdAt: time,
   });
-  const externalAuthority = { ...binding, authority: "external", authority_provider: "figma" };
+  const externalAuthority = { ...binding, authority: "external", authority_provider: "figma-console-mcp" };
   const unavailable = await proposeReconciliation({
     root: workspace, binding: externalAuthority,
     local: { revision: "r2", integrity: localWrite.integrity },
@@ -222,4 +222,4 @@ async function main() {
   }
 }
 
-if (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) await main();
+if (import.meta.main ?? (process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url)))) void main();

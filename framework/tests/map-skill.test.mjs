@@ -121,7 +121,7 @@ test("journey maps validate, render semantic HTML, and trace complete provenance
   );
   assert.match(html, /data-design-context="default-design-context@r1"/);
   assert.match(html, /data-source-revision="r1"/);
-  assert.match(html, /data-renderer-version="map-html@0\.6\.1"/);
+  assert.match(html, /data-renderer-version="map-html@0\.7\.0"/);
   assert.match(
     html,
     /data-design-system-revision="via-context:default-design-context@r1"/,

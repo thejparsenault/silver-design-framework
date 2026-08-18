@@ -1,0 +1,4 @@
+interface:
+  display_name: Visualize
+  short_description: Create static visual representations of a proposed product experience.
+  default_prompt: Use $visualize to create static visual representations of a proposed product experience at whatever fidelity is useful.

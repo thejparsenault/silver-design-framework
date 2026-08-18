@@ -1,0 +1,78 @@
+# A local Chrome, driven over the DevTools protocol by Silver itself.
+#
+# This is the portable baseline for browser work: no MCP server, no credential,
+# no agent-host feature. If Chrome is installed, this works. Every generally
+# applicable skill keeps a baseline like this so an external transport adds
+# capability and never quietly becomes a prerequisite.
+#
+# Scope note worth keeping straight: this transport is what the deterministic
+# browser *check* suite already uses. Resolving it for `browser.navigate` and
+# `browser.inspect-structure` means an agent can look at a running prototype
+# the same way. "An agent looked" and "a check passed" stay different claims.
+schema: silver/provider/v1
+id: silver-browser-local
+version: 0.9.0
+kind: portable
+target: browser
+variant: local-chrome
+aliases:
+  - local chrome
+  - headless chrome
+  - the built-in browser
+source:
+  publisher: The Silver Design Framework
+  repository: https://github.com/thejparsenault/silver-design-framework
+  license: MIT
+  distribution:
+    kind: binary
+    ref: A Google Chrome or Chromium already installed on this machine
+  evidence: verified
+  verified_at: 2026-08-11
+  verified_against: shipped with this release
+guidance:
+  good_at:
+    - Loading a local render target and reporting what it measured
+    - Working with no MCP server, no credential, and no network
+  not_for:
+    - Driving a signed-in application or anything needing a real browser profile
+  prefer_when:
+    - You want a repeatable answer about a page rather than an interactive look
+capabilities: [browser]
+connection:
+  kind: local
+availability:
+  script: scripts/health.mjs
+post_setup:
+  - Install Google Chrome or Chromium (google.com/chrome). If Silver reports no executable, set SILVER_CHROME_PATH to it.
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+directions: [portable]
+fidelity: partial
+operations:
+  - id: browser-local-health
+    script: scripts/health.mjs
+    effect: inspect

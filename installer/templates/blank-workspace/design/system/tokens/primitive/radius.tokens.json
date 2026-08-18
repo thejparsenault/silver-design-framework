@@ -1,0 +1,13 @@
+{
+  "radius": {
+    "$type": "dimension",
+    "$description": "Border radius scale.",
+    "none":  { "$value": { "value": 0,    "unit": "px"  }, "$description": "No rounding — tables, code blocks" },
+    "sm":    { "$value": { "value": 4,    "unit": "px"  }, "$description": "Small rounding — tags, badges" },
+    "md":    { "$value": { "value": 8,    "unit": "px"  }, "$description": "Base rounding — inputs, buttons, cards" },
+    "lg":    { "$value": { "value": 12,   "unit": "px"  }, "$description": "Large rounding — modals, panels" },
+    "xl":    { "$value": { "value": 16,   "unit": "px"  }, "$description": "Extra large — feature cards" },
+    "2xl":   { "$value": { "value": 24,   "unit": "px"  }, "$description": "Very large rounding" },
+    "full":  { "$value": { "value": 9999, "unit": "px"  }, "$description": "Pill shape — pills, toggles, avatars" }
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: Measure outcomes
+  short_description: Determine whether a shipped change achieved its intended outcome.
+  default_prompt: Use $measure to determine whether a shipped design or product change achieved its intended outcome.

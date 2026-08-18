@@ -1,0 +1,81 @@
+# Playwright MCP — a declaration, not an adapter.
+#
+# The other common way an agent reaches a browser. It is here so that a designer
+# who already uses Playwright can bind browser activities to it by name, rather
+# than being told Silver only supports the one tool its author happened to pick.
+schema: silver/provider/v1
+id: playwright-mcp
+version: 0.9.0
+kind: external
+target: browser
+variant: playwright
+aliases:
+  - playwright mcp
+  - playwright
+  - the playwright one
+source:
+  publisher: Microsoft
+  repository: https://github.com/microsoft/playwright-mcp
+  license: Apache-2.0
+  distribution:
+    kind: npm
+    ref: "@playwright/mcp"
+  evidence: declared
+  verified_at: 2026-08-11
+  verified_against: published package documentation
+guidance:
+  good_at:
+    - Driving Chromium, Firefox, and WebKit through one interface
+    - Structured accessibility-tree interaction rather than pixel guessing
+  not_for:
+    - Reusing your everyday browser profile — it drives its own instances
+  prefer_when:
+    - You already use Playwright, or you need a browser other than Chrome
+  compare_to:
+    - transport: chrome-devtools-mcp
+      difference: >-
+        Covers three browser engines and drives its own instances; the DevTools
+        server is Chrome-only and can attach to the browser you already have open.
+capabilities: [browser]
+connection:
+  kind: mcp
+  server: playwright
+  tool_prefix: mcp__playwright__
+  config:
+    command: npx
+    args: ["-y", "@playwright/mcp@latest"]
+probe:
+  tool: mcp__playwright__browser_snapshot
+  expects: an accessibility snapshot of the current page
+  freshness_hours: 24
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+directions: [read]
+fidelity: partial
+maturity: stable
+post_setup:
+  - Install the browser binaries Playwright drives — `npx playwright install`. Silver prints this and never runs it.
+activities:
+  - id: browser.navigate
+    support: full
+    actions: [inspect, execute]
+  - id: browser.interact
+    support: full
+    actions: [execute]
+  - id: browser.inspect-structure
+    support: full
+    actions: [inspect]
+  - id: browser.inspect-accessibility-tree
+    support: full
+    actions: [inspect]
+  - id: browser.capture-screenshot
+    support: full
+    actions: [inspect]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]

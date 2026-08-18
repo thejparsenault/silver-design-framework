@@ -1,0 +1,4 @@
+interface:
+  display_name: Define principles
+  short_description: Create concrete design principles and decision tests.
+  default_prompt: Use $principles to create concrete design principles and decision tests.

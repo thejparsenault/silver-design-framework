@@ -1,0 +1,23 @@
+{
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "$description": "Animation duration scale.",
+      "instant":  { "$value": { "value": 0,   "unit": "ms" }, "$description": "No animation — reduce-motion fallback" },
+      "fast":     { "$value": { "value": 100, "unit": "ms" }, "$description": "Micro-interactions, toggles" },
+      "base":     { "$value": { "value": 200, "unit": "ms" }, "$description": "Default — button feedback, hover" },
+      "moderate": { "$value": { "value": 300, "unit": "ms" }, "$description": "Panels, drawers entering" },
+      "slow":     { "$value": { "value": 500, "unit": "ms" }, "$description": "Page transitions, large reveals" }
+    },
+    "easing": {
+      "$type": "cubic-bezier",
+      "$description": "Easing functions.",
+      "linear":       { "$value": [0, 0, 1, 1],          "$description": "No easing — progress bars, steppers" },
+      "ease-in":      { "$value": [0.4, 0, 1, 1],        "$description": "Elements leaving screen" },
+      "ease-out":     { "$value": [0, 0, 0.2, 1],        "$description": "Elements entering screen" },
+      "ease-in-out":  { "$value": [0.4, 0, 0.2, 1],      "$description": "Default UI transitions" },
+      "spring":       { "$value": [0.34, 1.56, 0.64, 1], "$description": "Springy, playful interactions" },
+      "snappy":       { "$value": [0.2, 0, 0, 1],        "$description": "Fast, crisp micro-interactions" }
+    }
+  }
+}

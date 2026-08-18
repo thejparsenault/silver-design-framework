@@ -1,0 +1,4 @@
+interface:
+  display_name: Generate or apply theme
+  short_description: Generate, compare, apply, or revise semantic themes and modes.
+  default_prompt: Use $theme to generate, compare, apply, or revise semantic themes and modes.

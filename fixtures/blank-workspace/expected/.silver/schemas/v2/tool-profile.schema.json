@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/tool-profile.schema.json",
+  "title": "Silver user-global tool provider profile v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "providers", "permission_ceiling"],
+  "properties": {
+    "schema": {
+      "const": "silver/tool-profile/v2"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "provider", "priority", "available"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "provider": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "configuration_reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        }
+      }
+    },
+    "permission_ceiling": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "actions", "decision"],
+        "properties": {
+          "capability": {
+            "$ref": "common.schema.json#/$defs/capability"
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common.schema.json#/$defs/action"
+            }
+          },
+          "decision": {
+            "enum": ["allow", "ask", "deny"]
+          }
+        }
+      }
+    }
+  }
+}

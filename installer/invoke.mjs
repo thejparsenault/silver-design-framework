@@ -5,6 +5,7 @@ import { parse } from "yaml";
 import { invokeSkill } from "../framework/runtime/invoke-skill.mjs";
 import { loadDesignContexts } from "./context.mjs";
 import { exists, integrity, readUtf8 } from "./lib/files.mjs";
+import { checkResultPath, runContractChecks } from "./checks.mjs";
 
 // Emitted by `silver invoke --scaffold` wherever the agent must supply
 // judgement. `silver invoke` refuses any request that still contains it, so a
@@ -16,6 +17,7 @@ export const SCAFFOLD_PLACEHOLDER = "silver-scaffold-placeholder";
 const contextPinnedOutputKinds = new Set([
   "map",
   "sketch",
+  "visualization",
   "prototype",
   "presentation-view",
   "implementation-handoff",
@@ -55,6 +57,11 @@ export async function invokeInstalledSkill({
     skillDirectory,
     request,
     ...(completedAt ? { completedAt } : {}),
+    // The invocation runs its own required checks and writes their evidence, so
+    // a result reflects checks that actually happened rather than statuses the
+    // caller typed in.
+    runChecks: ({ root: checkRoot, contract }) =>
+      runContractChecks({ root: checkRoot, contract }),
   });
 }
 
@@ -152,13 +159,11 @@ export async function scaffoldInvocation({ root, skillId, now = new Date() }) {
     available_providers: [],
     approvals: [],
     relaxations: [],
-    checks: contract.checks
-      .filter(({ required }) => required)
-      .map(({ id }) => ({
-        id,
-        status: "not-run",
-        result_path: `.silver/results/checks/${id}.json`,
-      })),
+    // Left empty on purpose. The invocation runs these itself and records the
+    // real outcome; the agent no longer has to run a script, split its output,
+    // and copy statuses back in — the step that was skipped often enough to
+    // produce results claiming passes with no evidence behind them.
+    checks: [],
     unresolved_questions: [],
   };
 }

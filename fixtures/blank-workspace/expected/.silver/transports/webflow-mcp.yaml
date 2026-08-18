@@ -1,0 +1,64 @@
+# Webflow MCP — a declaration, not an adapter.
+#
+# Scoped to prototype work only. Webflow can host a real, running site, which
+# would make `production-source` or a deploy-preview activity the obvious
+# claim — but both are capabilities a declaration may never make (see
+# PACKAGE_ONLY_CAPABILITIES in framework/runtime/providers.mjs): nobody here
+# wrote or reviewed the code behind this server, so it may not be trusted to
+# produce Silver's canonical production source or stand in as a shipped
+# deploy provider. What it can honestly claim is prototype-renderer: a
+# functioning, visually real prototype on Webflow's own infrastructure.
+schema: silver/provider/v1
+id: webflow-mcp
+version: 0.9.0
+kind: external
+target: webflow
+variant: official-mcp
+aliases:
+  - webflow
+  - webflow mcp
+source:
+  publisher: Webflow
+  homepage: https://webflow.com
+  docs: https://developers.webflow.com/data/docs/ai-tools
+  distribution:
+    kind: npm
+    ref: webflow-mcp-server
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published documentation
+guidance:
+  good_at:
+    - A coded, visually real prototype built and hosted on Webflow
+  not_for:
+    - Standing in for this project's own production source or deployment
+  prefer_when:
+    - You want a hosted, shareable prototype without standing up your own hosting
+capabilities: [prototype-renderer, external-artifact]
+connection:
+  kind: mcp
+  server: webflow
+  tool_prefix: mcp__webflow__
+  config:
+    command: npx
+    args: ["-y", "webflow-mcp-server@latest"]
+activities:
+  - id: prototype.create-code
+    support: partial
+    actions: [create, write, update]
+    outputs: [{format: webflow, editable: true, native: true}]
+    constraints:
+      - Produces a Webflow site, not portable source code.
+permissions:
+  - capability: prototype-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: external-artifact
+    actions: [read, inspect]
+    default: ask
+requires_env: [WEBFLOW_API_TOKEN]
+directions: [read, write]
+fidelity: partial
+maturity: preview
+post_setup:
+  - Requires a Webflow site and an API token with site-editing scope.

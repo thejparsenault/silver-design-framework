@@ -1,0 +1,200 @@
+@layer base {
+  :root {
+    font-family: var(--ds-font-family-sans);
+    font-size: var(--ds-font-size-base);
+    line-height: var(--ds-font-line-height-normal);
+    color: var(--ds-text-primary);
+    background-color: var(--ds-surface-page);
+  }
+
+  /* Scheme switching: OS preference establishes default; [data-scheme] overrides */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ds-surface-page:    var(--ds-palette-scheme-dark-surface-page);
+      --ds-surface-base:    var(--ds-palette-scheme-dark-surface-base);
+      --ds-surface-raised:  var(--ds-palette-scheme-dark-surface-raised);
+      --ds-surface-overlay: var(--ds-palette-scheme-dark-surface-overlay);
+      --ds-surface-sunken:  var(--ds-palette-scheme-dark-surface-sunken);
+      --ds-surface-hover:   var(--ds-palette-scheme-dark-surface-hover);
+
+      --ds-text-primary:    var(--ds-palette-scheme-dark-text-primary);
+      --ds-text-secondary:  var(--ds-palette-scheme-dark-text-secondary);
+      --ds-text-muted:      var(--ds-palette-scheme-dark-text-muted);
+      --ds-text-disabled:   var(--ds-palette-scheme-dark-text-disabled);
+
+      --ds-border-default:  var(--ds-palette-scheme-dark-border-default);
+      --ds-border-strong:   var(--ds-palette-scheme-dark-border-strong);
+      --ds-border-subtle:   var(--ds-palette-scheme-dark-border-subtle);
+    }
+  }
+
+  /* Explicit scheme overrides — always win */
+  [data-scheme="light"] {
+    --ds-surface-page:    var(--ds-palette-scheme-light-surface-page);
+    --ds-surface-base:    var(--ds-palette-scheme-light-surface-base);
+    --ds-surface-raised:  var(--ds-palette-scheme-light-surface-raised);
+    --ds-surface-overlay: var(--ds-palette-scheme-light-surface-overlay);
+    --ds-surface-sunken:  var(--ds-palette-scheme-light-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-scheme-light-surface-hover);
+
+    --ds-text-primary:    var(--ds-palette-scheme-light-text-primary);
+    --ds-text-secondary:  var(--ds-palette-scheme-light-text-secondary);
+    --ds-text-muted:      var(--ds-palette-scheme-light-text-muted);
+    --ds-text-disabled:   var(--ds-palette-scheme-light-text-disabled);
+
+    --ds-border-default:  var(--ds-palette-scheme-light-border-default);
+    --ds-border-strong:   var(--ds-palette-scheme-light-border-strong);
+    --ds-border-subtle:   var(--ds-palette-scheme-light-border-subtle);
+  }
+
+  [data-scheme="dark"] {
+    --ds-surface-page:    var(--ds-palette-scheme-dark-surface-page);
+    --ds-surface-base:    var(--ds-palette-scheme-dark-surface-base);
+    --ds-surface-raised:  var(--ds-palette-scheme-dark-surface-raised);
+    --ds-surface-overlay: var(--ds-palette-scheme-dark-surface-overlay);
+    --ds-surface-sunken:  var(--ds-palette-scheme-dark-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-scheme-dark-surface-hover);
+
+    --ds-text-primary:    var(--ds-palette-scheme-dark-text-primary);
+    --ds-text-secondary:  var(--ds-palette-scheme-dark-text-secondary);
+    --ds-text-muted:      var(--ds-palette-scheme-dark-text-muted);
+    --ds-text-disabled:   var(--ds-palette-scheme-dark-text-disabled);
+
+    --ds-border-default:  var(--ds-palette-scheme-dark-border-default);
+    --ds-border-strong:   var(--ds-palette-scheme-dark-border-strong);
+    --ds-border-subtle:   var(--ds-palette-scheme-dark-border-subtle);
+  }
+
+  /* ─── Surface modes ────────────────────────────────────────────────────────
+   * Scoped to the element they're set on and all descendants. Safe to place
+   * on any container — components inside inherit the remapped tokens.
+   *
+   * Usage: <section data-mode="inverted"> or <body data-mode="brand">
+   * Composable with data-scheme: [data-scheme="dark"] [data-mode="subtle"] { … }
+   * ──────────────────────────────────────────────────────────────────────── */
+
+  /* subtle — slight neutral tint; visual rhythm break without full inversion */
+  [data-mode="subtle"] {
+    --ds-surface-page:    var(--ds-palette-mode-subtle-surface-page);
+    --ds-surface-base:    var(--ds-palette-mode-subtle-surface-base);
+    --ds-surface-raised:  var(--ds-palette-mode-subtle-surface-raised);
+    --ds-surface-sunken:  var(--ds-palette-mode-subtle-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-mode-subtle-surface-hover);
+  }
+
+  /* inverted — always dark surface regardless of scheme; for alternating
+   * landing page sections, dark hero panels, footer areas */
+  [data-mode="inverted"] {
+    --ds-surface-page:    var(--ds-palette-mode-inverted-surface-page);
+    --ds-surface-base:    var(--ds-palette-mode-inverted-surface-base);
+    --ds-surface-raised:  var(--ds-palette-mode-inverted-surface-raised);
+    --ds-surface-sunken:  var(--ds-palette-mode-inverted-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-mode-inverted-surface-hover);
+
+    --ds-text-primary:    var(--ds-palette-mode-inverted-text-primary);
+    --ds-text-secondary:  var(--ds-palette-mode-inverted-text-secondary);
+    --ds-text-muted:      var(--ds-palette-mode-inverted-text-muted);
+    --ds-text-disabled:   var(--ds-palette-mode-inverted-text-disabled);
+
+    --ds-border-default:  var(--ds-palette-mode-inverted-border-default);
+    --ds-border-strong:   var(--ds-palette-mode-inverted-border-strong);
+    --ds-border-subtle:   var(--ds-palette-mode-inverted-border-subtle);
+  }
+
+  /* brand — primary brand color fill; hero sections, feature highlights */
+  [data-mode="brand"] {
+    --ds-surface-page:    var(--ds-palette-mode-brand-surface-page);
+    --ds-surface-base:    var(--ds-palette-mode-brand-surface-base);
+    --ds-surface-raised:  var(--ds-palette-mode-brand-surface-raised);
+    --ds-surface-sunken:  var(--ds-palette-mode-brand-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-mode-brand-surface-hover);
+
+    --ds-text-primary:    var(--ds-palette-mode-brand-text-primary);
+    --ds-text-secondary:  var(--ds-palette-mode-brand-text-secondary);
+    --ds-text-muted:      var(--ds-palette-mode-brand-text-muted);
+    --ds-text-disabled:   var(--ds-palette-mode-brand-text-disabled);
+    --ds-text-link:       var(--ds-palette-mode-brand-text-link);
+    --ds-text-link-hover: var(--ds-palette-mode-brand-text-link-hover);
+
+    --ds-border-default:  var(--ds-palette-mode-brand-border-default);
+    --ds-border-strong:   var(--ds-palette-mode-brand-border-strong);
+    --ds-border-subtle:   var(--ds-palette-mode-brand-border-subtle);
+  }
+
+  /* tinted — soft brand tint; mid-page highlight, feature list backgrounds */
+  [data-mode="tinted"] {
+    --ds-surface-page:    var(--ds-palette-mode-tinted-surface-page);
+    --ds-surface-base:    var(--ds-palette-mode-tinted-surface-base);
+    --ds-surface-raised:  var(--ds-palette-mode-tinted-surface-raised);
+    --ds-surface-sunken:  var(--ds-palette-mode-tinted-surface-sunken);
+    --ds-surface-hover:   var(--ds-palette-mode-tinted-surface-hover);
+  }
+
+  /* Functional modes — remap action tokens for contextual UI regions */
+  [data-mode="error"],
+  [data-mode="danger"] {
+    --ds-action-primary-bg: var(--ds-action-destructive-bg);
+    --ds-action-primary-fg: var(--ds-action-destructive-fg);
+    --ds-border-focus:      var(--ds-border-danger);
+  }
+
+  [data-mode="success"] {
+    --ds-action-primary-bg: var(--ds-palette-mode-success-action-background);
+    --ds-action-primary-fg: var(--ds-palette-mode-success-action-foreground);
+  }
+
+  [data-mode="warning"] {
+    --ds-action-primary-bg: var(--ds-palette-mode-warning-action-background);
+    --ds-action-primary-fg: var(--ds-palette-mode-warning-action-foreground);
+  }
+
+  body {
+    min-height: 100dvh;
+    color: var(--ds-text-primary);
+    background-color: var(--ds-surface-page);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: var(--ds-font-line-height-tight);
+    letter-spacing: var(--ds-font-letter-spacing-tight);
+    color: var(--ds-text-primary);
+    font-weight: var(--ds-font-weight-bold);
+  }
+
+  h1 { font-size: var(--ds-font-size-4xl); }
+  h2 { font-size: var(--ds-font-size-3xl); }
+  h3 { font-size: var(--ds-font-size-2xl); }
+  h4 { font-size: var(--ds-font-size-xl); }
+  h5 { font-size: var(--ds-font-size-lg); }
+  h6 { font-size: var(--ds-font-size-md); }
+
+  p {
+    color: var(--ds-text-secondary);
+    max-width: var(--ds-layout-container-prose-max-width);
+  }
+
+  a {
+    color: var(--ds-text-link);
+    text-underline-offset: var(--ds-layout-link-underline-offset);
+  }
+
+  a:hover {
+    color: var(--ds-text-link-hover);
+    text-decoration: underline;
+  }
+
+  :focus-visible {
+    outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+    outline-offset: var(--ds-focus-ring-offset);
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--ds-font-family-mono);
+    font-size: var(--ds-layout-code-relative-size);
+  }
+
+  hr {
+    border: none;
+    border-top: var(--ds-layout-separator-width) solid var(--ds-border-subtle);
+  }
+}

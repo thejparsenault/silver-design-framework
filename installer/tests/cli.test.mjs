@@ -158,3 +158,43 @@ test("chat-facing setup inspect/apply and trace commands use reviewed JSON plans
     ".silver/results/traces/default-design-context.md",
   );
 });
+
+test("check rejects unknown ids and returns a distinct not-run exit code", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-cli-check-"));
+  t.after(() => rm(root, { force: true, recursive: true }));
+  await runCli(["setup", root, "--name", "Check CLI", "--id", "check-cli"], {
+    stdout: () => {},
+    stderr: () => {},
+  });
+
+  const unknownErrors = [];
+  const unknownCode = await runCli(
+    ["check", root, "--only", "not-a-check"],
+    { stdout: () => {}, stderr: (message) => unknownErrors.push(message) },
+  );
+  assert.equal(unknownCode, 1);
+  assert.match(unknownErrors.join("\n"), /Unknown fast check: not-a-check/);
+
+  const emptyErrors = [];
+  const emptyCode = await runCli(
+    ["check", root, "--only", ","],
+    { stdout: () => {}, stderr: (message) => emptyErrors.push(message) },
+  );
+  assert.equal(emptyCode, 1);
+  assert.match(emptyErrors.join("\n"), /At least one fast check must be selected/);
+
+  await rm(path.join(root, "design/system/tokens.json"), { force: true });
+  const manifestPath = path.join(root, "design/manifest.yaml");
+  await writeFile(
+    manifestPath,
+    (await readFile(manifestPath, "utf8")).replace(
+      "policy_profile: prototype",
+      "policy_profile: adoption",
+    ),
+  );
+  const notRunCode = await runCli(
+    ["check", root, "--only", "semantic-styles", "--json"],
+    { stdout: () => {}, stderr: () => {} },
+  );
+  assert.equal(notRunCode, 2);
+});

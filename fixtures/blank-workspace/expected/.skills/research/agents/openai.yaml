@@ -1,0 +1,4 @@
+interface:
+  display_name: Plan research
+  short_description: Plan ethical research and sanitized evidence handling.
+  default_prompt: Use $research to plan ethical research and sanitized evidence handling.

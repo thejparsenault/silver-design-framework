@@ -1,15 +1,13 @@
-import { execFile } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { runGit } from "../framework/runtime/git.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import { exists, resolveInside, writeUtf8 } from "./lib/files.mjs";
-
-const run = promisify(execFile);
 
 async function git(root, args, { allowFailure = false } = {}) {
   try {
-    const result = await run("git", ["-C", root, ...args], { encoding: "utf8" });
+    const result = await runGit(root, args);
     return result.stdout.trim();
   } catch (error) {
     if (allowFailure) return null;
@@ -84,6 +82,8 @@ export async function createCheckpoint({
           "user.name=Silver",
           "-c",
           "user.email=silver@local",
+          "-c",
+          "commit.gpgSign=false",
           "commit",
           "--only",
           "-m",
@@ -123,6 +123,7 @@ export async function createCheckpoint({
     workspace,
     `.silver/results/checkpoints/${id}.json`,
   );
-  await writeUtf8(recordPath, `${JSON.stringify(record, null, 2)}\n`);
+  const mutator = await createWorkspaceMutator(workspace);
+  await mutator.write(mutator.relative(recordPath), `${JSON.stringify(record, null, 2)}\n`);
   return record;
 }

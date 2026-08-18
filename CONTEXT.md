@@ -49,6 +49,25 @@ _Avoid_: Done flag, success when only file generation completed
 A deterministic evaluation of one conformance dimension that produces normalized findings and never performs design work.
 _Avoid_: Skill when the operation is purely evaluative
 
+**Check evidence**:
+The persisted result file a check writes under `.silver/results/checks/`. A
+recorded `pass` is believed only when its evidence resolves and agrees; an
+unbacked claim is degraded to `not-run` with the reason.
+_Avoid_: Check status when referring to the file that substantiates it
+
+**Studio voice**:
+How the agent talks while doing design work: register, not rigour. Authored once
+as a framework default and overridable in My Practice, deliberately separate from
+skill packages so tone and instructions can change independently.
+_Avoid_: Voice, which is the product's voice to its audience
+
+**Practice overlay**:
+My Practice resolved and carried into one workspace as a generated, untracked
+file. It is where personal studio voice and method overlays reach an agent, and
+it is never an authoring location — personal preference is authored in My
+Practice so it applies everywhere and is committed nowhere.
+_Avoid_: Workspace setting, personal config in the project
+
 **Recipe**:
 A tested implementation profile for generating a particular kind of output, such as a static reference page, marketing site, web application, or mobile prototype.
 _Avoid_: Template when the choice includes runtime and workflow guidance
@@ -97,6 +116,48 @@ _Avoid_: Framework default when it belongs to one workspace
 An abstract operation a skill needs, such as reading a design file or inspecting a browser, independent of the provider that supplies it.
 _Avoid_: MCP server when provider choice is not relevant
 
+**Activity**:
+A human-named unit of tool-using design work — "make a wireframe",
+"push design-system updates" — naming a capability, the actions taken with it,
+and sometimes the artifact kinds involved. It is what a transport preference
+binds to, and what lets a designer express a choice without knowing what a
+capability is. There are 67, namespaced by family
+(`visual.create-high-fidelity-ui`, `evaluate.audit-performance`). As of 0.9,
+which providers serve an activity is *declared* on the provider
+(`activities: [{id, support, actions}]`) rather than derived from its
+capabilities and directions alone — the pre-0.9 derivation could not express
+a fidelity distinction like "creates a rough sketch" vs. "creates an
+editable, high-fidelity design," which is the reason the catalog grew
+fine-grained in the first place. Every activity also carries a `fallback`: the
+native answer silver-portable gives when nothing holds the activity's
+capability at all, which is what makes "there is always a Silver-native
+answer" true by construction rather than by silver-portable collecting
+capabilities it doesn't otherwise need. `binding: internal` marks the rare
+activity nobody can meaningfully rebind — currently only
+`artifact.write-canonical`, whose capability a declaration may never claim.
+_Avoid_: Capability when the designer-facing name is what matters
+
+**Transport**:
+One way of reaching an external system. Several transports may share a target —
+Figma has more than one — and be good at genuinely different jobs, so they are
+separate providers with their own directions, artifact kinds, and (from 0.9)
+generically derived diagnosis.
+_Avoid_: Provider when the distinction between two routes to the same tool matters,
+Figma when a specific server is meant
+
+**Unmapped transport**:
+An MCP server present in the agent host that no shipped adapter claims. Silver
+knows it exists and nothing more, so it says so and asks what it is for rather
+than guessing. It is never selected for an activity until the designer answers.
+_Avoid_: Unsupported, which implies Silver has judged it
+
+**Veto**:
+A project, team, organization, or machine policy forbidding a transport. It is a
+permission, not a preference: no ordering can waive it. Recorded with its source
+and who can lift it, because a silently vetoed transport is indistinguishable
+from a broken one.
+_Avoid_: Priority, ranking
+
 **Tool profile**:
 A user's provider preferences and permission ceilings for tool capabilities, stored outside project workflow context.
 _Avoid_: Global skills
@@ -128,9 +189,41 @@ _Avoid_: Automatically discovered company foundation
 **Linked source**:
 A manually registered local or Git design-system, component-catalog, or
 codebase source with declared authority, selected paths, and an exact revision
-or integrity pin. Availability, drift, and stale dependents are inspected
-without importing or semantically synchronizing the source.
+or integrity pin. Its selected representations may be imported, compared, and
+explicitly exported through bindings; the source never receives a Silver
+installation and is never changed merely because drift was observed.
 _Avoid_: Live dependency, automatic pull
+
+**Representation binding**:
+The versioned connection between one ordinary workspace-local artifact and one
+provider object or selected linked-source path, including adapter, authority,
+synchronization policy, and the last shared local/external base.
+_Avoid_: Context-dependent artifact path, live mount
+
+**Shared base**:
+The paired local and external revision/integrity identities last accepted as
+equivalent for a representation binding. Reconciliation compares both current
+sides to this base; it never chooses a winner when both changed.
+_Avoid_: Latest file, implicit source of truth
+
+**Workspace mutation**:
+A single symlink-aware write, replacement, deletion, directory creation, or
+constrained generated adapter link beneath a canonical workspace root. It
+rejects linked ancestors and real-path escapes immediately before activation.
+_Avoid_: Direct filesystem write to a managed path
+
+**Workspace transaction**:
+A durable, locked, journaled set of workspace mutations with staged content,
+preimages, per-operation activation state, validation, and explicit resume or
+rollback. It promises complete-or-recoverable behavior, not simultaneous
+multi-file visibility.
+_Avoid_: Atomic migration when referring to the whole multi-file operation
+
+**Synchronization coordinator**:
+The product interface that resolves bindings and adapters, persists pinned
+proposals, requires explicit operation selection, runs checks and transactions,
+and advances the shared base after repository or provider reconciliation.
+_Avoid_: Adapter when referring to the end-to-end workflow
 
 **Design context**:
 A revisioned composition of product or brand, design system, component catalog,

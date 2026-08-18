@@ -1,0 +1,71 @@
+# Miro MCP — a declaration, not an adapter.
+#
+# A collaborative whiteboard, and the alternative to Figma/silver-portable for
+# experience maps and conceptual diagrams specifically — not a design-file
+# tool, and not a place frames or high-fidelity work belong.
+schema: silver/provider/v1
+id: miro-mcp
+version: 0.9.0
+kind: external
+target: miro
+variant: official-mcp
+aliases:
+  - miro
+  - miro mcp
+source:
+  publisher: Miro
+  homepage: https://miro.com
+  docs: https://developers.miro.com
+  distribution:
+    kind: remote
+    ref: https://mcp.miro.com/mcp
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published documentation
+guidance:
+  good_at:
+    - Experience maps, journey maps, and conceptual/system diagrams on a shared board
+    - Collaborating with a team that already lives in Miro
+  not_for:
+    - Design-file work — it has no concept of frames, tokens, or components
+  prefer_when:
+    - The output is a map or diagram meant to be reviewed or built on by a team in Miro
+  compare_to:
+    - transport: silver-portable
+      difference: >-
+        Produces a native, collaborative Miro board; the portable renderer
+        produces a Mermaid diagram with no external account needed.
+capabilities: [map-renderer, visual-renderer, external-artifact]
+connection:
+  kind: mcp
+  server: miro
+  tool_prefix: mcp__miro__
+  config:
+    url: https://mcp.miro.com/mcp
+activities:
+  - id: map.render
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: miro, editable: true, native: true}]
+  - id: diagram.create-conceptual
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: miro, editable: true, native: true}]
+  - id: external.publish-artifact
+    support: partial
+    actions: [create, write, update]
+permissions:
+  - capability: map-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: external-artifact
+    actions: [create, write, update]
+    default: ask
+directions: [read, write]
+fidelity: semantic
+maturity: preview
+post_setup:
+  - Requires a Miro account and board access; the agent authorizes on first call.

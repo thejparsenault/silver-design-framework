@@ -1,0 +1,4 @@
+interface:
+  display_name: Structure
+  short_description: Define information architecture and conceptual product structure.
+  default_prompt: Use $structure to define information architecture, navigation structure, and object models for the product.

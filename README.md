@@ -1,468 +1,300 @@
-# The Silver Design Framework
-
-Silver is an agentic product-design workspace. It gives designers and their
-agents a shared set of project-local skills, structured design artifacts,
-portable visual outputs, guardrails, and deterministic checks.
-
-Use Silver to:
-
-- define product, audience, brand, voice, and design principles;
-- conduct research, synthesize evidence, and generate ideas;
-- create specifications, flows, sketches, components, and prototypes;
-- evaluate work and refine it from accepted feedback;
-- prepare evidence-backed pitches and presentations;
-- move accepted designs toward production without silently inventing styles,
-  components, or requirements; and
-- keep local artifacts and external-tool representations revisioned,
-  inspectable, and explicitly reconciled.
-
-Silver does not require one application framework, design tool, agent, or
-mandatory design process. Skills run independently and can also be combined
-into a longer, resumable design loop.
-
-## How Silver works
-
-Silver is agent-first rather than a graphical application:
-
-1. Ask a file-capable chat agent to inspect setup for a product or repository.
-2. Review its recommendation for an integrated or separate design repository.
-3. Let the agent apply the exact reviewed plan.
-4. Ask it to use project-local skills in `.skills/`.
-5. Review consequential changes; accepted work receives a local Git checkpoint.
-
-A Silver workspace distinguishes three representation roles:
-
-- **Portable artifacts** contain the accepted design meaning. They use
-  Markdown, structured JSON or YAML, and DTCG token files.
-- **Local views** make that meaning easy to inspect. Silver uses semantic HTML
-  for visual work and Mermaid plus HTML for flows.
-- **External views** are objects in tools such as Figma. Bindings record their
-  authority, provider revision, mapping, and last shared base so drift can be
-  reviewed instead of resolved by guessing.
-
-Every general skill has a useful local baseline. External tools add capability
-but are not prerequisites for ordinary design work.
-
-## Requirements
-
-- Node.js 20.11 or newer;
-- an agent that can work with repository files and project instructions; and
-- Git, only if you install from source rather than from a release.
-
-No npm account or registry token is needed.
-
-## Quick start
-
-Open your product folder in a file-capable chat agent and paste this:
-
-> Install the Silver Design Framework in this folder.
->
-> First check that Node.js 20.11 or newer is available by running
-> `node --version`. If it is missing or older, stop and tell me how to install
-> it for my operating system.
->
-> Then run, from this folder:
->
->     silver setup inspect . --json
->
-> using this if `silver` is not on my PATH:
->
->     npx --yes silver-design-framework@0.6.1 setup inspect . --json
->
-> Do not run `npx silver`; that is an unrelated package. Show me the recommended
-> repository topology, its reasons, and every unresolved question. Ask me those
-> questions. Do not apply anything yet.
->
-> Once I have answered, apply exactly what I approved by piping inspect into
-> apply, so no plan file is written into this folder:
->
->     silver setup inspect . --answers '{"team_shape":"…","topology":"…"}' --json | silver setup apply -
->
-> Then run `silver doctor .` and summarize the result.
-
-The agent reads its own instructions from `silver --help`, which documents every
-answer key.
-
-Two rules the agent must follow, both enforced by the CLI:
-
-- `team_shape` and `topology` have no safe default. Setup refuses to apply while
-  either is unanswered, so a human confirms the topology rather than the agent
-  guessing.
-- A plan file written inside the folder being inspected changes that folder and
-  invalidates itself. Pipe into `setup apply -`, or keep the plan elsewhere.
-
-The plan recommends a separate design repository for multiple codebases,
-separate discipline ownership, or independent design history. It recommends
-integration for a solo or small shared team with one codebase and lifecycle.
-The recommendation is never applied until the plan is reviewed.
-
-No npm account, login, or token is needed to install.
-
-If your network cannot reach the npm registry, every release is also attached to
-its GitHub release, and npm accepts a remote tarball as a package spec:
-
-```sh
-npx --yes https://github.com/thejparsenault/silver-design-framework/releases/download/v0.6.1/silver-design-framework-0.6.1.tgz setup inspect . --json
-```
-
-### If you are installing from source
-
-You can also clone it and call it by path:
-
-```sh
-git clone https://github.com/thejparsenault/silver-design-framework.git
-cd silver-design-framework && npm install
-node "$PWD/bin/silver.mjs" setup inspect /path/to/product --json
-```
-
-After setup, the workspace has its own launcher and you can drop the long path:
-
-```sh
-cd /path/to/product
-.silver/bin/silver doctor .
-```
-
-### Do I need to install Node?
-
-Yes, until a standalone binary lands. Silver needs Node.js 20.11 or newer and
-tells you so rather than failing obscurely:
-
-```text
-$ silver setup .
-Silver needs Node.js 20.11 or newer; this is v18.19.0.
-
-Install a supported Node.js, then run this command again:
-  macOS with Homebrew:  brew install node
-  macOS/Windows:        download the LTS installer from https://nodejs.org
-  Linux with a manager: https://nodejs.org/en/download/package-manager
-```
-
-Guided setup also creates the visible, tool-neutral
-`~/Silver/My Practice` workspace. It has readable methods, playbooks, rubrics,
-and decisions plus implicit local Git history. A configured GitHub remote is
-reported separately from a verified remote backup; Silver never pushes merely
-because it created a local revision.
-
-Tell the agent which project-local skill to use. It should read that skill's
-`SKILL.md`, pin its inputs and active design context, respect repository
-instructions and guardrails, and record the result.
-
-Durable output goes through the guarded runtime. Ask for a scaffold rather than
-writing the request by hand:
-
-```sh
-.silver/bin/silver invoke --scaffold brand .   # prefilled request
-.silver/bin/silver invoke brand request.json .
-```
-
-The scaffold fills in identifiers, timestamps, the provenance envelope, the
-active design-context pin, required check entries, and the `expected_integrity`
-of any file being replaced. You supply the content and the reasons. Every
-placeholder carries a sentinel and the CLI refuses a request that still contains
-one, so a scaffold cannot be submitted unmodified.
-
-Run skills through `.silver/bin/silver`, not `.skills/<id>/scripts/invoke.mjs`.
-The guarded runtime needs dependencies the workspace does not carry; the CLI
-resolves them.
-
-## Working with Claude Code
-
-`silver setup` generates what Claude Code reads, because it reads `CLAUDE.md`
-rather than `AGENTS.md` and discovers skills only under `.claude/skills/`:
-
-- `CLAUDE.md` importing `@AGENTS.md`, merged into a marked block so a
-  project-owned `CLAUDE.md` keeps its content;
-- `.claude/skills/<id>` symlinks into the canonical `.skills/<id>`, so all
-  twenty-one skills appear in autocomplete;
-- `.silver/bin/silver`, a launcher giving the workspace one stable command.
-
-`.skills/` and `AGENTS.md` remain canonical and agent-neutral. The adapters are
-generated: `silver repair` regenerates them, `silver doctor` reports when one is
-missing or stale, and deleting them all still leaves a working workspace.
-
-Claude Cowork is not yet supported — it loads only account-level skills and runs
-code in an isolated remote environment. See
-[`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
-
-## A good first session
-
-Begin by giving the workspace enough context to constrain later work.
-
-### 1. Define the product
-
-> Use the project-local `product` skill to help me define the audience,
-> problems, jobs, constraints, and success measures for this product.
-> Interview me where necessary. Show me the proposed change before updating
-> `design/product.md`.
-
-### 2. Establish the brand
-
-> Use the `brand` skill, taking the accepted product artifact as context. Help
-> me define the brand promise, desired feeling, attributes, anti-attributes,
-> and visual implications. Do not update `design/brand.md` until I approve the
-> proposal.
-
-### 3. Define voice and principles
-
-> Use the `voice` skill to define tone, terminology, content patterns, and
-> important do/don't guidance for this audience.
-
-> Use the `principles` skill to create a small set of decision principles that
-> are specific enough to resolve real product-design tradeoffs.
-
-### 4. Review the system foundation
-
-> Use the `theme` and `system` skills to review the default semantic styles,
-> modes, tokens, and component guidance against the accepted product and
-> brand. Propose changes before applying them.
-
-These are useful foundations, not mandatory stages. You can revisit any one of
-them whenever the product changes.
-
-## Designing a feature
-
-Silver's recommended loop is:
-
-```text
-research → synthesize → ideate → specify ↔ flow/sketch → prototype → evaluate
-```
-
-The loop is optional. Start at the point that matches the evidence and
-decisions you already have.
-
-A typical feature session could use these prompts:
-
-> Use `research` to prepare a plan for learning why users abandon onboarding.
-> Separate planned research from research that has actually been conducted.
-
-> Use `synthesize` to turn the attached observations into findings. Preserve
-> links to the evidence and distinguish observation, interpretation, and
-> recommendation.
-
-> Use `ideate` to generate several approaches to the accepted problem. Record
-> assumptions and testable hypotheses rather than presenting ideas as facts.
-
-> Use `specify` to turn the selected direction into a design specification
-> covering behavior, states, edge cases, accessibility, success criteria, and
-> unresolved questions.
-
-> Use `flow` to create a structured user flow from the specification. Generate
-> both Mermaid and HTML views.
-
-> Use `map` to create a current-state journey map from the accepted evidence.
-> Label assumptions, pin the active design context, and render the local HTML
-> view.
-
-> Use `sketch` to create an inexpensive HTML representation of the important
-> states. Stop for my review before making a higher-fidelity prototype.
-
-> Use `prototype` to build a constrained local prototype that pins the accepted
-> specification, flow, and design-system revisions. State the question the
-> prototype is meant to answer.
-
-> Use `evaluate` to record these observations, separate findings from
-> interpretations, and propose refinements. Apply only the findings I accept.
-
-Flows are useful but not required for every sketch or prototype. A prototype
-may introduce experimental components, but it remains constrained to approved
-semantic styles unless you explicitly request and justify a partial or full
-constraint suspension.
-
-## Other skills
-
-The installed catalog contains twenty-one independently runnable skills:
-
-| Area | Skills |
+<p align="center">
+  <img src="docs/brand/silver-logo.jpg" alt="Silver — Ag mark" width="360">
+</p>
+
+# Silver
+
+**Silver is a product-design framework built for working with AI agents.** It
+gives a product team one local home for design work: the decisions behind it,
+the evidence that informed it, the design system it uses, the code and tools it
+connects to, and a clear record of what happened along the way.
+
+Start a chat with an agent that can access your project files. Ask it to install
+Silver, then work as you normally would: define a product, explore a flow, make
+a prototype, check a design, prepare a presentation, or connect a design system
+and Figma. Silver gives the agent a shared project vocabulary and clear places
+to save the work. When work draws on a source, Silver records it so you can see
+where it came from later.
+
+Silver does not replace Figma, your codebase, research tools, or the way your
+team works. It connects them deliberately. If a tool offers an agent connection
+(MCP), a command-line tool, or an API, an agent can use it when you give it the
+tool’s setup instructions. Silver records what is connected, what was used, and
+what still needs a human decision. It does not silently overwrite work in
+another tool or repository.
+
+Whenever you are unsure where to begin or what to do next, just ask your agent:
+**“What now?”** Silver will look at the workspace’s current evidence, decisions,
+and open work, then suggest a small set of grounded next steps. It does not
+start any of them until you choose.
+
+## Install Silver
+
+Silver 0.9 is distributed first as signed and Apple-verified macOS installer
+packages. This is the recommended option for most designers: install it once
+and the `silver` command is ready in any local project folder. Choose the
+package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0):
+
+| Your Mac | Download |
 | --- | --- |
-| Orientation | `what-now` |
-| Foundations | `product`, `brand`, `voice`, `principles`, `theme`, `system` |
-| Discovery | `research`, `synthesize`, `ideate`, `map` |
-| Definition | `specify`, `flow`, `component` |
-| Making | `sketch`, `prototype` |
-| Evaluation and delivery | `evaluate`, `pitch`, `implement`, `practice-review`, `design-check` |
+| Apple Silicon (M-series) | [`Silver-0.9.0-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/Silver-0.9.0-macos-arm64.pkg) |
+| Intel | [`Silver-0.9.0-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/Silver-0.9.0-macos-x64.pkg) |
 
-Use `pitch` to create an opportunity, proposal, or outcome case for team
-buy-in. It can generate a branded local presentation view while keeping
-estimated impact distinct from measured results.
+### For you
 
-Use `what-now` when returning to a workspace or when the next useful move is
-unclear. It ranks several choices from manifest status, review checkpoints,
-check results, freshness blockers, accepted handoffs, and timestamps without
-starting any of them.
+1. Download the package matching your Mac and follow macOS’s installer steps.
+2. Open the product folder you want to work in with Codex, Claude Code, or
+   another local agent that can read project files and run shell commands.
+3. Copy the following prompt into that agent. The prompt is for the agent; you
+   do not need to run the command yourself.
 
-Use `implement` only after the relevant design inputs are accepted and
-production readiness is satisfied. Prototype code is evidence and reference
-material by default, not automatically production code.
+### Copy this prompt into your agent
 
-## Run checks
+> **Install Silver in this folder. First run `silver setup inspect . --json`.
+> Explain the recommended repository setup, anything you still need me to decide, and the
+> files that would be created or changed. Do not apply anything until I approve
+> the plan.**
 
-Run the complete fast suite from the initialized workspace:
+The agent will ask about the team and whether this should live alongside one
+codebase or in its own design repository. Answer those questions in chat. When
+you are satisfied with the plan, tell the agent to apply only that plan and then
+run a health check.
+
+After setup, “**What now?**” is always a good next prompt. Your agent can use
+Silver’s project-local `what-now` skill to orient itself before proposing work.
+
+### If you do not have the macOS package
+
+An agent with Node.js 22 or later can run the exact release directly—no npm
+account or token is required. The following is a replacement prompt for your
+agent; it is not a command you need to type into Terminal.
+
+### Copy this prompt into your agent
+
+> **Use the Silver 0.9 release to inspect setup in this folder. Run:**
+>
+> `npx --yes --package silver-design-framework@0.9.0 silver setup inspect . --json`
+>
+> **Show me the plan and questions before making any changes. Do not run
+> `npx silver`; that is a different package.**
+
+If npm itself is unavailable, give the agent this exact archive command instead:
 
 ```sh
-node .skills/design-check/scripts/run-fast.mjs --root .
+npx --yes \
+  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/silver-design-framework-0.9.0.tgz \
+  setup inspect . --json
 ```
 
-If local Chrome is available, run the browser suite:
+### Which agents work?
 
-```sh
-node .skills/design-check/scripts/run-browser.mjs --root .
-```
+Silver is designed for **Codex, Claude Code, and similar local agents** that
+can read files in your project, follow project instructions, and run commands
+on your Mac. Its core instructions and skills live inside the project, rather
+than in one agent provider’s account.
 
-Checks cover artifact contracts, flow structure, semantic styles, prototype
-policy, evidence provenance, presentations, production readiness, assets,
-accessibility, responsive behavior, critical interactions, bindings,
-revision pins, view provenance, synchronization, semantic mapping, stale
-proposals, authority, map structure, and secret-free configuration.
+Claude Code is supported directly. Silver adds the small files Claude Code needs
+to find the project instructions and skills. Other local agents can use the
+same project files, even where Silver does not yet make a custom adapter for
+that agent.
 
-A genuinely unavailable target reports `not-run`; Silver never turns missing
-coverage into a pass.
+Claude Cowork is **not supported yet**, even if the `silver` command is
+installed on your Mac. Cowork cannot find Silver’s project skills or read its
+project instructions, and it cannot reliably run the local steps Silver uses to
+save work and record its checks. It can read and edit ordinary workspace files,
+but it cannot reliably run a complete Silver skill.
 
-## Workspace structure
+## What a Silver workspace gives you
 
-A new workspace has this general shape:
+Setup can create a complete design home in a single existing product folder, or
+a separate design repository linked to one or more code repositories. The
+single-folder option is a good starting point for a solo designer or a small
+team working on one product.
 
 ```text
-my-product-design/
-  AGENTS.md                  Canonical agent entry point
-  CLAUDE.md                  Generated Claude Code adapter; imports AGENTS.md
-  .claude/skills/            Generated links into .skills/ for Claude Code
-  .skills/                   Project-local design skills
-  .silver/                   Installed packages, lock state, and results
-    bin/silver               Generated launcher for the Silver CLI
-  design/
-    INDEX.md                 Generated artifact index
-    manifest.yaml            Workspace configuration and artifact map
-    product.md
-    brand.md
-    voice.md
-    design-principles.md
-    system/
-    assets/
-    contexts/                Product/surface contexts and expression mappings
-    decisions/
-    flows/
-    maps/
-    guidance/                Manually linked institutional guidance
-    sources/                 Pinned design-system, component, and code links
-    integrations/
-    presentation-kit/
-    work/                    Findings, concepts, specs, and other working artifacts
-  prototypes/
-  presentations/
-  production/
-  reference-system/         Editable demonstration system for local rendering
+your-product/
+├── AGENTS.md                 Shared instructions for the agent
+├── .skills/                  25 project-specific design skills
+├── .silver/                  Silver’s setup record, results, and recovery files
+├── .claude/                  Extra files Claude Code needs (when applicable)
+├── design/
+│   ├── product.md            Product, audience, outcomes, and positioning
+│   ├── brand.md              Brand foundation
+│   ├── voice.md              Voice, terminology, and content guidance
+│   ├── system/               Tokens, components, and design-system records
+│   ├── work/                 Specifications, concepts, findings, and evaluations
+│   ├── evidence/             Research evidence and observations
+│   ├── flows/                User and system flows
+│   ├── decisions/            Durable decisions and their reasons
+│   ├── contexts/             The current design-system and code context
+│   └── integrations/         Connections to shared repositories and tools
+├── prototypes/               Testable prototypes
+├── presentations/            Presentation material
+└── production/               Handoffs for implementation
 ```
 
-`~/Silver/My Practice` is intentionally outside this product workspace.
-Product results record only its stable identity, revision, and applied method
-IDs—not a private path or a copy of the personal repository.
+| Place | What it is for |
+| --- | --- |
+| `design/` | The main design record: foundations, working files, evidence, decisions, and design-system files. |
+| `design/system/` | The project’s main design system. It can be written here or imported from a shared system. |
+| `.skills/` | Instructions the agent follows for each kind of design work. They belong to this project, not to anyone’s personal prompt library. |
+| `.silver/` | Silver’s private working area: its setup record, check results, change proposals, and recovery information. |
+| `prototypes/`, `presentations/`, `production/` | Prototypes, presentation material, and implementation handoffs that draw on the design record. |
 
-Treat `design/manifest.yaml` and the mapped design artifacts as sources of
-truth. `design/INDEX.md` is generated. Framework-managed files under
-`.skills/` and `.silver/` are updated through the Silver CLI rather than
-edited casually.
+Silver also offers **My Practice**, a separate personal workspace for your own
+methods, rubrics, and playbooks. It is visible and editable, but never silently
+overrides project facts, required checks, or team guidance.
 
-## Maintenance commands
+## Included skills
 
-From inside an initialized workspace, use its launcher:
+Skills are independent. Ask an agent to use one skill for one clear piece of
+work, review what it produces, and then decide what happens next. Each skill
+records what it used, what it made, any checks it ran, and sensible next steps.
+
+| Area | Skills | Use them to |
+| --- | --- | --- |
+| Foundation | `product`, `brand`, `voice`, `principles` | Define the product, audience, brand, language, and decision tests. |
+| Understand | `research`, `collect`, `synthesize`, `map` | Plan research, gather source-linked evidence, turn it into findings, and map the wider experience. |
+| Frame and explore | `ideate`, `specify`, `structure`, `flow`, `visualize` | Form problems and hypotheses; make specifications, information architecture, flows, and visual representations. |
+| Make | `system`, `theme`, `component`, `prototype` | Maintain tokens and components; make themes, component proposals, and testable prototypes. |
+| Learn and improve | `evaluate`, `measure`, `design-check`, `practice-review` | Evaluate work, measure outcomes, run independent checks, and improve your reusable practice. |
+| Share and deliver | `pitch`, `implement` | Make an evidence-backed change case and prepare implementation-ready work. |
+| Keep work moving | `reconcile`, `what-now` | Review differences with linked sources or external tools, and choose a grounded next action. |
+
+For a first session, ask the agent to use `product`, then `brand`, `voice`, and
+`principles`. If you already have a design system, ask it to look at that first
+instead of creating a second one.
+
+## Integrating your tools
+
+Every general skill can do useful work with the files in the project. Connecting
+another tool adds options; it does not make that tool a hidden requirement for
+ordinary design work.
+
+Silver ships with these adapters:
+
+| Adapter | What it is useful for | What you need |
+| --- | --- | --- |
+| **Silver portable** | Project files, simple web views, flow diagrams, prototypes, presentations, and a record of sources. | Nothing beyond Silver. |
+| **Local Chrome / Chromium** | Repeatable checks of a prototype’s layout, accessibility, and interactions. | Chrome or Chromium installed locally. |
+| **Figma official MCP** | Reading Figma structure, variables, styles, and components; creating or editing Figma content. | Authorize Figma’s hosted connection when your agent asks. |
+| **Figma Console MCP** | Working in the Figma document currently open in the desktop app. | The Console plugin and its MCP server configured in your agent host. |
+| **Linked repository adapter** | Importing, comparing, and explicitly exporting selected files from a design-system, component-catalog, or code repository. | A local path to that repository and a reviewed link plan. |
+
+To use another tool, tell the agent where its setup instructions live. Those
+instructions might describe an MCP connection, a command-line tool, or an API.
+Silver can record the connection and explain whether it is ready, but it does
+not guess package names, install software, start background services, or store
+passwords and API keys.
+
+### Ask your agent
+
+> **What would Silver use to make a wireframe in this project? Show the tool it
+> would use, why it is available, and any setup I still need to do.**
+
+If you or an agent need the underlying commands, they are:
 
 ```sh
-.silver/bin/silver doctor .
-.silver/bin/silver repair .
-.silver/bin/silver update .
-.silver/bin/silver migrate .
-.silver/bin/silver trace artifact-id .
+silver tools . --for "make a wireframe"
+silver tools . --list
+silver tools . --diagnose figma-official-mcp
 ```
 
-The equivalent from your Silver checkout, which also works before a workspace
-exists:
+## Connect a design system, codebase, or Figma
+
+A shared design system or production codebase does not need its own Silver
+installation. Connect it as an external source, bring chosen files into your
+workspace, and review changes before moving them in either direction.
+
+### Ask your agent
+
+> **I have a shared design system at `../shared-design-system`. Inspect it as a
+> linked design-system source for this project. Show me the selected files,
+> any files you cannot connect clearly, and the import plan. Do not link,
+> import, or change either repository until I approve it.**
+
+For reference, the agent will use commands like these:
 
 ```sh
-node /path/to/silver-design-framework/bin/silver.mjs doctor /path/to/workspace
+# Ask Silver to make a reviewed plan for a shared design system.
+silver link inspect ../shared-design-system . \
+  --kind design-system --as shared-system --json
+
+# See whether any linked representations have drifted.
+silver sync status --all . --json
 ```
 
-- `doctor` is read-only and reports contract, integrity, and configuration
-  problems, including a missing or stale agent adapter.
-- `repair` regenerates disposable indexes, agent pointers, host adapters, and
-  the launcher. Run it after moving your Silver checkout.
-- `update` updates clean framework-managed packages and reports conflicts or
-  project-owned proposals.
-- `migrate` previews a supported migration. Add `--apply` only after reviewing
-  the plan.
-- `trace` shows the sources, practice revision, linked guidance, design
-  contexts, acceptance, and external bindings behind a durable artifact.
+The `reconcile` skill helps an agent explain what changed—both design-token
+changes and ordinary text-file changes—and identifies the right part of the
+design process to review it. Nothing changes automatically. An approved export
+changes only the files you selected, runs the agreed checks, and never pushes a
+Git branch or opens a pull request.
 
-Daily design work belongs in skills, not in the installer. Setup and updates
-never start recommended design tasks automatically.
+Figma uses the same review model. An agent can read a saved Figma state, prepare
+a proposal, make the approved Figma change, then read the result again before
+Silver records the new shared state.
 
-## Important safety rules
+## Safety, checks, and recovery
 
-- Filesystem access, Git/GitHub permissions, branch protection, and repository
-  instructions determine repository authority. Silver declares and audits
-  expected effects but does not add another repository permission gate.
-- Recommended next actions are never started automatically.
-- Constraint suspension must be requested explicitly; an agent may not infer
-  it from a request for exploration.
-- Accepted artifacts, implementation handoffs, and material configuration
-  changes create local Git checkpoints when possible. Checkpoints never push.
-- External changes are inspected and proposed before they affect portable
-  artifacts.
-- Credentials and secrets do not belong in project bindings or tool profiles.
+Silver is designed to make an agent’s work understandable and recoverable
+without asking you to become a software release engineer.
 
-## Current limitations
+- You see a plan before setup, linking, updates, migrations, or synchronization
+  changes your files.
+- Silver refuses to follow file shortcuts that lead outside the project while it
+  changes its own files.
+- Updates, migrations, and synchronization are prepared before they are applied.
+  If a process stops partway through, Silver leaves enough information to safely
+  continue or undo the work.
+- Checks make an important distinction between a real design problem, a check
+  that could not run, and a problem with the browser or checking tool itself.
+- Silver records sources, design-system versions, and check results so an agent
+  can show you where a result came from.
 
-Silver `0.6.1`, **Agent Hosts and Guarded Invocation**, is validated for guided
-setup, integrated and separate repository topology, My Practice, linked local
-or Git guidance, multiple design contexts, maps, provenance tracing, Claude Code
-discovery, CLI-routed guarded invocation, and reviewable 0.5-to-0.6 migration.
+Useful maintenance commands:
 
-- Claude Cowork is not supported. It loads only account-level skills and runs
-  code in an isolated remote environment, so guarded invocation cannot reach a
-  local workspace. See
-  [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md).
-- The `.silver/bin/silver` launcher records an absolute path to your Silver
-  installation, so it is machine-specific. Run `silver repair` after cloning a
-  workspace onto another machine.
-- Guided setup can install into an existing repository, but deep semantic
-  discovery and adoption of arbitrary codebases remains a following milestone.
-- Silver reports drift for newly linked guidance, design-system, component, and
-  codebase sources. General `silver sync` commands and broader bidirectional
-  Figma/component/document synchronization are intentionally deferred.
-- GitHub repository creation is agent-mediated: Silver previews the proposed
-  private repository and records a resulting remote, but does not create it
-  through a direct built-in API.
-- The convenience npm package and immutable GitHub release have not yet been
-  published.
-- Production recipes remain intentionally limited while the existing-codebase
-  adoption model is developed.
+```sh
+silver doctor .                         # diagnose; makes no changes
+silver check .                          # run applicable local checks
+silver update .                         # preview framework updates; makes no changes
+silver migrate .                        # preview a migration; makes no changes
+silver migrate . --apply                # apply a migration you have reviewed
+silver recover .                        # list interrupted changes that can be resumed or undone
+silver recover resume <transaction-id> .
+silver repair .                         # rebuild disposable indexes/adapters
+```
+
+## Current support boundary
+
+Silver 0.9 has signed macOS packages for Apple Silicon and Intel Macs. Windows
+and Linux can use the Node.js distribution, but native signed installers for
+those platforms are not part of this release.
+
+Silver works best with local file-capable agents. It does not install or manage
+credentials for third-party tools, auto-publish work, or replace a team’s review
+and version-control practices. External changes are proposals until a person
+explicitly accepts them.
+
+## Learn more
+
+- [Silver 0.9 acceptance and support boundary](docs/silver-0.9-acceptance.md)
+- [Agent-host compatibility](docs/agent-host-compatibility.md)
+- [Tool representations and reconciliation](docs/tool-representations-and-reconciliation.md)
+- [Installer and distribution model](docs/installer-distribution.md)
+- [Architecture of agentic design workflows](docs/agentic-design-workflows.md)
+- [Project status and roadmap](PROJECT.md)
 
 ## Contributing
 
-Install development requirements and run both authoritative release gates:
+Silver is developed in the open. The source distribution requires Node.js 22 or
+later:
 
 ```sh
+git clone https://github.com/thejparsenault/silver-design-framework.git
+cd silver-design-framework
 npm install
-npm run build
-npm run test:package
+npm test
 ```
 
-`npm run build` validates contracts, rebuilds local rendering assets, and runs
-the source test suite. `npm run test:package` packs the exact release archive,
-installs it into an isolated blank workspace, and exercises the packaged
-setup, migration, skills, views, reconciliation, and checks.
-
-## Project documentation
-
-- [`PROJECT.md`](PROJECT.md) — purpose, scope, and constraints
-- [`STATUS.md`](STATUS.md) — current state and next actions
-- [`TASKS.md`](TASKS.md) — active implementation sequence
-- [`silver_design_framework_prd.md`](silver_design_framework_prd.md) — product requirements
-- [`docs/agentic-design-workflows.md`](docs/agentic-design-workflows.md) — skills and playbooks
-- [`docs/tool-representations-and-reconciliation.md`](docs/tool-representations-and-reconciliation.md) — portable artifacts, views, providers, and drift
-- [`docs/agent-host-compatibility.md`](docs/agent-host-compatibility.md) — what each agent host reads, and what Silver generates for it
-- [`docs/silver-0.5-audit.md`](docs/silver-0.5-audit.md) — the 0.5 audit that produced this release
-- [`docs/traceable-practice-and-context.md`](docs/traceable-practice-and-context.md) — 0.5 architecture, ownership, versioning, backup, and authority
-- [`docs/silver-0.5-acceptance.md`](docs/silver-0.5-acceptance.md) — current release boundary
-- [`docs/silver-0.5-acceptance-audit.md`](docs/silver-0.5-acceptance-audit.md) — current direct evidence
-- [`docs/silver-0.3-acceptance.md`](docs/silver-0.3-acceptance.md) — release criteria
-- [`docs/silver-0.3-acceptance-audit.md`](docs/silver-0.3-acceptance-audit.md) — passing evidence
+See [the project documentation](PROJECT.md) and the acceptance material above
+for release evidence and the current roadmap.

@@ -7,7 +7,14 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { parse } from "yaml";
 
+import {
+  auditActivityCatalog,
+  auditProviderActivities,
+  loadActivityCatalog,
+} from "../runtime/activities.mjs";
 import { migrateSkillContractV1 } from "../migrations/v1-to-v2/skill.mjs";
+import { discoverProviders } from "../runtime/providers.mjs";
+import { loadTokenTree, resolveTokenTree } from "../runtime/tokens.mjs";
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -107,10 +114,7 @@ async function validateV1(validators) {
   const artifactIds = new Set();
   for (const mapping of manifest.artifacts) {
     const artifactPath = path.join(workspaceRoot, mapping.path);
-    const fileMetadata =
-      mapping.kind === "component-catalog"
-        ? null
-        : await stat(artifactPath);
+    const fileMetadata = await stat(artifactPath);
     const content = fileMetadata?.isFile()
       ? await readFile(artifactPath, "utf8")
       : null;
@@ -228,9 +232,12 @@ async function validateV2(validators) {
     ["guardrail-registry.schema.json", "framework/guardrails/registry.yaml", "yaml"],
     ["tool-profile.schema.json", "fixtures/contracts/v2/valid/tool-profile.yaml", "yaml"],
     ["playbook.schema.json", "framework/playbooks/default-design-loop.yaml", "yaml"],
+    ["semantic-roles.schema.json", "framework/semantic-roles/v1.yaml", "yaml"],
     ["lock.schema.json", "fixtures/blank-workspace/expected/.silver/lock.yaml", "yaml"],
     ["asset-catalog.schema.json", "fixtures/blank-workspace/expected/design/assets/catalog.json", "json"],
     ["presentation-kit.schema.json", "fixtures/blank-workspace/expected/design/presentation-kit/kit.json", "json"],
+    ["component-catalog.schema.json", "fixtures/blank-workspace/expected/design/system/components.json", "json"],
+    ["token-source.schema.json", "fixtures/blank-workspace/expected/design/system/tokens.json", "json"],
   ];
   for (const [schemaName, relativePath, format] of positive) {
     assertValid(
@@ -276,10 +283,129 @@ async function validateV2(validators) {
       `migrated ${relativePath}`,
     );
   }
+
+  // Activity support is derived from the provider and skill contracts, so the
+  // catalog can go stale without anyone editing it: shipping a provider for a
+  // `planned` activity, or dropping the last provider for a `served` one, both
+  // make it lie. A stale catalog is worse than none — it promises tools that
+  // are not there — so the drift is a gate, not a warning.
+  const catalog = await loadActivityCatalog();
+  const providers = await discoverProviders({ skipAvailability: true });
+  const skills = [];
+  for (const entry of skillEntries) {
+    skills.push(await yaml(`framework/skills/${entry.name}/skill.yaml`));
+  }
+  const drift = auditActivityCatalog({ catalog, providers, skills });
+  if (drift.length > 0) {
+    throw new Error(`Activity catalog drift:\n  ${drift.join("\n  ")}`);
+  }
+
+  // Declaring support (0.9) reintroduces drift risk the pure derivation made
+  // impossible. This is the replacement guarantee, checked per declaration
+  // rather than per catalog entry.
+  const providerDrift = auditProviderActivities({ catalog, providers });
+  if (providerDrift.length > 0) {
+    throw new Error(`Provider activity declarations drift:\n  ${providerDrift.join("\n  ")}`);
+  }
+
+  // A comparison against a transport that does not exist is worse than no
+  // guidance: it tells a designer to weigh their option against something they
+  // can never obtain, and it is exactly what a rename leaves behind.
+  const transportIds = new Set(providers.map(({ id }) => id));
+  const danglingComparisons = [];
+  for (const provider of providers) {
+    for (const comparison of provider.guidance?.compare_to ?? []) {
+      if (!transportIds.has(comparison.transport)) {
+        danglingComparisons.push(
+          `${provider.id} compares itself to unknown transport ${comparison.transport}`,
+        );
+      }
+      if (comparison.transport === provider.id) {
+        danglingComparisons.push(`${provider.id} compares itself to itself`);
+      }
+    }
+  }
+  if (danglingComparisons.length > 0) {
+    throw new Error(
+      `Transport guidance drift:\n  ${danglingComparisons.join("\n  ")}`,
+    );
+  }
+
+  // The vocabulary is the spec; the default design system is one conforming
+  // instance of it. Checking both directions is what keeps that relationship
+  // true: a published role nothing implements is a promise to external systems
+  // that Silver cannot keep, and an implemented role the vocabulary never
+  // published is a name no other system can map onto.
+  const vocabulary = await yaml("framework/semantic-roles/v1.yaml");
+  const published = new Set(vocabulary.roles.map(({ id }) => id));
+  const implemented = new Map();
+  const semanticRoot = path.join(
+    root,
+    "installer/templates/blank-workspace/design/system/tokens/semantic",
+  );
+  for (const name of (await readdir(semanticRoot)).sort()) {
+    if (!name.endsWith(".tokens.json")) continue;
+    // `palette` is the scheme/mode matrix the role families reference. It is
+    // plumbing, not vocabulary, and is deliberately unpublished.
+    if (name === "palette.tokens.json") continue;
+    const document = JSON.parse(
+      await readFile(path.join(semanticRoot, name), "utf8"),
+    );
+    const walk = (node, trail = []) => {
+      if (!node || typeof node !== "object") return;
+      if ("$value" in node) {
+        implemented.set(trail.join("."), node.$type ?? "color");
+        return;
+      }
+      for (const [key, value] of Object.entries(node)) {
+        if (!key.startsWith("$")) walk(value, [...trail, key]);
+      }
+    };
+    walk(document);
+  }
+
+  const roleDrift = [
+    ...[...published]
+      .filter((id) => !implemented.has(id))
+      .map((id) => `published but not implemented by the default system: ${id}`),
+    ...[...implemented.keys()]
+      .filter((id) => !published.has(id))
+      .map((id) => `implemented but not published in the vocabulary: ${id}`),
+    ...vocabulary.roles
+      .filter(({ id, type }) => implemented.has(id) && implemented.get(id) !== type)
+      .map(({ id, type }) => `${id} is ${type} in the vocabulary, ${implemented.get(id)} in the default system`),
+  ];
+  if (roleDrift.length > 0) {
+    throw new Error(`Semantic role drift:\n  ${roleDrift.join("\n  ")}`);
+  }
+
+  // design/system/tokens.json is generated, never hand-edited — recompute it
+  // from the authored tree and diff against what is committed, the same
+  // "recompute, diff, fail if they disagree" shape doctor already uses for
+  // design/INDEX.md against the manifest.
+  const tokensDir = path.join(
+    root,
+    "installer/templates/blank-workspace/design/system/tokens",
+  );
+  const expectedTokens = resolveTokenTree(await loadTokenTree(tokensDir));
+  const expectedTokensContent = `${JSON.stringify(expectedTokens, null, 2)}\n`;
+  const committedTokensContent = await readFile(
+    path.join(root, "fixtures/blank-workspace/expected/design/system/tokens.json"),
+    "utf8",
+  );
+  if (expectedTokensContent !== committedTokensContent) {
+    throw new Error(
+      "design/system/tokens.json in the blank-workspace fixture is stale — " +
+        "regenerate it (npm run fixtures:blank) after editing tokens/**.",
+    );
+  }
+
   return {
+    semanticRoles: published.size,
     examples: positive.length,
     skills: skillEntries.length,
     migrations: legacySkillFiles.length,
+    activities: catalog.activities.length,
   };
 }
 
@@ -292,7 +418,9 @@ async function main() {
     `Validated ${v1.count} v1 schemas, ${v2.count} v2 schemas, ` +
       `${v1Evidence.artifacts} mapped artifacts, ${v1Evidence.skills} v1 skill contracts, ` +
       `${v2Evidence.examples} v2 examples, ${v2Evidence.skills} v2 skill contracts, ` +
-      `and ${v2Evidence.migrations} v1-to-v2 skill migrations.`,
+      `${v2Evidence.migrations} v1-to-v2 skill migrations, ` +
+      `${v2Evidence.activities} activities with no catalog drift, ` +
+      `and ${v2Evidence.semanticRoles} semantic roles matching the default system.`,
   );
 }
 

@@ -1,0 +1,686 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --ds-button-height-sm: 28px; /** Small button min-height */
+  --ds-button-height-md: 36px; /** Default button min-height */
+  --ds-button-height-lg: 44px; /** Large button min-height */
+  --ds-button-padding-x-sm: 12px; /** Small button horizontal padding */
+  --ds-button-padding-x-md: 16px; /** Default button horizontal padding */
+  --ds-button-padding-x-lg: 20px; /** Large button horizontal padding */
+  --ds-button-font-size-sm: 13px; /** Small button label size */
+  --ds-button-font-size-md: 14px; /** Default button label size */
+  --ds-button-font-size-lg: 15px; /** Large button label size */
+  --ds-button-font-weight: 500; /** Button label weight — medium across all sizes */
+  --ds-button-radius: 8px; /** Button border radius — references radius.md */
+  --ds-button-gap: 6px; /** Gap between icon and label inside a button */
+  --ds-button-border-width: 1px; /** Border width for secondary and ghost variants */
+  --ds-field-input-height-sm: 28px; /** Compact input height */
+  --ds-field-input-height-md: 36px; /** Default input height */
+  --ds-field-input-height-lg: 44px; /** Large input height */
+  --ds-field-input-padding-x: 12px; /** Input horizontal inner padding */
+  --ds-field-input-padding-y: 8px; /** Input vertical inner padding (for textarea) */
+  --ds-field-input-font-size: 15px; /** Input text size */
+  --ds-field-input-radius: 8px; /** Input border radius */
+  --ds-field-input-border-width: 1px; /** Input border stroke */
+  --ds-field-label-font-size: 13px; /** Field label font size */
+  --ds-field-label-font-weight: 500; /** Field label weight — medium */
+  --ds-field-label-gap: 6px; /** Gap between label and input */
+  --ds-field-label-required-gap: 2px; /** Inline gap before a required marker */
+  --ds-field-hint-font-size: 13px; /** Helper/hint text size */
+  --ds-field-hint-gap: 4px; /** Gap between input and hint text */
+  --ds-field-stack-gap: 20px; /** Vertical gap between stacked fields in a form */
+  --ds-layout-container-max-width: 80rem; /** Maximum width for standard page content */
+  --ds-layout-container-compact-max-width: 40rem; /** Maximum width for compact page content */
+  --ds-layout-container-prose-max-width: 65ch; /** Readable line length for prose */
+  --ds-layout-form-max-width: 384px; /** Maximum width for a focused, single-column form composition */
+  --ds-layout-screen-reader-size: 1px; /** Clipped dimension for visually hidden accessible text */
+  --ds-layout-screen-reader-offset: -1px; /** Clipped offset for visually hidden accessible text */
+  --ds-layout-link-underline-offset: 0.2em; /** Readable underline offset for inline links */
+  --ds-layout-code-relative-size: 0.9em; /** Relative size for inline and block code */
+  --ds-layout-separator-width: 1px; /** Default horizontal separator stroke */
+  --ds-color-neutral-0: #ffffff; /** White */
+  --ds-color-neutral-25: #f7f7f7; /** Near-white — faint separation from white */
+  --ds-color-neutral-50: #eeeeee; /** Off-white — page background in light mode */
+  --ds-color-neutral-75: #e6e6e6; /** Subtle divider, input border on white */
+  --ds-color-neutral-100: #dedede; /** Hover state tint, disabled surface */
+  --ds-color-neutral-150: #cecece; /** Border default — card outline, separator */
+  --ds-color-neutral-200: #bebebe; /** Strong border */
+  --ds-color-neutral-250: #aeaeae; /** Placeholder text, muted icon */
+  --ds-color-neutral-300: #9e9e9e; /** Disabled text */
+  --ds-color-neutral-350: #8f8f8f;
+  --ds-color-neutral-400: #808080; /** Mid-gray — muted text */
+  --ds-color-neutral-450: #717171;
+  --ds-color-neutral-500: #636363; /** Secondary text midpoint */
+  --ds-color-neutral-550: #555555;
+  --ds-color-neutral-600: #484848; /** Body text on light surfaces */
+  --ds-color-neutral-650: #3a3a3a;
+  --ds-color-neutral-700: #2e2e2e; /** Heading text on light */
+  --ds-color-neutral-750: #222222;
+  --ds-color-neutral-800: #161616; /** Primary text on light — near max contrast */
+  --ds-color-neutral-850: #0b0b0b; /** Dark surface base */
+  --ds-color-neutral-900: #030303; /** Dark mode page background */
+  --ds-color-neutral-925: #010101; /** Dark mode sunken / recessed */
+  --ds-color-neutral-950: #000000; /** Near-black dark */
+  --ds-color-neutral-975: #000000; /** Almost black */
+  --ds-color-neutral-1000: #000000; /** Black */
+  --ds-color-blue-0: #ffffff; /** White */
+  --ds-color-blue-25: #f2f7fd; /** Barely perceptible blue tint */
+  --ds-color-blue-50: #e5f0fc; /** Faint blue — info surface, selected bg */
+  --ds-color-blue-75: #d8e8fa;
+  --ds-color-blue-100: #cbe1f8; /** Light blue tint */
+  --ds-color-blue-150: #aed2f7;
+  --ds-color-blue-200: #91c3f6; /** Soft blue */
+  --ds-color-blue-250: #73b3f4; /** Info border */
+  --ds-color-blue-300: #53a3f2; /** Medium blue */
+  --ds-color-blue-350: #3093ec;
+  --ds-color-blue-400: #3860ba; /** Mid-vivid blue */
+  --ds-color-blue-450: #1549ab; /** Primary action blue — use for action.primary.bg */
+  --ds-color-blue-500: #0036a0; /** Deep vivid blue */
+  --ds-color-blue-550: #002a8e; /** Link hover */
+  --ds-color-blue-600: #021f7a; /** Info text, dark action */
+  --ds-color-blue-650: #011663;
+  --ds-color-blue-700: #010f4e;
+  --ds-color-blue-750: #01093b;
+  --ds-color-blue-800: #01062a;
+  --ds-color-blue-850: #01031b;
+  --ds-color-blue-900: #01020e;
+  --ds-color-blue-925: #010109;
+  --ds-color-blue-950: #010106;
+  --ds-color-blue-975: #000000;
+  --ds-color-blue-1000: #000000; /** Black */
+  --ds-color-red-0: #ffffff; /** White */
+  --ds-color-red-25: #fef4f4; /** Barely perceptible red tint */
+  --ds-color-red-50: #fde9e8; /** Error surface tint */
+  --ds-color-red-75: #fcdedc;
+  --ds-color-red-100: #fdd2d0; /** Error background */
+  --ds-color-red-150: #fbbbb8;
+  --ds-color-red-200: #faa29f; /** Error light */
+  --ds-color-red-250: #f88987;
+  --ds-color-red-300: #f36f6f; /** Error mid-light */
+  --ds-color-red-350: #eb5459; /** Error border */
+  --ds-color-red-400: #e03644; /** Error mid */
+  --ds-color-red-450: #d30a31; /** Error base — use for destructive actions */
+  --ds-color-red-500: #ae0101; /** Deep error red */
+  --ds-color-red-550: #990101;
+  --ds-color-red-600: #820101;
+  --ds-color-red-650: #6a0101; /** Error text on light */
+  --ds-color-red-700: #540101;
+  --ds-color-red-750: #3f0101;
+  --ds-color-red-800: #310105;
+  --ds-color-red-850: #1c0203;
+  --ds-color-red-900: #0a0101;
+  --ds-color-red-925: #040101;
+  --ds-color-red-950: #010000;
+  --ds-color-red-975: #000000;
+  --ds-color-red-1000: #000000; /** Black */
+  --ds-color-green-0: #ffffff; /** White */
+  --ds-color-green-25: #f3f8f4; /** Barely perceptible green tint */
+  --ds-color-green-50: #e6f2e8; /** Success surface tint */
+  --ds-color-green-75: #d9ecdc;
+  --ds-color-green-100: #cbe6d0; /** Success background */
+  --ds-color-green-150: #b0dab8;
+  --ds-color-green-200: #94cf9f; /** Success light */
+  --ds-color-green-250: #76c387;
+  --ds-color-green-300: #54b66e; /** Success mid-light */
+  --ds-color-green-350: #2ea957; /** Success border */
+  --ds-color-green-400: #009548; /** Success mid */
+  --ds-color-green-450: #008035; /** Success base */
+  --ds-color-green-500: #006c25; /** Deep success green */
+  --ds-color-green-550: #005919; /** Success text on light */
+  --ds-color-green-600: #00470f;
+  --ds-color-green-650: #003709;
+  --ds-color-green-700: #002905;
+  --ds-color-green-750: #001d03;
+  --ds-color-green-800: #011302;
+  --ds-color-green-850: #010a01;
+  --ds-color-green-900: #000501;
+  --ds-color-green-925: #000201;
+  --ds-color-green-950: #000100;
+  --ds-color-green-975: #000000;
+  --ds-color-green-1000: #000000; /** Black */
+  --ds-color-amber-0: #ffffff; /** White */
+  --ds-color-amber-25: #fcf6ee; /** Barely perceptible warm tint */
+  --ds-color-amber-50: #f9eddd; /** Warning surface tint */
+  --ds-color-amber-75: #f6e3c9;
+  --ds-color-amber-100: #f5d9b4; /** Warning background */
+  --ds-color-amber-150: #f0c68c;
+  --ds-color-amber-200: #eab261; /** Warning light */
+  --ds-color-amber-250: #e49e26; /** Warning border */
+  --ds-color-amber-300: #e19300; /** Warning mid-light */
+  --ds-color-amber-350: #cf7d00; /** Warning icon, warning border */
+  --ds-color-amber-400: #ba6900; /** Warning mid */
+  --ds-color-amber-450: #a35600; /** Warning text, warning base */
+  --ds-color-amber-500: #8b4500;
+  --ds-color-amber-550: #733500;
+  --ds-color-amber-600: #5c2700;
+  --ds-color-amber-650: #461b00;
+  --ds-color-amber-700: #331100;
+  --ds-color-amber-750: #230a00;
+  --ds-color-amber-800: #150500;
+  --ds-color-amber-850: #130900;
+  --ds-color-amber-900: #060300;
+  --ds-color-amber-925: #020100;
+  --ds-color-amber-950: #010000;
+  --ds-color-amber-975: #000000;
+  --ds-color-amber-1000: #000000; /** Black */
+  --ds-motion-duration-instant: [object Object]; /** No animation — reduce-motion fallback */
+  --ds-motion-duration-fast: [object Object]; /** Micro-interactions, toggles */
+  --ds-motion-duration-base: [object Object]; /** Default — button feedback, hover */
+  --ds-motion-duration-moderate: [object Object]; /** Panels, drawers entering */
+  --ds-motion-duration-slow: [object Object]; /** Page transitions, large reveals */
+  --ds-motion-easing-linear: 0,0,1,1; /** No easing — progress bars, steppers */
+  --ds-motion-easing-ease-in: 0.4,0,1,1; /** Elements leaving screen */
+  --ds-motion-easing-ease-out: 0,0,0.2,1; /** Elements entering screen */
+  --ds-motion-easing-ease-in-out: 0.4,0,0.2,1; /** Default UI transitions */
+  --ds-motion-easing-spring: 0.34,1.56,0.64,1; /** Springy, playful interactions */
+  --ds-motion-easing-snappy: 0.2,0,0,1; /** Fast, crisp micro-interactions */
+  --ds-radius-none: 0px; /** No rounding — tables, code blocks */
+  --ds-radius-sm: 4px; /** Small rounding — tags, badges */
+  --ds-radius-md: 8px; /** Base rounding — inputs, buttons, cards */
+  --ds-radius-lg: 12px; /** Large rounding — modals, panels */
+  --ds-radius-xl: 16px; /** Extra large — feature cards */
+  --ds-radius-2xl: 24px; /** Very large rounding */
+  --ds-radius-full: 9999px; /** Pill shape — pills, toggles, avatars */
+  --ds-shadow-none: 0px 0px 0px 0px oklch(0% 0 0 / 0); /** No shadow — flat surfaces */
+  --ds-shadow-xs: 0px 1px 3px 0px oklch(0% 0 0 / 0.06); /** Hairline lift — inputs, badges */
+  --ds-shadow-sm: 0px 1px 2px 0px oklch(0% 0 0 / 0.05), 0px 2px 6px 0px oklch(0% 0 0 / 0.08); /** Cards, dropdowns, popovers */
+  --ds-shadow-md: 0px 2px 4px 0px oklch(0% 0 0 / 0.05), 0px 6px 16px 0px oklch(0% 0 0 / 0.1); /** Elevated panels, menus */
+  --ds-shadow-lg: 0px 4px 8px 0px oklch(0% 0 0 / 0.06), 0px 12px 32px 0px oklch(0% 0 0 / 0.12); /** Dialogs, modals */
+  --ds-shadow-xl: 0px 8px 16px 0px oklch(0% 0 0 / 0.08), 0px 24px 56px 0px oklch(0% 0 0 / 0.15); /** Full-screen overlays, command palette */
+  --ds-space-0: 0px; /** No spacing */
+  --ds-space-1: 1px; /** 1px — optical nudge, sub-pixel correction */
+  --ds-space-2: 2px; /** 2px — optical nudge, fine border offset */
+  --ds-space-3: 3px; /** 3px — optical nudge, tight icon inset */
+  --ds-space-4: 4px; /** 4px — base grid unit, minimum meaningful gap */
+  --ds-space-6: 6px; /** 6px — tight list gap, badge padding, icon-to-label gap */
+  --ds-space-8: 8px; /** 8px — compact gap, small inset, dense list item */
+  --ds-space-10: 10px; /** 10px — intermediate between 8 and 12 */
+  --ds-space-12: 12px; /** 12px — control inner padding y, tight section gap */
+  --ds-space-16: 16px; /** 16px — base component padding, form field gap */
+  --ds-space-20: 20px; /** 20px — stacked field gap, relaxed list gap */
+  --ds-space-24: 24px; /** 24px — section gap small, card padding */
+  --ds-space-32: 32px; /** 32px — section gap base */
+  --ds-space-40: 40px; /** 40px — content group separation */
+  --ds-space-48: 48px; /** 48px — section gap large */
+  --ds-space-64: 64px; /** 64px — page section gap */
+  --ds-space-80: 80px; /** 80px — large section separation */
+  --ds-space-96: 96px; /** 96px — hero section inner padding */
+  --ds-space-128: 128px; /** 128px — hero spacing, max section padding */
+  --ds-space-160: 160px; /** 160px — large hero spacing */
+  --ds-space-192: 192px; /** 192px */
+  --ds-space-256: 256px; /** 256px — max page-level spacing */
+  --ds-font-family-sans: Inter,system-ui,-apple-system,sans-serif; /** Primary UI typeface */
+  --ds-font-family-serif: Georgia,Times New Roman,serif; /** Serif — long-form editorial */
+  --ds-font-family-mono: JetBrains Mono,Fira Code,Consolas,monospace; /** Code, technical values */
+  --ds-font-weight-regular: 400; /** Body text */
+  --ds-font-weight-medium: 500; /** Labels, button text */
+  --ds-font-weight-semibold: 600; /** Subheadings, emphasis */
+  --ds-font-weight-bold: 700; /** Headings */
+  --ds-font-size-xs: 11px; /** 11px — captions, labels */
+  --ds-font-size-sm: 13px; /** 13px — helper text, metadata */
+  --ds-font-size-base: 15px; /** 15px — body copy */
+  --ds-font-size-md: 16px; /** 16px — large body, small heading */
+  --ds-font-size-lg: 18px; /** 18px — h5, section intro */
+  --ds-font-size-xl: 20px; /** 20px — h4 */
+  --ds-font-size-2xl: 24px; /** 24px — h3 */
+  --ds-font-size-3xl: 30px; /** 30px — h2 */
+  --ds-font-size-4xl: 36px; /** 36px — h1 */
+  --ds-font-size-5xl: 48px; /** 48px — display */
+  --ds-font-size-6xl: 60px; /** 60px — hero */
+  --ds-font-line-height-tight: 1.15; /** Headings, display text */
+  --ds-font-line-height-snug: 1.3; /** Subheadings, card titles */
+  --ds-font-line-height-normal: 1.5; /** Body text default */
+  --ds-font-line-height-relaxed: 1.6; /** Long-form prose */
+  --ds-font-line-height-loose: 1.75; /** Comfortable reading, help text */
+  --ds-font-letter-spacing-tight: -0.03em; /** Display, large headings */
+  --ds-font-letter-spacing-normal: 0em; /** Default */
+  --ds-font-letter-spacing-wide: 0.03em; /** Uppercase labels, badges */
+  --ds-font-letter-spacing-wider: 0.06em; /** Allcaps labels */
+  --ds-z-base: 0; /** Default stacking context */
+  --ds-z-raised: 10; /** Slightly elevated in-flow elements (sticky headers within a section) */
+  --ds-z-sticky: 100; /** Sticky page headers, nav bars */
+  --ds-z-dropdown: 200; /** Dropdowns, menus, popovers anchored to trigger */
+  --ds-z-overlay: 300; /** Drawer/sheet backdrop */
+  --ds-z-drawer: 400; /** Side drawers, sheets */
+  --ds-z-modal: 500; /** Dialog modals */
+  --ds-z-toast: 600; /** Toasts, snackbars — always above modals */
+  --ds-z-tooltip: 700; /** Tooltips — always topmost */
+  --ds-focus-ring-width: 2px; /** Focus outline stroke width */
+  --ds-focus-ring-offset: 2px; /** Gap between element edge and focus ring */
+  --ds-action-primary-bg: var(--ds-color-blue-450); /** Primary button/action background */
+  --ds-action-primary-bg-hover: var(--ds-color-blue-500); /** Primary action background under pointer or keyboard focus */
+  --ds-action-primary-bg-active: var(--ds-color-blue-550); /** Primary action background while being pressed */
+  --ds-action-primary-bg-disabled: var(--ds-color-neutral-100); /** Primary action background when the action is unavailable */
+  --ds-action-primary-fg: var(--ds-color-neutral-0); /** Primary button/action foreground (label, icon) */
+  --ds-action-primary-fg-disabled: var(--ds-color-neutral-350); /** Primary action foreground when unavailable */
+  --ds-action-secondary-bg: var(--ds-color-neutral-0); /** Secondary button background — typically transparent or very light */
+  --ds-action-secondary-bg-hover: var(--ds-color-blue-50); /** Secondary action background on hover */
+  --ds-action-secondary-bg-active: var(--ds-color-blue-75); /** Secondary action background while pressed */
+  --ds-action-secondary-bg-disabled: var(--ds-color-neutral-25); /** Secondary action background when unavailable */
+  --ds-action-secondary-fg: var(--ds-color-blue-450); /** Secondary button foreground */
+  --ds-action-secondary-fg-disabled: var(--ds-color-neutral-350); /** Secondary action foreground when unavailable */
+  --ds-action-secondary-border: var(--ds-color-blue-450); /** Secondary button border */
+  --ds-action-secondary-border-hover: var(--ds-color-blue-500); /** Secondary button border on hover */
+  --ds-action-secondary-border-disabled: var(--ds-color-neutral-150); /** Secondary button border when unavailable */
+  --ds-action-ghost-bg: var(--ds-color-neutral-0); /** Ghost button background — transparent at rest */
+  --ds-action-ghost-bg-hover: var(--ds-color-neutral-50); /** Ghost button background on hover */
+  --ds-action-ghost-bg-active: var(--ds-color-neutral-75); /** Ghost button background while pressed */
+  --ds-action-ghost-bg-disabled: var(--ds-color-neutral-0); /** Ghost button background when unavailable */
+  --ds-action-ghost-fg: var(--ds-color-neutral-750); /** Ghost button foreground */
+  --ds-action-ghost-fg-disabled: var(--ds-color-neutral-350); /** Ghost button foreground when unavailable */
+  --ds-action-destructive-bg: var(--ds-color-red-450); /** Destructive action background */
+  --ds-action-destructive-bg-hover: var(--ds-color-red-500); /** Destructive action background on hover */
+  --ds-action-destructive-bg-active: var(--ds-color-red-550); /** Destructive action background while pressed */
+  --ds-action-destructive-bg-disabled: var(--ds-color-neutral-100); /** Destructive action background when unavailable */
+  --ds-action-destructive-fg: var(--ds-color-neutral-0); /** Destructive action foreground */
+  --ds-action-destructive-fg-disabled: var(--ds-color-neutral-350); /** Destructive action foreground when unavailable */
+  --ds-border-default: var(--ds-color-neutral-150); /** Default divider and outline — cards, input borders, table dividers */
+  --ds-border-strong: var(--ds-color-neutral-400); /** Stronger border — active input ring, emphasized dividers */
+  --ds-border-subtle: var(--ds-color-neutral-75); /** Very light separator — inner table rules, inline sections */
+  --ds-border-focus: var(--ds-color-blue-450); /** Focus ring color — applied to all interactive elements */
+  --ds-border-action: var(--ds-color-blue-450); /** Border on secondary/ghost buttons in their action color */
+  --ds-border-danger: var(--ds-color-red-450); /** Input or control in error state */
+  --ds-border-success: var(--ds-color-green-450); /** Input or control in valid/success state */
+  --ds-elevation-flat: var(--ds-shadow-none); /** In-plane. No lift. */
+  --ds-elevation-raised: var(--ds-shadow-sm); /** Lifted just off the page — cards, panels. Pairs with surface.raised. */
+  --ds-elevation-overlay: var(--ds-shadow-md); /** Floating above the page — menus, popovers, dropdowns. Pairs with surface.overlay. */
+  --ds-elevation-modal: var(--ds-shadow-lg); /** Above everything — dialogs and sheets that take focus from the page. */
+  --ds-feedback-danger-surface: var(--ds-color-red-50); /** Error/danger background */
+  --ds-feedback-danger-text: var(--ds-color-red-650); /** Error/danger text */
+  --ds-feedback-danger-border: var(--ds-color-red-350); /** Error/danger border */
+  --ds-feedback-danger-icon: var(--ds-color-red-450); /** Error icon fill */
+  --ds-feedback-success-surface: var(--ds-color-green-50); /** Success background */
+  --ds-feedback-success-text: var(--ds-color-green-650); /** Success text */
+  --ds-feedback-success-border: var(--ds-color-green-350); /** Success border */
+  --ds-feedback-success-icon: var(--ds-color-green-450); /** Success icon fill */
+  --ds-feedback-warning-surface: var(--ds-color-amber-50); /** Warning background */
+  --ds-feedback-warning-text: var(--ds-color-amber-450); /** Warning text */
+  --ds-feedback-warning-border: var(--ds-color-amber-250); /** Warning border */
+  --ds-feedback-warning-icon: var(--ds-color-amber-350); /** Warning icon fill */
+  --ds-feedback-info-surface: var(--ds-color-blue-50); /** Informational background */
+  --ds-feedback-info-text: var(--ds-color-blue-600); /** Informational text */
+  --ds-feedback-info-border: var(--ds-color-blue-250); /** Informational border */
+  --ds-feedback-info-icon: var(--ds-color-blue-450); /** Info icon fill */
+  --ds-focus-ring-color: var(--ds-color-blue-450); /** Focus outline color */
+  --ds-focus-ring-offset-color: var(--ds-color-neutral-0); /** Focus outline offset gap color — typically matches the surface behind the element */
+  --ds-icon-default: var(--ds-color-neutral-650); /** Default icon colour, paired with text.primary */
+  --ds-icon-muted: var(--ds-color-neutral-400); /** De-emphasised icon — decorative, or paired with secondary text */
+  --ds-icon-disabled: var(--ds-color-neutral-250); /** Icon in an unavailable control */
+  --ds-icon-on-action: var(--ds-color-neutral-0); /** Icon sitting on an action surface, paired with text.on-action */
+  --ds-icon-accent: var(--ds-color-blue-450); /** Icon carrying the accent colour, such as a leading icon in a link */
+  --ds-palette-scheme-light-surface-page: var(--ds-color-neutral-25);
+  --ds-palette-scheme-light-surface-base: var(--ds-color-neutral-0);
+  --ds-palette-scheme-light-surface-raised: var(--ds-color-neutral-0);
+  --ds-palette-scheme-light-surface-overlay: var(--ds-color-neutral-0);
+  --ds-palette-scheme-light-surface-sunken: var(--ds-color-neutral-50);
+  --ds-palette-scheme-light-surface-hover: var(--ds-color-neutral-50);
+  --ds-palette-scheme-light-text-primary: var(--ds-color-neutral-800);
+  --ds-palette-scheme-light-text-secondary: var(--ds-color-neutral-600);
+  --ds-palette-scheme-light-text-muted: var(--ds-color-neutral-400);
+  --ds-palette-scheme-light-text-disabled: var(--ds-color-neutral-250);
+  --ds-palette-scheme-light-border-default: var(--ds-color-neutral-150);
+  --ds-palette-scheme-light-border-strong: var(--ds-color-neutral-400);
+  --ds-palette-scheme-light-border-subtle: var(--ds-color-neutral-75);
+  --ds-palette-scheme-dark-surface-page: var(--ds-color-neutral-900);
+  --ds-palette-scheme-dark-surface-base: var(--ds-color-neutral-850);
+  --ds-palette-scheme-dark-surface-raised: var(--ds-color-neutral-800);
+  --ds-palette-scheme-dark-surface-overlay: var(--ds-color-neutral-800);
+  --ds-palette-scheme-dark-surface-sunken: var(--ds-color-neutral-925);
+  --ds-palette-scheme-dark-surface-hover: var(--ds-color-neutral-800);
+  --ds-palette-scheme-dark-text-primary: var(--ds-color-neutral-50);
+  --ds-palette-scheme-dark-text-secondary: var(--ds-color-neutral-250);
+  --ds-palette-scheme-dark-text-muted: var(--ds-color-neutral-450);
+  --ds-palette-scheme-dark-text-disabled: var(--ds-color-neutral-600);
+  --ds-palette-scheme-dark-border-default: var(--ds-color-neutral-700);
+  --ds-palette-scheme-dark-border-strong: var(--ds-color-neutral-550);
+  --ds-palette-scheme-dark-border-subtle: var(--ds-color-neutral-750);
+  --ds-palette-mode-subtle-surface-page: var(--ds-color-neutral-50);
+  --ds-palette-mode-subtle-surface-base: var(--ds-color-neutral-25);
+  --ds-palette-mode-subtle-surface-raised: var(--ds-color-neutral-0);
+  --ds-palette-mode-subtle-surface-sunken: var(--ds-color-neutral-75);
+  --ds-palette-mode-subtle-surface-hover: var(--ds-color-neutral-75);
+  --ds-palette-mode-inverted-surface-page: var(--ds-color-neutral-850);
+  --ds-palette-mode-inverted-surface-base: var(--ds-color-neutral-800);
+  --ds-palette-mode-inverted-surface-raised: var(--ds-color-neutral-750);
+  --ds-palette-mode-inverted-surface-sunken: var(--ds-color-neutral-900);
+  --ds-palette-mode-inverted-surface-hover: var(--ds-color-neutral-750);
+  --ds-palette-mode-inverted-text-primary: var(--ds-color-neutral-25);
+  --ds-palette-mode-inverted-text-secondary: var(--ds-color-neutral-200);
+  --ds-palette-mode-inverted-text-muted: var(--ds-color-neutral-400);
+  --ds-palette-mode-inverted-text-disabled: var(--ds-color-neutral-550);
+  --ds-palette-mode-inverted-border-default: var(--ds-color-neutral-700);
+  --ds-palette-mode-inverted-border-strong: var(--ds-color-neutral-550);
+  --ds-palette-mode-inverted-border-subtle: var(--ds-color-neutral-750);
+  --ds-palette-mode-brand-surface-page: var(--ds-color-blue-500);
+  --ds-palette-mode-brand-surface-base: var(--ds-color-blue-550);
+  --ds-palette-mode-brand-surface-raised: var(--ds-color-blue-450);
+  --ds-palette-mode-brand-surface-sunken: var(--ds-color-blue-600);
+  --ds-palette-mode-brand-surface-hover: var(--ds-color-blue-450);
+  --ds-palette-mode-brand-text-primary: var(--ds-color-neutral-25);
+  --ds-palette-mode-brand-text-secondary: var(--ds-color-blue-150);
+  --ds-palette-mode-brand-text-muted: var(--ds-color-blue-250);
+  --ds-palette-mode-brand-text-disabled: var(--ds-color-blue-350);
+  --ds-palette-mode-brand-text-link: var(--ds-color-neutral-50);
+  --ds-palette-mode-brand-text-link-hover: var(--ds-color-neutral-0);
+  --ds-palette-mode-brand-border-default: var(--ds-color-blue-400);
+  --ds-palette-mode-brand-border-strong: var(--ds-color-blue-300);
+  --ds-palette-mode-brand-border-subtle: var(--ds-color-blue-500);
+  --ds-palette-mode-tinted-surface-page: var(--ds-color-blue-50);
+  --ds-palette-mode-tinted-surface-base: var(--ds-color-blue-25);
+  --ds-palette-mode-tinted-surface-raised: var(--ds-color-neutral-0);
+  --ds-palette-mode-tinted-surface-sunken: var(--ds-color-blue-75);
+  --ds-palette-mode-tinted-surface-hover: var(--ds-color-blue-75);
+  --ds-palette-mode-success-action-background: var(--ds-color-green-450);
+  --ds-palette-mode-success-action-foreground: var(--ds-color-neutral-0);
+  --ds-palette-mode-warning-action-background: var(--ds-color-amber-450);
+  --ds-palette-mode-warning-action-foreground: var(--ds-color-neutral-900);
+  --ds-surface-page: var(--ds-color-neutral-25); /** Page/body background — the lowest layer */
+  --ds-surface-base: var(--ds-color-neutral-0); /** Primary content surface — cards, panels, the main content area */
+  --ds-surface-raised: var(--ds-color-neutral-0); /** Elevated surface — dropdowns, popovers, tooltips */
+  --ds-surface-overlay: var(--ds-color-neutral-0); /** Modal/dialog surface */
+  --ds-surface-sunken: var(--ds-color-neutral-50); /** Recessed input areas, code blocks, inset sections */
+  --ds-surface-hover: var(--ds-color-neutral-50); /** Hover state for interactive list items, menu items */
+  --ds-surface-selected: var(--ds-color-blue-50); /** Selected/active row or list item */
+  --ds-surface-disabled: var(--ds-color-neutral-50); /** Disabled control background */
+  --ds-text-primary: var(--ds-color-neutral-850); /** Primary body and heading text — highest contrast */
+  --ds-text-secondary: var(--ds-color-neutral-600); /** Supporting text, less prominent labels */
+  --ds-text-muted: var(--ds-color-neutral-400); /** Subdued text — metadata, placeholder, captions */
+  --ds-text-disabled: var(--ds-color-neutral-250); /** Text on disabled controls */
+  --ds-text-inverse: var(--ds-color-neutral-0); /** Text on dark/filled surfaces — e.g., primary button label */
+  --ds-text-link: var(--ds-color-blue-450); /** Hyperlink default */
+  --ds-text-link-hover: var(--ds-color-blue-550); /** Hyperlink hover */
+  --ds-text-on-action: var(--ds-color-neutral-0); /** Text sitting on an action-primary surface (button label) */
+  --ds-text-danger: var(--ds-color-red-450); /** Error messages, destructive warnings */
+  --ds-text-success: var(--ds-color-green-550); /** Confirmation, success messages */
+  --ds-text-warning: var(--ds-color-amber-450); /** Warning messages */
+  --ds-type-display: var(--ds-font-weight-bold) var(--ds-font-size-5xl)/var(--ds-font-line-height-tight) Inter, system-ui, -apple-system, sans-serif; /** Largest type. Marketing headers and empty-state hero text; rarely more than once per screen. */
+  --ds-type-heading-xl: var(--ds-font-weight-semibold) var(--ds-font-size-3xl)/var(--ds-font-line-height-tight) Inter, system-ui, -apple-system, sans-serif; /** Page title. One per screen. */
+  --ds-type-heading-lg: var(--ds-font-weight-semibold) var(--ds-font-size-2xl)/var(--ds-font-line-height-snug) Inter, system-ui, -apple-system, sans-serif; /** Major section heading. */
+  --ds-type-heading-md: var(--ds-font-weight-semibold) var(--ds-font-size-xl)/var(--ds-font-line-height-snug) Inter, system-ui, -apple-system, sans-serif; /** Subsection heading, card title. */
+  --ds-type-heading-sm: var(--ds-font-weight-semibold) var(--ds-font-size-md)/var(--ds-font-line-height-normal) Inter, system-ui, -apple-system, sans-serif; /** Smallest heading — group labels within a section. */
+  --ds-type-body-lg: var(--ds-font-weight-regular) var(--ds-font-size-lg)/var(--ds-font-line-height-relaxed) Inter, system-ui, -apple-system, sans-serif; /** Lead paragraph, or body text in a reading-first layout. */
+  --ds-type-body-md: var(--ds-font-weight-regular) var(--ds-font-size-base)/var(--ds-font-line-height-normal) Inter, system-ui, -apple-system, sans-serif; /** Default body text. The role everything else is judged against. */
+  --ds-type-body-sm: var(--ds-font-weight-regular) var(--ds-font-size-sm)/var(--ds-font-line-height-normal) Inter, system-ui, -apple-system, sans-serif; /** Secondary body text — helper copy, dense tables. */
+  --ds-type-label: var(--ds-font-weight-medium) var(--ds-font-size-sm)/var(--ds-font-line-height-normal) Inter, system-ui, -apple-system, sans-serif; /** Form labels and control text. Heavier than body at the same size so it reads as interface rather than prose. */
+  --ds-type-caption: var(--ds-font-weight-regular) var(--ds-font-size-xs)/var(--ds-font-line-height-normal) Inter, system-ui, -apple-system, sans-serif; /** Smallest supporting text — timestamps, field hints, footnotes. */
+  --ds-type-code: var(--ds-font-weight-regular) var(--ds-font-size-sm)/var(--ds-font-line-height-relaxed) 'JetBrains Mono', 'Fira Code', Consolas, monospace; /** Inline and block code. */
+}
+
+/* Wide-gamut color override — oklch values on supporting browsers. */
+@supports (color: oklch(0 0 0)) {
+  /**
+   * Do not edit directly, this file was auto-generated.
+   */
+
+  :root {
+    --ds-color-neutral-0: oklch(1.0000 0.0000 0.00); /** White */
+    --ds-color-neutral-25: oklch(0.9750 0.0000 0.00); /** Near-white — faint separation from white */
+    --ds-color-neutral-50: oklch(0.9500 0.0000 0.00); /** Off-white — page background in light mode */
+    --ds-color-neutral-75: oklch(0.9250 0.0000 0.00); /** Subtle divider, input border on white */
+    --ds-color-neutral-100: oklch(0.9000 0.0000 0.00); /** Hover state tint, disabled surface */
+    --ds-color-neutral-150: oklch(0.8500 0.0000 0.00); /** Border default — card outline, separator */
+    --ds-color-neutral-200: oklch(0.8000 0.0000 0.00); /** Strong border */
+    --ds-color-neutral-250: oklch(0.7500 0.0000 0.00); /** Placeholder text, muted icon */
+    --ds-color-neutral-300: oklch(0.7000 0.0000 0.00); /** Disabled text */
+    --ds-color-neutral-350: oklch(0.6500 0.0000 0.00);
+    --ds-color-neutral-400: oklch(0.6000 0.0000 0.00); /** Mid-gray — muted text */
+    --ds-color-neutral-450: oklch(0.5500 0.0000 0.00);
+    --ds-color-neutral-500: oklch(0.5000 0.0000 0.00); /** Secondary text midpoint */
+    --ds-color-neutral-550: oklch(0.4500 0.0000 0.00);
+    --ds-color-neutral-600: oklch(0.4000 0.0000 0.00); /** Body text on light surfaces */
+    --ds-color-neutral-650: oklch(0.3500 0.0000 0.00);
+    --ds-color-neutral-700: oklch(0.3000 0.0000 0.00); /** Heading text on light */
+    --ds-color-neutral-750: oklch(0.2500 0.0000 0.00);
+    --ds-color-neutral-800: oklch(0.2000 0.0000 0.00); /** Primary text on light — near max contrast */
+    --ds-color-neutral-850: oklch(0.1500 0.0000 0.00); /** Dark surface base */
+    --ds-color-neutral-900: oklch(0.1000 0.0000 0.00); /** Dark mode page background */
+    --ds-color-neutral-925: oklch(0.0750 0.0000 0.00); /** Dark mode sunken / recessed */
+    --ds-color-neutral-950: oklch(0.0500 0.0000 0.00); /** Near-black dark */
+    --ds-color-neutral-975: oklch(0.0250 0.0000 0.00); /** Almost black */
+    --ds-color-neutral-1000: oklch(0.0000 0.0000 0.00); /** Black */
+    --ds-color-blue-0: oklch(1.0000 0.0000 250.00); /** White */
+    --ds-color-blue-25: oklch(0.9750 0.0100 250.00); /** Barely perceptible blue tint */
+    --ds-color-blue-50: oklch(0.9500 0.0200 250.00); /** Faint blue — info surface, selected bg */
+    --ds-color-blue-75: oklch(0.9250 0.0300 250.00);
+    --ds-color-blue-100: oklch(0.9000 0.0400 250.00); /** Light blue tint */
+    --ds-color-blue-150: oklch(0.8500 0.0650 250.00);
+    --ds-color-blue-200: oklch(0.8000 0.0900 250.00); /** Soft blue */
+    --ds-color-blue-250: oklch(0.7500 0.1150 250.00); /** Info border */
+    --ds-color-blue-300: oklch(0.7000 0.1400 250.00); /** Medium blue */
+    --ds-color-blue-350: oklch(0.6500 0.1600 250.00);
+    --ds-color-blue-400: oklch(0.6000 0.1750 250.00); /** Mid-vivid blue */
+    --ds-color-blue-450: oklch(0.5500 0.1900 250.00); /** Primary action blue — use for action.primary.bg */
+    --ds-color-blue-500: oklch(0.5000 0.2000 250.00); /** Deep vivid blue */
+    --ds-color-blue-550: oklch(0.4500 0.1950 250.00); /** Link hover */
+    --ds-color-blue-600: oklch(0.4000 0.1850 250.00); /** Info text, dark action */
+    --ds-color-blue-650: oklch(0.3500 0.1650 250.00);
+    --ds-color-blue-700: oklch(0.3000 0.1400 250.00);
+    --ds-color-blue-750: oklch(0.2500 0.1150 250.00);
+    --ds-color-blue-800: oklch(0.2000 0.0850 250.00);
+    --ds-color-blue-850: oklch(0.1500 0.0600 250.00);
+    --ds-color-blue-900: oklch(0.1000 0.0400 250.00);
+    --ds-color-blue-925: oklch(0.0750 0.0280 250.00);
+    --ds-color-blue-950: oklch(0.0500 0.0180 250.00);
+    --ds-color-blue-975: oklch(0.0250 0.0090 250.00);
+    --ds-color-blue-1000: oklch(0.0000 0.0000 250.00); /** Black */
+    --ds-color-red-0: oklch(1.0000 0.0000 22.00); /** White */
+    --ds-color-red-25: oklch(0.9750 0.0100 22.00); /** Barely perceptible red tint */
+    --ds-color-red-50: oklch(0.9500 0.0220 22.00); /** Error surface tint */
+    --ds-color-red-75: oklch(0.9250 0.0340 22.00);
+    --ds-color-red-100: oklch(0.9000 0.0480 22.00); /** Error background */
+    --ds-color-red-150: oklch(0.8500 0.0750 22.00);
+    --ds-color-red-200: oklch(0.8000 0.1050 22.00); /** Error light */
+    --ds-color-red-250: oklch(0.7500 0.1350 22.00);
+    --ds-color-red-300: oklch(0.7000 0.1630 22.00); /** Error mid-light */
+    --ds-color-red-350: oklch(0.6500 0.1870 22.00); /** Error border */
+    --ds-color-red-400: oklch(0.6000 0.2050 22.00); /** Error mid */
+    --ds-color-red-450: oklch(0.5500 0.2180 22.00); /** Error base — use for destructive actions */
+    --ds-color-red-500: oklch(0.5000 0.2200 22.00); /** Deep error red */
+    --ds-color-red-550: oklch(0.4500 0.2150 22.00);
+    --ds-color-red-600: oklch(0.4000 0.2000 22.00);
+    --ds-color-red-650: oklch(0.3500 0.1780 22.00); /** Error text on light */
+    --ds-color-red-700: oklch(0.3000 0.1480 22.00);
+    --ds-color-red-750: oklch(0.2500 0.1120 22.00);
+    --ds-color-red-800: oklch(0.2000 0.0780 22.00);
+    --ds-color-red-850: oklch(0.1500 0.0500 22.00);
+    --ds-color-red-900: oklch(0.1000 0.0300 22.00);
+    --ds-color-red-925: oklch(0.0750 0.0200 22.00);
+    --ds-color-red-950: oklch(0.0500 0.0130 22.00);
+    --ds-color-red-975: oklch(0.0250 0.0060 22.00);
+    --ds-color-red-1000: oklch(0.0000 0.0000 22.00); /** Black */
+    --ds-color-green-0: oklch(1.0000 0.0000 150.00); /** White */
+    --ds-color-green-25: oklch(0.9750 0.0080 150.00); /** Barely perceptible green tint */
+    --ds-color-green-50: oklch(0.9500 0.0180 150.00); /** Success surface tint */
+    --ds-color-green-75: oklch(0.9250 0.0300 150.00);
+    --ds-color-green-100: oklch(0.9000 0.0420 150.00); /** Success background */
+    --ds-color-green-150: oklch(0.8500 0.0650 150.00);
+    --ds-color-green-200: oklch(0.8000 0.0900 150.00); /** Success light */
+    --ds-color-green-250: oklch(0.7500 0.1150 150.00);
+    --ds-color-green-300: oklch(0.7000 0.1400 150.00); /** Success mid-light */
+    --ds-color-green-350: oklch(0.6500 0.1600 150.00); /** Success border */
+    --ds-color-green-400: oklch(0.6000 0.1750 150.00); /** Success mid */
+    --ds-color-green-450: oklch(0.5500 0.1810 150.00); /** Success base */
+    --ds-color-green-500: oklch(0.5000 0.1800 150.00); /** Deep success green */
+    --ds-color-green-550: oklch(0.4500 0.1750 150.00); /** Success text on light */
+    --ds-color-green-600: oklch(0.4000 0.1620 150.00);
+    --ds-color-green-650: oklch(0.3500 0.1430 150.00);
+    --ds-color-green-700: oklch(0.3000 0.1180 150.00);
+    --ds-color-green-750: oklch(0.2500 0.0900 150.00);
+    --ds-color-green-800: oklch(0.2000 0.0630 150.00);
+    --ds-color-green-850: oklch(0.1500 0.0420 150.00);
+    --ds-color-green-900: oklch(0.1000 0.0260 150.00);
+    --ds-color-green-925: oklch(0.0750 0.0180 150.00);
+    --ds-color-green-950: oklch(0.0500 0.0120 150.00);
+    --ds-color-green-975: oklch(0.0250 0.0060 150.00);
+    --ds-color-green-1000: oklch(0.0000 0.0000 150.00); /** Black */
+    --ds-color-amber-0: oklch(1.0000 0.0000 75.00); /** White */
+    --ds-color-amber-25: oklch(0.9750 0.0120 75.00); /** Barely perceptible warm tint */
+    --ds-color-amber-50: oklch(0.9500 0.0250 75.00); /** Warning surface tint */
+    --ds-color-amber-75: oklch(0.9250 0.0400 75.00);
+    --ds-color-amber-100: oklch(0.9000 0.0580 75.00); /** Warning background */
+    --ds-color-amber-150: oklch(0.8500 0.0880 75.00);
+    --ds-color-amber-200: oklch(0.8000 0.1180 75.00); /** Warning light */
+    --ds-color-amber-250: oklch(0.7500 0.1480 75.00); /** Warning border */
+    --ds-color-amber-300: oklch(0.7000 0.1680 75.00); /** Warning mid-light */
+    --ds-color-amber-350: oklch(0.6500 0.1830 75.00); /** Warning icon, warning border */
+    --ds-color-amber-400: oklch(0.6000 0.1850 75.00); /** Warning mid */
+    --ds-color-amber-450: oklch(0.5500 0.1820 75.00); /** Warning text, warning base */
+    --ds-color-amber-500: oklch(0.5000 0.1720 75.00);
+    --ds-color-amber-550: oklch(0.4500 0.1570 75.00);
+    --ds-color-amber-600: oklch(0.4000 0.1370 75.00);
+    --ds-color-amber-650: oklch(0.3500 0.1140 75.00);
+    --ds-color-amber-700: oklch(0.3000 0.0900 75.00);
+    --ds-color-amber-750: oklch(0.2500 0.0680 75.00);
+    --ds-color-amber-800: oklch(0.2000 0.0480 75.00);
+    --ds-color-amber-850: oklch(0.1500 0.0310 75.00);
+    --ds-color-amber-900: oklch(0.1000 0.0190 75.00);
+    --ds-color-amber-925: oklch(0.0750 0.0130 75.00);
+    --ds-color-amber-950: oklch(0.0500 0.0090 75.00);
+    --ds-color-amber-975: oklch(0.0250 0.0040 75.00);
+    --ds-color-amber-1000: oklch(0.0000 0.0000 75.00); /** Black */
+    --ds-action-primary-bg: var(--ds-color-blue-450); /** Primary button/action background */
+    --ds-action-primary-bg-hover: var(--ds-color-blue-500); /** Primary action background under pointer or keyboard focus */
+    --ds-action-primary-bg-active: var(--ds-color-blue-550); /** Primary action background while being pressed */
+    --ds-action-primary-bg-disabled: var(--ds-color-neutral-100); /** Primary action background when the action is unavailable */
+    --ds-action-primary-fg: var(--ds-color-neutral-0); /** Primary button/action foreground (label, icon) */
+    --ds-action-primary-fg-disabled: var(--ds-color-neutral-350); /** Primary action foreground when unavailable */
+    --ds-action-secondary-bg: var(--ds-color-neutral-0); /** Secondary button background — typically transparent or very light */
+    --ds-action-secondary-bg-hover: var(--ds-color-blue-50); /** Secondary action background on hover */
+    --ds-action-secondary-bg-active: var(--ds-color-blue-75); /** Secondary action background while pressed */
+    --ds-action-secondary-bg-disabled: var(--ds-color-neutral-25); /** Secondary action background when unavailable */
+    --ds-action-secondary-fg: var(--ds-color-blue-450); /** Secondary button foreground */
+    --ds-action-secondary-fg-disabled: var(--ds-color-neutral-350); /** Secondary action foreground when unavailable */
+    --ds-action-secondary-border: var(--ds-color-blue-450); /** Secondary button border */
+    --ds-action-secondary-border-hover: var(--ds-color-blue-500); /** Secondary button border on hover */
+    --ds-action-secondary-border-disabled: var(--ds-color-neutral-150); /** Secondary button border when unavailable */
+    --ds-action-ghost-bg: var(--ds-color-neutral-0); /** Ghost button background — transparent at rest */
+    --ds-action-ghost-bg-hover: var(--ds-color-neutral-50); /** Ghost button background on hover */
+    --ds-action-ghost-bg-active: var(--ds-color-neutral-75); /** Ghost button background while pressed */
+    --ds-action-ghost-bg-disabled: var(--ds-color-neutral-0); /** Ghost button background when unavailable */
+    --ds-action-ghost-fg: var(--ds-color-neutral-750); /** Ghost button foreground */
+    --ds-action-ghost-fg-disabled: var(--ds-color-neutral-350); /** Ghost button foreground when unavailable */
+    --ds-action-destructive-bg: var(--ds-color-red-450); /** Destructive action background */
+    --ds-action-destructive-bg-hover: var(--ds-color-red-500); /** Destructive action background on hover */
+    --ds-action-destructive-bg-active: var(--ds-color-red-550); /** Destructive action background while pressed */
+    --ds-action-destructive-bg-disabled: var(--ds-color-neutral-100); /** Destructive action background when unavailable */
+    --ds-action-destructive-fg: var(--ds-color-neutral-0); /** Destructive action foreground */
+    --ds-action-destructive-fg-disabled: var(--ds-color-neutral-350); /** Destructive action foreground when unavailable */
+    --ds-border-default: var(--ds-color-neutral-150); /** Default divider and outline — cards, input borders, table dividers */
+    --ds-border-strong: var(--ds-color-neutral-400); /** Stronger border — active input ring, emphasized dividers */
+    --ds-border-subtle: var(--ds-color-neutral-75); /** Very light separator — inner table rules, inline sections */
+    --ds-border-focus: var(--ds-color-blue-450); /** Focus ring color — applied to all interactive elements */
+    --ds-border-action: var(--ds-color-blue-450); /** Border on secondary/ghost buttons in their action color */
+    --ds-border-danger: var(--ds-color-red-450); /** Input or control in error state */
+    --ds-border-success: var(--ds-color-green-450); /** Input or control in valid/success state */
+    --ds-feedback-danger-surface: var(--ds-color-red-50); /** Error/danger background */
+    --ds-feedback-danger-text: var(--ds-color-red-650); /** Error/danger text */
+    --ds-feedback-danger-border: var(--ds-color-red-350); /** Error/danger border */
+    --ds-feedback-danger-icon: var(--ds-color-red-450); /** Error icon fill */
+    --ds-feedback-success-surface: var(--ds-color-green-50); /** Success background */
+    --ds-feedback-success-text: var(--ds-color-green-650); /** Success text */
+    --ds-feedback-success-border: var(--ds-color-green-350); /** Success border */
+    --ds-feedback-success-icon: var(--ds-color-green-450); /** Success icon fill */
+    --ds-feedback-warning-surface: var(--ds-color-amber-50); /** Warning background */
+    --ds-feedback-warning-text: var(--ds-color-amber-450); /** Warning text */
+    --ds-feedback-warning-border: var(--ds-color-amber-250); /** Warning border */
+    --ds-feedback-warning-icon: var(--ds-color-amber-350); /** Warning icon fill */
+    --ds-feedback-info-surface: var(--ds-color-blue-50); /** Informational background */
+    --ds-feedback-info-text: var(--ds-color-blue-600); /** Informational text */
+    --ds-feedback-info-border: var(--ds-color-blue-250); /** Informational border */
+    --ds-feedback-info-icon: var(--ds-color-blue-450); /** Info icon fill */
+    --ds-focus-ring-color: var(--ds-color-blue-450); /** Focus outline color */
+    --ds-focus-ring-offset-color: var(--ds-color-neutral-0); /** Focus outline offset gap color — typically matches the surface behind the element */
+    --ds-icon-default: var(--ds-color-neutral-650); /** Default icon colour, paired with text.primary */
+    --ds-icon-muted: var(--ds-color-neutral-400); /** De-emphasised icon — decorative, or paired with secondary text */
+    --ds-icon-disabled: var(--ds-color-neutral-250); /** Icon in an unavailable control */
+    --ds-icon-on-action: var(--ds-color-neutral-0); /** Icon sitting on an action surface, paired with text.on-action */
+    --ds-icon-accent: var(--ds-color-blue-450); /** Icon carrying the accent colour, such as a leading icon in a link */
+    --ds-palette-scheme-light-surface-page: var(--ds-color-neutral-25);
+    --ds-palette-scheme-light-surface-base: var(--ds-color-neutral-0);
+    --ds-palette-scheme-light-surface-raised: var(--ds-color-neutral-0);
+    --ds-palette-scheme-light-surface-overlay: var(--ds-color-neutral-0);
+    --ds-palette-scheme-light-surface-sunken: var(--ds-color-neutral-50);
+    --ds-palette-scheme-light-surface-hover: var(--ds-color-neutral-50);
+    --ds-palette-scheme-light-text-primary: var(--ds-color-neutral-800);
+    --ds-palette-scheme-light-text-secondary: var(--ds-color-neutral-600);
+    --ds-palette-scheme-light-text-muted: var(--ds-color-neutral-400);
+    --ds-palette-scheme-light-text-disabled: var(--ds-color-neutral-250);
+    --ds-palette-scheme-light-border-default: var(--ds-color-neutral-150);
+    --ds-palette-scheme-light-border-strong: var(--ds-color-neutral-400);
+    --ds-palette-scheme-light-border-subtle: var(--ds-color-neutral-75);
+    --ds-palette-scheme-dark-surface-page: var(--ds-color-neutral-900);
+    --ds-palette-scheme-dark-surface-base: var(--ds-color-neutral-850);
+    --ds-palette-scheme-dark-surface-raised: var(--ds-color-neutral-800);
+    --ds-palette-scheme-dark-surface-overlay: var(--ds-color-neutral-800);
+    --ds-palette-scheme-dark-surface-sunken: var(--ds-color-neutral-925);
+    --ds-palette-scheme-dark-surface-hover: var(--ds-color-neutral-800);
+    --ds-palette-scheme-dark-text-primary: var(--ds-color-neutral-50);
+    --ds-palette-scheme-dark-text-secondary: var(--ds-color-neutral-250);
+    --ds-palette-scheme-dark-text-muted: var(--ds-color-neutral-450);
+    --ds-palette-scheme-dark-text-disabled: var(--ds-color-neutral-600);
+    --ds-palette-scheme-dark-border-default: var(--ds-color-neutral-700);
+    --ds-palette-scheme-dark-border-strong: var(--ds-color-neutral-550);
+    --ds-palette-scheme-dark-border-subtle: var(--ds-color-neutral-750);
+    --ds-palette-mode-subtle-surface-page: var(--ds-color-neutral-50);
+    --ds-palette-mode-subtle-surface-base: var(--ds-color-neutral-25);
+    --ds-palette-mode-subtle-surface-raised: var(--ds-color-neutral-0);
+    --ds-palette-mode-subtle-surface-sunken: var(--ds-color-neutral-75);
+    --ds-palette-mode-subtle-surface-hover: var(--ds-color-neutral-75);
+    --ds-palette-mode-inverted-surface-page: var(--ds-color-neutral-850);
+    --ds-palette-mode-inverted-surface-base: var(--ds-color-neutral-800);
+    --ds-palette-mode-inverted-surface-raised: var(--ds-color-neutral-750);
+    --ds-palette-mode-inverted-surface-sunken: var(--ds-color-neutral-900);
+    --ds-palette-mode-inverted-surface-hover: var(--ds-color-neutral-750);
+    --ds-palette-mode-inverted-text-primary: var(--ds-color-neutral-25);
+    --ds-palette-mode-inverted-text-secondary: var(--ds-color-neutral-200);
+    --ds-palette-mode-inverted-text-muted: var(--ds-color-neutral-400);
+    --ds-palette-mode-inverted-text-disabled: var(--ds-color-neutral-550);
+    --ds-palette-mode-inverted-border-default: var(--ds-color-neutral-700);
+    --ds-palette-mode-inverted-border-strong: var(--ds-color-neutral-550);
+    --ds-palette-mode-inverted-border-subtle: var(--ds-color-neutral-750);
+    --ds-palette-mode-brand-surface-page: var(--ds-color-blue-500);
+    --ds-palette-mode-brand-surface-base: var(--ds-color-blue-550);
+    --ds-palette-mode-brand-surface-raised: var(--ds-color-blue-450);
+    --ds-palette-mode-brand-surface-sunken: var(--ds-color-blue-600);
+    --ds-palette-mode-brand-surface-hover: var(--ds-color-blue-450);
+    --ds-palette-mode-brand-text-primary: var(--ds-color-neutral-25);
+    --ds-palette-mode-brand-text-secondary: var(--ds-color-blue-150);
+    --ds-palette-mode-brand-text-muted: var(--ds-color-blue-250);
+    --ds-palette-mode-brand-text-disabled: var(--ds-color-blue-350);
+    --ds-palette-mode-brand-text-link: var(--ds-color-neutral-50);
+    --ds-palette-mode-brand-text-link-hover: var(--ds-color-neutral-0);
+    --ds-palette-mode-brand-border-default: var(--ds-color-blue-400);
+    --ds-palette-mode-brand-border-strong: var(--ds-color-blue-300);
+    --ds-palette-mode-brand-border-subtle: var(--ds-color-blue-500);
+    --ds-palette-mode-tinted-surface-page: var(--ds-color-blue-50);
+    --ds-palette-mode-tinted-surface-base: var(--ds-color-blue-25);
+    --ds-palette-mode-tinted-surface-raised: var(--ds-color-neutral-0);
+    --ds-palette-mode-tinted-surface-sunken: var(--ds-color-blue-75);
+    --ds-palette-mode-tinted-surface-hover: var(--ds-color-blue-75);
+    --ds-palette-mode-success-action-background: var(--ds-color-green-450);
+    --ds-palette-mode-success-action-foreground: var(--ds-color-neutral-0);
+    --ds-palette-mode-warning-action-background: var(--ds-color-amber-450);
+    --ds-palette-mode-warning-action-foreground: var(--ds-color-neutral-900);
+    --ds-surface-page: var(--ds-color-neutral-25); /** Page/body background — the lowest layer */
+    --ds-surface-base: var(--ds-color-neutral-0); /** Primary content surface — cards, panels, the main content area */
+    --ds-surface-raised: var(--ds-color-neutral-0); /** Elevated surface — dropdowns, popovers, tooltips */
+    --ds-surface-overlay: var(--ds-color-neutral-0); /** Modal/dialog surface */
+    --ds-surface-sunken: var(--ds-color-neutral-50); /** Recessed input areas, code blocks, inset sections */
+    --ds-surface-hover: var(--ds-color-neutral-50); /** Hover state for interactive list items, menu items */
+    --ds-surface-selected: var(--ds-color-blue-50); /** Selected/active row or list item */
+    --ds-surface-disabled: var(--ds-color-neutral-50); /** Disabled control background */
+    --ds-text-primary: var(--ds-color-neutral-850); /** Primary body and heading text — highest contrast */
+    --ds-text-secondary: var(--ds-color-neutral-600); /** Supporting text, less prominent labels */
+    --ds-text-muted: var(--ds-color-neutral-400); /** Subdued text — metadata, placeholder, captions */
+    --ds-text-disabled: var(--ds-color-neutral-250); /** Text on disabled controls */
+    --ds-text-inverse: var(--ds-color-neutral-0); /** Text on dark/filled surfaces — e.g., primary button label */
+    --ds-text-link: var(--ds-color-blue-450); /** Hyperlink default */
+    --ds-text-link-hover: var(--ds-color-blue-550); /** Hyperlink hover */
+    --ds-text-on-action: var(--ds-color-neutral-0); /** Text sitting on an action-primary surface (button label) */
+    --ds-text-danger: var(--ds-color-red-450); /** Error messages, destructive warnings */
+    --ds-text-success: var(--ds-color-green-550); /** Confirmation, success messages */
+    --ds-text-warning: var(--ds-color-amber-450); /** Warning messages */
+  }
+}

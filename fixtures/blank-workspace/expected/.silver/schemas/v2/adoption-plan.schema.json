@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/adoption-plan.schema.json",
+  "title": "Silver agent-led adoption plan v1",
+  "description": "What an existing repository contains, what an agent thinks each entry is, and what the designer decided to do about it — one entry at a time. Silver enumerates and validates; the agent reads and proposes; the human decides. Nothing here can move, rename, delete, or rewrite a file that already exists: adoption is additive, and the disposition vocabulary is deliberately small enough to keep it that way.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "created_at",
+    "framework_version",
+    "target",
+    "discovered",
+    "items",
+    "state_integrity"
+  ],
+  "properties": {
+    "schema": { "const": "silver/adoption-plan/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "framework_version": { "$ref": "common.schema.json#/$defs/version" },
+    "target": {
+      "description": "The workspace being adopted into. Absolute, because a plan is produced and applied from different working directories.",
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "description": "A second repository being read for translation, such as a product codebase whose UI, components, or documentation inform design artifacts here. Read-only without exception: no disposition writes anything inside a source.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reference"],
+      "properties": {
+        "kind": { "enum": ["local", "git"] },
+        "reference": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "discovered": {
+      "description": "What Silver found, and nothing about what it means. Paths, kinds, and sizes only — every judgement about an entry belongs to the agent in `items`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries", "skipped_directories", "truncated"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "entry_kind"],
+            "properties": {
+              "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+              "entry_kind": { "enum": ["file", "directory"] },
+              "size": { "type": "integer", "minimum": 0 },
+              "child_count": { "type": "integer", "minimum": 0 },
+              "truncated": {
+                "description": "This directory holds more entries than the walk reported. Stated rather than silently trimmed, so nothing looks smaller than it is.",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "skipped_directories": {
+          "description": "Directory names excluded from the walk — dependencies, build output, caches. Listed so their absence is a stated choice rather than a gap.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "truncated": { "type": "boolean" },
+        "depth_limit": { "type": "integer", "minimum": 1 },
+        "entry_limit": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "items": {
+      "description": "One decision per file or directory. An item without an `accepted` decision is never applied.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "path",
+          "entry_kind",
+          "observed",
+          "agent_reading",
+          "confidence",
+          "proposed_disposition",
+          "rationale",
+          "decision"
+        ],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+          "entry_kind": { "enum": ["file", "directory"] },
+          "observed": {
+            "description": "What the agent actually saw. Facts about the entry, separate from what it concludes.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "agent_reading": {
+            "description": "What the agent thinks this is. Kept separate from `observed` so a wrong conclusion is visibly a conclusion.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "confidence": { "enum": ["high", "medium", "low"] },
+          "proposed_disposition": {
+            "description": "leave-in-place: no change. register-in-place: name it in the manifest where it sits. link-as-source: pin it as a linked or guidance source. as-references: bring it in as reference material rather than truth. translate: write a new Silver artifact derived from it, original untouched. ignore: seen and deliberately not adopted, so re-runs stop asking.",
+            "enum": [
+              "leave-in-place",
+              "register-in-place",
+              "link-as-source",
+              "as-references",
+              "translate",
+              "ignore"
+            ]
+          },
+          "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "question": { "$ref": "common.schema.json#/$defs/decisionQuestion" },
+          "artifact": {
+            "description": "How a `register-in-place` entry enters the manifest. It points at the existing path; the file is not read, moved, or rewritten.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "scope", "role", "status"],
+            "properties": {
+              "id": { "$ref": "common.schema.json#/$defs/id" },
+              "kind": { "$ref": "common.schema.json#/$defs/artifactKind" },
+              "scope": { "enum": ["organization", "product", "codebase", "prototype"] },
+              "role": { "enum": ["canonical", "supporting", "evidence", "generated"] },
+              "status": { "enum": ["draft", "active", "deprecated", "archived"] }
+            }
+          },
+          "link": {
+            "description": "How a `link-as-source` entry is registered. The agent supplies the judgement — what it is and who owns it — and Silver computes the revision and integrity pins, because those are facts to be measured rather than claims to be accepted.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "kind", "authority"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "kind": { "enum": ["design-system", "component-catalog", "codebase"] },
+              "authority": {
+                "enum": ["external-authoritative", "workspace-authoritative", "shared-review"]
+              }
+            }
+          },
+          "target_path": {
+            "description": "Where a `translate` or `as-references` output is written. Must not already exist — Silver writes it exclusively, so a collision aborts rather than overwrites.",
+            "$ref": "common.schema.json#/$defs/relativePath"
+          },
+          "content": {
+            "description": "The new artifact's full content, authored by the agent. Silver is the only writer, which is what makes the no-overwrite rule enforceable rather than merely promised.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400000
+          },
+          "decision": {
+            "description": "Filled by the human, one item at a time. Only `accepted` is applied; `rejected` becomes leave-in-place; `deferred` is asked again next run.",
+            "enum": ["pending", "accepted", "rejected", "deferred"]
+          },
+          "decided_by": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "decided_at": { "type": "string", "format": "date-time" }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "proposed_disposition": { "const": "register-in-place" } },
+              "required": ["proposed_disposition"]
+            },
+            "then": { "required": ["artifact"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "proposed_disposition": { "enum": ["translate", "as-references"] }
+              },
+              "required": ["proposed_disposition"]
+            },
+            "then": { "required": ["target_path", "content"] }
+          },
+          {
+            "if": {
+              "properties": { "proposed_disposition": { "const": "link-as-source" } },
+              "required": ["proposed_disposition"]
+            },
+            "then": { "required": ["link"] }
+          }
+        ]
+      }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "questions": {
+      "description": "One ready-made question per undecided entry, in the shape every host already renders for setup. Emitted by `adopt inspect` so a per-entry conversation needs no new presentation code, and carried through apply so a plan stays self-describing.",
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/decisionQuestion" }
+    },
+    "state_integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

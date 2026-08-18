@@ -6,6 +6,14 @@ import { doctorWorkspace } from "./doctor.mjs";
 import { exists, integrity, readUtf8, writeUtf8 } from "./lib/files.mjs";
 import { renderIndex } from "./lib/index.mjs";
 import { validateSchema } from "./lib/schemas.mjs";
+import {
+  applyStatusChangesToSource,
+  planManifestStatusSync,
+} from "../framework/runtime/manifest-sync.mjs";
+import {
+  resolveSharedStudioVoice,
+  writeWorkspacePracticeOverlay,
+} from "./practice-overlay.mjs";
 import { renderAgentPointer } from "./setup.mjs";
 import {
   CLAUDE_MEMORY_PATH,
@@ -14,6 +22,7 @@ import {
   writeClaudeSkillLinks,
   writeLauncher,
 } from "./agent-adapters.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 
 async function loadValidatedYaml(root, relativePath, schemaName) {
   const absolute = path.join(root, relativePath);
@@ -42,7 +51,9 @@ function managedFileOwner(relativePath) {
 }
 
 export async function repairWorkspace(options = {}) {
-  const root = path.resolve(options.root ?? process.cwd());
+  let root = path.resolve(options.root ?? process.cwd());
+  const mutator = await createWorkspaceMutator(root);
+  root = mutator.root;
   const manifest = await loadValidatedYaml(
     root,
     "design/manifest.yaml",
@@ -56,10 +67,31 @@ export async function repairWorkspace(options = {}) {
   const skillIds = lock.packages
     .filter(({ type }) => type === "skill")
     .map(({ id }) => id);
+
+  // Reconcile manifest status against what each artifact says about itself
+  // before regenerating anything derived from the manifest. A workspace whose
+  // accepted artifacts went active while the manifest stayed draft is repaired
+  // here rather than by hand.
+  const statusChanges = await planManifestStatusSync({
+    root,
+    manifest,
+  });
+  for (const change of statusChanges) {
+    const entry = manifest.artifacts.find(({ id }) => id === change.id);
+    if (entry) entry.status = change.to;
+  }
+  if (statusChanges.length > 0) {
+    const manifestPath = path.join(root, "design", "manifest.yaml");
+    await mutator.write(
+      "design/manifest.yaml",
+      applyStatusChangesToSource(await readUtf8(manifestPath), statusChanges),
+    );
+  }
+
   const claudeMemoryPath = path.join(root, CLAUDE_MEMORY_PATH);
   const generated = new Map([
     ["design/INDEX.md", renderIndex(manifest, skillIds)],
-    ["AGENTS.md", renderAgentPointer(skillIds)],
+    ["AGENTS.md", renderAgentPointer(skillIds, await resolveSharedStudioVoice())],
     // Refreshes Silver's block in place and leaves project-owned content alone.
     [
       CLAUDE_MEMORY_PATH,
@@ -80,12 +112,18 @@ export async function repairWorkspace(options = {}) {
   repaired.push(...linked);
   repaired.push(...(await writeLauncher(root)));
 
+  // Personal preferences live in My Practice, outside the project, and are
+  // materialized here as an untracked file — so editing your practice takes
+  // effect in a workspace on repair.
+  const practiceOverlay = await writeWorkspacePracticeOverlay(root);
+  if (practiceOverlay.written) repaired.push(practiceOverlay.path);
+
   for (const [relativePath, content] of generated) {
     const absolute = path.join(root, relativePath);
     if ((await exists(absolute)) && (await readUtf8(absolute)) === content) {
       unchanged.push(relativePath);
     } else {
-      await writeUtf8(absolute, content);
+      await mutator.write(relativePath, content);
       repaired.push(relativePath);
     }
     const managed = lock.managed_files.find(
@@ -106,11 +144,13 @@ export async function repairWorkspace(options = {}) {
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const nextLock = stringify(lock);
   if ((await readUtf8(lockPath)) !== nextLock) {
-    await writeUtf8(lockPath, nextLock);
+    await mutator.write(".silver/lock.yaml", nextLock);
     repaired.push(".silver/lock.yaml");
   } else {
     unchanged.push(".silver/lock.yaml");
   }
+
+  if (statusChanges.length > 0) repaired.push("design/manifest.yaml");
 
   const diagnosis = await doctorWorkspace({ root });
   return {
@@ -118,6 +158,7 @@ export async function repairWorkspace(options = {}) {
     root,
     repaired,
     unchanged,
+    ...(statusChanges.length > 0 ? { status_changes: statusChanges } : {}),
     diagnostics: diagnosis.diagnostics,
   };
 }

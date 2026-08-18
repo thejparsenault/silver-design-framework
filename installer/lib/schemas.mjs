@@ -1,12 +1,11 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { payloadPath } from "../payload.mjs";
 
-const installerRoot = path.dirname(fileURLToPath(import.meta.url));
-const schemaRoot = path.resolve(installerRoot, "../../framework/schemas");
+const schemaRoot = payloadPath("framework/schemas", import.meta.url);
 const v1SchemaNames = [
   "artifact.schema.json",
   "check-result.schema.json",

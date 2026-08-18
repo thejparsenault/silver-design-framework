@@ -20,6 +20,7 @@ import {
   FRAMEWORK_VERSION,
   LOCAL_SOURCE_REFERENCE,
 } from "./version.mjs";
+import { runLifecycleTransaction } from "./lib/lifecycle-transaction.mjs";
 
 async function loadLock(root) {
   const lockPath = path.join(root, ".silver", "lock.yaml");
@@ -40,7 +41,7 @@ async function loadLock(root) {
   return { lock, lockPath };
 }
 
-export async function updateWorkspace(options = {}) {
+async function updateWorkspaceDirect(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const payloadRoot = options.payloadRoot;
   const version = options.version ?? FRAMEWORK_VERSION;
@@ -169,4 +170,28 @@ export async function updateWorkspace(options = {}) {
     repaired: repair.repaired,
     diagnostics: diagnosis.diagnostics,
   };
+}
+
+export async function updateWorkspace(options = {}) {
+  const root = path.resolve(options.root ?? process.cwd());
+  if (options.transaction === false) {
+    return updateWorkspaceDirect({ ...options, root });
+  }
+  const { stagedResult, transaction } = await runLifecycleTransaction({
+    root,
+    command: `silver update ${options.version ?? FRAMEWORK_VERSION}`,
+    metadata: { workflow: "update", target_version: options.version ?? FRAMEWORK_VERSION },
+    mutate: (stagingRoot) =>
+      updateWorkspaceDirect({ ...options, root: stagingRoot, transaction: false }),
+    validate: async ({ journal }) => {
+      const diagnosis = await doctorWorkspace({ root, ignoreTransactionId: journal.id });
+      return {
+        status: diagnosis.ok ? "pass" : "fail",
+        check: "doctor",
+        diagnostics: diagnosis.diagnostics,
+      };
+    },
+    hooks: options.transactionHooks,
+  });
+  return { ...stagedResult, root, transaction };
 }

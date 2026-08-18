@@ -1,0 +1,4 @@
+interface:
+  display_name: Define brand
+  short_description: Define or refine audience-facing brand foundations.
+  default_prompt: Use $brand to define or refine audience-facing brand foundations.

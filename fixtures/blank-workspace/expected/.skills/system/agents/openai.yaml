@@ -1,0 +1,4 @@
+interface:
+  display_name: Maintain system
+  short_description: Maintain semantic tokens, registries, deprecations, and migrations.
+  default_prompt: Use $system to maintain semantic tokens, registries, deprecations, and migrations.

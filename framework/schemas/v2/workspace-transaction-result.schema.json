@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/workspace-transaction-result.schema.json",
+  "title": "Silver workspace transaction result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "transaction_id", "command", "status", "operations"],
+  "properties": {
+    "schema": { "const": "silver/workspace-transaction-result/v1" },
+    "transaction_id": { "type": "string", "minLength": 1 },
+    "command": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["committed", "rolled-back", "recovery-required"] },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "state"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "state": { "enum": ["prepared", "activating", "activated", "rolling-back", "rolled-back"] }
+        }
+      }
+    },
+    "validation": { "type": "object" },
+    "error": { "type": "string" }
+  }
+}

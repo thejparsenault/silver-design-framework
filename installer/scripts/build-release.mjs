@@ -14,19 +14,30 @@ import {
   RELEASE_TARBALL_URL,
 } from "../version.mjs";
 
-const run = promisify(execFile);
+const execute = promisify(execFile);
+const run = (file, args, options = {}) => execute(file, args, {
+  timeout: 10 * 60 * 1000,
+  killSignal: "SIGKILL",
+  ...options,
+});
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const distributionRoot = path.join(repositoryRoot, "dist");
 const skipGates = process.argv.includes("--skip-gates");
 
-async function gate(name, args) {
+async function gate(name, args, options = {}) {
   process.stdout.write(`  ${name}… `);
   try {
-    await run("npm", args, { cwd: repositoryRoot, maxBuffer: 64 * 1024 * 1024 });
+    await run("npm", args, {
+      cwd: repositoryRoot,
+      maxBuffer: 64 * 1024 * 1024,
+      ...options,
+    });
     process.stdout.write("pass\n");
   } catch (error) {
     process.stdout.write("FAIL\n");
-    throw new Error(`${name} failed; release aborted.\n${error.stdout ?? error.message}`);
+    throw new Error(
+      `${name} failed; release aborted.\n${error.stdout ?? ""}${error.stderr ?? ""}${error.message ?? ""}`,
+    );
   }
 }
 
@@ -43,7 +54,7 @@ if (skipGates) {
   console.log("Skipping release gates (--skip-gates).");
 } else {
   console.log("Release gates:");
-  await gate("npm run build", ["run", "build"]);
+  await gate("npm run build", ["run", "build"], { timeout: 20 * 60 * 1000 });
   await gate("npm run test:package", ["run", "test:package"]);
 }
 

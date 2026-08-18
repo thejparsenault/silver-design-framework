@@ -1,0 +1,4 @@
+interface:
+  display_name: Ideate concepts
+  short_description: Generate distinct concepts and testable hypotheses.
+  default_prompt: Use $ideate to generate distinct concepts and testable hypotheses.

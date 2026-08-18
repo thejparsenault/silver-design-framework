@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/component-catalog.schema.json",
+  "title": "Silver component catalog v1",
+  "description": "The canonical component index: roles, variants, states, and slots a design system declares. Deliberately implementation-agnostic — no markup, no class names. How the index becomes rendered output is an expression's job, not this document's.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "revision", "components"],
+  "properties": {
+    "schema": { "const": "silver/component-catalog/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "description": { "type": "string" },
+    "components": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["summary", "states", "slots"],
+        "properties": {
+          "summary": { "type": "string", "minLength": 1 },
+          "variants": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          },
+          "states": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "slots": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "related": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

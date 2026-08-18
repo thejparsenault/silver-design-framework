@@ -1,0 +1,4 @@
+interface:
+  display_name: Map an experience or service
+  short_description: Create evidence-linked journey maps and service blueprints.
+  default_prompt: Use the project-local map skill and pin the active design context.

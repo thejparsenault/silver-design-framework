@@ -1,0 +1,4 @@
+interface:
+  display_name: Design component
+  short_description: Explore and specify accessible component anatomy and behavior.
+  default_prompt: Use $component to explore and specify accessible component anatomy and behavior.

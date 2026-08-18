@@ -1,0 +1,29 @@
+{
+  "feedback": {
+    "$description": "Feedback state semantic tokens — alerts, banners, badges, form states.",
+    "danger": {
+      "surface": { "$type": "color", "$description": "Error/danger background",      "$value": "{color.red.50}"    },
+      "text":    { "$type": "color", "$description": "Error/danger text",             "$value": "{color.red.650}"   },
+      "border":  { "$type": "color", "$description": "Error/danger border",           "$value": "{color.red.350}"   },
+      "icon":    { "$type": "color", "$description": "Error icon fill",               "$value": "{color.red.450}"   }
+    },
+    "success": {
+      "surface": { "$type": "color", "$description": "Success background",            "$value": "{color.green.50}"  },
+      "text":    { "$type": "color", "$description": "Success text",                  "$value": "{color.green.650}" },
+      "border":  { "$type": "color", "$description": "Success border",                "$value": "{color.green.350}" },
+      "icon":    { "$type": "color", "$description": "Success icon fill",             "$value": "{color.green.450}" }
+    },
+    "warning": {
+      "surface": { "$type": "color", "$description": "Warning background",            "$value": "{color.amber.50}"  },
+      "text":    { "$type": "color", "$description": "Warning text",                  "$value": "{color.amber.450}" },
+      "border":  { "$type": "color", "$description": "Warning border",                "$value": "{color.amber.250}" },
+      "icon":    { "$type": "color", "$description": "Warning icon fill",             "$value": "{color.amber.350}" }
+    },
+    "info": {
+      "surface": { "$type": "color", "$description": "Informational background",      "$value": "{color.blue.50}"   },
+      "text":    { "$type": "color", "$description": "Informational text",            "$value": "{color.blue.600}"  },
+      "border":  { "$type": "color", "$description": "Informational border",          "$value": "{color.blue.250}"  },
+      "icon":    { "$type": "color", "$description": "Info icon fill",                "$value": "{color.blue.450}"  }
+    }
+  }
+}

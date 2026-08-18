@@ -1,4 +1,0 @@
-interface:
-  display_name: Sketch alternatives
-  short_description: Create inexpensive, constraint-aware design alternatives.
-  default_prompt: Use $sketch to create inexpensive, constraint-aware design alternatives.

@@ -17,11 +17,13 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.6.1";
+const expectedVersion = "0.9.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
     maxBuffer: 10 * 1024 * 1024,
+    timeout: 10 * 60 * 1000,
+    killSignal: "SIGKILL",
     ...options,
   });
 }
@@ -75,11 +77,29 @@ try {
     "framework/playbooks/default-design-loop.yaml",
     "framework/scenarios/complete-blank.mjs",
     "framework/scenarios/portable-reconciliation.mjs",
-    "framework/providers/figma/adapter.mjs",
+    "framework/providers/figma-console-mcp/adapter.mjs",
+    "framework/providers/figma-official-mcp/provider.yaml",
     "framework/providers/silver-portable/provider.yaml",
+    // The activity catalog is payload, not documentation: a package without it
+    // resolves every capability by the pre-0.8 fallback and silently loses the
+    // names a designer binds preferences to.
+    "framework/activities/catalog.yaml",
+    // Shipped declarations are payload too: without this directory in the
+    // package, every CLI-only or declaration-only transport (chrome-devtools,
+    // playwright, the Design-tools and Browser & QA additions) silently
+    // vanishes for anyone who installed from npm rather than this repo.
+    "framework/transports/chrome-devtools-mcp.yaml",
+    "framework/runtime/activities.mjs",
+    "framework/runtime/tool-detection.mjs",
+    "framework/runtime/transports.mjs",
+    "framework/runtime/transport-diagnosis.mjs",
+    "framework/runtime/host-mcp.mjs",
+    "installer/tools.mjs",
+    "installer/host-mcp-config.mjs",
     "framework/schemas/v2/representation-binding.schema.json",
     "framework/runtime/reconciliation.mjs",
-    "reference-system/packages/css/src/tokens.css",
+    "framework/runtime/tokens.mjs",
+    "installer/templates/blank-workspace/design/system/tokens/primitive/color.tokens.json",
   ]) {
     assert.ok(packedPaths.has(required), `Package is missing ${required}`);
   }
@@ -106,6 +126,10 @@ try {
     "node_modules",
     "silver-design-framework",
   );
+  const installedManifest = JSON.parse(
+    await readFile(path.join(packageRoot, "package.json"), "utf8"),
+  );
+  assert.equal(installedManifest.engines.node, ">=22.0.0");
   const cli = path.join(packageRoot, "bin", "silver.mjs");
   assert.equal(
     (await command(process.execPath, [cli, "version"], { cwd: consumerRoot }))
@@ -156,12 +180,14 @@ try {
     "utf8",
   );
   assert.match(packedMemory, /^@AGENTS\.md$/m);
+  // Adapter names are namespaced so generic ids cannot be shadowed by a
+  // personal or bundled skill, while .skills/<id> stays canonical.
   assert.match(
     await readFile(
-      path.join(workspaceRoot, ".claude", "skills", "brand", "SKILL.md"),
+      path.join(workspaceRoot, ".claude", "skills", "silver-brand", "SKILL.md"),
       "utf8",
     ),
-    /^name: brand$/m,
+    /^name: silver-brand$/m,
   );
   const { stdout: packedScaffold } = await command(
     process.execPath,
@@ -226,7 +252,7 @@ try {
                 capability: "repository",
                 actions: ["read", "inspect"],
                 decision: "allow",
-                paths: ["design/**", "reference-system/**"],
+                paths: ["design/**"],
               },
             ],
           },
@@ -249,13 +275,54 @@ try {
     "scripts",
     "invoke.mjs",
   );
-  const { stdout: invocationOutput } = await command(
+  const invocationCommand = await command(
     process.execPath,
     [installedInvocation, invocationPath, "--root", workspaceRoot],
     { cwd: workspaceRoot },
+  ).catch((error) => ({ stdout: error.stdout, exitCode: error.code }));
+  const invocationResult = JSON.parse(invocationCommand.stdout);
+  assert.equal(
+    invocationCommand.exitCode ?? 0,
+    0,
+    JSON.stringify(
+      {
+        execution: invocationResult.execution,
+        failedChecks: invocationResult.checks.filter(({ status }) => status !== "pass"),
+        effectFindings: invocationResult.effect_findings,
+      },
+      null,
+      2,
+    ),
   );
-  const invocationResult = JSON.parse(invocationOutput);
   assert.equal(invocationResult.execution.status, "complete");
+  assert.deepEqual(
+    invocationResult.checks.map(({ id }) => id).sort(),
+    [
+      "accessibility",
+      "asset-integrity",
+      "authority",
+      "binding-integrity",
+      "contract-integrity",
+      "critical-interactions",
+      "evidence-provenance",
+      "flow-structure",
+      "map-structure",
+      "presentation-integrity",
+      "production-readiness",
+      "prototype-policy",
+      "provider-revision-pins",
+      "reference-integrity",
+      "responsive-behavior",
+      "secret-free-configuration",
+      "semantic-mapping",
+      "semantic-styles",
+      "stale-proposals",
+      "structure-integrity",
+      "synchronization-status",
+      "view-provenance",
+    ],
+  );
+  assert.ok(invocationResult.checks.every(({ status }) => status === "pass"));
   assert.ok(
     invocationResult.recommended_next_actions.every(
       ({ automatic }) => automatic === false,
@@ -269,10 +336,10 @@ try {
   );
   assert.equal(lock.framework.version, expectedVersion);
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.packages.length, 28);
+  assert.equal(lock.packages.length, 36);
   assert.equal(
     lock.packages.filter(({ type }) => type === "skill").length,
-    21,
+    25,
   );
   assert.ok(
     lock.packages.every(({ version }) => version === expectedVersion),
@@ -321,7 +388,9 @@ try {
   assert.equal(v2Repeated.needed, false);
   await command(process.execPath, [cli, "doctor", v2MigrationRoot], { cwd: consumerRoot });
   const legacyBrand = lock.packages.find(({ id }) => id === "brand");
-  const legacyReference = lock.packages.find(({ id }) => id === "reference-system");
+  // A v0.1.0-alpha.1 workspace predates design/system entirely — it shipped
+  // reference-system, which is what a genuinely legacy lock would still name.
+  // v1's schema keeps "reference-system" in its enum for exactly this reason.
   await writeFile(
     path.join(workspaceRoot, ".silver", "lock.yaml"),
     stringify({
@@ -343,7 +412,7 @@ try {
           type: "reference-system",
           version: "0.1.0-alpha.1",
           ownership: "copied-and-owned",
-          integrity: legacyReference.integrity,
+          integrity: `sha256:${"a".repeat(64)}`,
         },
       ],
       managed_files: lock.managed_files,
@@ -385,7 +454,7 @@ try {
     await readFile(path.join(workspaceRoot, ".silver", "lock.yaml"), "utf8"),
   );
   assert.equal(migratedLock.schema, "silver/lock/v2");
-  assert.equal(migratedLock.packages.length, 28);
+  assert.equal(migratedLock.packages.length, 36);
   await access(path.join(workspaceRoot, ".skills", "product", "SKILL.md"));
   await command(process.execPath, [cli, "doctor", workspaceRoot], {
     cwd: consumerRoot,
@@ -393,10 +462,11 @@ try {
   await access(
     path.join(
       workspaceRoot,
-      "reference-system",
-      "packages",
-      "css",
-      "src",
+      "design",
+      "system",
+      "expressions",
+      "html",
+      "styles",
       "tokens.css",
     ),
   );

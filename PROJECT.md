@@ -8,7 +8,7 @@ visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-07-30
+updated: 2026-08-17
 ---
 
 # The Silver Design Framework
@@ -38,6 +38,10 @@ A designer can:
     personal paths or overriding required product and company guidance.
 12. Trace durable work through its evidence, practice methods, linked guidance,
     design context, external views, acceptance, and local Git checkpoint.
+13. Import, compare, and explicitly export selected representations from linked
+    repositories or Figma without installing Silver into the external source,
+    silently overwriting either side, or leaving lifecycle mutations
+    unrecoverably half-applied.
 
 ## First Iteration
 
@@ -59,9 +63,37 @@ build
 
 ## Latest Release
 
-Silver `0.6.1` is the current release. It adds npm as the primary distribution
-channel with no behaviour change; `docs/release-notes/v0.6.1.md` records why the
-version was bumped rather than republishing `0.6.0`.
+Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
+`release/silver-0.8-tools`. It extends the provider-selection work into the
+repositories, references, design systems, and tools a team already owns:
+existing-workspace adoption, declared transport support and diagnosis,
+personal tool preferences, external references, a workspace-owned design
+system, a reviewable 0.8-to-0.9 migration, symlink-safe managed writes,
+recoverable lifecycle transactions, and explicit linked-source/Figma
+synchronization.
+
+The release will add signed macOS native CLI delivery for both Apple Silicon
+and Intel Macs. Windows and Linux delivery are explicitly deferred.
+`docs/silver-0.9-acceptance.md` is the release boundary.
+
+Silver `0.8.0`, **Tools That Are Actually There**, is the previous release.
+It made the provider-selection layer real: `resolveCapabilities` no longer
+picked alphabetically, transports became distinct ways of reaching a tool, and
+each activity resolved through an explicit order and two filters.
+
+Silver `0.7.0`, **One Good Step**, is the previous release. It answers the
+22-issue field report from the first real product session: invocations run their
+own required checks and record real evidence, a claimed pass without evidence is
+not believed, accepted canonical work activates across artifact, manifest,
+index, and lock in one checkpoint, an accepted invocation confirms Git can
+commit before writing, and generated agent instructions say to run one skill and
+stop. Tone became a separate layer — a studio voice set once and overridable in
+a personal practice — so skills stay precise and independently upgradeable.
+`docs/silver-0.7-acceptance.md` is the release boundary.
+
+Silver `0.6.1` added npm as the primary distribution channel with no behaviour
+change; `docs/release-notes/v0.6.1.md` records why the version was bumped rather
+than republishing `0.6.0`.
 
 Silver `0.6.0`, **Agent Hosts and Guarded Invocation**, is the substantive
 release. It responds to the audit in `docs/silver-0.5-audit.md`.
@@ -109,7 +141,36 @@ Silver `0.5.0`, **Traceable Practice and Context**, is defined in
 - Durable visual work pins one or more exact design-context revisions.
 - Every generally applicable skill has a useful bundled portable baseline; an external integration adds capability and never silently becomes a prerequisite for unrelated work.
 - Canonical artifacts, generated local views, and external views have distinct roles, authority, provenance, and revisions. Drift is reconciled against a shared base rather than resolved by last-write-wins.
-- Skill execution, acceptance, and downstream readiness are separate states.
+- Skill execution, acceptance, and downstream readiness are separate states, and
+  "the output was generated" is never reported as "the output was verified".
+- A check status is believed only when its evidence exists and agrees. A guarded
+  invocation runs its own required checks rather than trusting its caller.
+- A skill runs, reports what its checks said, offers next moves, and stops.
+  Recipes, implementation profiles, and playbooks are offered, never chosen for
+  the designer.
+- Accepted canonical status changes are atomic across the artifact, manifest,
+  generated index, and lock, and are checkpointed together.
+- Every personal preference is authored in My Practice and nowhere else, so it
+  applies across workspaces and is committed to none of them. Studio voice and
+  method overlays are separate layers from skill packages, and personal
+  preference never relaxes project facts, guardrails, or required guidance.
+- A designer's options are never narrowed silently. Every transport removed from
+  consideration is named, attributed to the availability failure or the project,
+  team, organization, or machine policy that removed it, and reported with who
+  can lift it. Where a preferred transport is gone, Silver asks rather than
+  substituting; where nobody can be asked, it stops with a resumable request.
+- An activity's transport is ordered by the designer first, then the project,
+  team, and framework default, and filtered by availability and veto. Ordering
+  is a preference and belongs to whoever is working; forbidding is a permission
+  and belongs to the project, team, or organization.
+- Silver declares tools and never installs them. It may detect what is present,
+  write an agent host's MCP declaration for an installed tool with approval, and
+  print exact commands — never install software, clone or build a repository,
+  hold a credential, or launch a background process.
+- Silver's knowledge of tools is what it ships plus what the designer tells it.
+  There is no discovery of third-party tools and no recommendation Silver cannot
+  stand behind; an unrecognized host server is reported as unmapped and never
+  used until the designer says what it is for.
 - Playbook invocation permits only its declared safe local progression and never broadens external, canonical, production, destructive, or version-control authority.
 - Presentation outputs consume canonical brand and design-system artifacts; reusable presentation templates and components remain a distinct project-owned kit.
 

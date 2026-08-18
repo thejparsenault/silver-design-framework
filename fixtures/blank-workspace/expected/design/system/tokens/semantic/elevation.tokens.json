@@ -1,0 +1,25 @@
+{
+  "elevation": {
+    "$description": "Elevation semantic tokens. These complete the surface roles: surface.raised and surface.overlay named the colour of a lifted plane without naming its shadow, so \"raised\" was only half-defined. Elevation is a real design concept that both design tools and production encode, and it needs a role of its own to survive a round trip.",
+    "flat": {
+      "$type": "shadow",
+      "$description": "In-plane. No lift.",
+      "$value": "{shadow.none}"
+    },
+    "raised": {
+      "$type": "shadow",
+      "$description": "Lifted just off the page — cards, panels. Pairs with surface.raised.",
+      "$value": "{shadow.sm}"
+    },
+    "overlay": {
+      "$type": "shadow",
+      "$description": "Floating above the page — menus, popovers, dropdowns. Pairs with surface.overlay.",
+      "$value": "{shadow.md}"
+    },
+    "modal": {
+      "$type": "shadow",
+      "$description": "Above everything — dialogs and sheets that take focus from the page.",
+      "$value": "{shadow.lg}"
+    }
+  }
+}

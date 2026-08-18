@@ -1,0 +1,317 @@
+# The Silver semantic role vocabulary.
+#
+# A vocabulary, not a design system. It names roles; it holds no values. What a
+# role *is* here — `action.primary.bg` is the background of the main action — is
+# stable, versioned, and small. What it *looks like* belongs to whichever design
+# system a workspace uses.
+#
+# This exists to be a pivot. A designer's Figma file may encode semantics, their
+# production codebase may not, and Silver has its own names — three vocabularies,
+# and without a shared one that is N×N translation. With one, every system needs
+# exactly two mappings: in and out.
+#
+# Three rules keep it useful:
+#
+#   SMALL      The temptation is two hundred roles. A pivot that large is one
+#              nobody maps onto completely, which defeats the point. This is
+#              capped near its current size.
+#   PARTIAL    Mapping onto it is partial by design. A system that covers half
+#              these roles is a recorded state, not a failure, and never a reason
+#              to refuse work.
+#   OPTIONAL   Nothing is required to adopt it. A workspace may declare
+#              `vocabulary: custom` and keep its own names forever. This is a
+#              lens, not a mandate.
+#
+# Adding a role is additive and needs a recorded adoption that could not map —
+# not a good idea somebody had. Renaming one is a migration.
+schema: silver/semantic-roles/v1
+version: 0.9.0
+roles:
+  # --- surface -----------------------------------------------------------
+  - id: surface.page
+    type: color
+    summary: "Page/body background \u2014 the lowest layer"
+  - id: surface.base
+    type: color
+    summary: "Primary content surface \u2014 cards, panels, the main content area"
+  - id: surface.raised
+    type: color
+    summary: "Elevated surface \u2014 dropdowns, popovers, tooltips"
+  - id: surface.overlay
+    type: color
+    summary: "Modal/dialog surface"
+  - id: surface.sunken
+    type: color
+    summary: "Recessed input areas, code blocks, inset sections"
+  - id: surface.hover
+    type: color
+    summary: "Hover state for interactive list items, menu items"
+  - id: surface.selected
+    type: color
+    summary: "Selected/active row or list item"
+  - id: surface.disabled
+    type: color
+    summary: "Disabled control background"
+  # --- text --------------------------------------------------------------
+  - id: text.primary
+    type: color
+    summary: "Primary body and heading text \u2014 highest contrast"
+  - id: text.secondary
+    type: color
+    summary: "Supporting text, less prominent labels"
+  - id: text.muted
+    type: color
+    summary: "Subdued text \u2014 metadata, placeholder, captions"
+  - id: text.disabled
+    type: color
+    summary: "Text on disabled controls"
+  - id: text.inverse
+    type: color
+    summary: "Text on dark/filled surfaces \u2014 e.g., primary button label"
+  - id: text.link
+    type: color
+    summary: "Hyperlink default"
+  - id: text.link-hover
+    type: color
+    summary: "Hyperlink hover"
+  - id: text.on-action
+    type: color
+    summary: "Text sitting on an action-primary surface (button label)"
+  - id: text.danger
+    type: color
+    summary: "Error messages, destructive warnings"
+  - id: text.success
+    type: color
+    summary: "Confirmation, success messages"
+  - id: text.warning
+    type: color
+    summary: "Warning messages"
+  # --- icon --------------------------------------------------------------
+  - id: icon.default
+    type: color
+    summary: "Default icon colour, paired with text.primary"
+  - id: icon.muted
+    type: color
+    summary: "De-emphasised icon \u2014 decorative, or paired with secondary text"
+  - id: icon.disabled
+    type: color
+    summary: "Icon in an unavailable control"
+  - id: icon.on-action
+    type: color
+    summary: "Icon sitting on an action surface, paired with text.on-action"
+  - id: icon.accent
+    type: color
+    summary: "Icon carrying the accent colour, such as a leading icon in a link"
+  # --- border ------------------------------------------------------------
+  - id: border.default
+    type: color
+    summary: "Default divider and outline \u2014 cards, input borders, table dividers"
+  - id: border.strong
+    type: color
+    summary: "Stronger border \u2014 active input ring, emphasized dividers"
+  - id: border.subtle
+    type: color
+    summary: "Very light separator \u2014 inner table rules, inline sections"
+  - id: border.focus
+    type: color
+    summary: "Focus ring color \u2014 applied to all interactive elements"
+  - id: border.action
+    type: color
+    summary: "Border on secondary/ghost buttons in their action color"
+  - id: border.danger
+    type: color
+    summary: "Input or control in error state"
+  - id: border.success
+    type: color
+    summary: "Input or control in valid/success state"
+  # --- action ------------------------------------------------------------
+  - id: action.primary.bg
+    type: color
+    summary: "Primary button/action background"
+  - id: action.primary.bg-hover
+    type: color
+    summary: "Primary action background under pointer or keyboard focus"
+  - id: action.primary.bg-active
+    type: color
+    summary: "Primary action background while being pressed"
+  - id: action.primary.bg-disabled
+    type: color
+    summary: "Primary action background when the action is unavailable"
+  - id: action.primary.fg
+    type: color
+    summary: "Primary button/action foreground (label, icon)"
+  - id: action.primary.fg-disabled
+    type: color
+    summary: "Primary action foreground when unavailable"
+  - id: action.secondary.bg
+    type: color
+    summary: "Secondary button background \u2014 typically transparent or very light"
+  - id: action.secondary.bg-hover
+    type: color
+    summary: "Secondary action background on hover"
+  - id: action.secondary.bg-active
+    type: color
+    summary: "Secondary action background while pressed"
+  - id: action.secondary.bg-disabled
+    type: color
+    summary: "Secondary action background when unavailable"
+  - id: action.secondary.fg
+    type: color
+    summary: "Secondary button foreground"
+  - id: action.secondary.fg-disabled
+    type: color
+    summary: "Secondary action foreground when unavailable"
+  - id: action.secondary.border
+    type: color
+    summary: "Secondary button border"
+  - id: action.secondary.border-hover
+    type: color
+    summary: "Secondary button border on hover"
+  - id: action.secondary.border-disabled
+    type: color
+    summary: "Secondary button border when unavailable"
+  - id: action.ghost.bg
+    type: color
+    summary: "Ghost button background \u2014 transparent at rest"
+  - id: action.ghost.bg-hover
+    type: color
+    summary: "Ghost button background on hover"
+  - id: action.ghost.bg-active
+    type: color
+    summary: "Ghost button background while pressed"
+  - id: action.ghost.bg-disabled
+    type: color
+    summary: "Ghost button background when unavailable"
+  - id: action.ghost.fg
+    type: color
+    summary: "Ghost button foreground"
+  - id: action.ghost.fg-disabled
+    type: color
+    summary: "Ghost button foreground when unavailable"
+  - id: action.destructive.bg
+    type: color
+    summary: "Destructive action background"
+  - id: action.destructive.bg-hover
+    type: color
+    summary: "Destructive action background on hover"
+  - id: action.destructive.bg-active
+    type: color
+    summary: "Destructive action background while pressed"
+  - id: action.destructive.bg-disabled
+    type: color
+    summary: "Destructive action background when unavailable"
+  - id: action.destructive.fg
+    type: color
+    summary: "Destructive action foreground"
+  - id: action.destructive.fg-disabled
+    type: color
+    summary: "Destructive action foreground when unavailable"
+  # --- feedback ----------------------------------------------------------
+  - id: feedback.danger.surface
+    type: color
+    summary: "Error/danger background"
+  - id: feedback.danger.text
+    type: color
+    summary: "Error/danger text"
+  - id: feedback.danger.border
+    type: color
+    summary: "Error/danger border"
+  - id: feedback.danger.icon
+    type: color
+    summary: "Error icon fill"
+  - id: feedback.success.surface
+    type: color
+    summary: "Success background"
+  - id: feedback.success.text
+    type: color
+    summary: "Success text"
+  - id: feedback.success.border
+    type: color
+    summary: "Success border"
+  - id: feedback.success.icon
+    type: color
+    summary: "Success icon fill"
+  - id: feedback.warning.surface
+    type: color
+    summary: "Warning background"
+  - id: feedback.warning.text
+    type: color
+    summary: "Warning text"
+  - id: feedback.warning.border
+    type: color
+    summary: "Warning border"
+  - id: feedback.warning.icon
+    type: color
+    summary: "Warning icon fill"
+  - id: feedback.info.surface
+    type: color
+    summary: "Informational background"
+  - id: feedback.info.text
+    type: color
+    summary: "Informational text"
+  - id: feedback.info.border
+    type: color
+    summary: "Informational border"
+  - id: feedback.info.icon
+    type: color
+    summary: "Info icon fill"
+  # --- focus -------------------------------------------------------------
+  - id: focus.ring-color
+    type: color
+    summary: "Focus outline color"
+  - id: focus.ring-offset-color
+    type: color
+    summary: "Focus outline offset gap color \u2014 typically matches the surface behind the element"
+  - id: focus.ring-width
+    type: dimension
+    summary: "Focus outline stroke width"
+  - id: focus.ring-offset
+    type: dimension
+    summary: "Gap between element edge and focus ring"
+  # --- elevation ---------------------------------------------------------
+  - id: elevation.flat
+    type: shadow
+    summary: "In-plane. No lift."
+  - id: elevation.raised
+    type: shadow
+    summary: "Lifted just off the page \u2014 cards, panels. Pairs with surface.raised."
+  - id: elevation.overlay
+    type: shadow
+    summary: "Floating above the page \u2014 menus, popovers, dropdowns. Pairs with surface.overlay."
+  - id: elevation.modal
+    type: shadow
+    summary: "Above everything \u2014 dialogs and sheets that take focus from the page."
+  # --- type --------------------------------------------------------------
+  - id: type.display
+    type: typography
+    summary: "Largest type. Marketing headers and empty-state hero text; rarely more than once per screen."
+  - id: type.heading.xl
+    type: typography
+    summary: "Page title. One per screen."
+  - id: type.heading.lg
+    type: typography
+    summary: "Major section heading."
+  - id: type.heading.md
+    type: typography
+    summary: "Subsection heading, card title."
+  - id: type.heading.sm
+    type: typography
+    summary: "Smallest heading \u2014 group labels within a section."
+  - id: type.body.lg
+    type: typography
+    summary: "Lead paragraph, or body text in a reading-first layout."
+  - id: type.body.md
+    type: typography
+    summary: "Default body text. The role everything else is judged against."
+  - id: type.body.sm
+    type: typography
+    summary: "Secondary body text \u2014 helper copy, dense tables."
+  - id: type.label
+    type: typography
+    summary: "Form labels and control text. Heavier than body at the same size so it reads as interface rather than prose."
+  - id: type.caption
+    type: typography
+    summary: "Smallest supporting text \u2014 timestamps, field hints, footnotes."
+  - id: type.code
+    type: typography
+    summary: "Inline and block code."

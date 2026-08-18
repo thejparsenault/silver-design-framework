@@ -45,7 +45,7 @@ function result({ id, skill, inputs = [], outputs = [] }) {
   return {
     schema: "silver/skill-result/v2",
     invocation_id: id,
-    skill: { id: skill, version: "0.6.1" },
+    skill: { id: skill, version: "0.9.0" },
     started_at: time.start,
     completed_at: time.start,
     inputs,
@@ -75,7 +75,7 @@ test("default playbook is a valid graph of pinned leaf skills with bounded auton
   await assertV2("playbook.schema.json", playbook);
   assertPlaybookGraph(playbook);
   assert.ok(
-    playbook.nodes.every(({ skill }) => skill.version === "0.6.1"),
+    playbook.nodes.every(({ skill }) => skill.version === "0.9.0"),
   );
   assert.deepEqual(playbook.autonomy.forbidden_effects, [
     "canonical-write",
@@ -103,7 +103,7 @@ test("playbook pauses for selection and resumes from serialized state", async ()
     inputs: [evidence],
     options: {
       "include-flow": false,
-      "include-sketch": false,
+      "include-visualize": false,
       "include-prototype": false,
       "include-pitch": false,
       "include-implementation": false,
@@ -201,7 +201,7 @@ test("upstream revision changes preserve old references and visibly stale downst
     inputs: [evidence],
     options: {
       "include-flow": false,
-      "include-sketch": false,
+      "include-visualize": false,
       "include-prototype": false,
       "include-pitch": false,
       "include-implementation": false,

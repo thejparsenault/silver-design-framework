@@ -1,0 +1,4 @@
+interface:
+  display_name: Collect evidence
+  short_description: Gather evidence from declared sources while preserving provenance.
+  default_prompt: Use $collect to gather evidence from declared sources while preserving provenance and separating observation from interpretation.

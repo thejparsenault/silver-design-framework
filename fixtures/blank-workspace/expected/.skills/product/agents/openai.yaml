@@ -1,0 +1,4 @@
+interface:
+  display_name: Define product
+  short_description: Define or refine product audience, jobs, outcomes, and positioning.
+  default_prompt: Use $product to define or refine product audience, jobs, outcomes, and positioning.

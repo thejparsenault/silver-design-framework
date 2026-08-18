@@ -7,6 +7,7 @@ in the manner of a periodic table tile.
 
 | File | Role |
 | --- | --- |
+| `silver-logo.jpg` | Repository logo displayed at the top of the GitHub README. |
 | `ag-mark.txt` | The terminal mark. Authoritative. |
 | `ag-figma-export.png` | Raster export from Figma, shared during design. Reference only. |
 

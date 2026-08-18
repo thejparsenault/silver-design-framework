@@ -1,0 +1,70 @@
+# Excalidraw MCP — a declaration, not an adapter.
+#
+# A portable, hand-drawn-style whiteboard, and an alternative to Figma
+# specifically for rough exploration and conceptual diagrams — the two jobs
+# where a native canvas doesn't matter and Excalidraw's simplicity is a good
+# fit. Not a substitute for Figma on anything needing a design system or
+# high fidelity.
+schema: silver/provider/v1
+id: excalidraw-mcp
+version: 0.9.0
+kind: external
+target: excalidraw
+variant: community-mcp
+aliases:
+  - excalidraw
+  - excalidraw mcp
+source:
+  publisher: Excalidraw community
+  homepage: https://excalidraw.com
+  repository: https://github.com/excalidraw/excalidraw
+  distribution:
+    kind: npm
+    ref: excalidraw-mcp
+  evidence: declared
+  verified_at: 2026-08-12
+  verified_against: published documentation
+guidance:
+  good_at:
+    - Rough sketches, boxes-and-arrows exploration, and conceptual diagrams
+  not_for:
+    - High-fidelity design or anything needing a design system
+  prefer_when:
+    - The output is meant to look hand-drawn and exploratory, not polished
+  compare_to:
+    - transport: figma-official-mcp
+      difference: >-
+        Portable and free-form, with no design-system concept; Figma is the
+        choice once fidelity or an existing design system matters.
+capabilities: [visual-renderer, external-artifact]
+connection:
+  kind: mcp
+  server: excalidraw
+  tool_prefix: mcp__excalidraw__
+  config:
+    command: npx
+    args: ["-y", "excalidraw-mcp@latest"]
+activities:
+  - id: visual.create-rough
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: excalidraw, editable: true, native: true}]
+  - id: diagram.create-conceptual
+    support: full
+    actions: [create, write, update]
+    outputs: [{format: excalidraw, editable: true, native: true}]
+  - id: visual.create-wireframe
+    support: partial
+    actions: [create, write, update]
+    constraints:
+      - No component or layout system; structure is drawn, not modeled.
+permissions:
+  - capability: visual-renderer
+    actions: [create, write, update]
+    default: ask
+  - capability: external-artifact
+    actions: [read, inspect]
+    default: ask
+directions: [read, write]
+fidelity: partial
+maturity: experimental

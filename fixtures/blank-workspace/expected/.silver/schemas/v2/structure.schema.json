@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/structure.schema.json",
+  "title": "Silver portable information architecture and object structure v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "kind", "revision", "title", "structure_type", "entities", "relationships", "design_contexts", "primary_context", "provenance"],
+  "properties": {
+    "schema": { "const": "silver/structure/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "kind": { "const": "structure" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "structure_type": { "enum": ["information-architecture", "navigation", "content-model", "taxonomy", "object-model"] },
+    "question": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "entities": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "description": { "type": "string", "maxLength": 1000 },
+          "attributes": { "type": "array", "items": { "type": "string", "maxLength": 300 } },
+          "parent": { "$ref": "common.schema.json#/$defs/id" }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["from", "to", "relationship"],
+        "properties": {
+          "from": { "$ref": "common.schema.json#/$defs/id" },
+          "to": { "$ref": "common.schema.json#/$defs/id" },
+          "relationship": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "cardinality": { "enum": ["one-to-one", "one-to-many", "many-to-many"] }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 500 }
+    },
+    "design_contexts": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
+    },
+    "primary_context": { "$ref": "common.schema.json#/$defs/id" },
+    "provenance": { "$ref": "provenance.schema.json" }
+  }
+}

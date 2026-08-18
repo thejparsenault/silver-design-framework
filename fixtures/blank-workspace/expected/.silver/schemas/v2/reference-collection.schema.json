@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/reference-collection.schema.json",
+  "title": "Silver reference collection v1",
+  "description": "Material a designer looked at — competitor screenshots, prior art, inspiration. Stored with the project so it stays with the work, never loaded implicitly by any skill: a skill invocation cites a collection explicitly or reads none of it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "revision", "updated", "references"],
+  "properties": {
+    "schema": { "const": "silver/reference-collection/v1" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "revision": { "$ref": "common.schema.json#/$defs/revision" },
+    "updated": { "type": "string", "format": "date-time" },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "revision", "description", "rights", "path", "media_type", "integrity"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "revision": { "$ref": "common.schema.json#/$defs/revision" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "description": {
+            "description": "Agent-readable. An agent cannot watch a video or see an image; a reference without a description of what it shows and why it was captured is opaque to the thing meant to use it.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "kind": {
+            "enum": ["image", "video", "audio", "document", "data", "code"]
+          },
+          "rights": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["usage"],
+            "properties": {
+              "usage": {
+                "description": "inspiration-only: informs thinking, never appears in or is copied into production. internal: may inform internal work products. production: may be cited by production directly. unrestricted: no constraint.",
+                "enum": ["inspiration-only", "internal", "production", "unrestricted"]
+              },
+              "attribution": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "source_url": { "type": "string", "format": "uri" }
+            }
+          },
+          "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+" },
+          "media_type": { "type": "string", "minLength": 3 },
+          "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "captured_at": { "type": "string", "format": "date-time" },
+          "status": {
+            "enum": ["active", "retired"],
+            "default": "active"
+          }
+        }
+      }
+    }
+  }
+}

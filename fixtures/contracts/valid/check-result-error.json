@@ -1,0 +1,28 @@
+{
+  "schema": "silver/check-result/v1",
+  "checker": "responsive-behavior",
+  "suite": "browser",
+  "policy_profile": "prototype",
+  "status": "error",
+  "coverage": {
+    "requested": ["prototype@1280x800"],
+    "completed": [],
+    "reason": "Page.navigate did not complete."
+  },
+  "findings": [],
+  "execution_error": {
+    "stage": "navigation",
+    "message": "Page.navigate did not complete.",
+    "target": "prototype",
+    "viewport": { "width": 1280, "height": 800 },
+    "method": "Page.navigate",
+    "duration_ms": 10000,
+    "attempts": 1,
+    "process": {
+      "exit_code": null,
+      "signal": null,
+      "forced": false,
+      "stderr": ""
+    }
+  }
+}

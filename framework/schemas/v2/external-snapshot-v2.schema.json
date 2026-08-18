@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v2/external-snapshot-v2.schema.json",
+  "title": "Silver normalized external snapshot v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "id", "binding_id", "counterpart", "revision", "integrity", "captured_at", "adapter", "completeness", "payload", "unresolved"],
+  "properties": {
+    "schema": { "const": "silver/external-snapshot/v2" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "binding_id": { "$ref": "common.schema.json#/$defs/id" },
+    "counterpart": { "type": "string", "minLength": 1 },
+    "revision": { "type": "string", "minLength": 1 },
+    "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "adapter": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "$ref": "common.schema.json#/$defs/id" }, "version": { "$ref": "common.schema.json#/$defs/version" } } },
+    "completeness": { "enum": ["complete", "partial", "invalid"] },
+    "payload": {},
+    "unresolved": { "type": "array", "items": { "type": "object", "required": ["path", "reason"], "properties": { "path": { "type": "string" }, "reason": { "type": "string" } }, "additionalProperties": false } }
+  }
+}

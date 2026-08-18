@@ -1,0 +1,4 @@
+interface:
+  display_name: Build prototype
+  short_description: Build and refine a testable, traceable simulation.
+  default_prompt: Use $prototype to build and refine a testable, traceable simulation.

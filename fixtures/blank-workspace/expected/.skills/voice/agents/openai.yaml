@@ -1,0 +1,4 @@
+interface:
+  display_name: Define voice
+  short_description: Define or refine voice, tone, terminology, and content guidance.
+  default_prompt: Use $voice to define or refine voice, tone, terminology, and content guidance.

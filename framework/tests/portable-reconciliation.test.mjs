@@ -13,7 +13,7 @@ import { resolvePermissions } from "../runtime/permissions.mjs";
 import { discoverProviders } from "../runtime/providers.mjs";
 import { acceptReconciliation, applyReconciliation, persistReconciliationRecord, proposeReconciliation } from "../runtime/reconciliation.mjs";
 import { contentIntegrity, synchronizationState, validateBinding, validateToolProfile, valueIntegrity, writeBinding } from "../runtime/representations.mjs";
-import { applySemanticTokenWrite, createFigmaChangeSet, normalizeFigmaSnapshot, previewSemanticTokenWrite } from "../providers/figma/adapter.mjs";
+import { applySemanticTokenWrite, createFigmaChangeSet, normalizeFigmaSnapshot, previewSemanticTokenWrite } from "../providers/figma-console-mcp/adapter.mjs";
 import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
 import { renderStaticPrototype } from "../skills/prototype/scripts/render-static-prototype.mjs";
 import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
@@ -76,17 +76,17 @@ async function reconciliationFixture(t, authority = "local") {
   const root = await workspace(t);
   const paths = {
     flow: "design/flows/guided-setup/flow.json",
-    sketch: "design/work/sketches/guided-setup/sketch.json",
+    visualization: "design/work/visualizations/guided-setup/visualization.json",
     specification: "design/work/specifications/guided-setup.json",
     tokens: "design/work/tokens/guided-setup.json",
     component: "design/work/components/guided-setup.json",
   };
   const artifacts = {
     flow: flow(),
-    sketch: working("guided-setup-sketch", "sketch", "Guided setup sketch", {
+    visualization: working("guided-setup-visualization", "visualization", "Guided setup visualization", {
       fidelity: "low", constraint_profile: "constrained",
       question: "Does the structure explain the consequence?",
-      view_path: "design/work/sketches/guided-setup/index.html",
+      view_path: "design/work/visualizations/guided-setup/index.html",
       alternatives: [
         { title: "Summary", summary: "Show saved values.", tradeoff: "More content." },
         { title: "Action", summary: "Focus the decision.", tradeoff: "Less context." },
@@ -114,11 +114,11 @@ async function reconciliationFixture(t, authority = "local") {
     id: "guided-setup-figma",
     artifact: { id: "guided-setup-flow", kind: "flow", revision: "r1", path: paths.flow },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-123", revision: "v18" },
+    provider: { id: "figma-console-mcp", object_id: "file-123", revision: "v18" },
     adapter: { id: "silver-figma", version: "0.4.0" },
     mapping_profile: "product-web",
     authority,
-    ...(authority === "external" ? { authority_provider: "figma" } : {}),
+    ...(authority === "external" ? { authority_provider: "figma-console-mcp" } : {}),
     round_trip: "partial",
     sync_policy: "notify",
     last_reconciled: {
@@ -154,7 +154,7 @@ async function reconciliationFixture(t, authority = "local") {
   const targets = {
     local: { integrity: writes.flow.integrity },
     flow: target("flow", ["flow-structure"]),
-    sketch: target("sketch", ["contract-integrity", "semantic-styles"]),
+    visualization: target("visualization", ["contract-integrity", "semantic-styles"]),
     specification: target("specification", ["contract-integrity"]),
     tokens: target("tokens", ["semantic-styles"]),
     component: target("component", ["contract-integrity"]),
@@ -166,10 +166,50 @@ async function reconciliationFixture(t, authority = "local") {
 }
 
 test("provider packages and canonical codecs are registered and executable", async () => {
-  const providers = await discoverProviders();
-  assert.deepEqual(providers.map(({ id }) => id), ["figma", "silver-portable"]);
+  // `home` is pinned to a directory with no host config so the MCP-backed
+  // transports resolve to absent rather than picking up whatever the machine
+  // running the tests happens to have configured.
+  const providers = await discoverProviders({ home: path.join(repositoryRoot, "fixtures/host/empty") });
+  // Packages ship adapter code; the catalog entries are declarations the agent
+  // calls directly. Both resolve, and `execution` is what tells them apart.
+  assert.deepEqual(
+    providers.filter(({ origin }) => origin === "shipped").map(({ id }) => id),
+    [
+      "figma-console-mcp",
+      "figma-official-mcp",
+      "silver-browser-local",
+      "silver-portable",
+    ],
+  );
+  assert.deepEqual(
+    providers.filter(({ origin }) => origin === "catalog").map(({ id }) => id).sort(),
+    [
+      "agent-native-browser",
+      "axe-core-cli",
+      "canva-connect-api",
+      "chromatic-cli",
+      "chrome-devtools-mcp",
+      "excalidraw-mcp",
+      "figma-official-desktop-mcp",
+      "lighthouse-cli",
+      "miro-mcp",
+      "playwright-mcp",
+      "v0-api",
+      "webflow-mcp",
+    ],
+  );
+  assert.equal(
+    providers.find(({ id }) => id === "chrome-devtools-mcp").execution,
+    "agent",
+  );
+  assert.equal(
+    providers.find(({ id }) => id === "silver-portable").execution,
+    "silver",
+  );
   assert.equal(providers.find(({ id }) => id === "silver-portable").available, true);
-  assert.equal(providers.find(({ id }) => id === "figma").available, false);
+  const console_ = providers.find(({ id }) => id === "figma-console-mcp");
+  assert.equal(console_.available, false);
+  assert.equal(console_.availability_level, "absent");
   const codecs = await discoverArtifactCodecs(providers);
   assert.deepEqual(codecs.map(({ id }) => id).sort(), ["silver-dtcg", "silver-flow-graph", "silver-prose", "silver-structured"]);
   for (const { name: id } of (await readdir(path.join(repositoryRoot, "framework/skills"), { withFileTypes: true })).filter((entry) => entry.isDirectory())) {
@@ -188,9 +228,9 @@ test("binding and user-profile contracts enforce authority, provenance, permissi
     id: "example-figma",
     artifact: { id: "example-flow", kind: "flow", revision: "r1", path: "design/flows/example/flow.json" },
     view: { role: "external-view", format: "figma" },
-    provider: { id: "figma", object_id: "file-1", revision: "v1" },
+    provider: { id: "figma-console-mcp", object_id: "file-1", revision: "v1" },
     adapter: { id: "silver-figma", version: "0.4.0" },
-    mapping_profile: "product-web", authority: "external", authority_provider: "figma",
+    mapping_profile: "product-web", authority: "external", authority_provider: "figma-console-mcp",
     round_trip: "partial", sync_policy: "notify",
     last_reconciled: {
       portable_revision: "r1", portable_integrity: `sha256:${"1".repeat(64)}`,
@@ -226,8 +266,8 @@ test("flow and system renderers produce portable semantic HTML with exact proven
     'data-source-revision="r1"', 'data-renderer-version="flow-html@0.4.0"',
     'data-assets-revision="r1"', 'data-design-system-revision="r1"',
   ]) assert.ok(html.includes(value));
-  await renderSystemCatalog({ root });
-  assert.match(await readFile(path.join(root, "design/system/catalog.html"), "utf8"), /system-catalog-html@0.4.0/);
+  await renderSystemCatalog({ root, replace: true });
+  assert.match(await readFile(path.join(root, "design/system/showcase.html"), "utf8"), /system-catalog-html@0.4.0/);
   assert.equal((await runFastSuite({ root })).status, "pass");
 });
 
@@ -264,7 +304,7 @@ test("local-to-Figma plans are preview-only and writes require fresh revision, p
   assert.equal(writes, 1);
 });
 
-test("accepted Figma visual changes revise only the sketch and prototype pins only accepted revisions", async (t) => {
+test("accepted Figma visual changes revise only the visualization and prototype pins only accepted revisions", async (t) => {
   const fixture = await reconciliationFixture(t);
   const result = await proposeReconciliation({
     root: fixture.root, binding: fixture.binding,
@@ -281,7 +321,7 @@ test("accepted Figma visual changes revise only the sketch and prototype pins on
     approvals: [{ operation_id: visual.id, approved: true }], appliedAt: fixedTime,
   });
   assert.equal(applied.status, "applied");
-  assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8")).revision, "r2");
+  assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8")).revision, "r2");
   assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.flow), "utf8")).revision, 1);
   assert.equal(JSON.parse(await readFile(path.join(fixture.root, fixture.paths.specification), "utf8")).revision, "r1");
   const prototypeRoot = path.join(fixture.root, "prototypes/guided-setup");
@@ -301,12 +341,12 @@ extensions:
   silver.reconciliation:
     external_revision: v19
     accepted_artifacts:
-      - guided-setup-sketch@r2
+      - guided-setup-visualization@r2
       - guided-setup-flow@r1
 `;
   await writeFile(path.join(prototypeRoot, "prototype.yaml"), metadata, "utf8");
   await renderStaticPrototype({ root: fixture.root, prototype: "prototypes/guided-setup", flow: fixture.paths.flow });
-  assert.match(metadata, /guided-setup-sketch@r2/);
+  assert.match(metadata, /guided-setup-visualization@r2/);
   assert.match(metadata, /guided-setup-flow@r1/);
   assert.doesNotMatch(metadata, /guided-setup-flow@r2/);
 });
@@ -327,13 +367,13 @@ test("divergence, stale proposals, partial extraction, and interruption preserve
   assert.equal(await readFile(path.join(fixture.root, fixture.paths.flow), "utf8"), localWrite.content);
   const visual = fixture.changeSet.changes.find(({ classification }) => classification === "presentation");
   const accepted = await acceptReconciliation({ root: fixture.root, result, operationIds: [visual.id], acceptedAt: fixedTime });
-  const before = await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8");
+  const before = await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8");
   await assert.rejects(
     applyReconciliation({ root: fixture.root, result: accepted, approvals: [{ operation_id: visual.id, approved: true }], failBeforeCommit: true }),
     /Simulated interruption/,
   );
-  assert.equal(await readFile(path.join(fixture.root, fixture.paths.sketch), "utf8"), before);
-  await writeFile(path.join(fixture.root, fixture.paths.sketch), `${before}\n`, "utf8");
+  assert.equal(await readFile(path.join(fixture.root, fixture.paths.visualization), "utf8"), before);
+  await writeFile(path.join(fixture.root, fixture.paths.visualization), `${before}\n`, "utf8");
   await assert.rejects(
     applyReconciliation({ root: fixture.root, result: accepted, approvals: [{ operation_id: visual.id, approved: true }] }),
     /Stale expected integrity/,
@@ -375,7 +415,7 @@ test("authority reversal blocks externally authoritative freshness when unavaila
   );
   const request = {
     schema: "silver/skill-invocation/v2", invocation_id: "external-freshness",
-    skill: { id: "design-check", version: "0.6.1" }, started_at: fixedTime,
+    skill: { id: "design-check", version: "0.9.0" }, started_at: fixedTime,
     inputs: [], outputs: [],
     permission_layers: [{
       schema: "silver/permission-policy/v2", id: "fixture-policy", layer: "framework-default",

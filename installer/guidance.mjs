@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
-import { execFile } from "node:child_process";
-import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import { parse, stringify } from "yaml";
 
 import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { runGit } from "../framework/runtime/git.mjs";
+import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
 import { createCheckpoint } from "./checkpoint.mjs";
 import { findPinnedDependents } from "./lib/dependents.mjs";
 import {
@@ -14,16 +14,11 @@ import {
   readUtf8,
   resolveInside,
   snapshotFiles,
-  writeUtf8,
 } from "./lib/files.mjs";
-
-const run = promisify(execFile);
 
 async function gitHead(root) {
   try {
-    const result = await run("git", ["-C", root, "rev-parse", "HEAD"], {
-      encoding: "utf8",
-    });
+    const result = await runGit(root, ["rev-parse", "HEAD"]);
     return result.stdout.trim();
   } catch {
     return null;
@@ -66,6 +61,7 @@ function snapshotKey(source) {
 }
 
 async function copySelectedSnapshot(workspace, source) {
+  const mutator = await createWorkspaceMutator(workspace);
   const snapshotRoot = path.join(
     workspace,
     ".silver",
@@ -92,12 +88,13 @@ async function copySelectedSnapshot(workspace, source) {
     if (metadata.isDirectory()) {
       for (const [relative, content] of await snapshotFiles(upstream)) {
         const file = resolveInside(destination, relative);
-        await mkdir(path.dirname(file), { recursive: true });
-        await writeFile(file, content, { flag: "wx" });
+        await mutator.create(mutator.relative(file), content);
       }
     } else {
-      await mkdir(path.dirname(destination), { recursive: true });
-      await copyFile(upstream, destination);
+      await mutator.create(
+        mutator.relative(destination),
+        await readFile(upstream),
+      );
     }
   }
   return snapshotRoot;
@@ -127,12 +124,13 @@ async function prepareGuidanceSource(workspace, source) {
 }
 
 export async function writeGuidanceRegistry(root, sources) {
-  const workspace = path.resolve(root);
+  const mutator = await createWorkspaceMutator(root);
+  const workspace = mutator.root;
   for (const source of sources) {
     await prepareGuidanceSource(workspace, source);
   }
   const file = path.join(workspace, "design", "guidance", "sources.yaml");
-  await writeUtf8(file, stringify({ schema: "silver/guidance-registry/v1", sources }));
+  await mutator.write("design/guidance/sources.yaml", stringify({ schema: "silver/guidance-registry/v1", sources }));
   return file;
 }
 
@@ -160,7 +158,8 @@ export async function applyGuidanceRepin({
     integrity: previous.source.integrity,
   });
   registry.sources[index] = proposal;
-  await writeUtf8(file, stringify(registry));
+  const mutator = await createWorkspaceMutator(workspace);
+  await mutator.write("design/guidance/sources.yaml", stringify(registry));
   const checkpoint = await createCheckpoint({
     root: workspace,
     id: `guidance-${proposal.id}-${proposal.source.revision}`

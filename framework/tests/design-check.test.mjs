@@ -36,12 +36,14 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       "contract-integrity",
       "flow-structure",
       "map-structure",
+      "structure-integrity",
       "semantic-styles",
       "prototype-policy",
       "evidence-provenance",
       "presentation-integrity",
       "production-readiness",
       "asset-integrity",
+      "reference-integrity",
       "accessibility",
       "responsive-behavior",
       "critical-interactions",
@@ -61,6 +63,19 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       true,
     );
   }
+});
+
+test("a selected fast check runs alone and unknown ids are refused", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const selected = await runFastSuite({ root, only: ["semantic-styles"] });
+  assert.deepEqual(
+    selected.results.map(({ checker }) => checker),
+    ["semantic-styles"],
+  );
+  await assert.rejects(
+    runFastSuite({ root, only: ["not-a-check"] }),
+    /Unknown fast check: not-a-check/,
+  );
 });
 
 test("artifact checker rejects malformed canonical metadata", async (t) => {
@@ -102,6 +117,53 @@ test("semantic checker rejects raw visual values in prototype code", async (t) =
       ({ rule }) => rule === "semantic-style.raw-dimension",
     ),
   );
+});
+
+test("semantic checker downgrades findings to informational under the adoption policy profile", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const prototypeRoot = path.join(root, "prototypes", "raw-values");
+  await mkdir(prototypeRoot, { recursive: true });
+  await writeFile(
+    path.join(prototypeRoot, "prototype.css"),
+    ".example { color: #123456; margin: 13px; }\n",
+  );
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  await writeFile(
+    manifestPath,
+    (await readFile(manifestPath, "utf8")).replace(
+      "policy_profile: prototype",
+      "policy_profile: adoption",
+    ),
+  );
+
+  const result = await checkSemanticStyles({ root });
+  assert.equal(result.policy_profile, "adoption");
+  assert.notEqual(result.status, "pass");
+  assert.ok(result.findings.length > 0);
+  for (const item of result.findings) {
+    assert.equal(item.severity, "info");
+    assert.equal(item.policy_profile, "adoption");
+    assert.match(item.message, /adoption/);
+  }
+});
+
+test("semantic checker reports not-run when adopted work has no token index yet", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  await writeFile(
+    manifestPath,
+    (await readFile(manifestPath, "utf8")).replace(
+      "policy_profile: prototype",
+      "policy_profile: adoption",
+    ),
+  );
+  await rm(path.join(root, "design", "system", "tokens.json"), { force: true });
+
+  const result = await checkSemanticStyles({ root });
+  assert.equal(result.status, "not-run");
+  assert.equal(result.policy_profile, "adoption");
+  assert.ok(result.coverage.reason);
+  assert.deepEqual(result.findings, []);
 });
 
 test("prototype checker reports flow revision drift", async (t) => {

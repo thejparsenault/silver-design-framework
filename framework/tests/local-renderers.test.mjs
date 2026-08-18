@@ -6,7 +6,7 @@ import test from "node:test";
 
 import { renderStaticImplementation } from "../skills/implement/scripts/render-static-implementation.mjs";
 import { renderPresentation } from "../skills/pitch/scripts/render-presentation.mjs";
-import { renderSketch } from "../skills/sketch/scripts/render-sketch.mjs";
+import { renderVisualization } from "../skills/visualize/scripts/render-visualization.mjs";
 import { runFastSuite } from "../skills/design-check/scripts/run-fast.mjs";
 import { assertV2 } from "../runtime/contracts.mjs";
 import { setupWorkspace } from "../../installer/setup.mjs";
@@ -33,7 +33,7 @@ async function writeArtifact(root, relativePath, artifact) {
   await writeFile(absolute, `${JSON.stringify(artifact, null, 2)}\n`, "utf8");
 }
 
-test("local sketch, presentation, and production renderers create constrained review targets", async (t) => {
+test("local visualization, presentation, and production renderers create constrained review targets", async (t) => {
   const root = await workspace(t);
   await writeArtifact(root, source.path, {
     schema: "silver/working-artifact/v2",
@@ -62,11 +62,11 @@ test("local sketch, presentation, and production renderers create constrained re
     }
   });
 
-  const sketchPath = "design/work/sketches/onboarding/sketch.json";
-  await writeArtifact(root, sketchPath, {
+  const visualizationPath = "design/work/visualizations/onboarding/visualization.json";
+  await writeArtifact(root, visualizationPath, {
     schema: "silver/working-artifact/v2",
-    id: "onboarding-sketch",
-    kind: "sketch",
+    id: "onboarding-visualization",
+    kind: "visualization",
     revision: "r1",
     scope: "product",
     status: "draft",
@@ -78,14 +78,14 @@ test("local sketch, presentation, and production renderers create constrained re
       fidelity: "low",
       constraint_profile: "constrained",
       question: "Which structure makes the next action clearest?",
-      view_path: "design/work/sketches/onboarding/index.html",
+      view_path: "design/work/visualizations/onboarding/index.html",
       alternatives: [
         { title: "Single focus", summary: "One centered decision.", tradeoff: "Less context visible." },
         { title: "Guided context", summary: "Context beside the decision.", tradeoff: "More to scan." }
       ]
     }
   });
-  await renderSketch({ root, artifact: sketchPath, output: "design/work/sketches/onboarding/index.html" });
+  await renderVisualization({ root, artifact: visualizationPath, output: "design/work/visualizations/onboarding/index.html" });
 
   const findingPath = "design/work/findings/setup.json";
   await writeArtifact(root, findingPath, {
@@ -162,7 +162,7 @@ test("local sketch, presentation, and production renderers create constrained re
 
   const result = await runFastSuite({ root });
   assert.equal(result.status, "pass", JSON.stringify(result, null, 2));
-  assert.match(await readFile(path.join(root, "design/work/sketches/onboarding/index.html"), "utf8"), /data-artifact-revision="r1"/);
+  assert.match(await readFile(path.join(root, "design/work/visualizations/onboarding/index.html"), "utf8"), /data-artifact-revision="r1"/);
   assert.match(await readFile(path.join(root, "presentations/onboarding/index.html"), "utf8"), /data-kit-revision="r1"/);
   assert.match(await readFile(path.join(root, "production/onboarding/index.html"), "utf8"), /data-handoff-revision="r1"/);
 });

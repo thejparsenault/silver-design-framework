@@ -1,0 +1,13 @@
+{
+  "schema": "silver/check-result/v1",
+  "checker": "responsive-behavior",
+  "suite": "browser",
+  "policy_profile": "prototype",
+  "status": "error",
+  "coverage": {
+    "requested": ["prototype@1280x800"],
+    "completed": [],
+    "reason": "Execution failed."
+  },
+  "findings": []
+}

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -9,6 +9,7 @@ import { parse, stringify } from "yaml";
 import { doctorWorkspace } from "../doctor.mjs";
 import { exists, snapshotFiles } from "../lib/files.mjs";
 import { migrateWorkspace } from "../migrate.mjs";
+import { validateSchema } from "../lib/schemas.mjs";
 import { setupWorkspace } from "../setup.mjs";
 
 async function legacyWorkspace(t) {
@@ -25,7 +26,9 @@ async function legacyWorkspace(t) {
   const lockPath = path.join(root, ".silver", "lock.yaml");
   const currentLock = parse(await readFile(lockPath, "utf8"));
   const brand = currentLock.packages.find(({ id }) => id === "brand");
-  const reference = currentLock.packages.find(({ id }) => id === "reference-system");
+  // A v0.1.0-alpha.1 workspace predates design/system entirely — it shipped
+  // reference-system, which is what a genuinely legacy lock would still name.
+  // v1's schema keeps "reference-system" in its enum for exactly this reason.
   const legacyLock = {
     schema: "silver/lock/v1",
     framework: {
@@ -45,7 +48,7 @@ async function legacyWorkspace(t) {
         type: "reference-system",
         version: "0.1.0-alpha.1",
         ownership: "copied-and-owned",
-        integrity: reference.integrity,
+        integrity: `sha256:${"a".repeat(64)}`,
       },
     ],
     managed_files: currentLock.managed_files,
@@ -138,9 +141,12 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.6.1");
-  assert.equal(lock.packages.length, 28);
-  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 21);
+  assert.equal(lock.framework.version, "0.9.0");
+  // 0.9 adds the silver-browser-local provider, the shipped transport
+  // catalog, and W10's collect/structure/measure skills (visualize replaces
+  // sketch rather than adding to the count).
+  assert.equal(lock.packages.length, 36);
+  assert.equal(lock.packages.filter(({ type }) => type === "skill").length, 25);
   const manifest = parse(await readFile(path.join(root, "design", "manifest.yaml"), "utf8"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "project-assets"));
   assert.ok(manifest.artifacts.some(({ id }) => id === "presentation-kit"));
@@ -217,7 +223,7 @@ test("0.4-to-current migration preserves an edited legacy policy as inactive and
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.4.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.ok(
     preview.changes.some(({ action }) => action === "bootstrap-provenance"),
   );
@@ -333,7 +339,9 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(preview.needed, true);
   assert.equal(preview.applied, false);
   assert.ok(preview.changes.some(({ package: id, action }) => id === "silver-portable" && action === "install"));
-  assert.ok(preview.changes.some(({ package: id, action }) => id === "figma" && action === "install"));
+  // 0.8 installs Figma as separate transports rather than one provider.
+  assert.ok(preview.changes.some(({ package: id, action }) => id === "figma-console-mcp" && action === "install"));
+  assert.ok(preview.changes.some(({ package: id, action }) => id === "figma-official-mcp" && action === "install"));
   assert.deepEqual(comparable(await snapshotFiles(root)), before);
 
   const applied = await migrateWorkspace({ root, apply: true });
@@ -341,10 +349,10 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.6.1");
+  assert.equal(migrated.framework.version, "0.9.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
-    ["figma", "silver-portable"],
+    ["figma-console-mcp", "figma-official-mcp", "silver-browser-local", "silver-portable"],
   );
   assert.equal((await doctorWorkspace({ root })).ok, true);
 
@@ -401,7 +409,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.5.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.equal(preview.applied, false);
   for (const expected of ["CLAUDE.md", ".claude/skills", ".silver/bin/silver"]) {
     assert.ok(
@@ -417,11 +425,226 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
     await readFile(path.join(root, "CLAUDE.md"), "utf8"),
     /^@AGENTS\.md$/m,
   );
-  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 21);
+  assert.equal((await readdir(path.join(root, ".claude", "skills"))).length, 25);
   assert.ok(await exists(path.join(root, ".silver", "bin", "silver")));
   assert.ok(
     (await readFile(brandPath, "utf8")).endsWith(ownedNote),
     "project-owned edits survive the migration",
+  );
+
+  assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("a 0.8 workspace migrates to 0.9, preserving hand-edited reference-system and installing design-system-tokens-seed", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-08-09-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre 0.9 Product",
+    id: "pre-09-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  // Rewind to the 0.8 shape: no design/system/tokens tree at all, a
+  // hand-edited reference-system/ instead, and the old manifest/context
+  // pointers that went with it.
+  await rm(path.join(root, "design/system/tokens"), { recursive: true, force: true });
+  await rm(path.join(root, "design/system/tokens.json"), { force: true });
+  await rm(path.join(root, "design/system/showcase.html"), { force: true });
+  await rm(path.join(root, "design/system/expressions"), { recursive: true, force: true });
+  await rm(path.join(root, "design/system/components.json"), { force: true });
+  const handEditedMarker = "/* hand-edited before 0.9 */\n.ds-button { color: var(--ds-action-primary-fg); }\n";
+  await mkdir(path.join(root, "reference-system", "packages", "css", "src"), { recursive: true });
+  await writeFile(
+    path.join(root, "reference-system", "packages", "css", "src", "ds.css"),
+    handEditedMarker,
+  );
+
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.8.0-pre-w9";
+  lock.packages = lock.packages.filter(({ id }) => id !== "design-system-tokens-seed");
+  lock.packages.push({
+    id: "reference-system",
+    type: "reference-system",
+    path: "reference-system",
+    version: "0.8.0",
+    ownership: "copied-and-owned",
+    integrity: `sha256:${"b".repeat(64)}`,
+  });
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const manifestPath = path.join(root, "design", "manifest.yaml");
+  const manifest = parse(await readFile(manifestPath, "utf8"));
+  manifest.artifacts = manifest.artifacts.filter(({ id }) => id !== "design-system-tokens");
+  const componentCatalog = manifest.artifacts.find(({ id }) => id === "component-catalog");
+  componentCatalog.path = "reference-system/html-contracts";
+  await writeFile(manifestPath, stringify(manifest), "utf8");
+
+  const contextPath = path.join(root, "design/contexts/default.yaml");
+  const context = parse(await readFile(contextPath, "utf8"));
+  delete context.token_source;
+  context.component_catalog.path = "reference-system/html-contracts";
+  await writeFile(contextPath, stringify(context), "utf8");
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.applied, false);
+  assert.ok(preview.changes.some(({ path: changed }) => changed === "design/manifest.yaml" && changed));
+  assert.ok(
+    preview.changes.some(
+      ({ action, path: changed }) => action === "upgrade-design-context" && changed === "design/contexts/default.yaml",
+    ),
+  );
+  assert.ok(preview.changes.some(({ package: pkg }) => pkg === "design-system-tokens-seed"));
+  // Preview never writes.
+  assert.equal(await exists(path.join(root, "design/system/tokens.json")), false);
+  assert.equal(
+    await readFile(path.join(root, "reference-system/packages/css/src/ds.css"), "utf8"),
+    handEditedMarker,
+  );
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.applied, true);
+
+  // The hand-edited copied-and-owned directory is never touched.
+  assert.equal(
+    await readFile(path.join(root, "reference-system/packages/css/src/ds.css"), "utf8"),
+    handEditedMarker,
+  );
+
+  // The new copied-and-owned seed installs fresh alongside it.
+  assert.ok(await exists(path.join(root, "design/system/tokens.json")));
+  assert.ok(await exists(path.join(root, "design/system/components.json")));
+
+  const migratedManifest = parse(await readFile(manifestPath, "utf8"));
+  assert.equal(
+    migratedManifest.artifacts.find(({ id }) => id === "component-catalog").path,
+    "design/system/components.json",
+  );
+  assert.ok(migratedManifest.artifacts.some(({ id }) => id === "design-system-tokens"));
+
+  const migratedContext = parse(await readFile(contextPath, "utf8"));
+  assert.equal(migratedContext.token_source.path, "design/system/tokens.json");
+  assert.equal(migratedContext.component_catalog.path, "design/system/components.json");
+
+  const migratedLock = parse(await readFile(lockPath, "utf8"));
+  assert.ok(migratedLock.packages.some(({ id }) => id === "design-system-tokens-seed"));
+  // The retired package is neither deleted nor tracked going forward — its
+  // ownership was copied-and-owned, so migration never touches it at all.
+  assert.equal(migratedLock.packages.some(({ id }) => id === "reference-system"), false);
+  assert.ok(await exists(path.join(root, "reference-system")));
+
+  assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("a 0.8 workspace with sketch migrates to visualize, preserving the deprecated artifact", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-sketch-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre-visualize Product",
+    id: "pre-visualize-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  // Rewind to the pre-0.9 shape: .skills/sketch instead of .skills/visualize,
+  // and a hand-authored sketch artifact a designer produced with it.
+  const visualizeSkillPath = path.join(root, ".skills", "visualize");
+  const sketchSkillPath = path.join(root, ".skills", "sketch");
+  const visualizeTree = await readdir(visualizeSkillPath, { recursive: true });
+  await rm(sketchSkillPath, { recursive: true, force: true });
+  await mkdir(sketchSkillPath, { recursive: true });
+  for (const entry of visualizeTree) {
+    const source = path.join(visualizeSkillPath, entry);
+    const info = await stat(source);
+    if (info.isDirectory()) {
+      await mkdir(path.join(sketchSkillPath, entry), { recursive: true });
+    } else {
+      await mkdir(path.dirname(path.join(sketchSkillPath, entry)), { recursive: true });
+      await writeFile(path.join(sketchSkillPath, entry), await readFile(source));
+    }
+  }
+  await rm(visualizeSkillPath, { recursive: true, force: true });
+
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.8.0-pre-visualize";
+  const visualizeEntry = lock.packages.find(({ id }) => id === "visualize");
+  lock.packages = lock.packages.filter(({ id }) => id !== "visualize");
+  lock.packages.push({
+    ...visualizeEntry,
+    id: "sketch",
+    path: ".skills/sketch",
+  });
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const sketchArtifactPath = "design/work/sketches/onboarding/sketch.json";
+  const sketchArtifact = {
+    schema: "silver/working-artifact/v2",
+    id: "onboarding-sketch",
+    kind: "sketch",
+    revision: "r1",
+    scope: "product",
+    status: "draft",
+    title: "Onboarding alternatives",
+    created: "2026-07-23T20:00:00Z",
+    updated: "2026-07-23T20:00:00Z",
+    sources: [],
+    payload: {
+      fidelity: "low",
+      constraint_profile: "constrained",
+      question: "Which structure makes the next action clearest?",
+      view_path: "design/work/sketches/onboarding/index.html",
+      alternatives: [
+        { title: "Single focus", summary: "One centered decision.", tradeoff: "Less context visible." },
+        { title: "Guided context", summary: "Context beside the decision.", tradeoff: "More to scan." },
+      ],
+    },
+  };
+  await mkdir(path.join(root, "design/work/sketches/onboarding"), { recursive: true });
+  await writeFile(
+    path.join(root, sketchArtifactPath),
+    `${JSON.stringify(sketchArtifact, null, 2)}\n`,
+  );
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.applied, false);
+  assert.equal(preview.conflicts.length, 0, JSON.stringify(preview.conflicts, null, 2));
+  assert.ok(
+    preview.changes.some(
+      ({ action, package: pkg }) => action === "retire" && pkg === "sketch",
+    ),
+  );
+
+  const applied = await migrateWorkspace({ root, apply: true });
+  assert.equal(applied.applied, true);
+
+  assert.equal(await exists(sketchSkillPath), false);
+  assert.ok(await exists(visualizeSkillPath));
+
+  // The deprecated artifact is preserved exactly as authored — migration
+  // never rewrites project-owned content — and still schema-valid.
+  assert.equal(
+    await readFile(path.join(root, sketchArtifactPath), "utf8"),
+    `${JSON.stringify(sketchArtifact, null, 2)}\n`,
+  );
+  const artifactValidation = await validateSchema(
+    "v2/working-artifact.schema.json",
+    JSON.parse(await readFile(path.join(root, sketchArtifactPath), "utf8")),
+  );
+  assert.equal(artifactValidation.valid, true, JSON.stringify(artifactValidation.errors));
+
+  const migratedLock = parse(await readFile(lockPath, "utf8"));
+  assert.equal(migratedLock.packages.some(({ id }) => id === "sketch"), false);
+  assert.ok(migratedLock.packages.some(({ id }) => id === "visualize"));
+
+  const report = await doctorWorkspace({ root });
+  assert.ok(
+    report.diagnostics.some(
+      ({ code, level }) => code === "deprecated-artifact-kind" && level === "info",
+    ),
   );
 
   assert.equal((await migrateWorkspace({ root })).needed, false);
@@ -438,9 +661,17 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   const lock = parse(await readFile(lockPath, "utf8"));
   lock.framework.version = "0.6.0";
   for (const installed of lock.packages) {
-    if (installed.version === "0.6.1") installed.version = "0.6.0";
+    if (installed.version === "0.9.0") installed.version = "0.6.0";
   }
   await writeFile(lockPath, stringify(lock), "utf8");
+  // The published 0.6 expression had no stylesheet field and still referenced
+  // the HTML-contract catalog. This exact shape was reproduced from the real
+  // task-tracker workspace during the audit.
+  const expressionPath = path.join(root, "design", "contexts", "default-expression.yaml");
+  const expression = parse(await readFile(expressionPath, "utf8"));
+  delete expression.stylesheet;
+  expression.component_catalog.path = "reference-system/html-contracts";
+  await writeFile(expressionPath, stringify(expression), "utf8");
   const launcherPath = path.join(root, ".silver", "bin", "silver");
   await writeFile(
     launcherPath,
@@ -452,8 +683,15 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.6.0");
-  assert.equal(preview.toVersion, "0.6.1");
+  assert.equal(preview.toVersion, "0.9.0");
   assert.equal(preview.applied, false);
+  assert.ok(
+    preview.changes.some(
+      ({ action, path: changedPath }) =>
+        action === "upgrade-component-expression" &&
+        changedPath === "design/contexts/default-expression.yaml",
+    ),
+  );
 
   const applied = await migrateWorkspace({ root, apply: true });
   assert.equal(applied.applied, true);
@@ -461,7 +699,16 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   // pin on the superseded 0.6.0 release artifact is gone either way.
   const launcher = await readFile(launcherPath, "utf8");
   assert.doesNotMatch(launcher, /releases\/download\/v0\.6\.0/);
-  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.6\.1)/m);
+  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.9\.0)/m);
   assert.ok((await readFile(voicePath, "utf8")).endsWith(ownedNote));
+  const migratedExpression = parse(await readFile(expressionPath, "utf8"));
+  assert.equal(
+    migratedExpression.stylesheet,
+    "design/system/expressions/html/styles/ds.css",
+  );
+  assert.equal(
+    migratedExpression.component_catalog.path,
+    "design/system/components.json",
+  );
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });

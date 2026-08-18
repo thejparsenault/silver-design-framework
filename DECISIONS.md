@@ -18,6 +18,57 @@ Decision: Keep `.skills/` and `AGENTS.md` as the canonical, agent-neutral entry 
 Reason: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and discovers skills only under `.claude/skills/`. A workspace that stopped at `AGENTS.md` and `.skills/` was invisible to its most likely host. Installing natively into `.claude/skills/` would have fixed Claude Code by abandoning agent-neutrality; adapters keep both. An adapter must never become a prerequisite for running a skill.
 Status: Accepted
 
+## 2026-08-17 - Managed workspace writes cross one symlink-aware mutation seam
+
+Decision: Production writes name a canonical workspace root and only relative
+paths. Existing ancestors are checked with `lstat` and `realpath` immediately
+before activation; links, junctions, and escapes beneath the root are rejected.
+The sole generated-link operation is a `.claude/skills/silver-*` leaf whose
+relative target resolves into `.skills/`. A symlink used only as the workspace
+root is canonicalized once.
+
+Reason: Lexical containment cannot prevent a pre-existing managed-directory
+link from redirecting writes. Centralizing the invariant gives setup, skills,
+renderers, evidence, lifecycle, and synchronization one implementation and one
+adversarial test surface. Standard portable Node primitives cannot promise to
+defeat a hostile nanosecond TOCTOU swap, so the supported guarantee is repeated
+immediate checks plus serialized Silver mutations.
+
+Status: Accepted
+
+## 2026-08-17 - Lifecycle mutations are complete-or-recoverable
+
+Decision: Migration, update, and synchronization activate through durable
+workspace transactions. They stage and validate first, record preimages and
+per-operation state under `.silver/transactions/`, serialize through one
+exclusive lock, activate the framework lock last, roll back caught failures,
+and leave killed processes resumable or rollbackable through `silver recover`.
+Cross-repository Git export is a saga: after an external commit recovery moves
+forward and never rewrites history.
+
+Reason: Portable filesystems do not provide one atomic multi-file visibility
+boundary. A durable journal makes partial visibility recoverable and auditable
+without claiming an impossible guarantee across filesystems or repositories.
+
+Status: Accepted
+
+## 2026-08-17 - Shared repositories synchronize through local representations
+
+Decision: A design-system, component-catalog, or codebase repository without a
+Silver install is a linked source, not a workspace. Each selected external path
+binds to an ordinary validated local artifact. Status and inspection are read-
+only; apply requires explicit operation ids. `external-authoritative`,
+`workspace-authoritative`, and `shared-review` affect proposal behavior but
+never silently choose a dual-edit winner. Imports are transactional; exports
+touch mapped paths only, run declared bounded checks, create a local Git commit
+when possible, and never push.
+
+Reason: Local artifact paths stay portable and design contexts remain simple,
+while independent repositories keep their own ownership and history. Multiple
+designers share commits and pins rather than one mutable physical checkout.
+
+Status: Accepted
+
 ## 2026-07-30 - Skill execution routes through the CLI
 
 Decision: `silver invoke <skill-id> <request.json>` and `silver what-now` are the sanctioned ways to run an installed skill. Setup generates `.silver/bin/silver` as the workspace's stable command. The workspace lock records the CLI version, never a filesystem path to a Silver checkout. The per-skill `scripts/invoke.mjs` shim remains for workspaces nested inside a Silver npm installation and otherwise fails with a message naming the CLI.
@@ -410,5 +461,169 @@ generation. Defaulting silently to either side would lose work or convert
 presentation details into unintended design requirements. Three-way
 reconciliation preserves provenance and lets designers decide which semantic
 changes belong in which artifact.
+
+Status: Accepted
+
+## 2026-07-31 - Silver's interface is files; its transports may be MCP servers
+
+Decision: Two separate questions, previously conflated under one entry. Silver
+does not *expose* an MCP server: its interface to an agent remains structured
+files — `.skills/`, `AGENTS.md`, generated host adapters, and a CLI. That may
+never change. Silver *invokes* transports, and those may absolutely be MCP
+servers; from 0.8 they are the expected kind. A provider declares
+`connection.kind: mcp` with a server name and, when Silver knows it, the
+declaration a host needs.
+
+Silver never opens a socket, never holds a credential, and never runs an MCP
+server. The agent host owns the connection, its authorization, and its process
+lifecycle. Consequently Silver can establish only that a transport is
+*configured*, never that it *responds*: setup steps carry `verify.by`, and a
+result verifies the artifacts that came back rather than the transport that
+claimed to produce them.
+
+Reason: The 2026-06-05 entry ruled out hosting an MCP server, and that reasoning
+still holds — hosting, auth, and infrastructure without proportional benefit.
+It said nothing about consuming other people's servers, which is a different
+question with the opposite answer: the host already solves auth and lifecycle,
+so routing through MCP removes work rather than adding it. Leaving the
+distinction implied would have made 0.8 look like a reversal of an accepted
+decision.
+
+Status: Accepted, clarifying 2026-06-05
+
+## 2026-07-31 - Silver declares tools, and never installs them
+
+Decision: The boundary is ownership, not difficulty. Silver may detect what is
+present, write an agent host's MCP declaration for an already-installed tool
+with explicit approval, name required environment variables, explain a tool, and
+print exact commands. Silver may not install software, clone or build a
+repository, read or store a credential, launch or supervise a background
+process, or run the commands it prints. A transport's setup is a ladder of typed
+steps, and Silver climbs only the `silver-managed` rungs.
+
+Where Silver does not know how a server is launched, it says so and hands back
+the manual steps rather than guessing a command into someone's agent
+configuration.
+
+Reason: Writing `.mcp.json` is the same class of act as the `.claude/skills`
+links Silver already generates — reversible, reviewable, host-specific, and
+inspectable as a diff. Cloning and building is executing third-party code from a
+URL that a linked team catalog could supply, which is a supply-chain surface.
+And Silver has no process supervisor, so "run the server" would mean
+health-checking and restarting a daemon on every invocation. Difficulty was
+rejected as the dividing line because it is subjective and drifts; ownership is
+stable.
+
+Status: Accepted
+
+## 2026-07-31 - Silver has no vetted source of tool recommendations
+
+Decision: Silver's knowledge of tools is limited to the adapters it ships and
+what a designer tells it. There is no web search for tools, no agent-proposed
+tool, and no maintained ranking of third-party servers. An MCP server present in
+the host that no shipped adapter claims is reported as unmapped — Silver knows
+it exists and nothing more — and is never selected for any activity until the
+designer says what it is for. When nothing can serve an activity, Silver names
+the transports it ships that could and prints their setup ladders.
+
+A larger catalog may be linked through the existing guidance-source contract:
+manually linked, revision-pinned, never auto-discovered, and carrying exactly
+the trust of whoever chose to link it.
+
+Reason: Recommending a repository found by search would launder an unvetted
+project into an endorsement. Silver refusing to install it is not sufficient
+protection, because the recommendation is what sends someone to install it
+themselves, and a suggestion pulled off a search result reads with the same
+authority as a tested shipped adapter. Maintaining rankings for tools that
+appear and die monthly is also not sustainable for this project.
+
+The cost is accepted and real: a designer who does not already know a tool
+exists will not learn it here. The unmapped-transport flow is what keeps that
+from being a dead end.
+
+Status: Accepted
+
+## 2026-07-31 - Transport preference is ordered by the designer, filtered by permission
+
+Decision: Ordering and prohibition are separate mechanisms. Order runs personal,
+then project, then team, then framework default; the first source that binds an
+activity wins outright and sources are not merged. Two filters then apply to
+whichever order won: availability, and a veto that a project, team,
+organization, or machine policy may set. A veto cannot be waived by preferring
+something.
+
+An activity's transport chain is an offer list, not an auto-fallback list. When
+the preferred transport is unavailable, Silver reports why and asks — wait, use
+the next one, or stop — and `on_unavailable` records the designer's standing
+answer. Where nobody can be asked, the run stops with a resumable request rather
+than choosing unattended.
+
+Every removal is recorded with its reason, its source, the failing setup step
+where there is one, and who can lift it.
+
+Reason: Which client runs on a designer's machine is nobody else's decision, so
+personal order comes first. But a team may have real grounds to forbid a
+transport — a remote MCP means design files transit a third party — and that is
+a permission, not a preference, so expressing it as a higher precedence rank
+would have given teams the power to dictate tooling as a side effect. A veto
+list is both narrower and easier to explain.
+
+Silent substitution was rejected because a designer cannot tell it apart from a
+broken tool, and because the framework's premise is that its user stays in
+control of how the work is done.
+
+Status: Accepted
+
+## 2026-08-12 - Activity support is declared, not derived, once the vocabulary is fine-grained
+
+Decision: Before 0.9, whether a provider served an activity was a pure
+function of its existing contract fields (`capabilities`, `directions`,
+`supported_artifact_kinds`) — nothing declared it twice, so the catalog could
+not drift out of agreement with the providers. Growing the activity catalog
+from 20 to 67 entries broke that: a provider's `directions: [portable]` meant
+"any action, for any capability I hold," which is honest at the old coarse
+grain but wrong at the new fine one — under pure derivation, silver-portable
+appeared to serve `production.deploy-preview` (no shipped provider actually
+does) for the same reason it appears to serve `production.write-source`
+(one genuinely does).
+
+So providers now *declare* which activities they serve
+(`provider.activities: [{id, support, actions, outputs?, constraints?}]`),
+and `framework/scripts/validate-contracts.mjs` carries the assertions that
+replace the lost derived guarantee: every declared id must exist in the
+catalog, declared actions must be consistent with `directions` and the
+activity's coarse capability, artifact kinds must intersect, package-only and
+`internal`-bound activities may never be declared, a `fallback.provider` must
+genuinely serve `mode: native`, and coverage is checked in both directions.
+
+Reason: A vocabulary fine enough to separate "make a rough sketch" from "make
+an editable, high-fidelity design" needs a fidelity signal no existing
+contract field carries. Declaring introduces drift risk on paper, but the
+alternative — silently over-claiming support because a coarse direction
+happens to be permissive — is worse and was already happening.
+
+Status: Accepted
+
+## 2026-08-12 - Setup ladders replaced by generically derived diagnosis
+
+Decision: The authored `setup` ladder (typed steps with `kind`, `verify`,
+and `troubleshoot`) is removed from `provider.schema.json`. In practice it
+was load-bearing in exactly one place — `silver tools --diagnose`'s rung
+reporting — and decorative everywhere else: `--connect` never consulted it,
+and availability never consulted it either. `framework/runtime/
+transport-diagnosis.mjs` now derives the same rungs generically from what a
+provider already declares — host-config presence for an MCP connection,
+required env vars, executable/env/file detection for a CLI/API/SDK
+`interface`, and probe freshness — so nothing here can drift out of
+agreement with the manifest, because nothing here is a second copy of it.
+What genuinely cannot be derived (a one-time command, a mode to enable in
+the tool itself) is a small freeform `post_setup: [string]` field, shown
+separately and never treated as verified.
+
+Reason: A typed ladder promises more precision than it delivered here, and
+every rung Silver could actually check was already expressible as a fact
+about the manifest rather than an authored step. The freeform notes field
+covers the genuine remainder — "run `npx playwright install`" — without
+inventing structure for a one-off instruction.
 
 Status: Accepted
