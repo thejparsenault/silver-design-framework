@@ -50,10 +50,12 @@ package for your Mac from the [Silver 0.9 release](https://github.com/thejparsen
 
 ### Copy this prompt into your agent
 
-> **Install Silver in this folder. First run `silver setup inspect . --json`.
-> Explain the recommended repository setup, anything you still need me to decide, and the
-> files that would be created or changed. Do not apply anything until I approve
-> the plan.**
+```text
+Install Silver in this folder. First run `silver setup inspect . --json`.
+Explain the recommended repository setup, anything you still need me to decide, and the
+files that would be created or changed. Do not apply anything until I approve
+the plan.
+```
 
 The agent will ask about the team and whether this should live alongside one
 codebase or in its own design repository. Answer those questions in chat. When
@@ -71,12 +73,13 @@ agent; it is not a command you need to type into Terminal.
 
 ### Copy this prompt into your agent
 
-> **Use the Silver 0.9 release to inspect setup in this folder. Run:**
->
-> `npx --yes --package silver-design-framework@0.9.0 silver setup inspect . --json`
->
-> **Show me the plan and questions before making any changes. Do not run
-> `npx silver`; that is a different package.**
+```text
+Use the Silver 0.9 release to inspect setup in this folder. Run:
+`npx --yes --package silver-design-framework@0.9.0 silver setup inspect . --json`
+
+Show me the plan and questions before making any changes. Do not run
+`npx silver`; that is a different package.
+```
 
 If npm itself is unavailable, give the agent this exact archive command instead:
 
