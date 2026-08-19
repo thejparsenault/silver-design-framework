@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -184,5 +184,63 @@ test("doctor reports a moved codebase link as external-changed, distinct from un
     doctorResult.diagnostics.some(
       (item) => item.code === "linked-source-external-changed",
     ),
+  );
+});
+
+test("a same-repo linked source stays current after an unrelated workspace commit, but still detects a real change", async (t) => {
+  const workspace = await temporaryDirectory(t, "silver-link-same-repo-");
+  await setupWorkspace({
+    root: workspace,
+    name: "Same Repo Fixture",
+    id: "same-repo-fixture",
+    date: "2026-08-19",
+  });
+  await git(workspace, ["init"]);
+  const commit = (message) =>
+    git(workspace, [
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.com",
+      "commit",
+      "-m",
+      message,
+    ]);
+  await git(workspace, ["add", "-A"]);
+  await commit("Initial workspace commit");
+
+  // The linked source lives inside the workspace's own repository, e.g. a
+  // vendored snapshot — this is the shape that exposed the bug: comparing
+  // against `git rev-parse HEAD` conflates "the repo advanced" with "the
+  // linked source changed" when both are the same repo.
+  const snapshotDir = path.join(workspace, "vendor", "snapshot");
+  await mkdir(snapshotDir, { recursive: true });
+  await writeFile(path.join(snapshotDir, "data.json"), '{"value":1}\n');
+  await git(workspace, ["add", "-A"]);
+  await commit("Add snapshot content");
+
+  await linkCodebase({ root: workspace, targetPath: snapshotDir, as: "same-repo-source" });
+
+  await writeFile(path.join(workspace, "UNRELATED.md"), "Unrelated change.\n");
+  await git(workspace, ["add", "-A"]);
+  await commit("Unrelated workspace commit");
+
+  const inspected = await inspectLinkedSources(workspace);
+  assert.equal(inspected.find((item) => item.id === "same-repo-source").state, "current");
+
+  const doctorResult = await doctorWorkspace({ root: workspace });
+  assert.ok(
+    !doctorResult.diagnostics.some((item) => item.code === "linked-source-external-changed"),
+  );
+
+  // A commit that actually touches the linked path must still be caught.
+  await writeFile(path.join(snapshotDir, "data.json"), '{"value":2}\n');
+  await git(workspace, ["add", "-A"]);
+  await commit("Change snapshot content");
+
+  const reinspected = await inspectLinkedSources(workspace);
+  assert.equal(
+    reinspected.find((item) => item.id === "same-repo-source").state,
+    "external-changed",
   );
 });

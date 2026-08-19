@@ -21,8 +21,37 @@ import {
   workspaceContentIntegrity,
 } from "../framework/runtime/workspace-mutations.mjs";
 
-async function gitHead(root) {
+async function gitToplevel(root) {
   try {
+    const result = await runGit(root, ["rev-parse", "--show-toplevel"]);
+    return result.stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+// For a `type: "git"` source whose reference lives inside the same
+// repository as the workspace (e.g. a snapshot directory checked into the
+// workspace's own repo), `git rev-parse HEAD` is the wrong revision to
+// compare against: it advances on every commit anywhere in that repository,
+// not just ones touching the linked paths, so an unrelated workspace commit
+// would falsely flag the source as changed upstream even though its content
+// integrity hash never moved. Scope the observed revision to the linked
+// paths' own history whenever source and workspace share a git toplevel. A
+// genuinely external repository keeps the whole-repo HEAD, since "has the
+// external repository moved at all" is the meaningful question there.
+async function gitHead(root, { workspaceRoot, paths } = {}) {
+  try {
+    if (workspaceRoot && paths?.length) {
+      const [sourceToplevel, workspaceToplevel] = await Promise.all([
+        gitToplevel(root),
+        gitToplevel(workspaceRoot),
+      ]);
+      if (sourceToplevel && sourceToplevel === workspaceToplevel) {
+        const result = await runGit(root, ["log", "-1", "--format=%H", "--", ...paths]);
+        return result.stdout.trim() || null;
+      }
+    }
     const result = await runGit(root, ["rev-parse", "HEAD"]);
     return result.stdout.trim();
   } catch {
@@ -87,7 +116,7 @@ async function verifyLinkedSource(root, source) {
     );
   }
   if (source.source.type === "git") {
-    const revision = await gitHead(reference);
+    const revision = await gitHead(reference, { workspaceRoot: root, paths: source.source.paths });
     if (revision !== source.source.revision) {
       throw new Error(
         `Linked ${source.kind} source ${source.id} is not at reviewed commit ${source.source.revision}.`,
@@ -175,7 +204,7 @@ export async function inspectLinkedSources(root) {
     }
     const observedRevision =
       source.source.type === "git"
-        ? await gitHead(reference)
+        ? await gitHead(reference, { workspaceRoot: root, paths: source.source.paths })
         : `snapshot-${observedIntegrity.slice(7, 19)}`;
     const current =
       observedIntegrity === source.source.integrity &&
@@ -483,8 +512,8 @@ export async function linkCodebase({
     );
   }
 
-  const revision = await gitHead(absoluteTarget);
   const paths = ["."];
+  const revision = await gitHead(absoluteTarget, { workspaceRoot: workspace, paths });
   const linked = {
     schema: "silver/linked-source/v1",
     id,
