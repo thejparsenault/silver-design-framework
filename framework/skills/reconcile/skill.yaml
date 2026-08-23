@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: reconcile
-version: 0.9.0
+version: 0.9.1
 summary: Review and explicitly reconcile a portable artifact with a linked repository or external view.
 context_budget: small
 inputs:

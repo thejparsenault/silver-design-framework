@@ -7,7 +7,7 @@
 # high fidelity.
 schema: silver/provider/v1
 id: excalidraw-mcp
-version: 0.9.0
+version: 0.9.1
 kind: external
 target: excalidraw
 variant: community-mcp

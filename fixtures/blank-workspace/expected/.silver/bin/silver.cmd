@@ -7,17 +7,17 @@ if exist "%~dp0..\..\node_modules\silver-design-framework\bin\silver.mjs" (
 )
 where npx >nul 2>nul
 if %ERRORLEVEL% equ 0 (
-  npx --yes silver-design-framework@0.9.0 %*
+  npx --yes silver-design-framework@0.9.1 %*
   exit /b %ERRORLEVEL%
 )
 REM Nothing left to try — see the POSIX launcher for why this case is normal.
 echo Silver is not installed on this machine, and this workspace needs it. 1>&2
 echo. 1>&2
 echo Designers - download the installer for your Mac: 1>&2
-echo   https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0 1>&2
+echo   https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.1 1>&2
 echo. 1>&2
-echo Developers - from this folder, with Node 20 or newer: 1>&2
-echo   npm install silver-design-framework@0.9.0 1>&2
+echo Developers - from this folder, with Node.js 22 or newer: 1>&2
+echo   npm install silver-design-framework@0.9.1 1>&2
 echo. 1>&2
 echo Either one makes the commands in this workspace work. 1>&2
 exit /b 127

@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: what-now
-version: 0.9.0
+version: 0.9.1
 summary: Recommend next actions from current workspace evidence.
 context_budget: small
 inputs: []

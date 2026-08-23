@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: visualize
-version: 0.9.0
+version: 0.9.1
 summary: Create static visual representations of a proposed product experience at
   whatever fidelity is useful.
 context_budget: small

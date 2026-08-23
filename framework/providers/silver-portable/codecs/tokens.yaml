@@ -1,6 +1,6 @@
 schema: silver/artifact-codec/v1
 id: silver-dtcg
-version: 0.9.0
+version: 0.9.1
 artifact_kinds: [token-source]
 canonical_format: dtcg-json
 view_formats: [html]

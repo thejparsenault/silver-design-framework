@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: collect
-version: 0.9.0
+version: 0.9.1
 summary: Gather evidence from declared sources, preserving provenance and separating
   direct observation from interpretation.
 context_budget: small

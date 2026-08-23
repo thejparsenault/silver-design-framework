@@ -33,12 +33,12 @@ start any of them until you choose.
 Silver 0.9 is distributed first as signed and Apple-verified macOS installer
 packages. This is the recommended option for most designers: install it once
 and the `silver` command is ready in any local project folder. Choose the
-package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0):
+package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.1):
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon (M-series) | [`Silver-0.9.0-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/Silver-0.9.0-macos-arm64.pkg) |
-| Intel | [`Silver-0.9.0-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/Silver-0.9.0-macos-x64.pkg) |
+| Apple Silicon (M-series) | [`Silver-0.9.1-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/Silver-0.9.1-macos-arm64.pkg) |
+| Intel | [`Silver-0.9.1-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/Silver-0.9.1-macos-x64.pkg) |
 
 ### For you
 
@@ -67,27 +67,43 @@ Silver’s project-local `what-now` skill to orient itself before proposing work
 
 ### If you do not have the macOS package
 
-An agent with Node.js 22 or later can run the exact release directly—no npm
-account or token is required. The following is a replacement prompt for your
-agent; it is not a command you need to type into Terminal.
+Silver also ships as a Node.js package. This is the route for developers, and
+the only route on Windows and Linux. All of these need Node.js 22 or later.
+
+| Method | Command | When to use it |
+| --- | --- | --- |
+| **Into one project** | `npm install silver-design-framework@0.9.1` | The project already has a `package.json`. The version is pinned in the repository, so everyone on the team gets the same one, and the workspace launcher finds this copy first. |
+| **On your machine** | `npm install -g silver-design-framework@0.9.1` | You want the `silver` command in any folder without using the macOS package. |
+| **Without installing anything** | `npx --yes --package silver-design-framework@0.9.1 silver setup inspect . --json` | Trying Silver once. Nothing is added to the project. |
+
+After a project or global install, `npx silver setup inspect . --json` runs the
+installed copy.
 
 ### Copy this prompt into your agent
 
 ```text
 Use the Silver 0.9 release to inspect setup in this folder. Run:
-`npx --yes --package silver-design-framework@0.9.0 silver setup inspect . --json`
+`npx --yes --package silver-design-framework@0.9.1 silver setup inspect . --json`
 
 Show me the plan and questions before making any changes. Do not run
 `npx silver`; that is a different package.
 ```
 
-If npm itself is unavailable, give the agent this exact archive command instead:
+If npm's registry is unreachable, the GitHub release archive needs no npm
+account or token. Give the agent this exact command instead:
 
 ```sh
 npx --yes \
-  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.0/silver-design-framework-0.9.0.tgz \
+  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/silver-design-framework-0.9.1.tgz \
   setup inspect . --json
 ```
+
+### If someone shares a Silver project with you
+
+A Silver workspace is a Git repository, and `node_modules/` is not committed. If
+you clone one onto a machine that has never had Silver, its commands will tell
+you so and point you back here — install by any method above and they start
+working. Nothing in the cloned workspace needs to change.
 
 ### Which agents work?
 

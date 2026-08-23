@@ -218,7 +218,7 @@ async function invokeCase({
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.9.0" },
+    skill: { id, version: "0.9.1" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -629,7 +629,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.9.0" },
+      skill: { id: "prototype", version: "0.9.1" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -675,7 +675,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.9.0" },
+      skill: { id: "evaluate", version: "0.9.1" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],

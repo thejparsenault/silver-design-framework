@@ -16,7 +16,7 @@ fi
 # The exact published version this workspace was created with. It stays
 # resolvable after npm prunes its cache, and npm verifies integrity on fetch.
 if command -v npx >/dev/null 2>&1; then
-  exec npx --yes silver-design-framework@0.9.0 "$@"
+  exec npx --yes silver-design-framework@0.9.1 "$@"
 fi
 # Nothing left to try. A Silver workspace is a git repo — design/, .skills/,
 # and .silver/ are committed, node_modules/ is not — so it is normal to clone
@@ -26,10 +26,10 @@ cat >&2 <<'SILVER_NOT_INSTALLED'
 Silver is not installed on this machine, and this workspace needs it.
 
 Designers - download the installer for your Mac:
-  https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0
+  https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.1
 
-Developers - from this folder, with Node 20 or newer:
-  npm install silver-design-framework@0.9.0
+Developers - from this folder, with Node.js 22 or newer:
+  npm install silver-design-framework@0.9.1
 
 Either one makes the commands in this workspace work.
 SILVER_NOT_INSTALLED

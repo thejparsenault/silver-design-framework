@@ -8,7 +8,7 @@
 # `evidence: declared` says so rather than implying otherwise.
 schema: silver/provider/v1
 id: chrome-devtools-mcp
-version: 0.9.0
+version: 0.9.1
 kind: external
 target: browser
 variant: devtools-mcp

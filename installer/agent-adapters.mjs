@@ -114,7 +114,7 @@ function installMessageLines() {
     "Designers - download the installer for your Mac:",
     `  ${RELEASE_PAGE_URL}`,
     "",
-    "Developers - from this folder, with Node 20 or newer:",
+    "Developers - from this folder, with Node.js 22 or newer:",
     `  npm install ${PACKAGE_SPEC}`,
     "",
     "Either one makes the commands in this workspace work.",
