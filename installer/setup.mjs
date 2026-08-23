@@ -335,7 +335,7 @@ export async function sourcePackages({
   // The seeded token tree is a starting point, not something Silver imposes —
   // a designer's edits are never overwritten (see the "copied-and-owned"
   // branch in update.mjs). A newer release can still improve the defaults; the
-  // most it does is propose that, the same way reference-system's seed used to.
+  // most it does is propose that.
   packages.push({
     id: "design-system-tokens-seed",
     type: "design-system-seed",

@@ -12,3 +12,9 @@ export const PACKAGE_SPEC = `${PACKAGE_NAME}@${FRAMEWORK_VERSION}`;
 export const RELEASE_TAG = `v${FRAMEWORK_VERSION}`;
 export const RELEASE_TARBALL_NAME = `${PACKAGE_NAME}-${FRAMEWORK_VERSION}.tgz`;
 export const RELEASE_TARBALL_URL = `https://github.com/thejparsenault/${PACKAGE_NAME}/releases/download/${RELEASE_TAG}/${RELEASE_TARBALL_NAME}`;
+
+// Where a person lands when they have nothing installed yet — the macOS
+// installer package and the tarball both hang off this page. The launcher
+// points here rather than at a tarball, because someone reading that message
+// does not yet know which of the two they want.
+export const RELEASE_PAGE_URL = `https://github.com/thejparsenault/${PACKAGE_NAME}/releases/tag/${RELEASE_TAG}`;

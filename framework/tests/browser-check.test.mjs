@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -206,4 +206,72 @@ test("DevTools supports the built-in EventTarget WebSocket fallback", async () =
   }));
   assert.deepEqual(await response, { value: "ok" });
   connected.close();
+});
+
+// The candidate list is duplicated on purpose: run-browser.mjs runs from an
+// installed workspace where the bare specifier for the runtime copy may not
+// resolve, so it carries an inline fallback. run-browser.mjs has claimed since
+// 0.8 that a test named this one fails if the two drift — the comment was true
+// about the intent and false about the test, which did not exist. It does now.
+test("chrome path list stays in one place", async () => {
+  const arrayBody = (source, opening) => {
+    const start = source.indexOf(opening);
+    assert.notEqual(start, -1, `expected to find ${opening}`);
+    const end = source.indexOf("].filter(Boolean);", start);
+    assert.notEqual(end, -1, "expected the list to end with .filter(Boolean)");
+    return source.slice(start + opening.length, end).trim();
+  };
+
+  const runtime = await readFile(
+    path.join(import.meta.dirname, "../runtime/chrome.mjs"),
+    "utf8",
+  );
+  const inline = await readFile(
+    path.join(
+      import.meta.dirname,
+      "../skills/design-check/scripts/run-browser.mjs",
+    ),
+    "utf8",
+  );
+
+  assert.equal(
+    arrayBody(inline, "chromeCandidates ??= ["),
+    arrayBody(runtime, "export const CHROME_CANDIDATES = ["),
+    "run-browser.mjs's inline fallback has drifted from framework/runtime/chrome.mjs",
+  );
+});
+
+// A Windows host is npm-only — the native package is macOS — and had no
+// candidate path at all, so `silver check --browser` reported not-run there
+// unless the user set SILVER_CHROME_PATH themselves.
+test("chrome is discoverable on macOS, Linux, and Windows", async (t) => {
+  const original = { ...process.env };
+  t.after(() => {
+    for (const key of ["PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"]) {
+      if (original[key] === undefined) delete process.env[key];
+      else process.env[key] = original[key];
+    }
+  });
+  process.env.PROGRAMFILES = "C:\\Program Files";
+  process.env["PROGRAMFILES(X86)"] = "C:\\Program Files (x86)";
+  process.env.LOCALAPPDATA = "C:\\Users\\designer\\AppData\\Local";
+
+  const { CHROME_CANDIDATES } = await import(
+    `../runtime/chrome.mjs?windows=${Date.now()}`
+  );
+  assert.ok(
+    CHROME_CANDIDATES.some((candidate) =>
+      candidate.startsWith("/Applications/Google Chrome.app"),
+    ),
+    "macOS",
+  );
+  assert.ok(CHROME_CANDIDATES.includes("/usr/bin/google-chrome"), "Linux");
+  assert.deepEqual(
+    CHROME_CANDIDATES.filter((candidate) => candidate.endsWith("chrome.exe")),
+    [
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Users\\designer\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
+    ],
+  );
 });

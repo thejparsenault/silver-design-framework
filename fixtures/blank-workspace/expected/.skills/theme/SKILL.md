@@ -1,7 +1,7 @@
 ---
 name: silver-theme
 description: Generate, compare, apply, or revise semantic themes, modes, and mappings without silently introducing raw or unapproved styles. Use for color ramps, semantic mappings, light or dark modes, and approved theme changes.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Generate or apply theme

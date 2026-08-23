@@ -35,7 +35,7 @@ import { traceArtifact } from "../../installer/trace.mjs";
 const time = "2026-07-24T20:00:00Z";
 const completed = "2026-07-24T20:00:01Z";
 const allActions = ["read", "inspect", "execute", "create", "write", "update"];
-const allPaths = ["design/**", "prototypes/**", "presentations/**", "production/**", "reference-system/**", ".silver/**"];
+const allPaths = ["design/**", "prototypes/**", "presentations/**", "production/**", ".silver/**"];
 const frameworkRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const ref = (id, kind, revision, artifactPath) => ({ id, kind, revision, path: artifactPath });

@@ -165,8 +165,9 @@ Only `S09-MIGRATE-04` (manual end-to-end verification) remains.
   after `silver setup` on a blank folder and regenerates when a token
   changes.
 - **S09-SYSTEM-07** No installed workspace contains anything named
-  `reference-system`; it is retired to `fixtures/reference-system/` for
-  tests only and dropped from the shipped package.
+  `reference-system`. The layout is retired: it survives only in the migration
+  path that upgrades a pre-0.9 workspace, and in the lock schema enums that let
+  such a workspace validate rather than be rejected.
 - **S09-SYSTEM-08** The `alongside` setup mode is renamed
   `with-existing-work`, distinct from the `topology: integrated | separate`
   axis it used to collide with.

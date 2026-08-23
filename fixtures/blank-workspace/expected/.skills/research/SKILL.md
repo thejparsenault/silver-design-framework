@@ -1,7 +1,7 @@
 ---
 name: silver-research
 description: Define research questions and methods, participant criteria, scripts, evidence handling, and sanitized observation plans. Use to plan product research or evaluation recruitment without implying the planned research was conducted.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Plan research

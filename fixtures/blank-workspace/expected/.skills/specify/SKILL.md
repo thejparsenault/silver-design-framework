@@ -1,7 +1,7 @@
 ---
 name: silver-specify
 description: Create or revise a living design specification covering outcomes, hypothesis, scope, requirements, states, edge cases, accessibility, success criteria, linked revisions, decisions, and open questions. Use after concept selection or whenever durable design intent is needed.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Specify design

@@ -331,3 +331,38 @@ test("the launcher resolves the CLI portably rather than by absolute path", asyn
     /^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\/v\d+\.\d+\.\d+\/silver-design-framework-\d+\.\d+\.\d+\.tgz$/,
   );
 });
+
+// A Silver workspace is a git repo: design/, .skills/, and .silver/ are
+// committed, node_modules/ is not. Cloning one onto a machine with neither
+// Silver nor Node used to produce `exec: npx: not found` and exit 127 — a
+// message that names neither Silver nor anywhere to get it.
+test("a cloned workspace with nothing installed says what is missing", async (t) => {
+  const { renderLauncher } = await import("../agent-adapters.mjs");
+  const { PACKAGE_SPEC, RELEASE_PAGE_URL } = await import("../version.mjs");
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-clone-"));
+  t.after(() => rm(workspace, { recursive: true, force: true }));
+
+  // Every rung dead: no workspace node_modules, and a fallback path that does
+  // not exist on this machine — exactly what a clone from someone else's
+  // checkout looks like.
+  const launcher = path.join(workspace, "silver");
+  await writeFile(
+    launcher,
+    renderLauncher(workspace, "/nonexistent/silver/bin/silver.mjs"),
+    { mode: 0o755 },
+  );
+
+  const failure = await promisify(execFile)("/bin/sh", [launcher, "what-now", "."], {
+    env: { PATH: "/usr/bin:/bin" },
+  }).then(
+    () => null,
+    (error) => error,
+  );
+
+  assert.ok(failure, "the launcher must fail rather than pretend to work");
+  assert.equal(failure.code, 127);
+  assert.doesNotMatch(failure.stderr, /npx: not found/);
+  assert.match(failure.stderr, /Silver is not installed on this machine/);
+  assert.ok(failure.stderr.includes(RELEASE_PAGE_URL));
+  assert.ok(failure.stderr.includes(`npm install ${PACKAGE_SPEC}`));
+});

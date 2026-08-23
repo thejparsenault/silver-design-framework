@@ -19,7 +19,6 @@ effects:
       - prototypes/**
       - presentations/**
       - production/**
-      - reference-system/**
       - .silver/**
   # Analysis alone changes nothing. `--record` additionally persists the
   # normalized result, which is a real write and is declared as one.

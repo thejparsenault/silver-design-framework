@@ -8,7 +8,7 @@ import { parse } from "yaml";
 import { loadActivityCatalog } from "./activities.mjs";
 import { assertV2 } from "./contracts.mjs";
 import { createWorkspaceMutator } from "./workspace-mutations.mjs";
-import { payloadPath } from "../../installer/payload.mjs";
+import { payloadPath } from "./payload.mjs";
 import {
   checkpointAcceptedOutputs,
   checkpointPreflight,

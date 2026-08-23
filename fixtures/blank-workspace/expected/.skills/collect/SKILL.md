@@ -1,7 +1,7 @@
 ---
 name: silver-collect
 description: Gather evidence from declared sources — web research, competitor products, live sites, browser inspection, repositories, linked documentation, or supplied material — while preserving provenance and separating direct observation from interpretation. Use between planning research and synthesizing evidence.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Collect evidence

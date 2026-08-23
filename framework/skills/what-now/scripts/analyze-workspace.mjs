@@ -3,12 +3,16 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
-
 import {
   isDirectoryKind,
   isInactiveKind,
 } from "../../design-check/scripts/artifact-kinds.mjs";
+// The dependency-free YAML subset the design checks already use. Scripts copied
+// into a workspace's `.skills/` cannot resolve an npm dependency — Silver bundles
+// `yaml` inside its own package, and Node's resolver only walks upward, never
+// into a sibling package's private tree. This was the last copied script that
+// still imported one.
+import { parseYaml } from "../../design-check/scripts/check-lib.mjs";
 
 const ACTION_TITLES = {
   "repair-workspace": "Repair the Silver workspace",

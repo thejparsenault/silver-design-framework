@@ -1,7 +1,7 @@
 ---
 name: silver-implement
 description: Assess production readiness and rebuild accepted design intent into the local production recipe under production policy. Use when accepted specifications, flows, component proposals, or evaluation findings are ready for reviewable production code.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Implement design

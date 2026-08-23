@@ -699,7 +699,8 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   // pin on the superseded 0.6.0 release artifact is gone either way.
   const launcher = await readFile(launcherPath, "utf8");
   assert.doesNotMatch(launcher, /releases\/download\/v0\.6\.0/);
-  assert.match(launcher, /^exec (node "|npx --yes silver-design-framework@0\.9\.0)/m);
+  // The npx rung is guarded now, so it is indented inside the `command -v` test.
+  assert.match(launcher, /^ *exec (node "|npx --yes silver-design-framework@0\.9\.0)/m);
   assert.ok((await readFile(voicePath, "utf8")).endsWith(ownedNote));
   const migratedExpression = parse(await readFile(expressionPath, "utf8"));
   assert.equal(

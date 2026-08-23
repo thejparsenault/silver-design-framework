@@ -1,7 +1,7 @@
 ---
 name: silver-ideate
 description: Generate meaningfully distinct concepts and testable hypotheses grounded in the current problem frame and canonical constraints, then support explicit human selection. Use for divergent product design exploration and hypothesis generation.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Ideate concepts

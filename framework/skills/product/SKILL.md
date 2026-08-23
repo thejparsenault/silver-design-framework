@@ -1,7 +1,7 @@
 ---
 name: silver-product
 description: Define or revise product audience, jobs, desired outcomes, constraints, and product-specific positioning. Use for product foundations, audience framing, jobs-to-be-done, outcome definition, or canonical product guidance.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Define product

@@ -1,7 +1,7 @@
 ---
 name: silver-system
 description: Define or maintain semantic tokens, color ramps, typography roles, modes, component and pattern registries, deprecations, and migration proposals. Use for design-system maintenance, component catalogs, semantic token changes, or canonical system decisions.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Maintain system

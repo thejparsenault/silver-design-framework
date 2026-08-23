@@ -1,7 +1,7 @@
 ---
 name: silver-synthesize
 description: Convert sanitized evidence, feedback, analytics, briefs, and labeled assumptions into findings, problem frames, opportunities, contradictions, and open questions with provenance. Use after research, feedback, evaluation, analytics, or a seed brief.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Synthesize evidence

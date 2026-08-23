@@ -53,7 +53,6 @@ effects:
       - prototypes/**
       - presentations/**
       - production/**
-      - reference-system/**
       - .silver/**
   - capability: repository
     actions:

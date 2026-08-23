@@ -3,7 +3,7 @@ import path from "node:path";
 
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
-import { payloadPath } from "../../installer/payload.mjs";
+import { payloadPath } from "./payload.mjs";
 
 const defaultSchemaRoot = payloadPath("framework/schemas/v2", import.meta.url);
 const validatorsByRoot = new Map();

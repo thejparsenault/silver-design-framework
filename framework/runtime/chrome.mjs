@@ -14,6 +14,15 @@ export const CHROME_CANDIDATES = [
   "/usr/bin/google-chrome-stable",
   "/usr/bin/chromium",
   "/usr/bin/chromium-browser",
+  // Windows has no conventional absolute path — Chrome lands under whichever
+  // root its installer chose — so all three are probed. On a non-Windows host
+  // these are undefined and drop out.
+  process.env.PROGRAMFILES &&
+    `${process.env.PROGRAMFILES}\\Google\\Chrome\\Application\\chrome.exe`,
+  process.env["PROGRAMFILES(X86)"] &&
+    `${process.env["PROGRAMFILES(X86)"]}\\Google\\Chrome\\Application\\chrome.exe`,
+  process.env.LOCALAPPDATA &&
+    `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
 ].filter(Boolean);
 
 export async function firstAccessible(paths = CHROME_CANDIDATES) {

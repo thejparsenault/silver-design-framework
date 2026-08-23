@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { exists, readUtf8 } from "./lib/files.mjs";
 import { nativeExecutablePath } from "./payload.mjs";
-import { PACKAGE_SPEC } from "./version.mjs";
+import { PACKAGE_SPEC, RELEASE_PAGE_URL } from "./version.mjs";
 import { WORKSPACE_PRACTICE_OVERLAY_PATH } from "./practice-overlay.mjs";
 
 const installerRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -89,9 +89,36 @@ export function renderLauncher(root, entryPoint = silverEntryPoint()) {
       : []),
     "# The exact published version this workspace was created with. It stays",
     "# resolvable after npm prunes its cache, and npm verifies integrity on fetch.",
-    `exec npx --yes ${PACKAGE_SPEC} "$@"`,
+    "if command -v npx >/dev/null 2>&1; then",
+    `  exec npx --yes ${PACKAGE_SPEC} "$@"`,
+    "fi",
+    "# Nothing left to try. A Silver workspace is a git repo — design/, .skills/,",
+    "# and .silver/ are committed, node_modules/ is not — so it is normal to clone",
+    "# one onto a machine that has neither Silver nor Node. `npx: not found` does",
+    "# not tell that person anything, so say what is missing and where to get it.",
+    "cat >&2 <<'SILVER_NOT_INSTALLED'",
+    ...installMessageLines(),
+    "SILVER_NOT_INSTALLED",
+    "exit 127",
     "",
   ].join("\n");
+}
+
+// The same message for both audiences, because the launcher cannot know which
+// one is reading it: designers install the framework itself, developers add it
+// to the project they already have a toolchain for.
+function installMessageLines() {
+  return [
+    "Silver is not installed on this machine, and this workspace needs it.",
+    "",
+    "Designers - download the installer for your Mac:",
+    `  ${RELEASE_PAGE_URL}`,
+    "",
+    "Developers - from this folder, with Node 20 or newer:",
+    `  npm install ${PACKAGE_SPEC}`,
+    "",
+    "Either one makes the commands in this workspace work.",
+  ];
 }
 
 export function renderLauncherCmd(root, entryPoint = silverEntryPoint()) {
@@ -118,7 +145,14 @@ export function renderLauncherCmd(root, entryPoint = silverEntryPoint()) {
           ")",
         ]
       : []),
-    `npx --yes ${PACKAGE_SPEC} %*`,
+    "where npx >nul 2>nul",
+    "if %ERRORLEVEL% equ 0 (",
+    `  npx --yes ${PACKAGE_SPEC} %*`,
+    "  exit /b %ERRORLEVEL%",
+    ")",
+    "REM Nothing left to try — see the POSIX launcher for why this case is normal.",
+    ...installMessageLines().map((line) => (line ? `echo ${line} 1>&2` : "echo. 1>&2")),
+    "exit /b 127",
     "",
   ].join("\r\n");
 }

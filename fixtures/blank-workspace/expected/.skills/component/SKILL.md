@@ -1,7 +1,7 @@
 ---
 name: silver-component
 description: Inspect the catalog, enumerate states, explore anatomy and behavior, classify composition level, propose a component contract, and document accessibility. Use for new or revised primitives, patterns, product compositions, and component state coverage.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Design component

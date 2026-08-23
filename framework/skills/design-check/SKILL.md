@@ -1,7 +1,7 @@
 ---
 name: silver-design-check
 description: Discover and run applicable independent design checks for a declared target and policy, preserve every result, and summarize coverage. Use for conformance, browser, accessibility, responsive, interaction, provenance, asset, presentation, and production readiness checks.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Check design
@@ -30,7 +30,7 @@ When a declared render target also needs live browser verification, run the
 browser suite separately after the fast suite:
 
 ```sh
-node .skills/design-check/scripts/run-browser.mjs --root .
+.silver/bin/silver check --browser .
 ```
 
 The browser suite reports `not-run` when Chrome or a target is unavailable,

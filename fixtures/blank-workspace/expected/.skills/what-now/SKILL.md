@@ -1,7 +1,7 @@
 ---
 name: silver-what-now
 description: Inspect a Silver workspace and recommend several evidence-based next actions without starting them. Use when work is resuming, context is missing, priorities are unclear, or the user asks what to do next.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Decide what to do next

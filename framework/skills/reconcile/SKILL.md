@@ -1,7 +1,7 @@
 ---
 name: silver-reconcile
 description: Review and explicitly reconcile a portable artifact with a linked repository or Figma without silent overwrite.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Reconcile representations

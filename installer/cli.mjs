@@ -9,7 +9,7 @@ import { setupWorkspace } from "./setup.mjs";
 import { updateWorkspace } from "./update.mjs";
 import { FRAMEWORK_VERSION } from "./version.mjs";
 import { runWhatNow } from "./what-now.mjs";
-import { runCheckSuite } from "./checks.mjs";
+import { runBrowserCheckSuite, runCheckSuite } from "./checks.mjs";
 import { invokeInstalledSkill, scaffoldInvocation } from "./invoke.mjs";
 import { applyPracticeChange, defaultPracticeRoot } from "./practice.mjs";
 import { applySetupPlan, inspectSetup } from "./setup-plan.mjs";
@@ -47,6 +47,7 @@ Usage:
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
   silver check [directory] [--only <check-id,...>] [--json]
+  silver check [directory] --browser [--chrome <path>] [--json]
   silver tools [directory] [--list] [--json]
   silver tools [directory] --diagnose [transport-id]
   silver tools [directory] --probe [transport-id]
@@ -167,6 +168,8 @@ function parseArguments(args) {
     "apply",
     "as",
     "bind",
+    "browser",
+    "chrome",
     "connect",
     "capture",
     "declare",
@@ -202,7 +205,7 @@ function parseArguments(args) {
       throw new Error(`Unknown option: --${key}`);
     }
     if (
-      ["allow-unresolved", "all", "apply", "json", "help", "list", "record", "scaffold"].includes(
+      ["allow-unresolved", "all", "apply", "browser", "json", "help", "list", "record", "scaffold"].includes(
         key,
       )
     ) {
@@ -365,7 +368,7 @@ function printWhatNow(analysis, write, recorded = false) {
 }
 
 function printCheck(suite, write) {
-  write(`Fast checks: ${suite.status}`);
+  write(`${suite.suite === "browser" ? "Browser" : "Fast"} checks: ${suite.status}`);
   for (const result of suite.results) {
     const findings = result.findings.length;
     write(
@@ -889,10 +892,22 @@ export async function runCli(
             .map((id) => id.trim())
             .filter(Boolean)
         : undefined;
-      const suite = await runCheckSuite({
-        root: path.resolve(positionals[0] ?? process.cwd()),
-        ...(only ? { only } : {}),
-      });
+      if (flags.browser && only) {
+        throw new Error("check --browser runs the whole browser suite; --only selects fast checks.");
+      }
+      const checkRoot = path.resolve(positionals[0] ?? process.cwd());
+      // The browser suite is the only producer of accessibility,
+      // responsive-behavior, and critical-interactions evidence. It needs a
+      // local Chrome, so it stays opt-in rather than joining the fast suite.
+      const suite = flags.browser
+        ? await runBrowserCheckSuite({
+            root: checkRoot,
+            ...(typeof flags.chrome === "string" ? { chromePath: flags.chrome } : {}),
+          })
+        : await runCheckSuite({
+            root: checkRoot,
+            ...(only ? { only } : {}),
+          });
       if (flags.json) {
         stdout(JSON.stringify(suite, null, 2));
       } else {

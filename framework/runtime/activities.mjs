@@ -14,7 +14,7 @@ import path from "node:path";
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
-import { payloadPath } from "../../installer/payload.mjs";
+import { payloadPath } from "./payload.mjs";
 
 const sourceCatalogPath = payloadPath("framework/activities/catalog.yaml", import.meta.url);
 

@@ -49,7 +49,6 @@ effects:
       - prototypes/**
       - presentations/**
       - production/**
-      - reference-system/**
       - .silver/**
   - capability: canonical-artifact
     actions:

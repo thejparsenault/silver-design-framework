@@ -656,3 +656,100 @@ test("undeclared recommendations block before durable outputs are written", asyn
     /ENOENT/,
   );
 });
+
+// Regression: 0.9 moved the canonical layout to `design/system/`, but the theme
+// contract still declared its `token-source` output at `reference-system/tokens/**`,
+// so every invocation that wrote tokens where they actually live was refused with
+// "Skill theme cannot produce token-source at …" before any mutation.
+function themeTokenRequest() {
+  const outputReference = reference(
+    "brand-primitives",
+    "token-source",
+    "r1",
+    "design/system/tokens/primitive/brand.tokens.json",
+  );
+  return {
+    schema: "silver/skill-invocation/v2",
+    invocation_id: "theme-test-1",
+    skill: { id: "theme", version: "0.9.0" },
+    started_at: startedAt,
+    inputs: [],
+    provenance: provenance(),
+    outputs: [
+      {
+        reference: outputReference,
+        schema_name: "token-source.schema.json",
+        content: {
+          format: "json",
+          value: {
+            color: {
+              $type: "color",
+              brand: { $value: "#2f5bff" },
+            },
+          },
+        },
+      },
+    ],
+    permission_layers: [
+      ...permissionLayers(
+        "canonical-artifact",
+        ["create", "write", "update"],
+        ["design/system/**"],
+      ),
+      ...permissionLayers(
+        "repository",
+        ["read", "inspect", "create", "write", "update"],
+        ["design/**", ".silver/**"],
+      ),
+    ],
+    available_providers: [],
+    approvals: [
+      {
+        capability: "canonical-artifact",
+        action: "create",
+        path: outputReference.path,
+        approved_by: "fixture-reviewer",
+      },
+    ],
+    relaxations: [],
+    checks: [
+      {
+        id: "semantic-styles",
+        status: "pass",
+        result_path: ".silver/results/checks/semantic-styles.json",
+      },
+      {
+        id: "accessibility",
+        status: "pass",
+        result_path: ".silver/results/checks/accessibility.json",
+      },
+    ],
+    unresolved_questions: [],
+    acceptance: {
+      status: "accepted",
+      reviewer: "fixture-reviewer",
+      recorded_at: completedAt,
+    },
+  };
+}
+
+test("theme writes a token-source under design/system/tokens instead of being refused", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-theme-tokens-"),
+  );
+  await seedCheckEvidence(workspace, ["semantic-styles", "accessibility"]);
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/theme"),
+    request: themeTokenRequest(),
+    completedAt,
+  });
+  assert.equal(result.execution.status, "complete");
+  const tokens = JSON.parse(
+    await readFile(
+      path.join(workspace, "design/system/tokens/primitive/brand.tokens.json"),
+      "utf8",
+    ),
+  );
+  assert.equal(tokens.color.brand.$value, "#2f5bff");
+});

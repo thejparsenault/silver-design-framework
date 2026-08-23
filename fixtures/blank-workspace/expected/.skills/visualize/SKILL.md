@@ -1,7 +1,7 @@
 ---
 name: silver-visualize
 description: Create static visual representations of a proposed product experience from a brief, concept, specification, structure, flow, or existing screen, at whatever fidelity is useful — rough sketches through polished interface designs — while recording fidelity separately from artifact type and honoring the constraint profile. Use for screen or component exploration before prototyping.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Visualize a design

@@ -11,12 +11,14 @@
 // The CLI owns this because it can reach the design-check scripts. The runtime
 // only verifies the evidence, so neither half has to trust the other.
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   FAST_CHECK_IDS,
   runFastSuite,
 } from "../framework/skills/design-check/scripts/run-fast.mjs";
 import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
+import { payloadPath } from "./payload.mjs";
 
 export const CHECK_RESULT_DIRECTORY = ".silver/results/checks";
 
@@ -58,6 +60,53 @@ export async function runCheckSuite({ root, only } = {}) {
         : "pass",
     results: selected,
   };
+}
+
+// Run the browser suite and persist its evidence the same way. The browser
+// checks are the only producers of `accessibility`, `responsive-behavior`, and
+// `critical-interactions` evidence; without a CLI entry point the only way to
+// reach them was `node .skills/design-check/scripts/run-browser.mjs`, which the
+// skill's own `allowed-tools` forbids.
+export async function runBrowserCheckSuite({ root, chromePath } = {}) {
+  // Loaded from the payload at call time rather than imported statically. The
+  // browser script is written to run as a copied workspace script — top-level
+  // await, `ws` behind a resolution ladder — which is fine when Node loads it
+  // as a file and fatal when the native build tries to compile it into the
+  // executable. `providers.mjs` reaches payload scripts the same way.
+  //
+  // No module URL: this is an installer module, never copied into a workspace,
+  // so the payload root always resolves. The mirror has no `skills/` under
+  // `.silver/` for a module-relative fallback to find anyway.
+  const script = payloadPath(
+    "framework/skills/design-check/scripts/run-browser.mjs",
+  );
+  let runBrowserSuite;
+  try {
+    ({ runBrowserSuite } = await import(pathToFileURL(script).href));
+  } catch (error) {
+    // Deferring the load defers this failure to the first `check --browser`,
+    // so it has to say what is missing rather than surfacing a bare
+    // ERR_MODULE_NOT_FOUND for a path inside the installation.
+    throw new Error(
+      `Cannot load the browser check suite from ${script}: ${error.message}. ` +
+        "This installation looks incomplete — reinstall Silver, or run the fast " +
+        "suite with `silver check` alone.",
+    );
+  }
+  const mutator = await createWorkspaceMutator(root);
+  const suite = await runBrowserSuite({
+    root: mutator.root,
+    ...(chromePath ? { chromePath } : {}),
+  });
+
+  for (const result of suite.results) {
+    await mutator.write(
+      checkResultPath(result.checker),
+      `${JSON.stringify(result, null, 2)}\n`,
+    );
+  }
+
+  return suite;
 }
 
 // Run the required checks declared by one skill contract, as part of an

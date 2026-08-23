@@ -1,7 +1,7 @@
 ---
 name: silver-measure
 description: Close the loop after implementation by determining whether a shipped design or product change achieved its intended outcome — reviewing instrumentation, inspecting analytics, comparing before/after, and stating confidence and limitations. Use after implementation, or whenever an outcome needs to be checked against its original success criteria.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Measure an outcome

@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { parse } from "yaml";
 
 import { assertV2 } from "./contracts.mjs";
-import { payloadPath } from "../../installer/payload.mjs";
+import { payloadPath } from "./payload.mjs";
 
 const sourceProviderRoot = payloadPath("framework/providers", import.meta.url);
 
@@ -261,7 +261,7 @@ export async function discoverProviders(options = {}) {
   // even though it is the least project-scoped preference source.
   const catalogRoot = workspace
     ? path.join(workspace, ".silver", "transports")
-    : payloadPath("framework/transports");
+    : payloadPath("framework/transports", import.meta.url);
   const practiceTransportsRoot = path.join(home, "Silver", "My Practice", "transports");
   const discovered = [
     ...(await loadPackages(providerRoot, options)),

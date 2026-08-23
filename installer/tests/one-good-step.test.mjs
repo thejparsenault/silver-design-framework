@@ -92,7 +92,7 @@ test("design checks ignore dependencies and build output", async (t) => {
     "prototypes/demo/node_modules/vite/dist/client.css",
     "prototypes/demo/dist/assets/index-abc123.css",
     "prototypes/demo/.vite/deps/chunk.css",
-    "reference-system/node_modules/react-dom/cjs/style.css",
+    "design/system/node_modules/react-dom/cjs/style.css",
   ]) {
     await mkdir(path.dirname(path.join(workspace, relative)), {
       recursive: true,

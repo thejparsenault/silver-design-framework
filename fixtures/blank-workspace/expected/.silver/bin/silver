@@ -15,4 +15,22 @@ if [ -f '/Users/jp/Projects/silver-design-framework/bin/silver.mjs' ]; then
 fi
 # The exact published version this workspace was created with. It stays
 # resolvable after npm prunes its cache, and npm verifies integrity on fetch.
-exec npx --yes silver-design-framework@0.9.0 "$@"
+if command -v npx >/dev/null 2>&1; then
+  exec npx --yes silver-design-framework@0.9.0 "$@"
+fi
+# Nothing left to try. A Silver workspace is a git repo — design/, .skills/,
+# and .silver/ are committed, node_modules/ is not — so it is normal to clone
+# one onto a machine that has neither Silver nor Node. `npx: not found` does
+# not tell that person anything, so say what is missing and where to get it.
+cat >&2 <<'SILVER_NOT_INSTALLED'
+Silver is not installed on this machine, and this workspace needs it.
+
+Designers - download the installer for your Mac:
+  https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.0
+
+Developers - from this folder, with Node 20 or newer:
+  npm install silver-design-framework@0.9.0
+
+Either one makes the commands in this workspace work.
+SILVER_NOT_INSTALLED
+exit 127

@@ -1,7 +1,7 @@
 ---
 name: silver-structure
 description: Define and refine information architecture, navigation structure, taxonomy, content models, and object models — what exists, how it is organized, and how things relate. Distinct from flow (sequences over time) and map (broader relational views).
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Structure information architecture

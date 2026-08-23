@@ -6,7 +6,7 @@
   "status": "not-run",
   "coverage": {
     "requested": [
-      "reference-system"
+      "declared-render-target"
     ],
     "completed": [],
     "reason": "No deterministic browser provider is configured."

@@ -54,3 +54,37 @@ test("collect produces the evidence kind synthesize requires", async () => {
     synthesize.inputs.some(({ kind, required }) => kind === "evidence" && required),
   );
 });
+
+// 0.9 moved the canonical layout from `reference-system/` to `design/system/`,
+// but `theme` kept declaring its `token-source` output at the retired path, so
+// every theme invocation that wrote tokens where they actually live was refused
+// before mutation. Nothing in the framework should name the retired layout in a
+// live contract again.
+test("no skill contract declares an output or effect under the retired reference-system layout", async () => {
+  const skills = await loadSkills();
+  const offenders = [];
+  for (const skill of skills) {
+    for (const output of skill.outputs ?? []) {
+      if (output.path_pattern?.startsWith("reference-system")) {
+        offenders.push(`${skill.id}: outputs[${output.kind}].path_pattern`);
+      }
+    }
+    for (const effect of skill.effects ?? []) {
+      for (const declared of effect.paths ?? []) {
+        if (declared.startsWith("reference-system")) {
+          offenders.push(`${skill.id}: effects[${effect.capability}].paths`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, []);
+});
+
+// The specific refusal the contract drift produced:
+//   Skill theme cannot produce token-source at
+//   design/system/tokens/primitive/<theme>.tokens.json
+test("theme declares its token-source output where buildDesignSystemTokens writes", async () => {
+  const theme = (await loadSkills()).find((skill) => skill.id === "theme");
+  const tokenSource = theme.outputs.find(({ kind }) => kind === "token-source");
+  assert.equal(tokenSource.path_pattern, "design/system/tokens/**");
+});

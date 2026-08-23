@@ -1,6 +1,6 @@
 // Resolves the active design context's stylesheet — the thing a renderer
 // actually links — instead of every renderer hardcoding a path into
-// reference-system/. Dependency-free (no "yaml" import) to match the rest of
+// design/system/. Dependency-free (no "yaml" import) to match the rest of
 // the skill scripts this is imported from, which run inside an installed
 // workspace where an npm dependency may not be resolvable.
 

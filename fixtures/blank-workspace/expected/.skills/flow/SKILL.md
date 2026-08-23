@@ -1,7 +1,7 @@
 ---
 name: silver-flow
 description: Create, revise, validate, and render portable user, interaction, and component-behavior graphs with stable identities, state coverage, and revision-aware references. Use for task flows, interaction flows, and component state machines.
-allowed-tools: Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash(${CLAUDE_PROJECT_DIR}/.silver/bin/silver:*)
 ---
 
 # Develop flow

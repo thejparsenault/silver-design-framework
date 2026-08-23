@@ -17,8 +17,13 @@ const skillId = path.basename(fileURLToPath(skillDirectory).replace(/[\\/]$/, ""
 let runtime;
 let failure;
 // The installed package resolves its own bundled dependencies through its
-// package name; the workspace copy only resolves when a node_modules tree above
-// the workspace supplies ajv and yaml.
+// package name, so the first rung is the one that runs. The second is a genuine
+// long shot: `.silver/runtime/` resolves only where ajv and yaml are reachable
+// from the workspace, and a plain npm install does not make them reachable —
+// Silver bundles them inside its own package, and Node's resolver walks upward
+// through ancestor node_modules directories, never into a sibling package's
+// private tree. Read the mirror as inspectable, integrity-checked evidence of
+// the rules being enforced; the CLI is the engine.
 for (const specifier of [
   "silver-design-framework/framework/runtime/invoke-skill.mjs",
   "../../../.silver/runtime/invoke-skill.mjs",
