@@ -43,7 +43,8 @@ notarization ticket, and verify the result with `spctl`.
 
 The GitHub release should contain only the signed, notarized `.pkg` files plus
 their SHA-256 checksums and the npm tarball/checksum. All release assets use
-the same `0.9.0` version and `v0.9.0` tag.
+the same version and matching `v<version>` tag — the one in
+`installer/version.mjs`.
 
 ## Update behavior
 
