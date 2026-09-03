@@ -364,11 +364,14 @@ export function resumePlaybook({
     }
     for (const reference of [...observed.inputs, ...observed.outputs]) {
       const actual = current.get(reference.id);
-      if (!actual || actual.revision === reference.revision) {
+      if (actual?.revision === reference.revision) {
         continue;
       }
+      const observedRevision = actual?.revision ?? null;
       const invalidationId =
-        `changed-${reference.id}-${reference.revision}-to-${actual.revision}`;
+        actual
+          ? `changed-${reference.id}-${reference.revision}-to-${actual.revision}`
+          : `missing-${reference.id}-${reference.revision}`;
       if (
         state.invalidations.some(
           (invalidation) => invalidation.id === invalidationId,
@@ -390,7 +393,8 @@ export function resumePlaybook({
         id: invalidationId,
         artifact_id: reference.id,
         recorded_revision: reference.revision,
-        observed_revision: actual.revision,
+        observed_revision: observedRevision,
+        observed_state: actual ? "present" : "missing",
         affected_nodes: affected,
         detected_at: now,
         status: "unresolved",
@@ -401,7 +405,9 @@ export function resumePlaybook({
         type: "reconciliation",
         status: "pending",
         prompt:
-          `Reconcile ${reference.id} ${reference.revision} with ${actual.revision}; downstream artifacts were not rewritten.`,
+          actual
+            ? `Reconcile ${reference.id} ${reference.revision} with ${actual.revision}; downstream artifacts were not rewritten.`
+            : `Reconcile missing artifact ${reference.id}@${reference.revision}; downstream artifacts were not rewritten.`,
       });
     }
   }

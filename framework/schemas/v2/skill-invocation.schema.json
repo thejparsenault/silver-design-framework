@@ -169,8 +169,8 @@
         "required": ["binding_id", "authority", "state", "freshness_sensitive_readiness"],
         "properties": {
           "binding_id": { "$ref": "common.schema.json#/$defs/id" },
-          "authority": { "enum": ["local", "external"] },
-          "state": { "enum": ["current", "view-stale", "external-changed", "diverged", "unmapped", "unverified", "conflict"] },
+          "authority": { "enum": ["local", "external", "workspace-authoritative", "external-authoritative", "shared-review"] },
+          "state": { "enum": ["uninitialized", "current", "local-changed", "view-stale", "external-changed", "diverged", "unmapped", "unverified", "conflict"] },
           "freshness_sensitive_readiness": {
             "type": "array",
             "items": { "$ref": "common.schema.json#/$defs/id" }

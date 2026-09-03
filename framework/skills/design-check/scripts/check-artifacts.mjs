@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  advisory,
   checkResult,
   exitCode,
   findFiles,
@@ -92,6 +93,7 @@ export async function checkArtifacts(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "contract-integrity";
   const findings = [];
+  const advisories = [];
   const requested = ["design/manifest.yaml"];
   const completed = [];
   let manifest;
@@ -309,40 +311,102 @@ export async function checkArtifacts(options = {}) {
       const artifact = JSON.parse(await readFile(absolute, "utf8"));
       if (artifact.schema !== "silver/working-artifact/v2") continue;
       await validateV2("working-artifact.schema.json", artifact);
+      const historicalAdvisoriesApply = ![
+        "archived",
+        "rejected",
+        "stale",
+      ].includes(artifact.status);
       for (const reference of artifact.sources) {
         const source = path.resolve(root, reference.path);
         if (!source.startsWith(`${root}${path.sep}`) || !(await exists(source))) {
-          findings.push(
-            finding({
+          if (historicalAdvisoriesApply) advisories.push(
+            advisory({
               checker,
               rule: "artifact.reference-unavailable",
               file,
-              message: `Pinned source ${reference.id}@${reference.revision} is unavailable.`,
+              message: `Historical source ${reference.id}@${reference.revision} is no longer available at its recorded path.`,
               observedValue: reference.path,
             }),
           );
           continue;
         }
-        if (source.endsWith(".json")) {
-          const sourceValue = JSON.parse(await readFile(source, "utf8"));
+        if (/\.(?:json|ya?ml|md)$/.test(source)) {
+          let sourceValue;
+          try {
+            const content = await readFile(source, "utf8");
+            sourceValue = source.endsWith(".json")
+              ? JSON.parse(content)
+              : source.endsWith(".md")
+                ? parseFrontmatter(content)
+                : await readYaml(source);
+          } catch (error) {
+            if (historicalAdvisoriesApply) advisories.push(advisory({
+              checker,
+              rule: "artifact.reference-unreadable",
+              file,
+              message: `Historical source ${reference.id}@${reference.revision} can no longer be inspected: ${error.message}`,
+              observedValue: reference.path,
+            }));
+            continue;
+          }
           const sourceRevision =
             typeof sourceValue.revision === "number"
               ? `r${sourceValue.revision}`
               : sourceValue.revision;
           if (
-            sourceValue.id &&
-            (sourceValue.id !== reference.id ||
-              sourceRevision !== reference.revision)
+            (sourceValue.id && sourceValue.id !== reference.id) ||
+            (sourceValue.kind && sourceValue.kind !== reference.kind) ||
+            (sourceRevision && sourceRevision !== reference.revision)
           ) {
-            findings.push(
-              finding({
+            if (historicalAdvisoriesApply) advisories.push(
+              advisory({
                 checker,
-                rule: "artifact.reference-stale",
+                rule: "artifact.reference-revision-advanced",
                 file,
-                message: `Pinned source ${reference.id}@${reference.revision} does not match the current source revision.`,
+                message: `Historical source pin ${reference.id}@${reference.revision} differs from the artifact currently at that path; the recorded pin was preserved.`,
                 observedValue: reference.path,
               }),
             );
+          }
+        }
+      }
+      if (artifact.kind === "visualization" && historicalAdvisoriesApply) {
+        const views = Array.isArray(artifact.payload.views)
+          ? artifact.payload.views
+          : artifact.payload.view_path
+            ? [{ id: "primary", medium: "local", path: artifact.payload.view_path }]
+            : [];
+        for (const view of views) {
+          if (view.medium === "local") {
+            const localView = path.resolve(root, view.path);
+            if (
+              !localView.startsWith(`${root}${path.sep}`) ||
+              !(await exists(localView))
+            ) {
+              advisories.push(advisory({
+                checker,
+                rule: "artifact.visualization-view-unavailable",
+                file,
+                message: `Local visualization view ${view.id} is unavailable.`,
+                observedValue: view.path,
+              }));
+            }
+          } else if (!view.binding) {
+            advisories.push(advisory({
+              checker,
+              rule: "artifact.visualization-view-unverified",
+              file,
+              message: `External visualization view ${view.id} has a location but no representation binding.`,
+              observedValue: view.url,
+            }));
+          } else if (!(await exists(path.join(root, "design", "integrations", `${view.binding}.yaml`)))) {
+            advisories.push(advisory({
+              checker,
+              rule: "artifact.visualization-binding-unavailable",
+              file,
+              message: `External visualization view ${view.id} references an unavailable binding.`,
+              observedValue: view.binding,
+            }));
           }
         }
       }
@@ -358,7 +422,7 @@ export async function checkArtifacts(options = {}) {
       );
     }
   }
-  return checkResult({ checker, requested, completed, findings });
+  return checkResult({ checker, requested, completed, findings, advisories });
 }
 
 async function main() {

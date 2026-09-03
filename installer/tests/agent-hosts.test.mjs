@@ -83,7 +83,8 @@ test("scaffolded requests round-trip through the guarded runtime", async (t) => 
   const scaffold = JSON.parse(stdout);
   assert.equal(scaffold.schema, "silver/skill-invocation/v2");
   assert.equal(scaffold.skill.id, "brand");
-  assert.equal(scaffold.provenance.acceptance, "awaiting-review");
+  assert.equal(scaffold.provenance.acceptance, undefined);
+  assert.equal(scaffold.acceptance.status, "awaiting-review");
   // design/brand.md is seeded, so overwriting it requires a matching integrity.
   const brandOutput = scaffold.outputs.find(
     ({ reference }) => reference.path === "design/brand.md",
@@ -107,6 +108,7 @@ test("scaffolded requests round-trip through the guarded runtime", async (t) => 
   scaffold.outputs[0].content.value =
     "---\nkind: brand\nid: scaffold-product-brand\nstatus: draft\nrevision: r1\nscope: product\nauthority: canonical\n---\n\n# Brand\n\nAudience: teams adopting Silver.\n";
   scaffold.provenance.change.reason = "Record the initial brand foundation.";
+  scaffold.provenance.contributors[0].id = "codex-test-agent";
   await writeFile(requestPath, JSON.stringify(scaffold, null, 2));
 
   const { stdout: invoked } = await silver(["invoke", "brand", requestPath, root]);
@@ -288,7 +290,7 @@ test("the launcher resolves the CLI portably rather than by absolute path", asyn
     !npmLauncher.includes(workspace),
     "an npm launcher must not hard-code the workspace path",
   );
-  assert.match(npmLauncher, new RegExp(`exec npx --yes ${PACKAGE_SPEC.replaceAll(".", "\\.")} `));
+  assert.match(npmLauncher, /exec npx --yes silver-design-framework@"\$locked_version"/);
 
   // A source or linked install keeps working through a fallback, but only after
   // the portable probe — never as the primary resolution.
@@ -301,6 +303,29 @@ test("the launcher resolves the CLI portably rather than by absolute path", asyn
     "the portable probe must come before the fallback",
   );
   assert.match(sourceLauncher, /# silver:fallback/);
+  assert.ok(
+    sourceLauncher.indexOf('if [ -n "${SILVER_HOME:-}" ]') <
+      sourceLauncher.indexOf('workspace_cli="$root/'),
+  );
+  assert.ok(
+    sourceLauncher.indexOf('workspace_cli="$root/') <
+      sourceLauncher.indexOf('command -v silver'),
+  );
+  assert.ok(
+    sourceLauncher.indexOf('command -v silver') <
+      sourceLauncher.indexOf('/usr/local/lib/silver/$locked_version'),
+  );
+  assert.ok(
+    sourceLauncher.indexOf('/opt/homebrew/lib/silver/$locked_version') <
+      sourceLauncher.indexOf("# silver:fallback"),
+  );
+  assert.ok(
+    sourceLauncher.indexOf("# silver:fallback") <
+      sourceLauncher.indexOf("exec npx --yes"),
+  );
+  assert.match(sourceLauncher, /skipping older/);
+  assert.match(sourceLauncher, /Continuing with the newer installation/);
+  assert.match(sourceLauncher, /SILVER_LAUNCHER_ACTIVE/);
 
   // npx unpacks into a cache npm garbage-collects, so an absolute path rots.
   const ephemeral = path.join(
@@ -360,9 +385,8 @@ test("a cloned workspace with nothing installed says what is missing", async (t)
   );
 
   assert.ok(failure, "the launcher must fail rather than pretend to work");
-  assert.equal(failure.code, 127);
+  assert.equal(failure.code, 78);
   assert.doesNotMatch(failure.stderr, /npx: not found/);
-  assert.match(failure.stderr, /Silver is not installed on this machine/);
-  assert.ok(failure.stderr.includes(RELEASE_PAGE_URL));
-  assert.ok(failure.stderr.includes(`npm install ${PACKAGE_SPEC}`));
+  assert.match(failure.stderr, /cannot read a stable framework\.version/);
+  assert.match(failure.stderr, /silver repair/);
 });

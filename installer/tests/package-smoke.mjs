@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.9.1";
+const expectedVersion = "0.9.2";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -300,12 +300,14 @@ try {
     [
       "accessibility",
       "asset-integrity",
+      "audit-trail-integrity",
       "authority",
       "binding-integrity",
       "contract-integrity",
       "critical-interactions",
       "evidence-provenance",
       "flow-structure",
+      "managed-integrity",
       "map-structure",
       "presentation-integrity",
       "production-readiness",
@@ -518,9 +520,12 @@ try {
     completeResult.trace_chain.guidance[0].id,
     "fixture-design-guidance",
   );
-  assert.deepEqual(completeResult.trace_chain.external_bindings, [
-    "guided-map-figma",
-  ]);
+  assert.equal(completeResult.trace_chain.external_bindings[0].id, "guided-map-figma");
+  assert.equal(
+    completeResult.trace_chain.external_bindings[0].path,
+    "design/integrations/guided-map-figma.yaml",
+  );
+  assert.match(completeResult.trace_chain.external_bindings[0].integrity, /^sha256:[a-f0-9]{64}$/);
   assert.equal(
     completeResult.trace_chain.implementation_checkpoint.status,
     "committed",
@@ -546,18 +551,10 @@ try {
     (await command(process.execPath, [reconciliationScenario, "--root", reconciliationRoot], { cwd: reconciliationRoot })).stdout,
   );
   assert.equal(reconciliationResult.status, "pass");
-  assert.equal(reconciliationResult.provider_operation, "previewed");
-  assert.equal(reconciliationResult.provider_operation_expected_revision, "v18");
-  assert.deepEqual(reconciliationResult.bindings, ["guided-flow-html", "guided-figma"]);
-  assert.equal(reconciliationResult.local_authority, "external-changed");
-  assert.equal(reconciliationResult.applied, "applied");
-  assert.deepEqual(reconciliationResult.behavioral_proposals, ["flow", "specification"]);
-  assert.ok(reconciliationResult.unknown_findings > 0);
-  assert.equal(reconciliationResult.divergence, "diverged");
-  assert.equal(reconciliationResult.external_authority_unavailable, "unverified");
-  await access(path.join(reconciliationRoot, reconciliationResult.prototype));
-  await access(path.join(reconciliationRoot, ".silver/results/reconciliation/operations/guided-figma-token-preview.json"));
-  await access(path.join(reconciliationRoot, ".silver/results/reconciliation/snapshots/guided-figma-current.json"));
+  assert.equal(reconciliationResult.binding_schema, "silver/representation-binding/v2");
+  assert.equal(reconciliationResult.proposal_schema, "silver/change-set/v2");
+  assert.equal(reconciliationResult.result_schema, "silver/reconciliation-result/v2");
+  await access(path.join(reconciliationRoot, `design/integrations/${reconciliationResult.binding}.yaml`));
   const representationCheckRunner = path.join(
     reconciliationRoot,
     ".skills/design-check/scripts/run-representation-check.mjs",

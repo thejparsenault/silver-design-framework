@@ -121,6 +121,17 @@ evidence
 → production change
 ```
 
+Pins persisted in a working artifact's `sources[]` are historical provenance:
+they say which revisions produced that artifact revision and are never repinned
+merely because an upstream artifact advances. Silver validates an input's current
+identity when a skill consumes it, and playbooks invalidate affected downstream
+nodes when recorded inputs or outputs later change or disappear.
+
+A visualization has one or more review surfaces. Local surfaces use guarded
+workspace paths; external surfaces use HTTPS locations plus representation
+bindings when their identity and freshness are verified. A raw external URL is
+recordable, but it cannot by itself establish downstream readiness.
+
 A design specification is a living contract. It may include user and product
 outcomes, hypothesis, scope and non-goals, requirements, content and data
 needs, states and edge cases, accessibility expectations, linked artifact

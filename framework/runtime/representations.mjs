@@ -42,29 +42,15 @@ function inspectSecrets(value, trail = []) {
 }
 
 export async function validateBinding(binding, options = {}) {
-  await assertV2(
-    binding.schema === "silver/representation-binding/v2"
-      ? "representation-binding-v2.schema.json"
-      : "representation-binding.schema.json",
-    binding,
-    options,
-  );
+  if (binding?.schema !== "silver/representation-binding/v2") {
+    throw new Error(
+      "Live representation bindings must use silver/representation-binding/v2. Run silver migrate, then run silver sync inspect again.",
+    );
+  }
+  await assertV2("representation-binding-v2.schema.json", binding, options);
   inspectSecrets(binding);
-  if (binding.schema === "silver/representation-binding/v2") return binding;
-  if (binding.view.role === "external-view" && binding.provider.id === "silver-portable") {
-    throw new Error("An external view cannot use the portable provider.");
-  }
-  if (
-    binding.authority === "external" &&
-    binding.authority_provider !== binding.provider.id
-  ) {
-    throw new Error("External authority must name the bound provider.");
-  }
-  if (
-    binding.artifact.revision !== binding.last_reconciled.portable_revision &&
-    binding.sync_policy !== "notify"
-  ) {
-    throw new Error("A changed portable revision must use notify until reconciled.");
+  if (binding.counterpart.type === "provider" && binding.counterpart.provider === "silver-portable") {
+    throw new Error("An external counterpart cannot use the portable provider.");
   }
   return binding;
 }
@@ -117,34 +103,34 @@ export function synchronizationState({
   providerAvailable = true,
   changeSet,
 }) {
-  if (!providerAvailable || !external?.revision || !external?.integrity) return "unverified";
+  if (binding?.schema !== "silver/representation-binding/v2") {
+    throw new Error("Synchronization state requires a v2 representation binding.");
+  }
+  if (!providerAvailable || !local?.state || !external?.state) return "unverified";
+  if (binding.base.state === "uninitialized") return "uninitialized";
   if (
     external.completeness === "invalid" ||
-    changeSet?.changes?.some(({ classification, mapping_fidelity: fidelity }) =>
+    changeSet?.operations?.some(({ classification, mapping_fidelity: fidelity }) =>
       classification === "unmapped" || fidelity === "unmapped",
     )
   ) {
     return "unmapped";
   }
-  const localChanged =
-    local.revision !== binding.last_reconciled.portable_revision ||
-    local.integrity !== binding.last_reconciled.portable_integrity;
-  const externalChanged =
-    external.revision !== binding.last_reconciled.external_revision ||
-    external.integrity !== binding.last_reconciled.snapshot_integrity;
+  const changed = (identity, base) => {
+    if (identity.state !== base.state) return true;
+    if (identity.state === "missing") return false;
+    return identity.revision !== base.revision || identity.integrity !== base.integrity;
+  };
+  const localChanged = changed(local, binding.base.local);
+  const externalChanged = changed(external, binding.base.external);
   if (localChanged && externalChanged) {
-    const claims = new Map();
-    for (const change of changeSet?.changes ?? []) {
-      for (const patch of change.proposal.patch) {
-        const key = `${change.proposal.target_path}:${patch.path}`;
-        const value = JSON.stringify(patch.value);
-        if (claims.has(key) && claims.get(key) !== value) return "conflict";
-        claims.set(key, value);
-      }
-    }
+    if (local.state === external.state && (
+      local.state === "missing" || local.integrity === external.integrity
+    )) return "current";
+    if (changeSet?.operations?.some(({ classification }) => classification === "conflict")) return "conflict";
     return "diverged";
   }
-  if (localChanged) return "view-stale";
+  if (localChanged) return "local-changed";
   if (externalChanged) return "external-changed";
   return "current";
 }

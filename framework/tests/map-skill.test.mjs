@@ -8,6 +8,7 @@ import { checkMap } from "../skills/map/scripts/check-map.mjs";
 import { renderMap } from "../skills/map/scripts/render-map.mjs";
 import {
   traceArtifact,
+  renderTrace,
   writeTraceView,
 } from "../../installer/trace.mjs";
 
@@ -168,4 +169,51 @@ test("trace refuses paths outside the workspace", async (t) => {
     traceArtifact({ root, target: "../outside.json" }),
     /escapes workspace/,
   );
+});
+
+test("trace joins the newest exact result and exposes duplicates and disagreement", async (t) => {
+  const root = await workspace(t);
+  const artifact = {
+    id: "joined-finding",
+    kind: "finding",
+    revision: "r1",
+    status: "accepted",
+  };
+  const relativePath = "design/work/findings/joined-finding.json";
+  await mkdir(path.join(root, "design/work/findings"), { recursive: true });
+  await writeFile(path.join(root, relativePath), `${JSON.stringify(artifact, null, 2)}\n`);
+  await mkdir(path.join(root, ".silver/results/skills"), { recursive: true });
+  const output = reference("joined-finding", "finding", relativePath);
+  for (const [invocationId, completedAt, acceptance] of [
+    ["older-result", "2026-07-30T12:00:01.000Z", "awaiting-review"],
+    ["newer-result", "2026-07-30T12:00:02.000Z", "rejected"],
+  ]) {
+    await writeFile(
+      path.join(root, `.silver/results/skills/${invocationId}.json`),
+      `${JSON.stringify({
+        schema: "silver/skill-result/v2",
+        invocation_id: invocationId,
+        completed_at: completedAt,
+        outputs: [output],
+        provenance: {
+          origin: "agent-assisted",
+          sources: [{ id: "source", kind: "evidence", revision: "r1", path: "design/evidence/source.json" }],
+          guidance: [],
+          design_contexts: [],
+          external_bindings: [],
+        },
+        acceptance: { status: acceptance },
+        checks: [{ id: "contract-integrity", status: "pass" }],
+        readiness: [{ name: "ideate", status: "not-ready", reasons: [] }],
+      }, null, 2)}\n`,
+    );
+  }
+
+  const trace = await traceArtifact({ root, target: "joined-finding" });
+  assert.equal(trace.producing_result.invocation_id, "newer-result");
+  assert.equal(trace.acceptance, "rejected");
+  assert.equal(trace.checks.length, 1);
+  assert.ok(trace.consistency_findings.some((message) => /2 skill results/.test(message)));
+  assert.ok(trace.consistency_findings.some((message) => /Artifact status accepted/.test(message)));
+  assert.match(renderTrace(trace), /Producing result: newer-result/);
 });

@@ -43,27 +43,23 @@ test("public Figma sync imports captured changes and uses a two-pass external wr
   const artifactContent = `${JSON.stringify(artifact, null, 2)}\n`;
   await writeFile(path.join(root, artifactPath), artifactContent);
   const binding = {
-    schema: "silver/representation-binding/v1",
+    schema: "silver/representation-binding/v2",
     id: "public-figma",
     artifact: { id: artifact.id, kind: artifact.kind, revision: artifact.revision, path: artifactPath },
-    view: { role: "external-view", format: "figma" },
-    provider: { id: "figma-console-mcp", object_id: "file-public-sync", revision: "v1" },
-    adapter: { id: "silver-figma", version: "0.4.0" },
-    mapping_profile: "product-web",
-    authority: "external",
-    authority_provider: "figma-console-mcp",
+    counterpart: { type: "provider", provider: "figma-console-mcp", object_id: "file-public-sync", revision: "v1" },
+    adapter: { id: "silver-figma", version: "0.9.2" },
+    authority: "shared-review",
     round_trip: "partial",
     sync_policy: "notify",
-    last_reconciled: {
-      portable_revision: "r1",
-      portable_integrity: contentIntegrity(artifactContent),
-      external_revision: "v1",
-      snapshot_integrity: `sha256:${"0".repeat(64)}`,
+    base: {
+      state: "initialized",
+      local: { state: "present", revision: "r1", integrity: contentIntegrity(artifactContent) },
+      external: { state: "present", revision: "v1", integrity: `sha256:${"0".repeat(64)}` },
       at: when,
     },
   };
   const base = await normalizeFigmaSnapshot({ binding, payload: payload("v1"), capturedAt: when });
-  binding.last_reconciled.snapshot_integrity = valueIntegrity(base);
+  binding.base.external.integrity = valueIntegrity(base);
   await writeBinding({ root, binding });
   const changedPayload = payload("v2", [
     { id: "VariableID:1", name: "Surface/Canvas", semantic_name: "surface.canvas", values_by_mode: { light: "#ffffff" } },
@@ -124,7 +120,8 @@ test("public Figma sync imports captured changes and uses a two-pass external wr
   });
   assert.equal(pending.status, "external-action-required");
   assert.equal(pending.external_action.status, "external-action-required");
-  assert.equal(pending.external_action.payload.status, "previewed");
+  assert.equal(pending.external_action.schema, "silver/provider-operation/v2");
+  assert.equal(pending.external_action.operation, "apply-write");
   const completed = await applySynchronization({
     root,
     input: exportInspection,
@@ -135,4 +132,21 @@ test("public Figma sync imports captured changes and uses a two-pass external wr
   });
   assert.equal(completed.status, "applied");
   assert.equal(completed.binding_advancement.base.external.revision, "v3");
+});
+
+test("live sync rejects a v1 binding until migration and re-inspection", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-sync-v1-rejected-"));
+  await setupWorkspace({ root, name: "Legacy Figma", id: "legacy-figma" });
+  await writeFile(path.join(root, "design/integrations/legacy-figma.yaml"), `schema: silver/representation-binding/v1
+id: legacy-figma
+`);
+  await assert.rejects(
+    inspectSynchronization({
+      root,
+      bindingId: "legacy-figma",
+      direction: "external-to-local",
+      capture: { payload: payload("v2") },
+    }),
+    /silver migrate.*silver sync inspect/,
+  );
 });

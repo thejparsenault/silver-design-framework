@@ -5,7 +5,7 @@
 # presentation or asset from a template; not a general design-file tool.
 schema: silver/provider/v1
 id: canva-connect-api
-version: 0.9.1
+version: 0.9.2
 kind: external
 target: canva
 variant: connect-api

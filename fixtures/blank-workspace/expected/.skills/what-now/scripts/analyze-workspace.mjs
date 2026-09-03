@@ -50,6 +50,24 @@ const FOUNDATION_ACTIONS = {
   "design-system": "system",
 };
 
+let resultIndexRuntime;
+async function loadResultIndexRuntime() {
+  if (resultIndexRuntime) return resultIndexRuntime;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/result-index.mjs",
+    "../../../.silver/runtime/result-index.mjs",
+    "../../../runtime/result-index.mjs",
+  ]) {
+    try {
+      resultIndexRuntime = await import(specifier);
+      return resultIndexRuntime;
+    } catch {
+      // Try the package, installed workspace, then source tree.
+    }
+  }
+  throw new Error("The shared skill-result index is unavailable.");
+}
+
 function parseArgs(args) {
   const rootIndex = args.indexOf("--root");
   const nowIndex = args.indexOf("--now");
@@ -396,14 +414,11 @@ async function inspectWorkspace(root, now) {
     }
   }
 
-  for (const relativePath of await structuredFiles(
-    root,
-    ".silver/results/skills",
-  )) {
-    const record = await readStructured(root, relativePath);
-    const result = record.value;
-    if (!result) continue;
-    const time = sourceTime(result, record.source);
+  const { loadSkillResultIndex, currentResultRecords } = await loadResultIndexRuntime();
+  const resultIndex = await loadSkillResultIndex(root);
+  for (const { path: relativePath, result } of currentResultRecords(resultIndex)) {
+    const source = await readSafe(root, relativePath);
+    const time = sourceTime(result, source);
     if (result.acceptance?.status === "awaiting-review") {
       addCandidate(
         candidates,

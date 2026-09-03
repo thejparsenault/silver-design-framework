@@ -5,6 +5,7 @@ import { parse as parseYaml } from "yaml";
 
 import { exists, readUtf8, writeUtf8 } from "./lib/files.mjs";
 import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
+import { joinArtifactResult } from "../framework/runtime/result-index.mjs";
 
 function parseFrontmatter(content) {
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
@@ -63,7 +64,31 @@ export async function traceArtifact({ root, target }) {
       continue;
     }
     if (!value || (file !== direct && value.id !== target && value.invocation_id !== target)) continue;
-    const provenance = value.provenance ?? null;
+    const isSkillResult = value.schema === "silver/skill-result/v2";
+    const reference = isSkillResult ? null : {
+      id: value.id ?? target,
+      kind: value.kind ?? value.schema ?? "unknown",
+      revision: value.revision ?? null,
+      path: path.relative(workspace, file).split(path.sep).join("/"),
+    };
+    const joined = reference?.revision
+      ? await joinArtifactResult(workspace, reference)
+      : { record: null, consistency_findings: [] };
+    const producingResult = isSkillResult ? value : joined.record?.result ?? null;
+    const provenance = producingResult?.provenance ?? value.provenance ?? null;
+    const artifactStatus = isSkillResult ? null : value.status ?? null;
+    const acceptance = producingResult?.acceptance?.status ?? "not-recorded";
+    const consistencyFindings = [...joined.consistency_findings];
+    if (
+      artifactStatus &&
+      ["accepted", "rejected"].includes(artifactStatus) &&
+      acceptance !== "not-recorded" &&
+      artifactStatus !== acceptance
+    ) {
+      consistencyFindings.push(
+        `Artifact status ${artifactStatus} disagrees with result acceptance ${acceptance}.`,
+      );
+    }
     return {
       schema: "silver/trace/v1",
       target: {
@@ -79,7 +104,20 @@ export async function traceArtifact({ root, target }) {
       linked_sources: provenance?.linked_sources ?? [],
       design_contexts: provenance?.design_contexts ?? value.design_contexts ?? [],
       references: provenance?.references ?? [],
-      acceptance: provenance?.acceptance ?? value.acceptance?.status ?? value.status ?? "unknown",
+      acceptance,
+      artifact_status: artifactStatus,
+      producing_result: producingResult
+        ? {
+            invocation_id: producingResult.invocation_id,
+            completed_at: producingResult.completed_at,
+            path: isSkillResult
+              ? path.relative(workspace, file).split(path.sep).join("/")
+              : joined.record.path,
+          }
+        : null,
+      checks: producingResult?.checks ?? [],
+      readiness: producingResult?.readiness ?? [],
+      consistency_findings: consistencyFindings,
     };
   }
   const bootstrapPath = path.join(
@@ -117,7 +155,12 @@ export async function traceArtifact({ root, target }) {
         linked_sources: [],
         design_contexts: [],
         references: [],
-        acceptance: "unknown",
+        acceptance: "not-recorded",
+        artifact_status: null,
+        producing_result: null,
+        checks: [],
+        readiness: [],
+        consistency_findings: [],
       };
     }
   }
@@ -128,15 +171,22 @@ export function renderTrace(trace) {
   const lines = [
     `Trace: ${trace.target.id}`,
     `Kind: ${trace.target.kind}`,
-    `Revision: ${trace.target.revision ?? "unknown"}`,
+    `Revision: ${trace.target.revision ?? "not recorded"}`,
     `Path: ${trace.target.path}`,
     `Acceptance: ${trace.acceptance}`,
-    `Origin: ${trace.provenance?.origin ?? "unknown"}`,
+    `Artifact status: ${trace.artifact_status ?? "not recorded"}`,
+    `Origin: ${trace.provenance?.origin ?? "not recorded"}`,
     `Sources: ${trace.sources.length}`,
-    `Guidance pins: ${trace.guidance.length}`,
-    `Linked source pins: ${trace.linked_sources?.length ?? 0}`,
-    `Design contexts: ${trace.design_contexts.length}`,
+    `Guidance pins: ${trace.provenance ? trace.guidance.length : "not recorded"}`,
+    `Linked source pins: ${trace.provenance ? trace.linked_sources?.length ?? 0 : "not recorded"}`,
+    `Design contexts: ${trace.provenance ? trace.design_contexts.length : "not recorded"}`,
   ];
+  if (trace.producing_result) {
+    lines.push(`Producing result: ${trace.producing_result.invocation_id}`);
+  }
+  for (const finding of trace.consistency_findings ?? []) {
+    lines.push(`Consistency finding: ${finding}`);
+  }
   for (const citation of trace.references ?? []) {
     lines.push(
       `Reference: ${citation.collection}@${citation.revision} (${citation.ids.join(", ")})`,

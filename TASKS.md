@@ -1,5 +1,43 @@
 # Tasks
 
+## Silver 0.9.2 — One Representation Model
+
+- [x] Consolidate live representation and reconciliation behavior on v2
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Runtime bindings, repository and Figma adapters, state calculation, provider operations, authority enforcement, and application now use v2; live v1 inputs require migration and re-inspection.
+
+- [x] Repair representation checks and add v2 regression coverage
+  - type: test
+  - priority: high
+  - context: medium
+  - notes: Version-aware checks retain historical v1 readability and correctly evaluate v2 pins, states, mapping, authority, proposal integrity, presence, and local, linked-source, or provider freshness boundaries.
+
+- [x] Separate historical artifact provenance from live input freshness
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Historical source revision drift is a non-blocking advisory; current invocation inputs still fail before writes when missing, stale, malformed, or outside the workspace, and playbook resume invalidates missing observed artifacts.
+
+- [x] Support verified local and external visualization review surfaces
+  - type: build
+  - priority: high
+  - context: medium
+  - notes: Visualization records can declare guarded local companions or external HTTPS locations such as Figma. Handoffs require one verified surface; raw URLs and stale or mismatched bindings remain visible but not ready.
+
+- [x] Repair traceability write/read consistency
+  - type: build
+  - priority: high
+  - context: large
+  - notes: Check passes attest workspace state; managed files use one integrity contract; invocation provenance and acceptance are validated before writes; trace and what-now join exact result revisions; and launchers select only lock-compatible runtimes.
+
+- [x] Verify and package the unsigned 0.9.2 release
+  - type: release
+  - priority: high
+  - context: medium
+  - notes: Complete. All 248 source tests and exact-package smoke pass; the 5,868-file package contains the final runtime, checker, skill, and schema changes; both native architectures report 0.9.2; both unsigned macOS packages match `dist/pkg/SHA256SUMS`. Nothing was signed, notarized, published, installed, committed, or pushed.
+
 ## Now — First Iteration
 
 - [x] Define the canonical workspace manifest schema

@@ -1,15 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { assertV2 } from "./contracts.mjs";
-import {
-  contentIntegrity,
-  synchronizationState,
-  valueIntegrity,
-  validateBinding,
-} from "./representations.mjs";
-import { runWorkspaceTransaction } from "./workspace-transactions.mjs";
-import { createWorkspaceMutator } from "./workspace-mutations.mjs";
+import { contentIntegrity } from "./representations.mjs";
 
 function inside(root, relativePath) {
   const workspace = path.resolve(root);
@@ -18,140 +10,6 @@ function inside(root, relativePath) {
     throw new Error(`Path escapes workspace: ${relativePath}`);
   }
   return absolute;
-}
-
-export async function persistReconciliationRecord({
-  root,
-  kind,
-  id,
-  value,
-}) {
-  if (!["snapshots", "change-sets", "results", "operations"].includes(kind)) {
-    throw new Error(`Unsupported reconciliation record kind: ${kind}`);
-  }
-  const relativePath = `.silver/results/reconciliation/${kind}/${id}.json`;
-  const content = `${JSON.stringify(value, null, 2)}\n`;
-  const mutator = await createWorkspaceMutator(root);
-  await mutator.write(relativePath, content);
-  return { path: relativePath, integrity: contentIntegrity(content) };
-}
-
-export async function proposeReconciliation({
-  root,
-  binding,
-  local,
-  external,
-  changeSet,
-  providerAvailable = true,
-  createdAt = new Date().toISOString(),
-  schemaRoot,
-}) {
-  await validateBinding(binding, schemaRoot ? { schemaRoot } : {});
-  await assertV2("change-set.schema.json", changeSet, schemaRoot ? { schemaRoot } : {});
-  if (changeSet.binding_id !== binding.id) {
-    throw new Error("Change set does not belong to the representation binding.");
-  }
-  if (
-    changeSet.artifact.id !== binding.artifact.id ||
-    changeSet.artifact.path !== binding.artifact.path
-  ) {
-    throw new Error("Change set artifact does not match the representation binding.");
-  }
-  const stored = await persistReconciliationRecord({
-    root,
-    kind: "change-sets",
-    id: changeSet.id,
-    value: changeSet,
-  });
-  const state = synchronizationState({
-    binding,
-    local,
-    external,
-    providerAvailable,
-    changeSet,
-  });
-  const blockers = [];
-  if (state === "unverified") blockers.push("Provider freshness could not be verified.");
-  if (state === "unmapped") blockers.push("One or more changes have no portable semantic mapping.");
-  if (["diverged", "conflict"].includes(state)) {
-    blockers.push("Both sides changed after the shared base; no winner was selected.");
-  }
-  if (external.completeness === "partial") {
-    blockers.push("External extraction is partial; unresolved data remains inspectable only.");
-  }
-  const result = {
-    schema: "silver/reconciliation-result/v1",
-    id: `${binding.id}-reconciliation`,
-    binding_id: binding.id,
-    authority: binding.authority,
-    state,
-    base: {
-      revision: binding.last_reconciled.portable_revision,
-      integrity: binding.last_reconciled.portable_integrity,
-    },
-    local: { revision: local.revision, integrity: local.integrity },
-    external: { revision: external.revision, integrity: external.integrity },
-    change_set_path: stored.path,
-    change_set_integrity: stored.integrity,
-    proposal_integrity: valueIntegrity({
-      binding: binding.id,
-      state,
-      base: binding.last_reconciled,
-      change_set_integrity: stored.integrity,
-    }),
-    status:
-      blockers.length || ["current", "view-stale"].includes(state)
-        ? "notify"
-        : "awaiting-acceptance",
-    accepted_operations: [],
-    applied_operations: [],
-    blockers,
-    created_at: createdAt,
-    updated_at: createdAt,
-  };
-  await assertV2("reconciliation-result.schema.json", result, schemaRoot ? { schemaRoot } : {});
-  await persistReconciliationRecord({
-    root,
-    kind: "results",
-    id: result.id,
-    value: result,
-  });
-  return result;
-}
-
-export async function acceptReconciliation({
-  root,
-  result,
-  operationIds,
-  acceptedAt = new Date().toISOString(),
-  schemaRoot,
-}) {
-  await assertV2("reconciliation-result.schema.json", result, schemaRoot ? { schemaRoot } : {});
-  if (!["awaiting-acceptance", "notify"].includes(result.status)) {
-    throw new Error(`Reconciliation cannot be accepted from ${result.status}.`);
-  }
-  if (["unverified", "unmapped", "conflict"].includes(result.state)) {
-    throw new Error(`Reconciliation state ${result.state} cannot be applied.`);
-  }
-  const changeSetContent = await readFile(inside(root, result.change_set_path), "utf8");
-  if (contentIntegrity(changeSetContent) !== result.change_set_integrity) {
-    throw new Error("Reconciliation change set integrity is stale.");
-  }
-  const changeSet = JSON.parse(changeSetContent);
-  const known = new Set(changeSet.changes.map(({ id }) => id));
-  if (!operationIds.length || operationIds.some((id) => !known.has(id))) {
-    throw new Error("Acceptance must name one or more known change operations.");
-  }
-  const accepted = {
-    ...result,
-    status: "accepted",
-    accepted_operations: [...new Set(operationIds)].sort(),
-    blockers: result.blockers.filter((item) => !item.startsWith("Both sides changed")),
-    updated_at: acceptedAt,
-  };
-  await assertV2("reconciliation-result.schema.json", accepted, schemaRoot ? { schemaRoot } : {});
-  await persistReconciliationRecord({ root, kind: "results", id: accepted.id, value: accepted });
-  return accepted;
 }
 
 function decodePointer(pathValue) {
@@ -194,41 +52,50 @@ export function validatePortableArtifact(value) {
   }
 }
 
+// Adapter-specific patches remain inspectable in changeSet.adapter_payload,
+// while the selected operations and all freshness identities use the v2
+// portable contract. The installer synchronization coordinator is the only
+// lifecycle owner; this helper only prepares validated local file contents.
 export async function preparePortableReconciliation({
   root,
   changeSet,
   operationIds,
   approvals = [],
 }) {
-  const selected = changeSet.changes.filter(({ id }) => operationIds.includes(id));
+  if (changeSet?.schema !== "silver/change-set/v2") {
+    throw new Error("Portable reconciliation requires a v2 change set; migrate and inspect again.");
+  }
+  const selected = changeSet.operations.filter(({ id }) => operationIds.includes(id));
   const prepared = new Map();
-  for (const change of selected) {
-    if (change.operation === "finding" || change.operation === "no-op") {
-      throw new Error(`Operation ${change.id} has no applicable mutation.`);
+  for (const operation of selected) {
+    if (["finding", "no-op"].includes(operation.type)) {
+      throw new Error(`Operation ${operation.id} has no applicable mutation.`);
     }
     if (
-      change.required_approval &&
+      operation.required_approval &&
       !approvals.some(({ operation_id: operationId, approved }) =>
-        operationId === change.id && approved === true,
+        operationId === operation.id && approved === true,
       )
     ) {
-      throw new Error(`Operation ${change.id} requires explicit approval.`);
+      throw new Error(`Operation ${operation.id} requires explicit approval.`);
     }
-    const absolute = inside(root, change.proposal.target_path);
+    const absolute = inside(root, operation.target_path);
     const content = prepared.get(absolute)?.original ?? await readFile(absolute, "utf8");
-    if (contentIntegrity(content) !== change.proposal.expected_integrity) {
-      throw new Error(`Stale expected integrity for ${change.proposal.target_path}.`);
+    if (operation.target_identity.state !== "present" || contentIntegrity(content) !== operation.target_identity.integrity) {
+      throw new Error(`Stale expected integrity for ${operation.target_path}.`);
     }
     const current = prepared.has(absolute)
       ? prepared.get(absolute).value
       : JSON.parse(content);
-    const next = applyPatch(current, change.proposal.patch);
+    const patch = changeSet.adapter_payload?.patches?.[operation.id];
+    if (!Array.isArray(patch)) throw new Error(`Operation ${operation.id} has no adapter patch payload.`);
+    const next = applyPatch(current, patch);
     validatePortableArtifact(next);
     prepared.set(absolute, {
-      path: change.proposal.target_path,
+      path: operation.target_path,
       original: content,
       value: next,
-      operationIds: [...(prepared.get(absolute)?.operationIds ?? []), change.id],
+      operationIds: [...(prepared.get(absolute)?.operationIds ?? []), operation.id],
     });
   }
   return {
@@ -240,56 +107,4 @@ export async function preparePortableReconciliation({
       operationIds: record.operationIds,
     })),
   };
-}
-
-export async function applyReconciliation({
-  root,
-  result,
-  approvals = [],
-  failBeforeCommit = false,
-  appliedAt = new Date().toISOString(),
-  schemaRoot,
-}) {
-  await assertV2("reconciliation-result.schema.json", result, schemaRoot ? { schemaRoot } : {});
-  if (result.status !== "accepted") throw new Error("Reconciliation must be accepted before apply.");
-  const resultPath = `.silver/results/reconciliation/results/${result.id}.json`;
-  const persistedResult = JSON.parse(await readFile(inside(root, resultPath), "utf8"));
-  if (persistedResult.proposal_integrity !== result.proposal_integrity) {
-    throw new Error("Reconciliation proposal integrity is stale.");
-  }
-  const changeSetContent = await readFile(inside(root, result.change_set_path), "utf8");
-  if (contentIntegrity(changeSetContent) !== result.change_set_integrity) {
-    throw new Error("Reconciliation change set changed after acceptance.");
-  }
-  const changeSet = JSON.parse(changeSetContent);
-  const { selected, files } = await preparePortableReconciliation({
-    root,
-    changeSet,
-    operationIds: result.accepted_operations,
-    approvals,
-  });
-  if (failBeforeCommit) throw new Error("Simulated interruption before atomic commit.");
-  await runWorkspaceTransaction({
-    root,
-    command: `silver reconcile ${result.id}`,
-    operations: files.map((file, index) => ({
-      id: `portable-${index + 1}`,
-      type: "write",
-      path: file.path,
-      content: file.content,
-      expectedIntegrity: file.expectedIntegrity,
-    })),
-    metadata: { workflow: "reconciliation", result: result.id },
-    validate: async () => ({ status: "pass", check: "portable-artifact-validation" }),
-  });
-  const applied = {
-    ...result,
-    status: "applied",
-    applied_operations: selected.map(({ id }) => id).sort(),
-    blockers: [],
-    updated_at: appliedAt,
-  };
-  await assertV2("reconciliation-result.schema.json", applied, schemaRoot ? { schemaRoot } : {});
-  await persistReconciliationRecord({ root, kind: "results", id: applied.id, value: applied });
-  return applied;
 }

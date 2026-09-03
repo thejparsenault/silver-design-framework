@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: design-check
-version: 0.9.1
+version: 0.9.2
 summary: Run applicable independent checks without performing design work.
 context_budget: small
 inputs:
@@ -70,6 +70,9 @@ checks:
   - id: contract-integrity
     required: true
     blocks: &no_blocks []
+  - id: audit-trail-integrity
+    required: true
+    blocks: *no_blocks
   - id: flow-structure
     required: true
     blocks: *no_blocks
@@ -109,6 +112,9 @@ checks:
   - id: critical-interactions
     required: true
     blocks: *no_blocks
+  - id: managed-integrity
+    required: true
+    blocks: *no_blocks
   - id: binding-integrity
     required: true
     blocks: *no_blocks
@@ -146,6 +152,9 @@ scripts:
   - id: check-artifacts
     path: scripts/check-artifacts.mjs
     purpose: Bundled deterministic design-check operation.
+  - id: check-audit-trail-integrity
+    path: scripts/check-audit-trail-integrity.mjs
+    purpose: Bundled deterministic design-check operation.
   - id: check-assets
     path: scripts/check-assets.mjs
     purpose: Bundled deterministic design-check operation.
@@ -166,6 +175,9 @@ scripts:
     purpose: Bundled deterministic design-check operation.
   - id: check-lib
     path: scripts/check-lib.mjs
+    purpose: Bundled deterministic design-check operation.
+  - id: check-managed-integrity
+    path: scripts/check-managed-integrity.mjs
     purpose: Bundled deterministic design-check operation.
   - id: check-presentations
     path: scripts/check-presentations.mjs

@@ -45,7 +45,7 @@ function result({ id, skill, inputs = [], outputs = [] }) {
   return {
     schema: "silver/skill-result/v2",
     invocation_id: id,
-    skill: { id: skill, version: "0.9.1" },
+    skill: { id: skill, version: "0.9.2" },
     started_at: time.start,
     completed_at: time.start,
     inputs,
@@ -75,7 +75,7 @@ test("default playbook is a valid graph of pinned leaf skills with bounded auton
   await assertV2("playbook.schema.json", playbook);
   assertPlaybookGraph(playbook);
   assert.ok(
-    playbook.nodes.every(({ skill }) => skill.version === "0.9.1"),
+    playbook.nodes.every(({ skill }) => skill.version === "0.9.2"),
   );
   assert.deepEqual(playbook.autonomy.forbidden_effects, [
     "canonical-write",
@@ -281,6 +281,23 @@ test("upstream revision changes preserve old references and visibly stale downst
   assert.equal(
     resumed.node_states.find(({ node }) => node === "specify").status,
     "stale",
+  );
+
+  const missing = resumePlaybook({
+    playbook,
+    state: JSON.parse(JSON.stringify(state)),
+    currentArtifacts: [evidence, finding, concept],
+    now: time.resume,
+  });
+  await assertV2("playbook-state.schema.json", missing);
+  const missingSpecification = missing.invalidations.find(
+    ({ artifact_id: artifactId }) => artifactId === specification.id,
+  );
+  assert.equal(missingSpecification.observed_state, "missing");
+  assert.equal(missingSpecification.observed_revision, null);
+  assert.match(
+    missing.checkpoints.find(({ id }) => id === `reconcile-${specification.id}`).prompt,
+    /missing artifact/,
   );
   assert.equal(
     resumed.node_states

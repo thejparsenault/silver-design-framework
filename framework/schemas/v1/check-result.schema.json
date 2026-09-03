@@ -60,6 +60,20 @@
         "$ref": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/finding.schema.json"
       }
     },
+    "completed_at": {
+      "description": "When this check completed. Optional only so historical unbound results remain readable; all new evidence records it.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "state_scope": {
+      "description": "The versioned definition of the workspace state covered by state_digest.",
+      "const": "workspace-check-inputs/v1"
+    },
+    "state_digest": {
+      "description": "Deterministic digest of the checker-visible workspace state. Optional only for historical compatibility.",
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
     "execution_error": {
       "type": "object",
       "additionalProperties": false,

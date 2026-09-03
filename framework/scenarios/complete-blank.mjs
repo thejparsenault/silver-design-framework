@@ -12,6 +12,7 @@ import { parse, stringify } from "yaml";
 import { runGit } from "../runtime/git.mjs";
 
 import { invokeSkill } from "../runtime/invoke-skill.mjs";
+import { runContractChecks } from "../../installer/checks.mjs";
 import {
   createPlaybookState,
   recordNodeResult,
@@ -24,7 +25,7 @@ import { renderStaticImplementation } from "../skills/implement/scripts/render-s
 import { renderPresentation } from "../skills/pitch/scripts/render-presentation.mjs";
 import { initPrototype } from "../skills/prototype/scripts/init-prototype.mjs";
 import { renderStaticPrototype } from "../skills/prototype/scripts/render-static-prototype.mjs";
-import { renderVisualization } from "../skills/visualize/scripts/render-visualization.mjs";
+import { buildVisualizationHtml } from "../skills/visualize/scripts/render-visualization.mjs";
 import { renderFlowFile } from "../skills/flow/scripts/render-flow.mjs";
 import { renderMap } from "../skills/map/scripts/render-map.mjs";
 import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
@@ -111,7 +112,6 @@ function provenance(
     linked_sources: linkedSources,
     design_contexts: designContexts,
     change: { reason },
-    acceptance: "accepted",
     external_bindings: externalBindings,
   };
 }
@@ -218,7 +218,7 @@ async function invokeCase({
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.9.1" },
+    skill: { id, version: "0.9.2" },
     started_at: time,
     inputs,
     outputs: positiveOutputs,
@@ -260,8 +260,13 @@ async function invokeCase({
             : "what-now-positive",
       },
       completedAt: completed,
+      runChecks: ({ root: checkRoot, contract: checkContract }) =>
+        runContractChecks({ root: checkRoot, contract: checkContract, now: completed }),
     });
-    assert.ok(["complete", "complete-with-findings"].includes(result.execution.status));
+    assert.ok(
+      ["complete", "complete-with-findings"].includes(result.execution.status),
+      JSON.stringify(result, null, 2),
+    );
     if (id === "design-check") {
       // Before 0.9 this asserted `browser` was always degraded, which was only
       // true because no provider served it. Now `silver-browser-local` does,
@@ -306,10 +311,21 @@ async function invokeCase({
     skillDirectory,
     request: { ...base, invocation_id: `${id}-positive` },
     completedAt: completed,
+    runChecks: ({ root: checkRoot, contract: checkContract }) =>
+      runContractChecks({ root: checkRoot, contract: checkContract, now: completed }),
   });
-  assert.ok(["complete", "complete-with-findings"].includes(result.execution.status), JSON.stringify(result, null, 2));
+  assert.ok(
+    ["complete", "complete-with-findings", "complete-awaiting-verification"].includes(
+      result.execution.status,
+    ),
+    JSON.stringify(result, null, 2),
+  );
   assert.ok(result.recommended_next_actions.every(({ automatic }) => automatic === false));
-  assert.ok(result.readiness.every(({ status }) => ["ready", "not-applicable"].includes(status)));
+  assert.ok(
+    result.readiness.every(({ status }) =>
+      ["ready", "not-ready", "not-applicable"].includes(status),
+    ),
+  );
   return result;
 }
 
@@ -323,6 +339,7 @@ function artifactOutputs() {
   const specification = ref("guided-setup-spec", "design-specification", "r1", "design/work/specifications/guided-setup.json");
   const flow = ref("guided-setup-flow", "flow", "r1", "design/flows/guided-setup/flow.json");
   const visualization = ref("guided-setup-visualization", "visualization", "r1", "design/work/visualizations/guided-setup/visualization.json");
+  const visualizationRender = ref("guided-setup-visualization-render", "x-visualization-render", "r1", "design/work/visualizations/guided-setup/index.html");
   const component = ref("setup-card", "component-proposal", "r1", "design/work/components/setup-card.json");
   const prototype = ref("guided-setup-prototype", "prototype", "r1", "prototypes/guided-setup/prototype.json");
   const observation = ref("setup-observation", "observation", "r1", "design/evidence/setup-observation.json");
@@ -334,7 +351,7 @@ function artifactOutputs() {
   const presentation = ref("guided-setup-presentation", "presentation-view", "r1", "presentations/guided-setup/view.json");
   const handoff = ref("guided-setup-handoff", "implementation-handoff", "r1", "design/work/implementation-handoffs/guided-setup.json");
   const implementation = ref("guided-setup-implementation", "implementation", "r1", "production/guided-setup/intent.json");
-  return { seed, finding, frame, concept, hypothesis, selection, specification, flow, visualization, component, prototype, observation, evaluation, evaluationFinding, journeyMap, practiceChange, changeCase, presentation, handoff, implementation };
+  return { seed, finding, frame, concept, hypothesis, selection, specification, flow, visualization, visualizationRender, component, prototype, observation, evaluation, evaluationFinding, journeyMap, practiceChange, changeCase, presentation, handoff, implementation };
 }
 
 export async function runCompleteBlankScenario(options = {}) {
@@ -518,23 +535,37 @@ export async function runCompleteBlankScenario(options = {}) {
     path.join(root, "design/flows/guided-setup/flow.mmd"),
   );
 
+  const visualizationValue = working(refs.visualization, "Guided setup alternatives", {
+    fidelity: "low",
+    constraint_profile: "constrained",
+    question: "Which structure makes the consequence and action clearest?",
+    views: [{
+      id: "primary",
+      primary: true,
+      medium: "local",
+      format: "html",
+      path: refs.visualizationRender.path,
+    }],
+    alternatives: [
+      { title: "Single focus", summary: "One centered consequence and action.", tradeoff: "Less context remains visible." },
+      { title: "Review card", summary: "Saved details sit beside the action.", tradeoff: "More information to scan." },
+    ],
+  }, [refs.concept, refs.specification, refs.flow]);
+  const visualizationHtml = await buildVisualizationHtml({
+    root,
+    visualization: visualizationValue,
+    output: refs.visualizationRender.path,
+  });
   results.set("visualize", await invokeCase({
     root,
     id: "visualize",
     inputs: [refs.concept, refs.specification, refs.flow],
-    outputs: [jsonOutput(refs.visualization, working(refs.visualization, "Guided setup alternatives", {
-      fidelity: "low",
-      constraint_profile: "constrained",
-      question: "Which structure makes the consequence and action clearest?",
-      view_path: "design/work/visualizations/guided-setup/index.html",
-      alternatives: [
-        { title: "Single focus", summary: "One centered consequence and action.", tradeoff: "Less context remains visible." },
-        { title: "Review card", summary: "Saved details sit beside the action.", tradeoff: "More information to scan." },
-      ],
-    }, [refs.concept, refs.specification, refs.flow]), "working-artifact.schema.json")],
+    outputs: [
+      jsonOutput(refs.visualization, visualizationValue, "working-artifact.schema.json"),
+      textOutput(refs.visualizationRender, visualizationHtml),
+    ],
     checkEvidence,
   }));
-  await renderVisualization({ root, artifact: refs.visualization.path, output: "design/work/visualizations/guided-setup/index.html" });
 
   results.set("component", await invokeCase({
     root,
@@ -629,7 +660,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.9.1" },
+      skill: { id: "prototype", version: "0.9.2" },
       started_at: time,
       inputs: [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
       outputs: refinedOutput,
@@ -654,8 +685,10 @@ export async function runCompleteBlankScenario(options = {}) {
       acceptance: { status: "accepted", reviewer: "release-fixture-reviewer", recorded_at: completed },
     },
     completedAt: completed,
+    runChecks: ({ root: checkRoot, contract: checkContract }) =>
+      runContractChecks({ root: checkRoot, contract: checkContract, now: completed }),
   });
-  assert.equal(refinedResult.execution.status, "complete");
+  assert.equal(refinedResult.execution.status, "complete-awaiting-verification");
   await renderStaticPrototype({ root, prototype: "prototypes/guided-setup", flow: refs.flow.path, replace: true });
 
   const secondEvaluation = ref("setup-re-evaluation", "evaluation", "r1", "design/work/evaluations/setup-re-evaluation.json");
@@ -675,7 +708,7 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.9.1" },
+      skill: { id: "evaluate", version: "0.9.2" },
       started_at: time,
       inputs: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
@@ -700,6 +733,8 @@ export async function runCompleteBlankScenario(options = {}) {
       acceptance: { status: "accepted", reviewer: "release-fixture-reviewer", recorded_at: completed },
     },
     completedAt: completed,
+    runChecks: ({ root: checkRoot, contract: checkContract }) =>
+      runContractChecks({ root: checkRoot, contract: checkContract, now: completed }),
   });
   assert.equal(secondEvalResult.execution.status, "complete");
 
@@ -769,6 +804,26 @@ export async function runCompleteBlankScenario(options = {}) {
       },
     ),
   };
+  await mkdir(path.join(root, "design/integrations"), { recursive: true });
+  await writeFile(
+    path.join(root, "design/integrations/guided-map-figma.yaml"),
+    stringify({
+      schema: "silver/representation-binding/v2",
+      id: "guided-map-figma",
+      artifact: refs.journeyMap,
+      counterpart: {
+        type: "provider",
+        provider: "figma",
+        object_id: "fixture-map-node",
+        revision: "v1",
+      },
+      adapter: { id: "silver-figma", version: "0.9.2" },
+      authority: "workspace-authoritative",
+      round_trip: "read-only",
+      sync_policy: "manual",
+      base: { state: "uninitialized" },
+    }),
+  );
   results.set("map", await invokeCase({
     root,
     id: "map",
@@ -806,28 +861,29 @@ export async function runCompleteBlankScenario(options = {}) {
   await writeFile(
     path.join(root, "design/integrations/guided-map-figma.yaml"),
     stringify({
-      schema: "silver/representation-binding/v1",
+      schema: "silver/representation-binding/v2",
       id: "guided-map-figma",
       artifact: refs.journeyMap,
-      view: { role: "external-view", format: "figma" },
-      provider: {
-        id: "figma",
+      counterpart: {
+        type: "provider",
+        provider: "figma",
         object_id: "fixture-map-node",
         revision: "v1",
       },
-      adapter: { id: "silver-figma", version: "0.4.0" },
-      mapping_profile: "map-read-only",
-      authority: "local",
+      adapter: { id: "silver-figma", version: "0.9.2" },
+      authority: "workspace-authoritative",
       round_trip: "read-only",
       sync_policy: "manual",
-      last_reconciled: {
-        portable_revision: refs.journeyMap.revision,
-        portable_integrity: hash(
+      base: {
+        state: "initialized",
+        local: {
+          state: "present",
+          revision: refs.journeyMap.revision,
+          integrity: hash(
           await readFile(path.join(root, refs.journeyMap.path)),
-        ),
-        external_revision: "v1",
-        snapshot_integrity: hash(externalSnapshot),
-        snapshot_path: externalSnapshotPath,
+          ),
+        },
+        external: { state: "present", revision: "v1", integrity: hash(externalSnapshot) },
         at: time,
       },
     }),
@@ -945,6 +1001,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("design-check", await invokeCase({
     root,
     id: "design-check",
+    inputs: [refs.journeyMap, refs.handoff],
     checkEvidence,
     provenanceSources: [refs.journeyMap, refs.handoff],
     provenanceMetadata: {
@@ -1024,12 +1081,11 @@ export async function runCompleteBlankScenario(options = {}) {
   const qaResult = results.get("design-check");
   assert.equal(implementationResult.git_checkpoint.status, "committed");
   assert.deepEqual(mapTrace.guidance, [guidancePin]);
-  assert.deepEqual(mapTrace.provenance.external_bindings, [
-    "guided-map-figma",
-  ]);
-  assert.deepEqual(qaResult.provenance.external_bindings, [
-    "guided-map-figma",
-  ]);
+  for (const pins of [mapTrace.provenance.external_bindings, qaResult.provenance.external_bindings]) {
+    assert.equal(pins[0].id, "guided-map-figma");
+    assert.equal(pins[0].path, "design/integrations/guided-map-figma.yaml");
+    assert.match(pins[0].integrity, /^sha256:[a-f0-9]{64}$/);
+  }
 
   return {
     schema: "silver/complete-blank-scenario/v1",

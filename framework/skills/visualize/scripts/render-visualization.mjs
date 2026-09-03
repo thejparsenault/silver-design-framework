@@ -63,15 +63,8 @@ async function writeExclusive(mutator, root, file, content, replace) {
   else await mutator.create(relative, content);
 }
 
-export async function renderVisualization({ root = process.cwd(), artifact, output, replace = false }) {
+export async function buildVisualizationHtml({ root = process.cwd(), visualization, output }) {
   const workspace = path.resolve(root);
-  const mutator = await workspaceMutator(workspace);
-  const sourcePath = inside(workspace, artifact, "Artifact");
-  const outputPath = inside(workspace, output, "Output");
-  const visualization = JSON.parse(await readFile(sourcePath, "utf8"));
-  if (visualization.schema !== "silver/working-artifact/v2" || visualization.kind !== "visualization") {
-    throw new Error("Visualization input must be a silver/working-artifact/v2 visualization.");
-  }
   const { fidelity, constraint_profile: profile, question, alternatives = [] } = visualization.payload;
   if (!fidelity || !profile || !question || alternatives.length < 2) {
     throw new Error("Visualization must declare fidelity, constraint profile, question, and at least two alternatives.");
@@ -83,7 +76,7 @@ export async function renderVisualization({ root = process.cwd(), artifact, outp
         <p class="visualization-tradeoff"><strong>Tradeoff:</strong> ${escapeHtml(item.tradeoff)}</p>
       </article>`).join("\n      ");
   const relativeCss = await resolveStylesheetHref(workspace, path.posix.dirname(output));
-  const html = `<!doctype html>
+  return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -111,6 +104,18 @@ export async function renderVisualization({ root = process.cwd(), artifact, outp
 </body>
 </html>
 `;
+}
+
+export async function renderVisualization({ root = process.cwd(), artifact, output, replace = false }) {
+  const workspace = path.resolve(root);
+  const mutator = await workspaceMutator(workspace);
+  const sourcePath = inside(workspace, artifact, "Artifact");
+  const outputPath = inside(workspace, output, "Output");
+  const visualization = JSON.parse(await readFile(sourcePath, "utf8"));
+  if (visualization.schema !== "silver/working-artifact/v2" || visualization.kind !== "visualization") {
+    throw new Error("Visualization input must be a silver/working-artifact/v2 visualization.");
+  }
+  const html = await buildVisualizationHtml({ root: workspace, visualization, output });
   await writeExclusive(mutator, workspace, outputPath, html, replace);
   return { outputPath, artifact: { id: visualization.id, revision: visualization.revision } };
 }

@@ -7,7 +7,7 @@
 # path to this project's production source.
 schema: silver/provider/v1
 id: v0-api
-version: 0.9.1
+version: 0.9.2
 kind: external
 target: v0
 variant: platform-api

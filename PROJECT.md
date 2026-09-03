@@ -8,7 +8,7 @@ visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-08-17
+updated: 2026-09-03
 ---
 
 # The Silver Design Framework
@@ -63,18 +63,29 @@ build
 
 ## Latest Release
 
-Silver `0.9.0`, **Meet the Work Where It Is**, is in progress on
-`release/silver-0.8-tools`. It extends the provider-selection work into the
-repositories, references, design systems, and tools a team already owns:
-existing-workspace adoption, declared transport support and diagnosis,
-personal tool preferences, external references, a workspace-owned design
-system, a reviewable 0.8-to-0.9 migration, symlink-safe managed writes,
-recoverable lifecycle transactions, and explicit linked-source/Figma
-synchronization.
+Silver `0.9.2`, **One Representation Model**, is the current corrective release
+candidate. It completes 0.9's representation transition by making v2 the only
+live binding, change-set, result, provider-operation, and synchronization model;
+keeps historical v1 reconciliation evidence readable; repairs every fast
+representation check; and requires migration plus fresh inspection for live v1
+bindings. `docs/release-notes/v0.9.2.md` defines the patch boundary.
 
-The release will add signed macOS native CLI delivery for both Apple Silicon
-and Intel Macs. Windows and Linux delivery are explicitly deferred.
-`docs/silver-0.9-acceptance.md` is the release boundary.
+The prepared release includes unsigned native CLI and macOS package outputs for
+Apple Silicon and Intel. Signing, notarization, publication, and installation
+are explicit later actions.
+
+The corrective release also separates immutable artifact provenance from live
+skill inputs and makes visualization review surfaces representation-aware.
+Historical source revisions now remain truthful non-blocking evidence, while
+new invocations reject stale inputs before writing. Visualizations may declare
+guarded local files or verified external HTTPS views such as Figma, and their
+downstream handoffs wait for at least one verified review surface.
+
+Check evidence is now bound to a deterministic workspace snapshot rather than
+trusted by age or filename. Managed runtime integrity, invocation provenance,
+acceptance, trace joins, recommendations, and version-aware launchers share
+their write/read contracts, so a later reader cannot silently reinterpret what
+an earlier writer recorded.
 
 Silver `0.8.0`, **Tools That Are Actually There**, is the previous release.
 It made the provider-selection layer real: `resolveCapabilities` no longer

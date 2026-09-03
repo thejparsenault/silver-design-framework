@@ -10,7 +10,7 @@
 # functioning, visually real prototype on Webflow's own infrastructure.
 schema: silver/provider/v1
 id: webflow-mcp
-version: 0.9.1
+version: 0.9.2
 kind: external
 target: webflow
 variant: official-mcp

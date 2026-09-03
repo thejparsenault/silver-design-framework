@@ -98,11 +98,29 @@
       }
     },
     "acceptance": {
+      "description": "Deprecated compatibility alias. New records omit this field; skill-result.acceptance.status is authoritative.",
       "enum": ["not-required", "awaiting-review", "accepted", "rejected"]
     },
     "external_bindings": {
       "type": "array",
-      "items": { "$ref": "common.schema.json#/$defs/id" },
+      "items": {
+        "oneOf": [
+          {
+            "description": "Legacy unpinned binding id; readable for compatibility but normalized to a pinned object by new invocations.",
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "path", "integrity"],
+            "properties": {
+              "id": { "$ref": "common.schema.json#/$defs/id" },
+              "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+              "integrity": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+            }
+          }
+        ]
+      },
       "uniqueItems": true
     }
   }

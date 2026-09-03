@@ -68,6 +68,7 @@
       "format": "date-time"
     },
     "sources": {
+      "description": "Immutable historical provenance: the artifact revisions this revision was authored from. Current-input freshness is checked when a skill runs; later source drift never rewrites these pins.",
       "type": "array",
       "items": {
         "$ref": "common.schema.json#/$defs/artifactReference"
@@ -170,7 +171,64 @@
       "then": {
         "properties": {
           "payload": {
-            "required": ["fidelity", "constraint_profile", "question", "view_path"]
+            "required": ["fidelity", "constraint_profile", "question"],
+            "properties": {
+              "view_path": {
+                "description": "Legacy shorthand for one primary local view. New visualization work should emit views[].",
+                "$ref": "common.schema.json#/$defs/relativePath"
+              },
+              "views": {
+                "type": "array",
+                "minItems": 1,
+                "contains": {
+                  "type": "object",
+                  "properties": { "primary": { "const": true } },
+                  "required": ["primary"]
+                },
+                "minContains": 1,
+                "maxContains": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "primary", "medium", "format"],
+                  "properties": {
+                    "id": { "$ref": "common.schema.json#/$defs/id" },
+                    "primary": { "type": "boolean" },
+                    "medium": { "enum": ["local", "external"] },
+                    "format": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9+.-]*$",
+                      "maxLength": 80
+                    },
+                    "path": { "$ref": "common.schema.json#/$defs/relativePath" },
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https://",
+                      "maxLength": 2000,
+                      "not": { "pattern": "^https://[^/]*@" }
+                    },
+                    "binding": { "$ref": "common.schema.json#/$defs/id" }
+                  },
+                  "oneOf": [
+                    {
+                      "properties": { "medium": { "const": "local" } },
+                      "required": ["path"],
+                      "not": { "anyOf": [{ "required": ["url"] }, { "required": ["binding"] }] }
+                    },
+                    {
+                      "properties": { "medium": { "const": "external" } },
+                      "required": ["url"],
+                      "not": { "required": ["path"] }
+                    }
+                  ]
+                }
+              }
+            },
+            "anyOf": [
+              { "required": ["view_path"] },
+              { "required": ["views"] }
+            ]
           }
         }
       }

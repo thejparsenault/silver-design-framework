@@ -300,6 +300,18 @@
             "items": {
               "$ref": "common.schema.json#/$defs/artifactKind"
             }
+          },
+          "representation": {
+            "description": "Optional readiness requirement for a verified local or external representation of an output artifact.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artifact_kind", "role", "minimum", "verified"],
+            "properties": {
+              "artifact_kind": { "$ref": "common.schema.json#/$defs/artifactKind" },
+              "role": { "const": "review-surface" },
+              "minimum": { "type": "integer", "minimum": 1 },
+              "verified": { "const": true }
+            }
           }
         }
       }

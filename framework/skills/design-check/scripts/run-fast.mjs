@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { checkArtifacts } from "./check-artifacts.mjs";
+import { checkAuditTrailIntegrity } from "./check-audit-trail-integrity.mjs";
 import { checkAccessibility } from "./check-accessibility.mjs";
 import { checkAssets } from "./check-assets.mjs";
 import { checkEvidence } from "./check-evidence.mjs";
@@ -21,6 +22,7 @@ import { checkProduction } from "./check-production.mjs";
 import { checkReferenceIntegrity } from "./check-reference-integrity.mjs";
 import { checkResponsive } from "./check-responsive.mjs";
 import { checkInteractions } from "./check-interactions.mjs";
+import { checkManagedIntegrity } from "./check-managed-integrity.mjs";
 import { checkSemanticStyles } from "./check-semantic-styles.mjs";
 import { checkAuthority } from "./check-authority.mjs";
 import { checkBindingIntegrity } from "./check-binding-integrity.mjs";
@@ -31,8 +33,27 @@ import { checkStaleProposals } from "./check-stale-proposals.mjs";
 import { checkSynchronizationStatus } from "./check-synchronization-status.mjs";
 import { checkViewProvenance } from "./check-view-provenance.mjs";
 
+let attestation;
+async function attestationRuntime() {
+  if (attestation) return attestation;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/check-attestation.mjs",
+    "../../../.silver/runtime/check-attestation.mjs",
+    "../../../runtime/check-attestation.mjs",
+  ]) {
+    try {
+      attestation = await import(specifier);
+      return attestation;
+    } catch {
+      // Try the package, installed workspace, then source tree.
+    }
+  }
+  throw new Error("The shared check-attestation runtime is unavailable.");
+}
+
 const checkers = [
   ["contract-integrity", checkArtifacts],
+  ["audit-trail-integrity", checkAuditTrailIntegrity],
   ["flow-structure", checkFlows],
   ["map-structure", checkMaps],
   ["structure-integrity", checkStructures],
@@ -46,6 +67,7 @@ const checkers = [
   ["accessibility", checkAccessibility],
   ["responsive-behavior", checkResponsive],
   ["critical-interactions", checkInteractions],
+  ["managed-integrity", checkManagedIntegrity],
   ["binding-integrity", checkBindingIntegrity],
   ["provider-revision-pins", checkProviderRevisionPins],
   ["view-provenance", checkViewProvenance],
@@ -60,6 +82,12 @@ export const FAST_CHECK_IDS = Object.freeze(checkers.map(([id]) => id));
 
 export async function runFastSuite(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
+  const {
+    attestCheckResults,
+    unstableCheckResults,
+    workspaceCheckStateDigest,
+  } = await attestationRuntime();
+  const stateBefore = await workspaceCheckStateDigest(root);
   const only = options.only ? new Set(options.only) : null;
   if (only) {
     if (only.size === 0) {
@@ -90,18 +118,23 @@ export async function runFastSuite(options = {}) {
       );
     }
   }
-  const status = results.some(({ status }) => status === "error")
+  const stateAfter = await workspaceCheckStateDigest(root);
+  const completedAt = (options.now instanceof Date ? options.now : new Date(options.now ?? Date.now())).toISOString();
+  const attested = stateBefore === stateAfter
+    ? attestCheckResults(results, stateAfter, completedAt)
+    : unstableCheckResults(results, completedAt);
+  const status = attested.some(({ status }) => status === "error")
     ? "error"
-    : results.some(({ status }) => status === "fail")
+    : attested.some(({ status }) => status === "fail")
     ? "fail"
-    : results.some(({ status }) => status === "not-run")
+    : attested.some(({ status }) => status === "not-run")
       ? "not-run"
       : "pass";
   return {
     schema: "silver/check-suite-result/v1",
     suite: "fast",
     status,
-    results,
+    results: attested,
   };
 }
 

@@ -36,10 +36,14 @@ const BROWSER_ONLY_CHECKS = new Set([
 ]);
 
 // Run the fast suite and persist one evidence file per checker.
-export async function runCheckSuite({ root, only } = {}) {
+export async function runCheckSuite({ root, only, now } = {}) {
   const mutator = await createWorkspaceMutator(root);
   const workspaceRoot = mutator.root;
-  const suite = await runFastSuite({ root: workspaceRoot, ...(only ? { only } : {}) });
+  const suite = await runFastSuite({
+    root: workspaceRoot,
+    ...(only ? { only } : {}),
+    ...(now ? { now } : {}),
+  });
   const selected = suite.results;
 
   for (const result of selected) {
@@ -111,7 +115,7 @@ export async function runBrowserCheckSuite({ root, chromePath } = {}) {
 
 // Run the required checks declared by one skill contract, as part of an
 // invocation. Returns the shape the runtime records in `result.checks`.
-export async function runContractChecks({ root, contract }) {
+export async function runContractChecks({ root, contract, now }) {
   const required = contract.checks.filter(({ required }) => required);
   if (required.length === 0) return { checks: [] };
 
@@ -124,7 +128,7 @@ export async function runContractChecks({ root, contract }) {
     .filter(
       (id) => contract.id === "design-check" || !BROWSER_ONLY_CHECKS.has(id),
     );
-  const suite = await runCheckSuite({ root, only: runnable });
+  const suite = await runCheckSuite({ root, only: runnable, now });
   const byChecker = new Map(
     suite.results.map((result) => [result.checker, result]),
   );

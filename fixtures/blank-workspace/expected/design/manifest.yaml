@@ -152,6 +152,7 @@ checks:
   policy_profile: prototype
   enabled:
     - contract-integrity
+    - audit-trail-integrity
     - flow-structure
     - map-structure
     - semantic-styles
@@ -163,6 +164,7 @@ checks:
     - production-readiness
     - asset-integrity
     - critical-interactions
+    - managed-integrity
     - binding-integrity
     - provider-revision-pins
     - view-provenance
@@ -174,6 +176,7 @@ checks:
   suites:
     fast:
       - contract-integrity
+      - audit-trail-integrity
       - flow-structure
       - map-structure
       - semantic-styles
@@ -185,6 +188,7 @@ checks:
       - accessibility
       - responsive-behavior
       - critical-interactions
+      - managed-integrity
       - binding-integrity
       - provider-revision-pins
       - view-provenance
@@ -207,6 +211,7 @@ checks:
       - secret-free-configuration
     full:
       - contract-integrity
+      - audit-trail-integrity
       - flow-structure
       - map-structure
       - semantic-styles
@@ -218,6 +223,7 @@ checks:
       - accessibility
       - responsive-behavior
       - critical-interactions
+      - managed-integrity
   render_targets:
     - id: default-system
       profile: default-html

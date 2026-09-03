@@ -2,6 +2,57 @@
 
 ## Current Focus
 
+Silver `0.9.2`, **One Representation Model**, is prepared on the working tree
+as a corrective release. Live representation binding, state calculation,
+repository synchronization, captured-Figma synchronization, provider
+operations, and reconciliation application now use the v2 contracts end to
+end. Historical v1 reconciliation records remain readable by the design
+checks; live v1 bindings stop with migration and re-inspection guidance.
+
+The representation checks now evaluate v2 revision identities, states,
+semantic mappings, authority, proposal pins, local sources, workspace targets,
+linked-source targets, and provider capture boundaries without interpreting
+pre-application identities as post-application state. Direct regression tests
+cover uninitialized, present, missing, drifted, applied, authority-blocked, and
+legacy-rejected paths.
+
+Artifact source pins are now immutable historical provenance rather than live
+dependencies. Revision drift is reported as a non-blocking advisory, archived
+or stale artifacts do not generate provenance noise, and current invocation
+inputs are validated before any output is written. Playbook resume also
+invalidates downstream work when a previously observed artifact disappears.
+
+Visualization records now support one or more typed review surfaces. A surface
+may be a guarded local companion in any declared format or an external HTTPS
+location such as Figma. External surfaces become verified only through a
+current v2 representation binding whose provider identity matches the URL;
+raw URLs remain visible but do not satisfy downstream readiness. Visualize
+handoffs require at least one verified surface without making HTML mandatory.
+
+Traceability now has shared write/read contracts. Fast and browser check passes
+are bound to a deterministic checker-visible workspace snapshot; mixed-state,
+legacy, malformed, substituted, or stale evidence cannot satisfy an invocation.
+Doctor, checks, and invocation preflight share managed-file integrity. New
+results use one acceptance lifecycle and integrity-pinned provenance, while the
+audit checker reports historical contradictions and drift. Trace and what-now
+join exact output revisions, and generated launchers select a lock-compatible
+runtime without silently preferring an older workspace dependency.
+
+Release preparation is green: 248 serialized source tests, 54 v2 schemas, 25
+v2 skills, and the exact packed-package scenario pass. The tarball contains
+5,868 files and is 12,622,737 bytes. Both native executables report `0.9.2`;
+the arm64 binary is
+`sha256:a31732fe987c663c606f56be3ac6b237c4813e909267f3f074d2114873e9cc8a`
+and the x64 binary is
+`sha256:cc8212bd170bb7d885e93b0146c8493599b9bc0c0207e4831d6578383f059e24`.
+The unsigned macOS packages are prepared with matching `SHA256SUMS`: arm64
+`sha256:e6850beb210f8c57b8b10b0a7573410308e5f791ed3c6925960394d64d6af7c0`
+and x64
+`sha256:59f947ea0760bc11d73c843a6c2bc8ae43ccb6aa64532f5f14dcc9405f948606`.
+Each package contains 1,027 payload entries and `pkgutil` confirms that neither
+is signed. Signing, notarization, publication, and installation remain separate
+actions.
+
 The final macOS release artifacts were built locally on 2026-08-17. Both
 architecture-specific native executables carry hardened Developer ID
 Application signatures; both installer packages carry Developer ID Installer

@@ -81,6 +81,7 @@ const newProjectFiles = [
 ];
 const independentChecks = [
   "contract-integrity",
+  "audit-trail-integrity",
   "flow-structure",
   "map-structure",
   "structure-integrity",
@@ -94,6 +95,7 @@ const independentChecks = [
   "accessibility",
   "responsive-behavior",
   "critical-interactions",
+  "managed-integrity",
   "binding-integrity",
   "provider-revision-pins",
   "view-provenance",

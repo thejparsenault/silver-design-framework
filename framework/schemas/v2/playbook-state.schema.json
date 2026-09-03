@@ -177,7 +177,13 @@
             "$ref": "common.schema.json#/$defs/revision"
           },
           "observed_revision": {
-            "$ref": "common.schema.json#/$defs/revision"
+            "oneOf": [
+              { "$ref": "common.schema.json#/$defs/revision" },
+              { "type": "null" }
+            ]
+          },
+          "observed_state": {
+            "enum": ["present", "missing"]
           },
           "affected_nodes": {
             "type": "array",

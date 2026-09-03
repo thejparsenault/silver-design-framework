@@ -10,6 +10,24 @@ import { fileURLToPath } from "node:url";
 
 import { checkResult, finding, loadManifest, parseArguments } from "./check-lib.mjs";
 
+let attestation;
+async function attestationRuntime() {
+  if (attestation) return attestation;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/check-attestation.mjs",
+    "../../../.silver/runtime/check-attestation.mjs",
+    "../../../runtime/check-attestation.mjs",
+  ]) {
+    try {
+      attestation = await import(specifier);
+      return attestation;
+    } catch {
+      // Try the package, installed workspace, then source tree.
+    }
+  }
+  throw new Error("The shared check-attestation runtime is unavailable.");
+}
+
 let WebSocketClient;
 try {
   ({ default: WebSocketClient } = await import("ws"));
@@ -545,23 +563,44 @@ export function browserSuiteExitCode(result) {
 
 export async function runBrowserSuite(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
+  const {
+    attestCheckResults,
+    unstableCheckResults,
+    workspaceCheckStateDigest,
+  } = await attestationRuntime();
+  const stateBefore = await workspaceCheckStateDigest(root);
+  const finalize = async (suite) => {
+    const stateAfter = await workspaceCheckStateDigest(root);
+    const completedAt = (options.now instanceof Date ? options.now : new Date(options.now ?? Date.now())).toISOString();
+    const results = stateBefore === stateAfter
+      ? attestCheckResults(suite.results, stateAfter, completedAt)
+      : unstableCheckResults(suite.results, completedAt);
+    const status = results.some(({ status }) => status === "error")
+      ? "error"
+      : results.some(({ status }) => status === "fail")
+        ? "fail"
+        : results.some(({ status }) => status === "not-run")
+          ? "not-run"
+          : "pass";
+    return { ...suite, status, results };
+  };
   let manifest;
   try { ({ value: manifest } = await loadManifest(root)); }
   catch (error) {
     const results = notRunResults(`Cannot discover render targets: ${error.message}`);
-    return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };
+    return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
   }
   const targets = manifest.checks?.render_targets ?? [];
   if (!targets.length) {
     const results = notRunResults("No render targets are declared.");
-    return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };
+    return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
   }
   const executable = options.chromePath
     ? await firstAccessible([options.chromePath])
     : await firstAccessible(chromeCandidates);
   if (!executable) {
     const results = notRunResults("No compatible local Chrome executable is available.");
-    return { schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results };
+    return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
   }
 
   const requested = [];
@@ -659,7 +698,7 @@ export async function runBrowserSuite(options = {}) {
     : results.some(({ status: resultStatus }) => resultStatus === "fail")
       ? "fail"
       : "pass";
-  return {
+  return finalize({
     schema: "silver/check-suite-result/v1",
     suite: "browser",
     status,
@@ -670,7 +709,7 @@ export async function runBrowserSuite(options = {}) {
     },
     results,
     ...(failure ? { errors: [failure.diagnostic] } : {}),
-  };
+  });
 }
 
 async function main() {

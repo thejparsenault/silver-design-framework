@@ -1,6 +1,6 @@
 schema: silver/provider/v1
 id: silver-portable
-version: 0.9.1
+version: 0.9.2
 kind: portable
 source:
   publisher: The Silver Design Framework

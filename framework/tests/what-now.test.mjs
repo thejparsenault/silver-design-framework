@@ -150,7 +150,7 @@ function invocation(recommendedNextActions) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "what-now-test",
-    skill: { id: "what-now", version: "0.9.1" },
+    skill: { id: "what-now", version: "0.9.2" },
     started_at: "2026-07-28T18:00:00Z",
     inputs: [],
     outputs: [],
@@ -182,6 +182,7 @@ test("pending checkpoints, failed checks, and stale state outrank new work", asy
     root,
     ".silver/playbooks/runs/paused.json",
     JSON.stringify({
+      schema: "silver/skill-result/v2",
       schema: "silver/playbook-state/v2",
       run_id: "paused-loop",
       status: "paused",
@@ -222,8 +223,9 @@ test("accepted ready results contribute their declared follow-up evidence", asyn
     root,
     ".silver/results/skills/specify-ready.json",
     JSON.stringify({
+      schema: "silver/skill-result/v2",
       invocation_id: "specify-ready",
-      skill: { id: "specify", version: "0.9.1" },
+      skill: { id: "specify", version: "0.9.2" },
       completed_at: "2026-07-28T17:50:00Z",
       execution: { status: "complete" },
       acceptance: { status: "accepted" },
@@ -242,6 +244,44 @@ test("accepted ready results contribute their declared follow-up evidence", asyn
   const flow = analysis.recommendations.find(({ action }) => action === "flow");
   assert.equal(flow.priority, 4);
   assert.match(flow.reason, /accepted result specify-ready/);
+});
+
+test("newer accepted exact results supersede older awaiting-review records", async () => {
+  const root = await workspace();
+  const output = {
+    id: "current-spec",
+    kind: "design-specification",
+    revision: "r1",
+    path: "design/work/specifications/current-spec.json",
+  };
+  for (const [id, completedAt, acceptance] of [
+    ["older-awaiting", "2026-07-28T17:40:00Z", "awaiting-review"],
+    ["newer-accepted", "2026-07-28T17:50:00Z", "accepted"],
+  ]) {
+    await write(
+      root,
+      `.silver/results/skills/${id}.json`,
+      JSON.stringify({
+        schema: "silver/skill-result/v2",
+        invocation_id: id,
+        skill: { id: "specify", version: "0.9.2" },
+        completed_at: completedAt,
+        outputs: [output],
+        execution: { status: "complete" },
+        acceptance: { status: acceptance },
+        readiness: [{ name: "flow", status: acceptance === "accepted" ? "ready" : "not-ready", reasons: [] }],
+        freshness_blockers: [],
+        recommended_next_actions: acceptance === "accepted"
+          ? [{ action: "flow", reason: "Model the accepted specification.", automatic: false }]
+          : [],
+      }),
+    );
+  }
+  const analysis = await inspectWorkspace(root, now);
+  assert.ok(!analysis.recommendations.some(({ action, evidence }) =>
+    action === "review-result" && evidence.endsWith("older-awaiting.json")));
+  assert.ok(analysis.recommendations.some(({ action, reason }) =>
+    action === "flow" && /newer-accepted/.test(reason)));
 });
 
 test("analysis does not mutate the workspace and refuses symlink traversal", async () => {
@@ -318,7 +358,7 @@ test("generated what-now package stays aligned with the catalog", async () => {
     ),
   );
   assert.equal(contract.id, "what-now");
-  assert.equal(contract.version, "0.9.1");
+  assert.equal(contract.version, "0.9.2");
   assert.deepEqual(contract.outputs, []);
   assert.equal(contract.completion.review.required, false);
   assert.equal(contract.completion.quality_criteria[0].evaluation, "deterministic");

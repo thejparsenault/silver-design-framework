@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: visualize
-version: 0.9.1
+version: 0.9.2
 summary: Create static visual representations of a proposed product experience at
   whatever fidelity is useful.
 context_budget: small
@@ -25,6 +25,10 @@ outputs:
     scope: product
     path_pattern: design/work/visualizations/**
     authority: project-owned
+  - kind: x-visualization-render
+    scope: product
+    path_pattern: design/work/visualizations/**
+    authority: generated
 capabilities:
   required:
     - repository
@@ -96,22 +100,32 @@ checks:
   - id: accessibility
     required: true
     blocks: *a1
+  - id: view-provenance
+    required: true
+    blocks: *a1
 handoffs:
   - id: visualize-to-evaluate
     target: evaluate
     readiness: evaluate
     requires:
       - visualization
+    representation: &review_surface
+      artifact_kind: visualization
+      role: review-surface
+      minimum: 1
+      verified: true
   - id: visualize-to-prototype
     target: prototype
     readiness: prototype
     requires:
       - visualization
+    representation: *review_surface
   - id: visualize-to-component
     target: component
     readiness: component
     requires:
       - visualization
+    representation: *review_surface
 external_effects:
   - none
 scripts:

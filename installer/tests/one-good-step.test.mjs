@@ -203,6 +203,7 @@ test("accepting canonical work activates it everywhere in one step", async (t) =
   ].join("\n");
   request.outputs = [output];
   request.provenance.change.reason = "Record the initial brand foundation.";
+  request.provenance.contributors[0].id = "codex-test-agent";
   request.acceptance = {
     status: "accepted",
     reviewer: "test",
@@ -517,6 +518,7 @@ test("an accepted invocation refuses before writing when Git cannot commit", asy
         schema: "silver/provenance/v1",
         origin: "agent-assisted",
         recorded_at: "2026-07-31T00:00:00Z",
+        contributors: [{ kind: "agent", id: "codex-test-agent" }],
         sources: [],
         guidance: [],
         design_contexts: [],

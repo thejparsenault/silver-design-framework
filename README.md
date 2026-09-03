@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/brand/silver-logo.jpg" alt="Silver — Ag mark" style="max-width: 100%;border-radius: 12px;max-height: 320px;">
+  <img src="docs/brand/silver-logo.png" alt="Silver — Ag mark" style="max-width: 100%;border-radius: 12px;max-height: 320px;">
 </p>
 
 # Silver
@@ -33,12 +33,12 @@ start any of them until you choose.
 Silver 0.9 is distributed first as signed and Apple-verified macOS installer
 packages. This is the recommended option for most designers: install it once
 and the `silver` command is ready in any local project folder. Choose the
-package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.1):
+package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.2):
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon (M-series) | [`Silver-0.9.1-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/Silver-0.9.1-macos-arm64.pkg) |
-| Intel | [`Silver-0.9.1-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/Silver-0.9.1-macos-x64.pkg) |
+| Apple Silicon (M-series) | [`Silver-0.9.2-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/Silver-0.9.2-macos-arm64.pkg) |
+| Intel | [`Silver-0.9.2-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/Silver-0.9.2-macos-x64.pkg) |
 
 ### For you
 
@@ -72,9 +72,9 @@ the only route on Windows and Linux. All of these need Node.js 22 or later.
 
 | Method | Command | When to use it |
 | --- | --- | --- |
-| **Into one project** | `npm install silver-design-framework@0.9.1` | The project already has a `package.json`. The version is pinned in the repository, so everyone on the team gets the same one, and the workspace launcher finds this copy first. |
-| **On your machine** | `npm install -g silver-design-framework@0.9.1` | You want the `silver` command in any folder without using the macOS package. |
-| **Without installing anything** | `npx --yes --package silver-design-framework@0.9.1 silver setup inspect . --json` | Trying Silver once. Nothing is added to the project. |
+| **Into one project** | `npm install silver-design-framework@0.9.2` | The project already has a `package.json`. The version is pinned in the repository, so everyone on the team gets the same one, and the workspace launcher finds this copy first. |
+| **On your machine** | `npm install -g silver-design-framework@0.9.2` | You want the `silver` command in any folder without using the macOS package. |
+| **Without installing anything** | `npx --yes --package silver-design-framework@0.9.2 silver setup inspect . --json` | Trying Silver once. Nothing is added to the project. |
 
 After a project or global install, `npx silver setup inspect . --json` runs the
 installed copy.
@@ -83,7 +83,7 @@ installed copy.
 
 ```text
 Use the Silver 0.9 release to inspect setup in this folder. Run:
-`npx --yes --package silver-design-framework@0.9.1 silver setup inspect . --json`
+`npx --yes --package silver-design-framework@0.9.2 silver setup inspect . --json`
 
 Show me the plan and questions before making any changes. Do not run
 `npx silver`; that is a different package.
@@ -94,7 +94,7 @@ account or token. Give the agent this exact command instead:
 
 ```sh
 npx --yes \
-  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.1/silver-design-framework-0.9.1.tgz \
+  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/silver-design-framework-0.9.2.tgz \
   setup inspect . --json
 ```
 

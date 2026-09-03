@@ -2,6 +2,7 @@ import { lstat, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { decodePortable } from "../artifact-codecs.mjs";
+import { synchronizationState } from "../representations.mjs";
 import {
   createWorkspaceMutator,
   workspaceContentIntegrity,
@@ -10,7 +11,7 @@ import {
 export const REPOSITORY_ADAPTER = Object.freeze({
   schema: "silver/representation-adapter/v1",
   id: "silver-repository",
-  version: "0.9.1",
+  version: "0.9.2",
   counterparts: ["linked-source"],
   formats: ["json", "yaml", "dtcg-json", "markdown-frontmatter", "text", "binary"],
   directions: ["external-to-local", "local-to-external"],
@@ -67,26 +68,6 @@ function structuralPaths(left, right, prefix = "") {
     .flatMap((key) => structuralPaths(left[key], right[key], `${prefix}/${String(key).replaceAll("~", "~0").replaceAll("/", "~1")}`));
 }
 
-function changed(identity, base) {
-  if (!base) return true;
-  if (base.state === "missing") return identity.state !== "missing";
-  if (identity.state === "missing") return true;
-  return identity.integrity !== base.integrity;
-}
-
-function stateFor(binding, local, external) {
-  if (binding.base.state === "uninitialized") return "uninitialized";
-  const localChanged = changed(local, binding.base.local);
-  const externalChanged = changed(external, binding.base.external);
-  if (localChanged && externalChanged) {
-    if (local.state === external.state && local.integrity === external.integrity) return "current";
-    return "conflict";
-  }
-  if (localChanged) return "local-changed";
-  if (externalChanged) return "external-changed";
-  return "current";
-}
-
 export async function inspectRepositoryBinding({ root, binding, source, direction, externalRevision }) {
   const workspace = path.resolve(root);
   const localMutator = await createWorkspaceMutator(workspace);
@@ -115,7 +96,7 @@ export async function inspectRepositoryBinding({ root, binding, source, directio
     binding.counterpart.path,
     externalRevision ?? source.source.revision,
   );
-  const state = stateFor(binding, local.identity, external.identity);
+  let state = synchronizationState({ binding, local: local.identity, external: external.identity });
   const from = direction === "external-to-local" ? external : local;
   const to = direction === "external-to-local" ? local : external;
   const sourcePath = direction === "external-to-local"
@@ -152,10 +133,11 @@ export async function inspectRepositoryBinding({ root, binding, source, directio
     const toValue = decodePortable(utf8(to.content), binding.counterpart.format);
     diff = structuralPaths(toValue, fromValue);
   }
-  if (state === "conflict" && operationType !== "no-op") {
+  if (state === "diverged" && operationType !== "no-op") {
     classification = "conflict";
     operationType = "finding";
     unresolved.push("Both representations changed after the shared base; no winner was selected.");
+    state = "conflict";
   }
   const operation = {
     id: `${binding.id}-${direction === "external-to-local" ? "import" : "export"}`,

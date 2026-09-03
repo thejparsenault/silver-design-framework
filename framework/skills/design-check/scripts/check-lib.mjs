@@ -268,6 +268,22 @@ export function finding({
   };
 }
 
+// Advisories are durable, visible observations that do not make a completed
+// check fail. They live in the v1 result's namespaced extension point so older
+// readers continue to validate the result while newer CLIs can render them
+// separately from blocking findings.
+export function advisory({ checker, rule, message, file, observedValue, suggestedCorrection }) {
+  return {
+    checker,
+    rule,
+    severity: "warning",
+    ...(file ? { file } : {}),
+    message,
+    ...(observedValue === undefined ? {} : { observed_value: observedValue }),
+    ...(suggestedCorrection ? { suggested_correction: suggestedCorrection } : {}),
+  };
+}
+
 export function checkResult({
   checker,
   suite = "fast",
@@ -275,6 +291,7 @@ export function checkResult({
   requested,
   completed,
   findings,
+  advisories = [],
   reason,
   executionError,
 }) {
@@ -298,6 +315,9 @@ export function checkResult({
       ...(["not-run", "error"].includes(status) ? { reason: reason ?? executionError.message } : {}),
     },
     findings,
+    ...(advisories.length > 0
+      ? { extensions: { "silver.check-advisories": advisories } }
+      : {}),
     ...(executionError ? { execution_error: executionError } : {}),
   };
 }

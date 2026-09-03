@@ -6,7 +6,7 @@
 # lighthouse-cli rather than through a host configuration entry.
 schema: silver/provider/v1
 id: axe-core-cli
-version: 0.9.1
+version: 0.9.2
 kind: external
 target: axe-core
 variant: cli

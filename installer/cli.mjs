@@ -371,13 +371,18 @@ function printCheck(suite, write) {
   write(`${suite.suite === "browser" ? "Browser" : "Fast"} checks: ${suite.status}`);
   for (const result of suite.results) {
     const findings = result.findings.length;
+    const advisories = result.extensions?.["silver.check-advisories"] ?? [];
     write(
-      `  ${result.checker}: ${result.status}${findings > 0 ? ` (${findings} finding(s))` : ""}`,
+      `  ${result.checker}: ${result.status}${findings > 0 ? ` (${findings} finding(s))` : ""}${advisories.length > 0 ? ` (${advisories.length} advisory notice(s))` : ""}`,
     );
     for (const finding of result.findings.slice(0, 5)) {
       write(`    ${finding.rule}${finding.file ? ` ${finding.file}` : ""}: ${finding.message}`);
     }
     if (findings > 5) write(`    ... and ${findings - 5} more`);
+    for (const item of advisories.slice(0, 5)) {
+      write(`    advisory ${item.rule}${item.file ? ` ${item.file}` : ""}: ${item.message}`);
+    }
+    if (advisories.length > 5) write(`    ... and ${advisories.length - 5} more advisories`);
   }
   write("Evidence written to .silver/results/checks/.");
 }

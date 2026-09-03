@@ -1,6 +1,6 @@
 schema: silver/artifact-codec/v1
 id: silver-prose
-version: 0.9.1
+version: 0.9.2
 artifact_kinds: [brand, product, voice, design-principles]
 canonical_format: markdown-frontmatter
 view_formats: [markdown, html]

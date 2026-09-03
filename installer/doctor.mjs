@@ -11,6 +11,7 @@ import { inspectLinkedSources } from "./sources.mjs";
 import { findFiles, workspacePath } from "../framework/skills/design-check/scripts/check-lib.mjs";
 import { loadActivityCatalog } from "../framework/runtime/activities.mjs";
 import { assertV2 } from "../framework/runtime/contracts.mjs";
+import { inspectManagedIntegrity } from "../framework/runtime/managed-integrity.mjs";
 import { discoverProviders } from "../framework/runtime/providers.mjs";
 import { defaultPracticeRoot } from "./practice.mjs";
 import {
@@ -26,7 +27,6 @@ import {
   integrity,
   readUtf8,
   resolveInside,
-  treeIntegrity,
 } from "./lib/files.mjs";
 import { inspectWorkspacePath } from "../framework/runtime/workspace-mutations.mjs";
 import { listWorkspaceTransactions } from "../framework/runtime/workspace-transactions.mjs";
@@ -392,56 +392,12 @@ export async function doctorWorkspace(options = {}) {
           );
           continue;
         }
-        if (
-          installedPackage.ownership === "framework-managed" &&
-          installedPackage.integrity &&
-          (await treeIntegrity(absolute)) !== installedPackage.integrity
-        ) {
-          diagnostics.push(
-            diagnostic(
-              "error",
-              "managed-package-stale",
-              "Framework-managed package differs from the integrity recorded in the lock.",
-              packagePath,
-            ),
-          );
-        }
       }
 
-      for (const managed of lock.managed_files) {
-        let managedPath;
-        try {
-          managedPath = resolveInside(root, managed.path);
-        } catch (error) {
-          diagnostics.push(
-            diagnostic("error", "unsafe-path", error.message, managed.path),
-          );
-          continue;
-        }
-        if (!(await exists(managedPath))) {
-          diagnostics.push(
-            diagnostic(
-              "error",
-              "missing-managed-file",
-              "Managed file does not exist.",
-              managed.path,
-            ),
-          );
-          continue;
-        }
-        if (managed.base_integrity) {
-          const observed = integrity(await readUtf8(managedPath));
-          if (observed !== managed.base_integrity) {
-            diagnostics.push(
-              diagnostic(
-                "error",
-                "managed-file-stale",
-                "Managed file differs from the integrity recorded in the lock.",
-                managed.path,
-              ),
-            );
-          }
-        }
+      for (const issue of await inspectManagedIntegrity(root, lock)) {
+        diagnostics.push(
+          diagnostic("error", issue.code, issue.message, issue.path),
+        );
       }
     }
   }

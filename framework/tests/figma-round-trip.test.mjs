@@ -18,21 +18,18 @@ const fixedTime = "2026-08-11T00:00:00Z";
 
 function binding(objectId = "file-aliasing", revision = "v1") {
   return {
-    schema: "silver/representation-binding/v1",
+    schema: "silver/representation-binding/v2",
     id: "aliasing-figma",
     artifact: { id: "aliasing-flow", kind: "flow", revision: "r1", path: "design/flows/aliasing/flow.json" },
-    view: { role: "external-view", format: "figma" },
-    provider: { id: "figma-console-mcp", object_id: objectId, revision },
-    adapter: { id: "silver-figma", version: "0.4.0" },
-    mapping_profile: "product-web",
-    authority: "local",
+    counterpart: { type: "provider", provider: "figma-console-mcp", object_id: objectId, revision },
+    adapter: { id: "silver-figma", version: "0.9.2" },
+    authority: "workspace-authoritative",
     round_trip: "partial",
     sync_policy: "notify",
-    last_reconciled: {
-      portable_revision: "r1",
-      portable_integrity: `sha256:${"0".repeat(64)}`,
-      external_revision: revision,
-      snapshot_integrity: `sha256:${"0".repeat(64)}`,
+    base: {
+      state: "initialized",
+      local: { state: "present", revision: "r1", integrity: `sha256:${"0".repeat(64)}` },
+      external: { state: "present", revision, integrity: `sha256:${"0".repeat(64)}` },
       at: fixedTime,
     },
   };
@@ -141,16 +138,16 @@ test("a deliberate structural edit is classified distinctly from an ordinary val
   };
   const emptyBase = await normalizeFigmaSnapshot({ binding: binding(), payload: { ...payload(), variables: [], file: { id: "file-aliasing", revision: "v0" } }, capturedAt: fixedTime });
   const changeSet = await createFigmaChangeSet({
-    binding: { ...binding(undefined, "v2"), last_reconciled: { portable_revision: "r1", portable_integrity: `sha256:${"0".repeat(64)}` } },
+    binding: binding(undefined, "v2"),
     baseSnapshot: emptyBase,
     currentSnapshot,
     targets,
+    bindingIntegrity: `sha256:${"0".repeat(64)}`,
     createdAt: fixedTime,
   });
-  const primitiveChange = changeSet.changes.find((item) => item.provider_entity === "VariableID:1");
-  const nowLiteralChange = changeSet.changes.find((item) => item.provider_entity === "VariableID:2");
-  assert.equal(primitiveChange.value_kind, "literal");
-  assert.equal(nowLiteralChange.value_kind, "literal");
+  const metadata = Object.values(changeSet.adapter_payload.metadata);
+  assert.equal(metadata.find((item) => item.provider_entity === "VariableID:1").value_kind, "literal");
+  assert.equal(metadata.find((item) => item.provider_entity === "VariableID:2").value_kind, "literal");
 });
 
 test("a text style's bound-vs-literal property split survives a no-op round trip", async () => {

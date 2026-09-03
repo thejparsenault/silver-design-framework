@@ -1,11 +1,15 @@
 import { createHash } from "node:crypto";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
 import { loadActivityCatalog } from "./activities.mjs";
+import {
+  CHECK_STATE_SCOPE,
+  workspaceCheckStateDigest,
+} from "./check-attestation.mjs";
 import { assertV2 } from "./contracts.mjs";
 import { createWorkspaceMutator } from "./workspace-mutations.mjs";
 import { payloadPath } from "./payload.mjs";
@@ -15,6 +19,8 @@ import {
 } from "./checkpoints.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
 import { syncManifestStatus } from "./manifest-sync.mjs";
+import { inspectViewProvenance } from "./view-provenance.mjs";
+import { assertManagedSkillIntegrity } from "./managed-integrity.mjs";
 import { discoverProviders } from "./providers.mjs";
 import { resolveReferenceCitations } from "./references.mjs";
 import {
@@ -35,6 +41,186 @@ async function exists(filePath) {
 
 function integrity(content) {
   return `sha256:${createHash("sha256").update(content).digest("hex")}`;
+}
+
+function normalizeRevision(value) {
+  return typeof value === "number" ? `r${value}` : value;
+}
+
+function frontmatterValue(content) {
+  const match = content.match(/^---\s*\n([\s\S]*?)\n---(?:\s*\n|$)/);
+  return match ? parse(match[1]) : null;
+}
+
+async function currentInputIdentity(root, reference) {
+  const absolute = inside(root, reference.path);
+  if (!(await exists(absolute))) {
+    throw new Error(
+      `Current input ${reference.id}@${reference.revision} is unavailable at ${reference.path}.`,
+    );
+  }
+  const canonicalRoot = await realpath(root);
+  const canonicalInput = await realpath(absolute);
+  if (
+    canonicalInput !== canonicalRoot &&
+    !canonicalInput.startsWith(`${canonicalRoot}${path.sep}`)
+  ) {
+    throw new Error(`Current input ${reference.path} resolves outside the workspace.`);
+  }
+  let content;
+  try {
+    content = await readFile(absolute, "utf8");
+  } catch (error) {
+    if (error.code === "EISDIR") return null;
+    throw error;
+  }
+  try {
+    if (reference.path.endsWith(".json")) return JSON.parse(content);
+    if (/\.ya?ml$/.test(reference.path)) return parse(content);
+    if (reference.path.endsWith(".md")) return frontmatterValue(content);
+  } catch (error) {
+    throw new Error(`Current input ${reference.path} cannot be parsed: ${error.message}`);
+  }
+  return null;
+}
+
+async function validateCurrentInputs(root, references) {
+  for (const reference of references) {
+    const observed = await currentInputIdentity(root, reference);
+    if (!observed) continue;
+    const mismatches = [];
+    if (observed.id !== undefined && observed.id !== reference.id) mismatches.push("id");
+    if (
+      ["silver/working-artifact/v2", "silver/artifact/v1"].includes(observed.schema) &&
+      observed.kind !== undefined &&
+      observed.kind !== reference.kind
+    ) mismatches.push("kind");
+    if (
+      observed.revision !== undefined &&
+      normalizeRevision(observed.revision) !== reference.revision
+    ) mismatches.push("revision");
+    if (mismatches.length > 0) {
+      throw new Error(
+        `Current input ${reference.id}@${reference.revision} is stale or mismatched at ${reference.path} (${mismatches.join(", ")}).`,
+      );
+    }
+  }
+}
+
+function effectiveAcceptance(contract, request) {
+  return contract.completion.review.required
+    ? request.acceptance ?? { status: "awaiting-review" }
+    : { status: "not-required" };
+}
+
+function withoutLegacyAcceptance(provenance) {
+  if (!provenance) return provenance;
+  const { acceptance: _legacyAcceptance, ...current } = provenance;
+  return current;
+}
+
+function referenceKey(reference) {
+  return JSON.stringify({
+    id: reference.id,
+    kind: reference.kind,
+    revision: reference.revision,
+    path: reference.path,
+    ...(reference.role ? { role: reference.role } : {}),
+  });
+}
+
+async function validateInvocationProvenance({ root, request, contract, completedAt }) {
+  const provenance = request.provenance;
+  if (!provenance) return null;
+  const acceptance = effectiveAcceptance(contract, request);
+  if (
+    provenance.acceptance !== undefined &&
+    provenance.acceptance !== acceptance.status
+  ) {
+    throw new Error(
+      `Provenance acceptance ${provenance.acceptance} disagrees with authoritative acceptance ${acceptance.status}.`,
+    );
+  }
+  if (
+    provenance.sources.length !== request.inputs.length ||
+    provenance.sources.some((source, index) => referenceKey(source) !== referenceKey(request.inputs[index]))
+  ) {
+    throw new Error("Provenance sources must exactly match the invocation inputs.");
+  }
+  const recordedAt = new Date(provenance.recorded_at).valueOf();
+  const startedAt = new Date(request.started_at).valueOf();
+  const finishedAt = new Date(completedAt).valueOf();
+  if (recordedAt < startedAt || recordedAt > finishedAt) {
+    throw new Error("Provenance recorded_at must fall within the invocation interval.");
+  }
+  const contributorKinds = new Set((provenance.contributors ?? []).map(({ kind }) => kind));
+  const requiredContributor = {
+    "human-authored": "human",
+    "agent-assisted": "agent",
+    imported: "provider",
+  }[provenance.origin];
+  if (requiredContributor && !contributorKinds.has(requiredContributor)) {
+    throw new Error(`Provenance origin ${provenance.origin} requires a ${requiredContributor} contributor.`);
+  }
+  if (
+    provenance.origin === "generated" &&
+    !contributorKinds.has("agent") &&
+    !contributorKinds.has("provider")
+  ) {
+    throw new Error("Generated provenance requires an agent or provider contributor.");
+  }
+  await validateCurrentInputs(root, provenance.design_contexts);
+
+  let guidanceRegistry = { sources: [] };
+  if (provenance.guidance.length > 0) {
+    try {
+      guidanceRegistry = parse(await readFile(path.join(root, "design/guidance/sources.yaml"), "utf8"));
+    } catch (error) {
+      throw new Error(`Provenance guidance registry is unavailable: ${error.message}`);
+    }
+  }
+  for (const pin of provenance.guidance) {
+    const source = (guidanceRegistry.sources ?? []).find(({ id }) => id === pin.id);
+    if (
+      !source ||
+      source.source?.revision !== pin.revision ||
+      source.source?.integrity !== pin.integrity
+    ) {
+      throw new Error(`Guidance pin ${pin.id}@${pin.revision} does not match the current guidance registry.`);
+    }
+  }
+
+  const externalBindings = [];
+  for (const pin of provenance.external_bindings ?? []) {
+    const id = typeof pin === "string" ? pin : pin.id;
+    const bindingPath = typeof pin === "string"
+      ? `design/integrations/${id}.yaml`
+      : pin.path;
+    let content;
+    let binding;
+    try {
+      content = await readFile(inside(root, bindingPath), "utf8");
+      binding = parse(content);
+      await assertV2("representation-binding-v2.schema.json", binding);
+    } catch (error) {
+      throw new Error(`External binding ${id} is unavailable or invalid: ${error.message}`);
+    }
+    if (binding.id !== id) {
+      throw new Error(`External binding ${id} does not match the binding at ${bindingPath}.`);
+    }
+    const observedIntegrity = integrity(content);
+    if (typeof pin !== "string" && pin.integrity !== observedIntegrity) {
+      throw new Error(`External binding ${id} changed since its provenance pin was prepared.`);
+    }
+    externalBindings.push({ id, path: bindingPath, integrity: observedIntegrity });
+  }
+
+  return {
+    ...withoutLegacyAcceptance(provenance),
+    sources: request.inputs,
+    references: await resolveReferenceCitations(root, request.references ?? []),
+    external_bindings: externalBindings,
+  };
 }
 
 // A missing or unreadable catalog must not stop a workspace working. Without one
@@ -283,6 +469,7 @@ async function verifyChecks({ root, declared = [], ran }) {
   for (const check of ran ?? []) byId.set(check.id, check);
 
   const verified = [];
+  let currentStateDigest;
   for (const check of byId.values()) {
     if (check.status !== "pass") {
       verified.push(check);
@@ -310,11 +497,44 @@ async function verifyChecks({ root, declared = [], ran }) {
       });
       continue;
     }
+    if (
+      evidence.schema !== "silver/check-result/v1" ||
+      evidence.checker !== check.id
+    ) {
+      verified.push({
+        ...check,
+        status: "not-run",
+        reason: `Check evidence at ${check.result_path} does not identify checker ${check.id}.`,
+      });
+      continue;
+    }
     if (evidence.status !== "pass") {
       verified.push({
         ...check,
         status: ["fail", "error"].includes(evidence.status) ? evidence.status : "not-run",
         reason: `Check evidence at ${check.result_path} records ${evidence.status}, not pass.`,
+      });
+      continue;
+    }
+    if (
+      evidence.state_scope !== CHECK_STATE_SCOPE ||
+      !/^sha256:[a-f0-9]{64}$/.test(evidence.state_digest ?? "") ||
+      typeof evidence.completed_at !== "string" ||
+      Number.isNaN(new Date(evidence.completed_at).valueOf())
+    ) {
+      verified.push({
+        ...check,
+        status: "not-run",
+        reason: `Check evidence at ${check.result_path} is historical or lacks a valid workspace-state attestation. Rerun ${check.id}.`,
+      });
+      continue;
+    }
+    currentStateDigest ??= await workspaceCheckStateDigest(root);
+    if (evidence.state_digest !== currentStateDigest) {
+      verified.push({
+        ...check,
+        status: "not-run",
+        reason: `Check evidence at ${check.result_path} was produced for different workspace state. Rerun ${check.id}.`,
       });
       continue;
     }
@@ -350,16 +570,16 @@ async function blockedResult({
     resultRecordEffect(request.invocation_id),
   ];
   const audit = effectAudit(contract, observed);
-  const provenance = request.provenance ?? {
+  const provenance = request.provenance ? withoutLegacyAcceptance(request.provenance) : {
     schema: "silver/provenance/v1",
     origin: "generated",
     recorded_at: completedAt,
+    contributors: [{ kind: "agent", id: "silver-runtime" }],
     sources: request.inputs,
     guidance: [],
     design_contexts: [],
     references: await resolveReferenceCitations(root, request.references ?? []),
     change: { reason: `Recorded blocked ${contract.id} invocation: ${summary}` },
-    acceptance: "not-required",
     external_bindings: [],
   };
   return {
@@ -450,13 +670,155 @@ function freshnessBlockers(request) {
   return (request.binding_states ?? [])
     .filter(
       ({ authority, state, freshness_sensitive_readiness: readiness }) =>
-        authority === "external" && state !== "current" && readiness.length > 0,
+        ["external", "external-authoritative"].includes(authority) &&
+        state !== "current" &&
+        readiness.length > 0,
     )
     .map(({ binding_id: bindingId, state, freshness_sensitive_readiness: blocks }) => ({
       binding_id: bindingId,
       state,
       blocks,
     }));
+}
+
+function visualizationViews(value) {
+  if (Array.isArray(value?.payload?.views)) return value.payload.views;
+  if (value?.payload?.view_path) {
+    return [{
+      id: "primary",
+      primary: true,
+      medium: "local",
+      format: path.extname(value.payload.view_path).slice(1) || "file",
+      path: value.payload.view_path,
+    }];
+  }
+  return [];
+}
+
+function validateVisualizationCompanions(prepared) {
+  const visualizations = prepared.filter(
+    ({ reference, value }) => reference.kind === "visualization" && value,
+  );
+  const companions = prepared.filter(
+    ({ reference }) => reference.kind === "x-visualization-render",
+  );
+  if (companions.length > 0 && visualizations.length === 0) {
+    throw new Error(
+      "A visualization render must be submitted with its matching visualization record.",
+    );
+  }
+  for (const companion of companions) {
+    const match = visualizations.find(({ reference, value }) =>
+      reference.revision === companion.reference.revision &&
+      visualizationViews(value).some(
+        (view) => view.medium === "local" && view.path === companion.reference.path,
+      ),
+    );
+    if (!match) {
+      throw new Error(
+        `Visualization render ${companion.reference.path} does not match a declared local view at the same revision.`,
+      );
+    }
+    const declared = visualizationViews(match.value).find(
+      (view) => view.medium === "local" && view.path === companion.reference.path,
+    );
+    if (declared.format === "html") {
+      const provenanceFindings = inspectViewProvenance(companion.value, {
+        target: "visualization",
+        id: match.reference.id,
+        revision: match.reference.revision,
+      });
+      if (provenanceFindings.length > 0) {
+        throw new Error(
+          `Visualization HTML ${companion.reference.path} has invalid Silver source provenance: ${provenanceFindings.join(" ")}`,
+        );
+      }
+    }
+  }
+}
+
+async function externalReviewSurfaceStatus({ root, view, visualization, request }) {
+  if (!view.binding) {
+    return { verified: false, reason: `External view ${view.id} has a URL but no representation binding.` };
+  }
+  const bindingPath = path.join(root, "design", "integrations", `${view.binding}.yaml`);
+  let binding;
+  try {
+    binding = parse(await readFile(bindingPath, "utf8"));
+    await assertV2("representation-binding-v2.schema.json", binding);
+  } catch (error) {
+    return { verified: false, reason: `External view ${view.id} binding ${view.binding} is unavailable or invalid: ${error.message}` };
+  }
+  if (
+    binding.artifact.id !== visualization.reference.id ||
+    binding.artifact.revision !== visualization.reference.revision ||
+    binding.counterpart.type !== "provider"
+  ) {
+    return { verified: false, reason: `External view ${view.id} binding does not identify this visualization revision.` };
+  }
+  if (view.format === "figma") {
+    const location = new URL(view.url);
+    const host = location.hostname.toLowerCase();
+    const segments = location.pathname.split("/").filter(Boolean);
+    const fileSegment = segments.findIndex((segment) => ["design", "file"].includes(segment));
+    const fileKey = fileSegment >= 0 ? segments[fileSegment + 1] : null;
+    const nodeId = location.searchParams.get("node-id");
+    const objectId = binding.counterpart.object_id;
+    const nodeMatches =
+      !nodeId ||
+      objectId.includes(nodeId) ||
+      objectId.includes(nodeId.replaceAll("-", ":"));
+    if (
+      !host.endsWith("figma.com") ||
+      !binding.counterpart.provider.includes("figma") ||
+      !fileKey ||
+      !objectId.includes(fileKey) ||
+      !nodeMatches
+    ) {
+      return { verified: false, reason: `External view ${view.id} URL and provider binding do not agree.` };
+    }
+  }
+  const state = (request.binding_states ?? []).find(
+    ({ binding_id: bindingId }) => bindingId === view.binding,
+  );
+  const external = binding.base?.state === "initialized" ? binding.base.external : null;
+  if (state?.state !== "current" || external?.state !== "present") {
+    return { verified: false, reason: `External view ${view.id} has not been freshly captured in a current binding state.` };
+  }
+  return { verified: true };
+}
+
+async function reviewSurfaceStatus({ root, prepared, request, artifactKind }) {
+  const artifacts = prepared.filter(
+    ({ reference, value }) => reference.kind === artifactKind && value,
+  );
+  let verified = 0;
+  const reasons = [];
+  for (const visualization of artifacts) {
+    for (const view of visualizationViews(visualization.value)) {
+      if (view.medium === "local") {
+        const companion = prepared.find(
+          ({ reference }) =>
+            reference.kind === "x-visualization-render" &&
+            reference.revision === visualization.reference.revision &&
+            reference.path === view.path,
+        );
+        if (companion) verified += 1;
+        else reasons.push(`Local review surface ${view.path} was not recorded by this invocation.`);
+      } else {
+        const status = await externalReviewSurfaceStatus({
+          root,
+          view,
+          visualization,
+          request,
+        });
+        if (status.verified) verified += 1;
+        else reasons.push(status.reason);
+      }
+    }
+  }
+  if (artifacts.length === 0) reasons.push(`No ${artifactKind} output was recorded.`);
+  return { verified, reasons };
 }
 
 function recommendedNextActions(contract, request) {
@@ -495,11 +857,21 @@ export async function invokeSkill({
     skillDirectory instanceof URL
       ? fileURLToPath(skillDirectory)
       : path.resolve(skillDirectory);
+  if (path.dirname(skillRoot) === path.join(workspaceRoot, ".skills")) {
+    let lock = null;
+    try {
+      lock = parse(await readFile(path.join(workspaceRoot, ".silver/lock.yaml"), "utf8"));
+    } catch {
+      // The shared diagnostic below reports managed-lock-invalid.
+    }
+    await assertManagedSkillIntegrity(workspaceRoot, path.basename(skillRoot), lock);
+  }
   const contract = parse(
     await readFile(path.join(skillRoot, "skill.yaml"), "utf8"),
   );
   await assertV2("skill.schema.json", contract);
   await assertV2("skill-invocation.schema.json", request);
+  const authoritativeAcceptance = effectiveAcceptance(contract, request);
   if (
     request.skill.id !== contract.id ||
     request.skill.version !== contract.version
@@ -599,6 +971,7 @@ export async function invokeSkill({
   }
 
   const prepared = [];
+  let persistedProvenance = null;
   let recommendations;
   try {
     recommendations = recommendedNextActions(contract, request);
@@ -612,6 +985,16 @@ export async function invokeSkill({
         `Skill ${contract.id} cannot create durable output without a provenance envelope.`,
       );
     }
+    persistedProvenance = await validateInvocationProvenance({
+      root: workspaceRoot,
+      request,
+      contract,
+      completedAt,
+    });
+    // Inputs are live dependencies while a skill is running. Validate them
+    // before any output is prepared or written; once persisted on an artifact,
+    // the same references become immutable historical provenance.
+    await validateCurrentInputs(workspaceRoot, request.inputs);
     if (
       request.outputs.length > 0 &&
       (contract.id === "design-check" ||
@@ -672,10 +1055,12 @@ export async function invokeSkill({
       prepared.push({
         absolute,
         content: renderOutput(output),
+        value: output.content.value,
         reference: output.reference,
         effect,
       });
     }
+    validateVisualizationCompanions(prepared);
   } catch (error) {
     const result = await blockedResult({
       root: workspaceRoot,
@@ -804,10 +1189,7 @@ export async function invokeSkill({
     contract.completion.unresolved_questions.startsWith("block") &&
     request.unresolved_questions.length > 0;
   const bindingBlockers = freshnessBlockers(request);
-  const acceptance =
-    contract.completion.review.required
-      ? request.acceptance ?? { status: "awaiting-review" }
-      : { status: "not-required" };
+  const acceptance = authoritativeAcceptance;
   const accepted = ["accepted", "not-required"].includes(acceptance.status);
   const gitCheckpoint =
     acceptance.status === "accepted" && prepared.length > 0
@@ -858,21 +1240,64 @@ export async function invokeSkill({
     }));
 
   const effectFindings = [...audit.findings, ...checkpointFindings];
-  const ready =
+  const baseReady =
     !checkBlocked &&
     !questionBlocked &&
     bindingBlockers.length === 0 &&
     checkpointFindings.length === 0 &&
     accepted;
+  const readiness = [];
+  if (contract.handoffs.length === 0) {
+    readiness.push({ name: "downstream", status: "not-applicable", reasons: [] });
+  } else {
+    for (const handoff of contract.handoffs) {
+      const representation = handoff.representation
+        ? await reviewSurfaceStatus({
+            root: workspaceRoot,
+            prepared,
+            request,
+            artifactKind: handoff.representation.artifact_kind,
+          })
+        : null;
+      const representationReady =
+        !representation || representation.verified >= handoff.representation.minimum;
+      readiness.push({
+        name: handoff.readiness,
+        status:
+          baseReady && representationReady
+            ? "ready"
+            : "not-ready",
+        reasons: [
+          ...(!accepted ? ["Human acceptance is unresolved."] : []),
+          ...(checkFailed ? ["One or more required checks failed."] : []),
+          ...(checkErrored
+            ? ["One or more required checker mechanisms errored before completing verification."]
+            : []),
+          ...(checkUnverified
+            ? ["One or more required checks could not be run or verified, so this work is unverified rather than wrong."]
+            : []),
+          ...(questionBlocked ? ["Unresolved questions block this handoff."] : []),
+          ...(bindingBlockers.length
+            ? ["Externally authoritative input freshness is unresolved."]
+            : []),
+          ...(checkpointFindings.length
+            ? ["The accepted local Git checkpoint is blocked."]
+            : []),
+          ...(!representationReady ? representation.reasons : []),
+        ],
+      });
+    }
+  }
   const result = {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
     skill: { id: contract.id, version: contract.version },
     provenance:
-      request.provenance ?? {
+      persistedProvenance ?? {
         schema: "silver/provenance/v1",
         origin: "generated",
         recorded_at: completedAt,
+        contributors: [{ kind: "agent", id: "silver-runtime" }],
         sources: request.inputs,
         guidance: [],
         design_contexts: [],
@@ -880,7 +1305,6 @@ export async function invokeSkill({
         change: {
           reason: `Recorded read-only ${contract.id} invocation.`,
         },
-        acceptance: "not-required",
         external_bindings: [],
       },
     declared_effects: audit.declared,
@@ -943,38 +1367,7 @@ export async function invokeSkill({
       ].join(""),
     },
     acceptance,
-    readiness:
-      contract.handoffs.length === 0
-        ? [
-            {
-              name: "downstream",
-              status: "not-applicable",
-              reasons: [],
-            },
-          ]
-        : contract.handoffs.map((handoff) => ({
-            name: handoff.readiness,
-            status: ready ? "ready" : "not-ready",
-            reasons: [
-              ...(!accepted ? ["Human acceptance is unresolved."] : []),
-              ...(checkFailed ? ["One or more required checks failed."] : []),
-              ...(checkErrored
-                ? ["One or more required checker mechanisms errored before completing verification."]
-                : []),
-              ...(checkUnverified
-                ? [
-                    "One or more required checks could not be run or verified, so this work is unverified rather than wrong.",
-                  ]
-                : []),
-              ...(questionBlocked ? ["Unresolved questions block this handoff."] : []),
-              ...(bindingBlockers.length
-                ? ["Externally authoritative input freshness is unresolved."]
-                : []),
-              ...(checkpointFindings.length
-                ? ["The accepted local Git checkpoint is blocked."]
-                : []),
-            ],
-          })),
+    readiness,
     checks,
     guardrails,
     unresolved_questions: request.unresolved_questions,

@@ -128,55 +128,24 @@ export function migrateRepresentationBindingV1(binding) {
   };
 }
 
-function legacyFigmaBinding(binding, original = binding) {
-  if (original.schema === "silver/representation-binding/v1") return original;
-  if (binding.counterpart.type !== "provider") {
-    throw new Error("Only provider bindings can be adapted to Figma.");
-  }
-  const initialized = binding.base.state === "initialized";
-  return {
-    schema: "silver/representation-binding/v1",
-    id: binding.id,
-    artifact: binding.artifact,
-    view: { role: "external-view", format: "figma" },
-    provider: {
-      id: binding.counterpart.provider,
-      object_id: binding.counterpart.object_id,
-      revision: binding.counterpart.revision,
-    },
-    adapter: binding.adapter,
-    mapping_profile: "product-web",
-    authority: binding.authority === "external-authoritative" ? "external" : "local",
-    ...(binding.authority === "external-authoritative"
-      ? { authority_provider: binding.counterpart.provider }
-      : {}),
-    round_trip: binding.round_trip,
-    sync_policy: binding.sync_policy === "propose" ? "notify" : binding.sync_policy,
-    last_reconciled: {
-      portable_revision: initialized && binding.base.local.state === "present"
-        ? binding.base.local.revision
-        : binding.artifact.revision,
-      portable_integrity: initialized && binding.base.local.state === "present"
-        ? binding.base.local.integrity
-        : workspaceContentIntegrity(""),
-      external_revision: initialized && binding.base.external.state === "present"
-        ? binding.base.external.revision
-        : binding.counterpart.revision,
-      snapshot_integrity: initialized && binding.base.external.state === "present"
-        ? binding.base.external.integrity
-        : workspaceContentIntegrity(""),
-      at: initialized ? binding.base.at : new Date(0).toISOString(),
-    },
-  };
-}
-
 async function loadBinding(root, id) {
   const relativePath = bindingPath(id);
   const content = await readUtf8(path.join(root, relativePath));
   const original = parse(content);
-  const binding = migrateRepresentationBindingV1(original);
+  if (original.schema === "silver/representation-binding/v1") {
+    throw new Error(
+      "Live synchronization no longer accepts v1 representation bindings. Run silver migrate, then run silver sync inspect again.",
+    );
+  }
+  const binding = original;
   await assertV2("representation-binding-v2.schema.json", binding);
-  return { relativePath, content, original, binding };
+  return { relativePath, content, binding };
+}
+
+function directionPermitted(binding, direction) {
+  return binding.authority === "shared-review" ||
+    (binding.authority === "workspace-authoritative" && direction === "local-to-external") ||
+    (binding.authority === "external-authoritative" && direction === "external-to-local");
 }
 
 async function localIdentity(root, binding) {
@@ -301,7 +270,7 @@ export async function inspectSynchronization({
   const workspace = path.resolve(root);
   const mutator = await createWorkspaceMutator(workspace);
   const { registry } = await loadRegistry(workspace);
-  const { binding, original, content: bindingContent } = await loadBinding(workspace, bindingId);
+  const { binding, content: bindingContent } = await loadBinding(workspace, bindingId);
   if (!new Set(["external-to-local", "local-to-external"]).has(direction)) {
     throw new Error("sync inspect requires --direction external-to-local or local-to-external.");
   }
@@ -310,9 +279,8 @@ export async function inspectSynchronization({
     if (binding.adapter.id !== "silver-figma") {
       throw new Error(`No synchronization adapter is available for provider binding ${binding.id}.`);
     }
-    const figmaBinding = legacyFigmaBinding(binding, original);
     const payload = capture.payload ?? capture;
-    const snapshot = await normalizeFigmaSnapshot({ binding: figmaBinding, payload, capturedAt: now });
+    const snapshot = await normalizeFigmaSnapshot({ binding, payload, capturedAt: now });
     const local = await localIdentity(workspace, binding);
     const external = {
       state: "present",
@@ -338,52 +306,21 @@ export async function inspectSynchronization({
     let requiredChecks = [];
     if (direction === "external-to-local") {
       let baseSnapshot = capture.base_snapshot;
-      if (!baseSnapshot && original.last_reconciled.snapshot_path) {
-        baseSnapshot = JSON.parse(
-          await readFile(path.join(workspace, original.last_reconciled.snapshot_path), "utf8"),
-        );
-      }
       if (!baseSnapshot || !capture.targets) {
-        throw new Error("Figma import capture requires base_snapshot (or a pinned snapshot path) and targets.");
+        throw new Error("Figma import capture requires base_snapshot and targets.");
       }
-      const legacy = await createFigmaChangeSet({
-        binding: figmaBinding,
+      const figmaProposal = await createFigmaChangeSet({
+        binding,
         baseSnapshot,
         currentSnapshot: snapshot,
         targets: capture.targets,
+        bindingIntegrity: workspaceContentIntegrity(bindingContent),
         createdAt: now,
       });
-      operations = legacy.changes.map((change) => ({
-        id: change.id,
-        type:
-          change.operation === "finding" ? "finding" :
-          change.operation === "no-op" ? "no-op" :
-          change.operation === "propose-create" ? "create" : "update",
-        classification:
-          change.operation === "finding" ? "unmapped" :
-          change.classification === "semantic-style" ? "semantic-style" :
-          change.classification === "component" ? "component" : "structural",
-        mapping_fidelity:
-          change.mapping_fidelity === "unmapped" ? "unmapped" :
-          change.mapping_fidelity === "semantic" ? "semantic" : "exact",
-        source_path: `figma:${change.provider_entity}`,
-        target_path: change.proposal.target_path,
-        source_identity: external,
-        target_identity: {
-          state: "present",
-          revision: change.proposal.target_path === binding.artifact.path
-            ? binding.artifact.revision
-            : change.artifact_id,
-          integrity: change.proposal.expected_integrity,
-        },
-        structural_diff: change.proposal.patch.map(({ path: patchPath }) => patchPath),
-        required_approval: change.required_approval,
-        unresolved: change.unresolved,
-      }));
-      requiredChecks = [...new Set(legacy.changes.flatMap(({ required_checks: checks }) => checks))]
-        .map((id) => ({ id, required: true }));
+      operations = figmaProposal.operations;
+      requiredChecks = figmaProposal.required_checks;
       adapterPayload = {
-        legacy_change_set: legacy,
+        ...figmaProposal.adapter_payload,
         current_snapshot: snapshot,
         external_snapshot_path: persistedSnapshot.snapshotPath,
       };
@@ -392,26 +329,13 @@ export async function inspectSynchronization({
         throw new Error("Figma export capture requires a non-empty changes array.");
       }
       const providerOperation = await previewSemanticTokenWrite({
-        binding: figmaBinding,
+        binding,
         changes: capture.changes,
         snapshot,
         permission: "ask",
         createdAt: now,
       });
-      const externalAction = {
-        schema: "silver/provider-operation/v2",
-        id: providerOperation.id,
-        provider: binding.counterpart.provider,
-        adapter: binding.adapter,
-        binding_id: binding.id,
-        direction,
-        operation: "apply-write",
-        expected_external_revision: snapshot.revision,
-        status: "external-action-required",
-        created_at: now,
-        payload: providerOperation,
-      };
-      await assertV2("provider-operation-v2.schema.json", externalAction);
+      const externalAction = providerOperation;
       operations = [{
         id: providerOperation.id,
         type: "update",
@@ -515,9 +439,7 @@ export async function inspectSynchronization({
     ...(inspection.blockers ?? []),
     ...inspection.operations.flatMap(({ unresolved }) => unresolved),
   ];
-  if (
-    binding.authority === "workspace-authoritative" && direction === "external-to-local"
-  ) {
+  if (!directionPermitted(binding, direction)) {
     blockers.push(`The ${binding.authority} binding permits review in this direction but not automatic selection.`);
   }
   const result = {
@@ -685,6 +607,9 @@ export async function applySynchronization({
     throw new Error("Unresolved or conflicting operations cannot be applied.");
   }
   const { content: bindingContent, binding } = await loadBinding(workspace, proposal.binding_id);
+  if (!directionPermitted(binding, proposal.direction)) {
+    throw new Error(`The ${binding.authority} binding cannot be applied in the ${proposal.direction} direction.`);
+  }
   if (workspaceContentIntegrity(bindingContent) !== proposal.binding_integrity) {
     throw new Error("Representation binding changed after inspection.");
   }
@@ -723,7 +648,7 @@ export async function applySynchronization({
     if (proposal.direction === "external-to-local") {
       const prepared = await preparePortableReconciliation({
         root: workspace,
-        changeSet: proposal.adapter_payload.legacy_change_set,
+        changeSet: proposal,
         operationIds: selectedIds,
         approvals: selectedIds.map((id) => ({ operation_id: id, approved: true })),
       });
@@ -746,9 +671,8 @@ export async function applySynchronization({
       if (externalResult.status !== "applied") {
         throw new Error("Figma external result must record status applied.");
       }
-      const original = legacyFigmaBinding(loaded.binding, loaded.original);
       const postSnapshot = await normalizeFigmaSnapshot({
-        binding: original,
+        binding: loaded.binding,
         payload: capture.payload ?? capture,
         capturedAt: now,
       });

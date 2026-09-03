@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, symlink, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -8,6 +8,10 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import { invokeSkill } from "../runtime/invoke-skill.mjs";
+import {
+  CHECK_STATE_SCOPE,
+  workspaceCheckStateDigest,
+} from "../runtime/check-attestation.mjs";
 
 const run = promisify(execFile);
 
@@ -17,6 +21,12 @@ async function seedCheckEvidence(workspace, checkers, status = "pass") {
   await mkdir(path.join(workspace, ".silver/results/checks"), {
     recursive: true,
   });
+  await mkdir(path.join(workspace, "design/evidence"), { recursive: true });
+  await writeFile(
+    path.join(workspace, "design/evidence/seed-feedback.json"),
+    `${JSON.stringify({ id: "seed-feedback", kind: "evidence", revision: "r1" }, null, 2)}\n`,
+  );
+  const stateDigest = await workspaceCheckStateDigest(workspace);
   for (const checker of checkers) {
     await writeFile(
       path.join(workspace, `.silver/results/checks/${checker}.json`),
@@ -28,12 +38,29 @@ async function seedCheckEvidence(workspace, checkers, status = "pass") {
           requested: [checker],
           completed: [checker],
           findings: [],
+          completed_at: completedAt,
+          state_scope: CHECK_STATE_SCOPE,
+          state_digest: stateDigest,
         },
         null,
         2,
       )}\n`,
     );
   }
+}
+
+async function fixtureCheckRunner({ root: workspace, contract }) {
+  const checkers = contract.checks
+    .filter(({ required }) => required)
+    .map(({ id }) => id);
+  await seedCheckEvidence(workspace, checkers);
+  return {
+    checks: checkers.map((id) => ({
+      id,
+      status: "pass",
+      result_path: `.silver/results/checks/${id}.json`,
+    })),
+  };
 }
 
 const root = path.resolve(
@@ -84,9 +111,24 @@ function provenance(sources = []) {
     guidance: [],
     design_contexts: [],
     change: { reason: "Created by a guarded invocation fixture." },
-    acceptance: "accepted",
     external_bindings: [],
   };
+}
+
+async function seedDesignContext(workspace) {
+  const contextPath = path.join(workspace, "design/contexts/default.yaml");
+  await mkdir(path.dirname(contextPath), { recursive: true });
+  await writeFile(
+    contextPath,
+    [
+      "schema: silver/design-context/v1",
+      "id: default-design-context",
+      "kind: design-context",
+      "revision: r1",
+      "title: Default design context",
+      "",
+    ].join("\n"),
+  );
 }
 
 function findingOutput() {
@@ -133,7 +175,7 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.9.1" },
+    skill: { id: "synthesize", version: "0.9.2" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -195,6 +237,7 @@ test("guarded invocation writes a valid artifact and normalized accepted result"
     skillDirectory: path.join(root, "framework/skills/synthesize"),
     request: synthesizeRequest(),
     completedAt,
+    runChecks: fixtureCheckRunner,
   });
   assert.equal(result.execution.status, "complete");
   assert.ok(result.readiness.every(({ status }) => status === "ready"));
@@ -272,7 +315,7 @@ test("legacy Silver ask rules no longer deny repository writes", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.9.1" },
+    skill: { id: "brand", version: "0.9.2" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -468,7 +511,7 @@ test("visual durable output without a design-context pin is blocked", async () =
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "visualize-no-context",
-    skill: { id: "visualize", version: "0.9.1" },
+    skill: { id: "visualize", version: "0.9.2" },
     started_at: startedAt,
     inputs: [],
     outputs: [
@@ -513,6 +556,44 @@ test("visual durable output without a design-context pin is blocked", async () =
   );
 });
 
+test("acceptance aliases and provenance relationships must agree before writes", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-provenance-preflight-"));
+  await seedCheckEvidence(workspace, ["contract-integrity", "evidence-provenance"]);
+
+  const acceptanceMismatch = synthesizeRequest({ invocation_id: "acceptance-mismatch" });
+  acceptanceMismatch.provenance.acceptance = "awaiting-review";
+  const mismatch = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: acceptanceMismatch,
+    completedAt,
+  });
+  assert.equal(mismatch.execution.status, "blocked");
+  assert.match(mismatch.execution.summary, /disagrees with authoritative acceptance/);
+
+  const sourceMismatch = synthesizeRequest({ invocation_id: "source-mismatch" });
+  sourceMismatch.provenance.sources = [];
+  const sources = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: sourceMismatch,
+    completedAt,
+  });
+  assert.equal(sources.execution.status, "blocked");
+  assert.match(sources.execution.summary, /sources must exactly match/);
+
+  const originMismatch = synthesizeRequest({ invocation_id: "origin-mismatch" });
+  originMismatch.provenance.contributors = [];
+  const origin = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: originMismatch,
+    completedAt,
+  });
+  assert.equal(origin.execution.status, "blocked");
+  assert.match(origin.execution.summary, /requires a agent contributor/);
+});
+
 test("existing outputs require matching integrity and remain unchanged on stale writes", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-stale-"),
@@ -547,6 +628,294 @@ test("existing outputs require matching integrity and remain unchanged on stale 
   assert.equal(await readFile(artifactPath, "utf8"), before);
 });
 
+test("state-bound evidence survives unchanged blocked preflight and rejects workspace drift", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-check-state-"));
+  const checkers = ["contract-integrity", "evidence-provenance"];
+  await seedCheckEvidence(workspace, checkers);
+  const request = synthesizeRequest({ invocation_id: "state-bound-unchanged" });
+  request.inputs = [];
+  request.provenance.sources = [];
+
+  const unchanged = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.equal(unchanged.execution.status, "blocked");
+  assert.ok(unchanged.checks.every(({ status }) => status === "pass"));
+
+  await writeFile(path.join(workspace, "new-check-input.txt"), "changed\n");
+  const stale = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: { ...request, invocation_id: "state-bound-stale" },
+    completedAt,
+  });
+  assert.ok(stale.checks.every(({ status }) => status === "not-run"));
+  assert.ok(stale.checks.every(({ reason }) => /different workspace state/.test(reason)));
+});
+
+test("checker substitution cannot reuse an otherwise current attestation", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-check-substitution-"));
+  await seedCheckEvidence(workspace, ["contract-integrity"]);
+  const evidencePath = path.join(workspace, ".silver/results/checks/contract-integrity.json");
+  const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+  await writeFile(evidencePath, `${JSON.stringify({ ...evidence, checker: "accessibility" }, null, 2)}\n`);
+  const request = synthesizeRequest({ invocation_id: "checker-substitution" });
+  request.inputs = [];
+  request.provenance.sources = [];
+  request.checks = request.checks.filter(({ id }) => id === "contract-integrity");
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request,
+    completedAt,
+  });
+  assert.equal(result.checks[0].status, "not-run");
+  assert.match(result.checks[0].reason, /does not identify checker contract-integrity/);
+});
+
+test("workspace attestations include additions, deletions, bytes, and symlink targets", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-check-digest-"));
+  await writeFile(path.join(workspace, "target-a.txt"), "a\n");
+  await writeFile(path.join(workspace, "target-b.txt"), "b\n");
+  await symlink("target-a.txt", path.join(workspace, "current.txt"));
+  const initial = await workspaceCheckStateDigest(workspace);
+  await writeFile(path.join(workspace, "target-a.txt"), "changed\n");
+  assert.notEqual(await workspaceCheckStateDigest(workspace), initial);
+  await writeFile(path.join(workspace, "added.txt"), "new\n");
+  const added = await workspaceCheckStateDigest(workspace);
+  await unlink(path.join(workspace, "added.txt"));
+  assert.notEqual(await workspaceCheckStateDigest(workspace), added);
+  const beforeLinkChange = await workspaceCheckStateDigest(workspace);
+  await unlink(path.join(workspace, "current.txt"));
+  await symlink("target-b.txt", path.join(workspace, "current.txt"));
+  assert.notEqual(await workspaceCheckStateDigest(workspace), beforeLinkChange);
+});
+
+test("current input revision drift blocks before writing while historical pins remain untouched", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-invoke-input-drift-"));
+  await seedCheckEvidence(workspace, ["contract-integrity", "evidence-provenance"]);
+  await writeFile(
+    path.join(workspace, "design/evidence/seed-feedback.json"),
+    `${JSON.stringify({ id: "seed-feedback", kind: "evidence", revision: "r2" }, null, 2)}\n`,
+  );
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/synthesize"),
+    request: synthesizeRequest({ invocation_id: "synthesize-stale-input" }),
+    completedAt,
+  });
+  assert.equal(result.execution.status, "blocked");
+  assert.match(result.execution.summary, /stale or mismatched.*revision/);
+  await assert.rejects(
+    readFile(path.join(workspace, "design/work/findings/campaign-finding.json"), "utf8"),
+    /ENOENT/,
+  );
+});
+
+function visualizationRequest({ output, render, views, bindingStates = [], externalBindings = [] }) {
+  const context = reference(
+    "default-design-context",
+    "design-context",
+    "r1",
+    "design/contexts/default.yaml",
+  );
+  const envelope = provenance([context]);
+  envelope.design_contexts = [context];
+  envelope.external_bindings = externalBindings;
+  const outputs = [
+    {
+      reference: output,
+      schema_name: "working-artifact.schema.json",
+      content: {
+        format: "json",
+        value: {
+          schema: "silver/working-artifact/v2",
+          id: output.id,
+          kind: output.kind,
+          revision: output.revision,
+          scope: "product",
+          status: "draft",
+          title: "My Day visualization",
+          created: startedAt,
+          updated: startedAt,
+          sources: [],
+          payload: {
+            fidelity: "high",
+            constraint_profile: "constrained",
+            question: "Does the day layout communicate time clearly?",
+            views,
+            alternatives: [
+              { title: "Timeline", summary: "Hour-aligned layout", tradeoff: "Dense" },
+              { title: "Agenda", summary: "Compact list", tradeoff: "Less spatial" },
+            ],
+          },
+        },
+      },
+    },
+  ];
+  if (render) outputs.push(render);
+  return {
+    schema: "silver/skill-invocation/v2",
+    invocation_id: `visualize-${render ? "rendered" : "external"}`,
+    skill: { id: "visualize", version: "0.9.2" },
+    started_at: startedAt,
+    inputs: [context],
+    outputs,
+    provenance: envelope,
+    permission_layers: permissionLayers(
+      "repository",
+      ["read", "inspect", "create", "write", "update"],
+      ["design/**"],
+    ),
+    available_providers: [],
+    binding_states: bindingStates,
+    approvals: [],
+    relaxations: [],
+    checks: ["contract-integrity", "semantic-styles", "accessibility"].map((id) => ({
+      id,
+      status: "pass",
+      result_path: `.silver/results/checks/${id}.json`,
+    })),
+    unresolved_questions: [],
+    acceptance: { status: "accepted", reviewer: "fixture-reviewer", recorded_at: completedAt },
+  };
+}
+
+test("visualization readiness accepts a guarded local review surface and rejects metadata-only readiness", async () => {
+  const renderedRoot = await mkdtemp(path.join(os.tmpdir(), "silver-visual-local-"));
+  await seedDesignContext(renderedRoot);
+  await seedCheckEvidence(renderedRoot, ["contract-integrity", "semantic-styles", "accessibility"]);
+  const output = reference(
+    "my-day",
+    "visualization",
+    "r1",
+    "design/work/visualizations/my-day/visualization.json",
+  );
+  const renderReference = reference(
+    "my-day-render",
+    "x-visualization-render",
+    "r1",
+    "design/work/visualizations/my-day/index.html",
+  );
+  const views = [{
+    id: "primary",
+    primary: true,
+    medium: "local",
+    format: "html",
+    path: renderReference.path,
+  }];
+  const html = '<main data-silver-target="visualization" data-source-id="my-day" data-source-revision="r1" data-renderer-version="0.9.2" data-assets-revision="r1" data-design-system-revision="r1"><h1>My Day</h1></main>';
+  const rendered = await invokeSkill({
+    root: renderedRoot,
+    skillDirectory: path.join(root, "framework/skills/visualize"),
+    request: visualizationRequest({
+      output,
+      views,
+      render: { reference: renderReference, content: { format: "text", value: html } },
+    }),
+    completedAt,
+    runChecks: fixtureCheckRunner,
+  });
+  assert.ok(rendered.readiness.every(({ status }) => status === "ready"));
+
+  const metadataRoot = await mkdtemp(path.join(os.tmpdir(), "silver-visual-metadata-"));
+  await seedDesignContext(metadataRoot);
+  await seedCheckEvidence(metadataRoot, ["contract-integrity", "semantic-styles", "accessibility"]);
+  const metadataOnly = await invokeSkill({
+    root: metadataRoot,
+    skillDirectory: path.join(root, "framework/skills/visualize"),
+    request: visualizationRequest({ output, views }),
+    completedAt,
+  });
+  assert.ok(metadataOnly.readiness.every(({ status }) => status === "not-ready"));
+  assert.match(metadataOnly.readiness[0].reasons.join(" "), /not recorded/);
+});
+
+test("a current captured Figma binding satisfies visualization review readiness", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "silver-visual-figma-"));
+  await seedDesignContext(workspace);
+  await seedCheckEvidence(workspace, ["contract-integrity", "semantic-styles", "accessibility"]);
+  await mkdir(path.join(workspace, "design/integrations"), { recursive: true });
+  const output = reference(
+    "my-day-figma-view",
+    "visualization",
+    "r1",
+    "design/work/visualizations/my-day-figma/visualization.json",
+  );
+  const digest = `sha256:${"a".repeat(64)}`;
+  await writeFile(
+    path.join(workspace, "design/integrations/my-day-figma.yaml"),
+    [
+      "schema: silver/representation-binding/v2",
+      "id: my-day-figma",
+      "artifact:",
+      `  id: ${output.id}`,
+      "  kind: visualization",
+      "  revision: r1",
+      `  path: ${output.path}`,
+      "counterpart:",
+      "  type: provider",
+      "  provider: figma-console-mcp",
+      "  object_id: abc123:42-7",
+      "  revision: figma-r7",
+      "adapter:",
+      "  id: figma-console-mcp",
+      "  version: 0.9.2",
+      "authority: shared-review",
+      "round_trip: partial",
+      "sync_policy: manual",
+      "base:",
+      "  state: initialized",
+      "  local:",
+      "    state: present",
+      "    revision: r1",
+      `    integrity: ${digest}`,
+      "  external:",
+      "    state: present",
+      "    revision: figma-r7",
+      `    integrity: ${digest}`,
+      `  at: ${startedAt}`,
+      "",
+    ].join("\n"),
+  );
+  const request = visualizationRequest({
+    output,
+    views: [{
+      id: "figma",
+      primary: true,
+      medium: "external",
+      format: "figma",
+      url: "https://www.figma.com/design/abc123/My-Day?node-id=42-7",
+      binding: "my-day-figma",
+    }],
+    bindingStates: [{
+      binding_id: "my-day-figma",
+      authority: "shared-review",
+      state: "current",
+      freshness_sensitive_readiness: ["evaluate", "prototype", "component"],
+    }],
+    externalBindings: ["my-day-figma"],
+  });
+  request.invocation_id = "visualize-figma";
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/visualize"),
+    request,
+    completedAt,
+    runChecks: fixtureCheckRunner,
+  });
+  assert.ok(result.readiness.every(({ status }) => status === "ready"));
+  assert.deepEqual(result.provenance.external_bindings[0], {
+    id: "my-day-figma",
+    path: "design/integrations/my-day-figma.yaml",
+    integrity: result.provenance.external_bindings[0].integrity,
+  });
+  assert.match(result.provenance.external_bindings[0].integrity, /^sha256:[a-f0-9]{64}$/);
+});
+
 test("registered portable production capability is selected but empty output still writes nothing", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "silver-invoke-not-run-"),
@@ -554,7 +923,7 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.9.1" },
+    skill: { id: "implement", version: "0.9.2" },
     started_at: startedAt,
     inputs: [
       reference(
@@ -671,7 +1040,7 @@ function themeTokenRequest() {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "theme-test-1",
-    skill: { id: "theme", version: "0.9.1" },
+    skill: { id: "theme", version: "0.9.2" },
     started_at: startedAt,
     inputs: [],
     provenance: provenance(),
@@ -743,6 +1112,7 @@ test("theme writes a token-source under design/system/tokens instead of being re
     skillDirectory: path.join(root, "framework/skills/theme"),
     request: themeTokenRequest(),
     completedAt,
+    runChecks: fixtureCheckRunner,
   });
   assert.equal(result.execution.status, "complete");
   const tokens = JSON.parse(

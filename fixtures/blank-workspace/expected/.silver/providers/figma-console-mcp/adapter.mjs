@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { assertV2 } from "../../runtime/contracts.mjs";
 import { firstModeValue, isAlias, resolveReferenceToVariableId } from "./tokens.mjs";
 
-export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.4.0" };
+export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.9.2" };
 
 const digest = (value) =>
   `sha256:${createHash("sha256").update(`${JSON.stringify(value, null, 2)}\\n`).digest("hex")}`;
@@ -39,7 +39,10 @@ export async function normalizeFigmaSnapshot({
   if (!payload?.file?.id || !payload.file.revision) {
     throw new Error("Figma payload requires file.id and file.revision.");
   }
-  if (payload.file.id !== binding.provider.object_id) {
+  if (binding?.schema !== "silver/representation-binding/v2" || binding.counterpart?.type !== "provider") {
+    throw new Error("Figma capture requires a v2 provider representation binding.");
+  }
+  if (payload.file.id !== binding.counterpart.object_id) {
     throw new Error("Figma payload object does not match the binding.");
   }
   const variables = requiredArray(payload, "variables").map((item) => entity(item, "variable"));
@@ -136,6 +139,8 @@ export async function createFigmaChangeSet({
   baseSnapshot,
   currentSnapshot,
   targets,
+  bindingIntegrity,
+  direction = "external-to-local",
   createdAt = new Date().toISOString(),
   schemaRoot,
 }) {
@@ -223,28 +228,66 @@ export async function createFigmaChangeSet({
       }));
     }
   }
+  const externalIdentity = {
+    state: "present",
+    revision: currentSnapshot.revision,
+    integrity: digest(currentSnapshot),
+  };
+  const localIdentity = {
+    state: "present",
+    revision: binding.artifact.revision,
+    integrity: targets.local.integrity,
+  };
+  const operations = changes.map((item) => ({
+    id: item.id,
+    type:
+      item.operation === "finding" ? "finding" :
+      item.operation === "no-op" ? "no-op" :
+      item.operation === "propose-create" ? "create" : "update",
+    classification:
+      ["unknown-style", "unknown-component"].includes(item.classification) ? "unmapped" :
+      ["presentation", "flow", "specification"].includes(item.classification) ? "structural" :
+      item.classification,
+    mapping_fidelity:
+      item.mapping_fidelity === "partial"
+        ? item.operation === "finding" ? "unmapped" : "semantic"
+        : item.mapping_fidelity,
+    source_path: `figma:${item.provider_entity}`,
+    target_path: item.proposal.target_path,
+    source_identity: externalIdentity,
+    target_identity: {
+      state: "present",
+      revision: item.proposal.target_path === binding.artifact.path
+        ? binding.artifact.revision
+        : item.artifact_id,
+      integrity: item.proposal.expected_integrity,
+    },
+    required_approval: item.required_approval,
+    unresolved: item.unresolved,
+  }));
   const changeSet = {
-    schema: "silver/change-set/v1",
+    schema: "silver/change-set/v2",
     id: `${binding.id}-changes`,
     binding_id: binding.id,
-    artifact: binding.artifact,
-    base: {
-      revision: binding.last_reconciled.portable_revision,
-      integrity: binding.last_reconciled.portable_integrity,
-    },
-    local: {
-      revision: binding.artifact.revision,
-      integrity: targets.local.integrity,
-    },
-    external: {
-      revision: currentSnapshot.revision,
-      integrity: digest(currentSnapshot),
-    },
+    direction,
+    binding_integrity: bindingIntegrity,
+    base: binding.base,
+    local: localIdentity,
+    external: externalIdentity,
     adapter: FIGMA_ADAPTER,
     created_at: createdAt,
-    changes,
+    operations,
+    required_checks: [...new Set(changes.flatMap(({ required_checks: checks }) => checks))]
+      .map((id) => ({ id, required: true })),
+    adapter_payload: {
+      patches: Object.fromEntries(changes.map((item) => [item.id, item.proposal.patch])),
+      metadata: Object.fromEntries(changes.map((item) => [item.id, {
+        provider_entity: item.provider_entity,
+        ...(item.value_kind ? { value_kind: item.value_kind } : {}),
+      }])),
+    },
   };
-  await assertV2("change-set.schema.json", changeSet, schemaRoot ? { schemaRoot } : {});
+  await assertV2("change-set-v2.schema.json", changeSet, schemaRoot ? { schemaRoot } : {});
   return changeSet;
 }
 
@@ -259,6 +302,7 @@ export async function previewSemanticTokenWrite({
   binding,
   changes,
   snapshot,
+  expectedExternalRevision = snapshot?.revision ?? binding.counterpart.revision,
   permission = "ask",
   createdAt = new Date().toISOString(),
   schemaRoot,
@@ -268,17 +312,15 @@ export async function previewSemanticTokenWrite({
   }
   const variables = snapshot?.variables ?? [];
   const operation = {
-    schema: "silver/provider-operation/v1",
+    schema: "silver/provider-operation/v2",
     id: `${binding.id}-token-preview`,
-    provider: "figma",
+    provider: binding.counterpart.provider,
     adapter: FIGMA_ADAPTER,
     binding_id: binding.id,
-    operation: "preview-write",
+    operation: "apply-write",
     direction: "local-to-external",
-    capability: "design-file",
-    permission,
-    expected_external_revision: binding.provider.revision,
-    status: "previewed",
+    expected_external_revision: expectedExternalRevision,
+    status: permission === "deny" ? "blocked" : "external-action-required",
     created_at: createdAt,
     payload: {
       variables: changes.map((item) => {
@@ -289,7 +331,7 @@ export async function previewSemanticTokenWrite({
       }),
     },
   };
-  await assertV2("provider-operation.schema.json", operation, schemaRoot ? { schemaRoot } : {});
+  await assertV2("provider-operation-v2.schema.json", operation, schemaRoot ? { schemaRoot } : {});
   return operation;
 }
 
@@ -303,6 +345,7 @@ export async function previewStyleWrite({
   style,
   properties,
   snapshot,
+  expectedExternalRevision = snapshot?.revision ?? binding.counterpart.revision,
   permission = "ask",
   createdAt = new Date().toISOString(),
   schemaRoot,
@@ -321,21 +364,19 @@ export async function previewStyleWrite({
     }
   }
   const operation = {
-    schema: "silver/provider-operation/v1",
+    schema: "silver/provider-operation/v2",
     id: `${binding.id}-style-preview`,
-    provider: "figma",
+    provider: binding.counterpart.provider,
     adapter: FIGMA_ADAPTER,
     binding_id: binding.id,
-    operation: "preview-write",
+    operation: "apply-write",
     direction: "local-to-external",
-    capability: "design-file",
-    permission,
-    expected_external_revision: binding.provider.revision,
-    status: "previewed",
+    expected_external_revision: expectedExternalRevision,
+    status: permission === "deny" ? "blocked" : "external-action-required",
     created_at: createdAt,
     payload: { style_id: style.id, properties: payloadProperties },
   };
-  await assertV2("provider-operation.schema.json", operation, schemaRoot ? { schemaRoot } : {});
+  await assertV2("provider-operation-v2.schema.json", operation, schemaRoot ? { schemaRoot } : {});
   return operation;
 }
 
@@ -345,11 +386,11 @@ export async function applySemanticTokenWrite({
   currentRevision,
   transport,
 }) {
-  if (operation.operation !== "preview-write" || operation.status !== "previewed") {
-    throw new Error("Only a previewed semantic-token operation can be applied.");
+  if (operation.operation !== "apply-write" || operation.status !== "external-action-required") {
+    throw new Error("Only an approved pending semantic-token operation can be applied.");
   }
-  if (!approval || !["allow", "ask"].includes(operation.permission)) {
-    throw new Error("Explicit permission and approval are required for a Figma write.");
+  if (!approval) {
+    throw new Error("Explicit approval is required for a Figma write.");
   }
   if (currentRevision !== operation.expected_external_revision) {
     throw new Error("Figma write rejected because the provider revision is stale.");
@@ -363,9 +404,7 @@ export async function applySemanticTokenWrite({
   });
   return {
     ...operation,
-    operation: "apply-write",
     status: "applied",
-    approval_id: approval.id,
-    payload: { ...operation.payload, provider_result: result },
+    result: { approval_id: approval.id, provider_result: result },
   };
 }

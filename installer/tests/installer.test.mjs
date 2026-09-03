@@ -17,6 +17,7 @@ import { snapshotFiles } from "../lib/files.mjs";
 import { repairWorkspace } from "../repair.mjs";
 import { setupWorkspace } from "../setup.mjs";
 import { updateWorkspace } from "../update.mjs";
+import { scaffoldInvocation } from "../invoke.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const expectedRoot = path.join(
@@ -272,6 +273,10 @@ test("doctor verifies framework-managed skills but permits design-system edits",
       ({ code, path: target }) =>
         code === "managed-package-stale" && target === ".skills/brand",
     ),
+  );
+  await assert.rejects(
+    scaffoldInvocation({ root, skillId: "brand", now: new Date("2026-07-23T00:00:00Z") }),
+    /managed-package-stale.*silver repair|managed-package-stale.*silver update/,
   );
 });
 

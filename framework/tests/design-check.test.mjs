@@ -8,6 +8,10 @@ import { checkArtifacts } from "../skills/design-check/scripts/check-artifacts.m
 import { checkPrototypes } from "../skills/design-check/scripts/check-prototypes.mjs";
 import { checkSemanticStyles } from "../skills/design-check/scripts/check-semantic-styles.mjs";
 import { runFastSuite } from "../skills/design-check/scripts/run-fast.mjs";
+import { checkRepresentationRule } from "../skills/design-check/scripts/check-representation-lib.mjs";
+import { checkAuditTrailIntegrity } from "../skills/design-check/scripts/check-audit-trail-integrity.mjs";
+import { checkManagedIntegrity } from "../skills/design-check/scripts/check-managed-integrity.mjs";
+import { contentIntegrity } from "../runtime/representations.mjs";
 import { initFlow } from "../skills/flow/scripts/init-flow.mjs";
 import { initPrototype } from "../skills/prototype/scripts/init-prototype.mjs";
 import { validateSchema } from "../../installer/lib/schemas.mjs";
@@ -34,6 +38,7 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
     result.results.map(({ checker }) => checker),
     [
       "contract-integrity",
+      "audit-trail-integrity",
       "flow-structure",
       "map-structure",
       "structure-integrity",
@@ -47,6 +52,7 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       "accessibility",
       "responsive-behavior",
       "critical-interactions",
+      "managed-integrity",
       "binding-integrity",
       "provider-revision-pins",
       "view-provenance",
@@ -63,6 +69,29 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       true,
     );
   }
+});
+
+test("audit-trail integrity reports malformed result records instead of silently skipping them", async (t) => {
+  const root = await temporaryWorkspace(t);
+  await mkdir(path.join(root, ".silver/results/skills"), { recursive: true });
+  await writeFile(path.join(root, ".silver/results/skills/broken.json"), "{not-json\n");
+  const result = await checkAuditTrailIntegrity({ root });
+  assert.equal(result.status, "fail");
+  assert.ok(result.findings.some(({ rule }) => rule === "audit-trail.result-invalid"));
+});
+
+test("managed-integrity uses the same stale-package diagnostic as doctor", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const skillPath = path.join(root, ".skills/brand/SKILL.md");
+  await writeFile(skillPath, `${await readFile(skillPath, "utf8")}\nTampered.\n`);
+  const result = await checkManagedIntegrity({ root });
+  assert.equal(result.status, "fail");
+  assert.ok(
+    result.findings.some(
+      ({ rule, file }) =>
+        rule === "managed-integrity.managed-package-stale" && file === ".skills/brand",
+    ),
+  );
 });
 
 test("a selected fast check runs alone and unknown ids are refused", async (t) => {
@@ -96,6 +125,80 @@ test("artifact checker rejects malformed canonical metadata", async (t) => {
       ({ rule }) => rule === "artifact.frontmatter-mismatch",
     ),
   );
+});
+
+test("historical source drift is advisory and preserves contract-integrity pass", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const timestamp = "2026-07-24T20:00:00Z";
+  const specificationPath = "design/work/specifications/history.json";
+  const visualizationPath = "design/work/visualizations/history/visualization.json";
+  const viewPath = "design/work/visualizations/history/index.html";
+  await mkdir(path.join(root, "design/work/specifications"), { recursive: true });
+  await mkdir(path.join(root, "design/work/visualizations/history"), { recursive: true });
+  const specification = {
+    schema: "silver/working-artifact/v2",
+    id: "historical-spec",
+    kind: "design-specification",
+    revision: "r1",
+    scope: "product",
+    status: "accepted",
+    title: "Historical specification",
+    created: timestamp,
+    updated: timestamp,
+    sources: [],
+    payload: {
+      outcomes: ["Understand history"],
+      hypothesis: "Pinned provenance remains accurate.",
+      scope: ["History"],
+      non_goals: [],
+      requirements: ["Preserve pins"],
+      content_and_data: [],
+      states: ["ready"],
+      edge_cases: [],
+      accessibility: [],
+      success_criteria: ["No false failure"],
+      decisions: [],
+      open_questions: [],
+    },
+  };
+  await writeFile(path.join(root, specificationPath), `${JSON.stringify(specification, null, 2)}\n`);
+  await writeFile(
+    path.join(root, visualizationPath),
+    `${JSON.stringify({
+      schema: "silver/working-artifact/v2",
+      id: "historical-visualization",
+      kind: "visualization",
+      revision: "r1",
+      scope: "product",
+      status: "accepted",
+      title: "Historical visualization",
+      created: timestamp,
+      updated: timestamp,
+      sources: [{ id: specification.id, kind: specification.kind, revision: "r1", path: specificationPath }],
+      payload: {
+        fidelity: "high",
+        constraint_profile: "constrained",
+        question: "What was reviewed?",
+        view_path: viewPath,
+      },
+    }, null, 2)}\n`,
+  );
+  await writeFile(path.join(root, viewPath), "<!doctype html><main><h1>Historical view</h1></main>\n");
+  await writeFile(
+    path.join(root, specificationPath),
+    `${JSON.stringify({ ...specification, revision: "r2", updated: "2026-07-25T20:00:00Z" }, null, 2)}\n`,
+  );
+
+  const result = await checkArtifacts({ root });
+  assert.equal(result.status, "pass");
+  assert.deepEqual(result.findings, []);
+  assert.ok(
+    result.extensions["silver.check-advisories"].some(
+      ({ rule }) => rule === "artifact.reference-revision-advanced",
+    ),
+  );
+  const recorded = JSON.parse(await readFile(path.join(root, visualizationPath), "utf8"));
+  assert.equal(recorded.sources[0].revision, "r1");
 });
 
 test("semantic checker rejects raw visual values in prototype code", async (t) => {
@@ -194,4 +297,118 @@ test("prototype checker reports flow revision drift", async (t) => {
       ({ rule }) => rule === "prototype.flow-revision-mismatch",
     ),
   );
+});
+
+test("v2 representation checks accept healthy identities and detect pending proposal drift", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const artifactPath = "design/work/check-target.json";
+  const artifactContent = '{"value":"before"}\n';
+  await mkdir(path.join(root, "design/work"), { recursive: true });
+  await writeFile(path.join(root, artifactPath), artifactContent);
+  const integrity = contentIntegrity(artifactContent);
+  const binding = `schema: silver/representation-binding/v2
+id: check-target
+artifact:
+  id: check-target
+  kind: token-source
+  revision: r1
+  path: ${artifactPath}
+counterpart:
+  type: provider
+  provider: figma-console-mcp
+  object_id: file-check
+  revision: v1
+adapter:
+  id: silver-figma
+  version: 0.9.2
+authority: shared-review
+round_trip: partial
+sync_policy: notify
+base:
+  state: initialized
+  local:
+    state: present
+    revision: r1
+    integrity: ${integrity}
+  external:
+    state: present
+    revision: v1
+    integrity: ${integrity}
+  at: 2026-08-23T12:00:00Z
+`;
+  await writeFile(path.join(root, "design/integrations/check-target.yaml"), binding);
+  await writeFile(path.join(root, "design/integrations/missing-target.yaml"), binding
+    .replaceAll("check-target", "missing-target")
+    .replace("state: initialized\n  local:\n    state: present\n    revision: r1\n    integrity: " + integrity + "\n  external:\n    state: present\n    revision: v1\n    integrity: " + integrity + "\n  at: 2026-08-23T12:00:00Z", "state: initialized\n  local:\n    state: missing\n  external:\n    state: missing\n  at: 2026-08-23T12:00:00Z"));
+  const proposal = {
+    schema: "silver/change-set/v2",
+    id: "check-proposal",
+    binding_id: "check-target",
+    direction: "external-to-local",
+    binding_integrity: contentIntegrity(binding),
+    base: {
+      state: "initialized",
+      local: { state: "present", revision: "r1", integrity },
+      external: { state: "present", revision: "v1", integrity },
+      at: "2026-08-23T12:00:00Z",
+    },
+    local: { state: "present", revision: "r1", integrity },
+    external: { state: "present", revision: "v2", integrity },
+    adapter: { id: "silver-figma", version: "0.9.2" },
+    created_at: "2026-08-23T12:00:00Z",
+    operations: [{
+      id: "update-target",
+      type: "update",
+      classification: "semantic-style",
+      mapping_fidelity: "semantic",
+      source_path: "figma:node-1",
+      target_path: artifactPath,
+      source_identity: { state: "present", revision: "v2", integrity },
+      target_identity: { state: "present", revision: "r1", integrity },
+      required_approval: true,
+      unresolved: [],
+    }],
+    required_checks: [],
+  };
+  const proposalContent = `${JSON.stringify(proposal, null, 2)}\n`;
+  const proposalPath = ".silver/results/reconciliation/change-sets/check-proposal.json";
+  const resultPath = ".silver/results/reconciliation/results/check-result.json";
+  await mkdir(path.join(root, ".silver/results/reconciliation/change-sets"), { recursive: true });
+  await mkdir(path.join(root, ".silver/results/reconciliation/results"), { recursive: true });
+  await writeFile(path.join(root, proposalPath), proposalContent);
+  const result = {
+    schema: "silver/reconciliation-result/v2",
+    id: "check-result",
+    binding_id: "check-target",
+    direction: "external-to-local",
+    status: "awaiting-acceptance",
+    state: "external-changed",
+    proposal_path: proposalPath,
+    proposal_integrity: contentIntegrity(proposalContent),
+    selected_operations: [],
+    applied_operations: [],
+    checks: [],
+    external_action: null,
+    transaction: null,
+    binding_advancement: null,
+    blockers: [],
+    created_at: "2026-08-23T12:00:00Z",
+    updated_at: "2026-08-23T12:00:00Z",
+  };
+  await writeFile(path.join(root, resultPath), `${JSON.stringify(result, null, 2)}\n`);
+
+  for (const checker of ["binding-integrity", "provider-revision-pins", "synchronization-status", "semantic-mapping", "stale-proposals", "authority"]) {
+    assert.equal((await checkRepresentationRule({ root, checker })).status, "pass", checker);
+  }
+
+  await writeFile(path.join(root, artifactPath), '{"value":"after"}\n');
+  assert.equal((await checkRepresentationRule({ root, checker: "stale-proposals" })).status, "fail");
+  await writeFile(path.join(root, resultPath), `${JSON.stringify({
+    ...result,
+    status: "applied",
+    state: "current",
+    selected_operations: ["update-target"],
+    applied_operations: ["update-target"],
+  }, null, 2)}\n`);
+  assert.equal((await checkRepresentationRule({ root, checker: "stale-proposals" })).status, "pass");
 });

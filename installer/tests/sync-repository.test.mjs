@@ -15,7 +15,7 @@ import {
 import { inspectRecovery, resumeRecovery, rollbackRecovery } from "../recover.mjs";
 import { runGit } from "../../framework/runtime/git.mjs";
 
-async function linkedFixture({ checks = [] } = {}) {
+async function linkedFixture({ checks = [], authority = "external-authoritative" } = {}) {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "silver-sync-repository-"));
   const workspace = path.join(temporary, "workspace");
   const external = path.join(temporary, "system");
@@ -31,6 +31,7 @@ async function linkedFixture({ checks = [] } = {}) {
       paths: ["tokens.json"],
       mappings: [{ id: "tokens", external_path: "tokens.json", local_path: "design/system/imported.tokens.json", format: "dtcg-json", artifact_kind: "token-source" }],
       checks,
+      authority,
     },
   });
   await applySourceLinkPlan({ plan });
@@ -125,9 +126,55 @@ test("dual edits become a conflict and cannot be selected", async () => {
   );
 });
 
+test("binding authority blocks application in the non-authoritative direction", async () => {
+  const externalOwned = await linkedFixture();
+  const importPlan = await inspectSynchronization({
+    root: externalOwned.workspace,
+    bindingId: externalOwned.bindingId,
+    direction: "external-to-local",
+  });
+  await applySynchronization({
+    root: externalOwned.workspace,
+    input: importPlan,
+    only: [importPlan.proposal.operations[0].id],
+  });
+  await writeFile(path.join(externalOwned.workspace, "design/system/imported.tokens.json"), '{"changed":true}\n');
+  const blockedExport = await inspectSynchronization({
+    root: externalOwned.workspace,
+    bindingId: externalOwned.bindingId,
+    direction: "local-to-external",
+  });
+  assert.equal(blockedExport.result.status, "blocked");
+  await assert.rejects(
+    applySynchronization({
+      root: externalOwned.workspace,
+      input: blockedExport,
+      only: [blockedExport.proposal.operations[0].id],
+    }),
+    /external-authoritative.*cannot be applied/,
+  );
+
+  const workspaceOwned = await linkedFixture({ authority: "workspace-authoritative" });
+  const blockedImport = await inspectSynchronization({
+    root: workspaceOwned.workspace,
+    bindingId: workspaceOwned.bindingId,
+    direction: "external-to-local",
+  });
+  assert.equal(blockedImport.result.status, "blocked");
+  await assert.rejects(
+    applySynchronization({
+      root: workspaceOwned.workspace,
+      input: blockedImport,
+      only: [blockedImport.proposal.operations[0].id],
+    }),
+    /workspace-authoritative.*cannot be applied/,
+  );
+});
+
 test("required non-Git export check failure restores the external preimage", async () => {
   const { workspace, external, bindingId } = await linkedFixture({
     checks: [{ id: "reject", argv: [process.execPath, "-e", "process.exit(3)"], cwd: ".", required: true, timeout_seconds: 5 }],
+    authority: "shared-review",
   });
   const initial = await inspectSynchronization({ root: workspace, bindingId, direction: "external-to-local" });
   await applySynchronization({ root: workspace, input: initial, only: [initial.proposal.operations[0].id] });
@@ -150,6 +197,7 @@ test("a timed-out required source check is terminated and restores the external 
       required: true,
       timeout_seconds: 1,
     }],
+    authority: "shared-review",
   });
   const initial = await inspectSynchronization({ root: workspace, bindingId, direction: "external-to-local" });
   await applySynchronization({ root: workspace, input: initial, only: [initial.proposal.operations[0].id] });
@@ -166,7 +214,7 @@ test("a timed-out required source check is terminated and restores the external 
 });
 
 test("a workspace-finalization failure rolls back a non-Git export", async () => {
-  const { workspace, external, bindingId } = await linkedFixture();
+  const { workspace, external, bindingId } = await linkedFixture({ authority: "shared-review" });
   const initial = await inspectSynchronization({ root: workspace, bindingId, direction: "external-to-local" });
   await applySynchronization({ root: workspace, input: initial, only: [initial.proposal.operations[0].id] });
   await writeFile(path.join(workspace, "design/system/imported.tokens.json"), '{"color":{"value":"#333"}}\n');
@@ -203,6 +251,7 @@ test("Git export recovers forward after its external commit and never pushes", a
     kind: "design-system",
     as: "shared-system",
     answers: {
+      authority: "shared-review",
       paths: ["tokens.json"],
       mappings: [{ id: "tokens", external_path: "tokens.json", local_path: "design/system/imported.tokens.json", format: "dtcg-json", artifact_kind: "token-source" }],
     },

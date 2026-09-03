@@ -25,9 +25,12 @@ test("complete blank workspace invokes every skill and passes the full local loo
     "default-design-context",
   );
   assert.ok(result.trace_chain.sources.length >= 2);
-  assert.deepEqual(result.trace_chain.external_bindings, [
-    "guided-map-figma",
-  ]);
+  assert.equal(result.trace_chain.external_bindings[0].id, "guided-map-figma");
+  assert.equal(
+    result.trace_chain.external_bindings[0].path,
+    "design/integrations/guided-map-figma.yaml",
+  );
+  assert.match(result.trace_chain.external_bindings[0].integrity, /^sha256:[a-f0-9]{64}$/);
   assert.equal(
     result.trace_chain.implementation_checkpoint.status,
     "committed",

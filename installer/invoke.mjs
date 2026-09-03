@@ -6,6 +6,7 @@ import { invokeSkill } from "../framework/runtime/invoke-skill.mjs";
 import { loadDesignContexts } from "./context.mjs";
 import { exists, integrity, readUtf8 } from "./lib/files.mjs";
 import { checkResultPath, runContractChecks } from "./checks.mjs";
+import { assertManagedSkillIntegrity } from "../framework/runtime/managed-integrity.mjs";
 
 // Emitted by `silver invoke --scaffold` wherever the agent must supply
 // judgement. `silver invoke` refuses any request that still contains it, so a
@@ -29,6 +30,8 @@ function compactTimestamp(date) {
 }
 
 export async function loadInstalledContract(root, skillId) {
+  const lock = parse(await readUtf8(path.join(root, ".silver/lock.yaml")));
+  await assertManagedSkillIntegrity(root, skillId, lock);
   const skillDirectory = path.join(path.resolve(root), ".skills", skillId);
   const contractPath = path.join(skillDirectory, "skill.yaml");
   if (!(await exists(contractPath))) {
@@ -141,15 +144,18 @@ export async function scaffoldInvocation({ root, skillId, now = new Date() }) {
             schema: "silver/provenance/v1",
             origin: "agent-assisted",
             recorded_at: recordedAt,
+            contributors: [
+              {
+                kind: "agent",
+                id: `${SCAFFOLD_PLACEHOLDER}: identify the agent or host creating this work.`,
+              },
+            ],
             sources: [],
             guidance: [],
             design_contexts: designContext ? [designContext] : [],
             change: {
               reason: `${SCAFFOLD_PLACEHOLDER}: state why this change is being made.`,
             },
-            acceptance: contract.completion.review.required
-              ? "awaiting-review"
-              : "not-required",
             external_bindings: [],
           },
         }
@@ -165,5 +171,8 @@ export async function scaffoldInvocation({ root, skillId, now = new Date() }) {
     // produce results claiming passes with no evidence behind them.
     checks: [],
     unresolved_questions: [],
+    acceptance: contract.completion.review.required
+      ? { status: "awaiting-review" }
+      : { status: "not-required" },
   };
 }

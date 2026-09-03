@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: product
-version: 0.9.1
+version: 0.9.2
 summary: Define or refine product audience, jobs, outcomes, and positioning.
 context_budget: small
 inputs:
