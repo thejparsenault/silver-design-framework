@@ -145,6 +145,73 @@ Installing into a product:
     github_repository           its name. Silver never creates it directly.
 `;
 
+// A focused slice of `usage` for one subcommand: its own Usage: lines, plus its
+// paragraph from Commands: when it has one. Falls back to the full text if a
+// command's usage lines cannot be located (keeps --help useful rather than blank).
+function commandUsageBlock(command) {
+  const lines = usage.split("\n");
+  const usageIndex = lines.indexOf("Usage:");
+  const commandsIndex = lines.indexOf("Commands:");
+  const installingIndex = lines.findIndex((line) => line.startsWith("Installing into a product:"));
+  if (usageIndex === -1 || commandsIndex === -1) return usage;
+
+  const usageLines = lines.slice(usageIndex + 1, commandsIndex).filter((line) => {
+    const trimmed = line.trim();
+    return trimmed === `silver ${command}` || trimmed.startsWith(`silver ${command} `);
+  });
+  if (usageLines.length === 0) return usage;
+
+  const commandsLines = lines.slice(
+    commandsIndex + 1,
+    installingIndex === -1 ? undefined : installingIndex,
+  );
+  const paragraph = [];
+  let capturing = false;
+  for (const line of commandsLines) {
+    const entryStart = /^  (\S+)\s/.exec(line);
+    if (entryStart) {
+      if (capturing) break;
+      capturing = entryStart[1] === command;
+    }
+    if (capturing) paragraph.push(line);
+  }
+
+  const sections = ["Usage:", ...usageLines];
+  if (paragraph.length > 0) sections.push("", "Description:", ...paragraph);
+  return `${sections.join("\n")}\n`;
+}
+
+// The horizon amnesty is reported exactly once, at the migration that establishes or
+// advances it — never on every `check`, which is the whole point of having a horizon.
+function printHorizonReport(horizon, stdout) {
+  if (!horizon) return;
+  if (horizon.amnesty) {
+    stdout(`Audit enforcement horizon established: ${horizon.from}`);
+    if (horizon.tally && horizon.tally.records > 0) {
+      stdout(`  ${horizon.tally.records} pre-horizon result record(s) retained read-only:`);
+      for (const [rule, count] of Object.entries(horizon.tally.by_rule)) {
+        stdout(`    ${count} ${rule}`);
+      }
+      stdout("  Re-examine any time with: silver check --since all .");
+    }
+    return;
+  }
+  if (horizon.advanced) {
+    stdout(`Audit enforcement horizon advanced to ${horizon.from} (verified clean as of that check).`);
+    return;
+  }
+  const reasons = {
+    "not-passing": "the most recent audit-trail-integrity check has not passed",
+    "no-evidence": "no audit-trail-integrity check evidence was found",
+    "stale-evidence": "the most recent audit-trail-integrity check no longer matches the workspace",
+    "digest-unavailable": "the current workspace state could not be measured",
+    "not-newer": "the most recent check evidence is not newer than the current horizon",
+  };
+  if (horizon.reason && horizon.reason in reasons) {
+    stdout(`Audit enforcement horizon unchanged (${reasons[horizon.reason]}). Run \`silver check .\` and migrate again once it passes.`);
+  }
+}
+
 async function readStdin(stream = process.stdin) {
   if (stream.isTTY) {
     throw new Error(
@@ -202,6 +269,10 @@ function parseArguments(args) {
   const flags = {};
   for (let index = 0; index < args.length; index += 1) {
     const value = args[index];
+    if (value === "-h") {
+      flags.help = true;
+      continue;
+    }
     if (!value.startsWith("--")) {
       positionals.push(value);
       continue;
@@ -694,6 +765,7 @@ export async function runCli(
     if (command === "setup" && ["inspect", "apply"].includes(args[1])) {
       const operation = args[1];
       const { positionals, flags } = parseArguments(args.slice(2));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (operation === "inspect") {
         if (positionals.length > 1) throw new Error("setup inspect accepts at most one directory.");
         const answers = flags.answers
@@ -734,6 +806,7 @@ export async function runCli(
     if (command === "adopt" && ["inspect", "apply"].includes(args[1])) {
       const operation = args[1];
       const { positionals, flags } = parseArguments(args.slice(2));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (operation === "inspect") {
         if (positionals.length > 1) {
           throw new Error("adopt inspect accepts at most one directory.");
@@ -775,6 +848,7 @@ export async function runCli(
     if (command === "link" && ["inspect", "apply"].includes(args[1])) {
       const operation = args[1];
       const { positionals, flags } = parseArguments(args.slice(2));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (operation === "inspect") {
         if (positionals.length < 1 || positionals.length > 2) {
           throw new Error("link inspect requires a source path and accepts an optional workspace directory.");
@@ -815,6 +889,7 @@ export async function runCli(
     }
     if (command === "link") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length < 1 || positionals.length > 2) {
         throw new Error(
           "link requires a path to the codebase to link, and accepts an optional workspace directory.",
@@ -835,6 +910,7 @@ export async function runCli(
     }
     if (command === "invoke") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (flags.scaffold) {
         if (positionals.length < 1 || positionals.length > 2) {
           throw new Error(
@@ -877,6 +953,7 @@ export async function runCli(
     }
     if (command === "what-now") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length > 1) {
         throw new Error("what-now accepts at most one directory.");
       }
@@ -894,6 +971,7 @@ export async function runCli(
     }
     if (command === "check") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length > 1) {
         throw new Error("check accepts at most one directory.");
       }
@@ -948,6 +1026,7 @@ export async function runCli(
     }
     if (command === "tools") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length > 1) throw new Error("tools accepts at most one directory.");
       const toolsRoot = path.resolve(positionals[0] ?? process.cwd());
       if (flags.list) {
@@ -1076,6 +1155,7 @@ export async function runCli(
     }
     if (command === "practice" && args[1] === "apply") {
       const { positionals, flags } = parseArguments(args.slice(2));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length !== 1) throw new Error("practice apply requires one proposal JSON file.");
       const proposal = JSON.parse(await readFile(path.resolve(positionals[0]), "utf8"));
       const result = await applyPracticeChange({
@@ -1088,6 +1168,7 @@ export async function runCli(
     }
     if (command === "trace") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (positionals.length < 1 || positionals.length > 2) {
         throw new Error("trace requires an artifact id or path and accepts an optional workspace directory.");
       }
@@ -1108,6 +1189,7 @@ export async function runCli(
     }
     if (command === "recover") {
       const { positionals, flags } = parseArguments(args.slice(1));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       if (["resume", "rollback"].includes(positionals[0])) {
         const operation = positionals[0];
         if (positionals.length < 2 || positionals.length > 3) {
@@ -1138,6 +1220,7 @@ export async function runCli(
     if (command === "sync") {
       const operation = args[1];
       const { positionals, flags } = parseArguments(args.slice(2));
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       const readJsonInput = async (value, label) => {
         if (!value) return undefined;
         const content = value === "-"
@@ -1259,11 +1342,13 @@ export async function runCli(
     }
 
     if (command === "migrate") {
+      if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       const result = await migrateWorkspace({ root, apply: flags.apply });
       if (flags.json) {
         stdout(JSON.stringify(result, null, 2));
       } else if (!result.needed) {
         stdout(`Workspace is already current: ${result.root}`);
+        printHorizonReport(result.horizon, stdout);
       } else {
         stdout(
           `${result.applied ? "Applied" : "Previewed"} migration ${result.fromVersion} → ${result.toVersion}: ${result.root}`,
@@ -1274,6 +1359,7 @@ export async function runCli(
         for (const conflict of result.conflicts) {
           stdout(`  CONFLICT ${conflict.package}${conflict.path ? ` ${conflict.path}` : ""}: ${conflict.reason}`);
         }
+        printHorizonReport(result.horizon, stdout);
         if (!result.applied && result.ok) {
           stdout("Run `silver migrate --apply` after reviewing this plan.");
         }
