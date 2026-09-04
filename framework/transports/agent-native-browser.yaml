@@ -42,6 +42,13 @@ guidance:
 capabilities: [browser]
 connection:
   kind: host-native
+browser_checks:
+  adapter: delegated-observation
+  execution_mode: delegated
+  protocol_version: silver/browser-check-adapter/v1
+  connection_kind: host-native
+  checkers: [accessibility, responsive-behavior, critical-interactions]
+  isolation: agent-owned
 probe:
   tool: the agent's own browser or navigation tool
   expects: any successful page load
@@ -56,6 +63,9 @@ maturity: stable
 post_setup:
   - Silver cannot see an agent's built-in tools. Ask the agent to open a page and record the result with `silver tools --record-probe`.
 activities:
+  - id: evaluate.run-browser-suite
+    support: full
+    actions: [inspect, execute]
   - id: browser.navigate
     support: full
     actions: [inspect, execute]

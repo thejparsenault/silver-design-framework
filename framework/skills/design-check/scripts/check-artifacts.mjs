@@ -6,7 +6,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  advisory,
   checkResult,
   exitCode,
   findFiles,
@@ -25,15 +24,16 @@ import {
 
 let contractsPromise;
 
-async function runtimeContracts() {
+async function runtimeContracts(injected) {
+  if (injected) return injected;
   contractsPromise ??= import(
     "silver-design-framework/framework/runtime/contracts.mjs",
   ).catch(() => null);
   return contractsPromise;
 }
 
-async function validateV2(name, value) {
-  const contracts = await runtimeContracts();
+async function validateV2(name, value, injected) {
+  const contracts = await runtimeContracts(injected);
   if (contracts) {
     await contracts.assertV2(name, value);
     return;
@@ -211,7 +211,7 @@ export async function checkArtifacts(options = {}) {
       const structuredSchema = structuredSchemaFor(artifact.kind);
       if (structuredSchema) {
         const value = await readStructured(absolute);
-        await validateV2(structuredSchema, value);
+        await validateV2(structuredSchema, value, options.runtime?.contracts);
         // token-source is a resolved DTCG tree, not a Silver artifact document
         // — it has no id of its own to compare against the manifest mapping.
         if (value.id !== undefined && value.id !== artifact.id) {
@@ -231,7 +231,7 @@ export async function checkArtifacts(options = {}) {
           throw new Error(`${registry.label} does not declare a supported schema.`);
         }
         for (const source of value.sources) {
-          await validateV2(variant.entrySchema, source);
+          await validateV2(variant.entrySchema, source, options.runtime?.contracts);
         }
         continue;
       }
@@ -310,67 +310,16 @@ export async function checkArtifacts(options = {}) {
     try {
       const artifact = JSON.parse(await readFile(absolute, "utf8"));
       if (artifact.schema !== "silver/working-artifact/v2") continue;
-      await validateV2("working-artifact.schema.json", artifact);
-      const historicalAdvisoriesApply = ![
+      await validateV2("working-artifact.schema.json", artifact, options.runtime?.contracts);
+      // Artifact sources are immutable authorship provenance. Their current
+      // availability and revision are deliberately irrelevant after this
+      // artifact revision is recorded; live inputs are checked before writes.
+      const enforceReviewSurface = ![
         "archived",
         "rejected",
         "stale",
       ].includes(artifact.status);
-      for (const reference of artifact.sources) {
-        const source = path.resolve(root, reference.path);
-        if (!source.startsWith(`${root}${path.sep}`) || !(await exists(source))) {
-          if (historicalAdvisoriesApply) advisories.push(
-            advisory({
-              checker,
-              rule: "artifact.reference-unavailable",
-              file,
-              message: `Historical source ${reference.id}@${reference.revision} is no longer available at its recorded path.`,
-              observedValue: reference.path,
-            }),
-          );
-          continue;
-        }
-        if (/\.(?:json|ya?ml|md)$/.test(source)) {
-          let sourceValue;
-          try {
-            const content = await readFile(source, "utf8");
-            sourceValue = source.endsWith(".json")
-              ? JSON.parse(content)
-              : source.endsWith(".md")
-                ? parseFrontmatter(content)
-                : await readYaml(source);
-          } catch (error) {
-            if (historicalAdvisoriesApply) advisories.push(advisory({
-              checker,
-              rule: "artifact.reference-unreadable",
-              file,
-              message: `Historical source ${reference.id}@${reference.revision} can no longer be inspected: ${error.message}`,
-              observedValue: reference.path,
-            }));
-            continue;
-          }
-          const sourceRevision =
-            typeof sourceValue.revision === "number"
-              ? `r${sourceValue.revision}`
-              : sourceValue.revision;
-          if (
-            (sourceValue.id && sourceValue.id !== reference.id) ||
-            (sourceValue.kind && sourceValue.kind !== reference.kind) ||
-            (sourceRevision && sourceRevision !== reference.revision)
-          ) {
-            if (historicalAdvisoriesApply) advisories.push(
-              advisory({
-                checker,
-                rule: "artifact.reference-revision-advanced",
-                file,
-                message: `Historical source pin ${reference.id}@${reference.revision} differs from the artifact currently at that path; the recorded pin was preserved.`,
-                observedValue: reference.path,
-              }),
-            );
-          }
-        }
-      }
-      if (artifact.kind === "visualization" && historicalAdvisoriesApply) {
+      if (artifact.kind === "visualization" && enforceReviewSurface) {
         const views = Array.isArray(artifact.payload.views)
           ? artifact.payload.views
           : artifact.payload.view_path
@@ -383,30 +332,46 @@ export async function checkArtifacts(options = {}) {
               !localView.startsWith(`${root}${path.sep}`) ||
               !(await exists(localView))
             ) {
-              advisories.push(advisory({
+              findings.push(finding({
                 checker,
                 rule: "artifact.visualization-view-unavailable",
                 file,
-                message: `Local visualization view ${view.id} is unavailable.`,
+                message: `Local visualization view ${view.id} is missing at its declared path.`,
                 observedValue: view.path,
               }));
             }
           } else if (!view.binding) {
-            advisories.push(advisory({
+            findings.push(finding({
               checker,
               rule: "artifact.visualization-view-unverified",
               file,
-              message: `External visualization view ${view.id} has a location but no representation binding.`,
+              message: `External visualization view ${view.id} has a URL but no representation binding.`,
               observedValue: view.url,
             }));
           } else if (!(await exists(path.join(root, "design", "integrations", `${view.binding}.yaml`)))) {
-            advisories.push(advisory({
+            findings.push(finding({
               checker,
               rule: "artifact.visualization-binding-unavailable",
               file,
               message: `External visualization view ${view.id} references an unavailable binding.`,
               observedValue: view.binding,
             }));
+          } else {
+            try {
+              const binding = await readYaml(path.join(root, "design", "integrations", `${view.binding}.yaml`));
+              await validateV2("representation-binding-v2.schema.json", binding, options.runtime?.contracts);
+              if (binding.id !== view.binding) {
+                throw new Error(`Binding identifies ${binding.id}, not ${view.binding}.`);
+              }
+            } catch (error) {
+              findings.push(finding({
+                checker,
+                rule: "artifact.visualization-binding-invalid",
+                file,
+                message: `External visualization view ${view.id} has an invalid representation binding: ${error.message}`,
+                observedValue: view.binding,
+              }));
+            }
           }
         }
       }

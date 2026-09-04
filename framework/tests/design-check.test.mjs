@@ -127,7 +127,7 @@ test("artifact checker rejects malformed canonical metadata", async (t) => {
   );
 });
 
-test("historical source drift is advisory and preserves contract-integrity pass", async (t) => {
+test("historical source drift is ignored and preserves immutable artifact provenance", async (t) => {
   const root = await temporaryWorkspace(t);
   const timestamp = "2026-07-24T20:00:00Z";
   const specificationPath = "design/work/specifications/history.json";
@@ -192,11 +192,7 @@ test("historical source drift is advisory and preserves contract-integrity pass"
   const result = await checkArtifacts({ root });
   assert.equal(result.status, "pass");
   assert.deepEqual(result.findings, []);
-  assert.ok(
-    result.extensions["silver.check-advisories"].some(
-      ({ rule }) => rule === "artifact.reference-revision-advanced",
-    ),
-  );
+  assert.equal(result.extensions, undefined);
   const recorded = JSON.parse(await readFile(path.join(root, visualizationPath), "utf8"));
   assert.equal(recorded.sources[0].revision, "r1");
 });

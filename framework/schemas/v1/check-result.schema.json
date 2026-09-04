@@ -79,7 +79,7 @@
       "additionalProperties": false,
       "required": ["stage", "message"],
       "properties": {
-        "stage": { "enum": ["browser-launch", "browser-readiness", "navigation", "protocol", "inspection", "cleanup"] },
+        "stage": { "enum": ["browser-launch", "browser-readiness", "navigation", "protocol", "inspection", "cleanup", "provider-selection", "adapter"] },
         "message": { "type": "string", "minLength": 1, "maxLength": 2000 },
         "target": { "type": "string", "minLength": 1 },
         "viewport": {

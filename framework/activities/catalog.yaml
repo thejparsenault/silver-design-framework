@@ -568,6 +568,15 @@ activities:
     fallback: {mode: input-required, provider: silver-portable, format: markdown, note: "Perform a design or spec review from available artifacts; deterministic runtime checks need browser or source access."}
     status: served
 
+  - id: evaluate.run-browser-suite
+    title: Run the browser check suite
+    summary: Execute Silver's state-bound accessibility, responsive, and interaction inspection plan.
+    capability: browser
+    actions: [inspect, execute]
+    phrases: [run browser checks, browser check suite, verify rendered interface]
+    fallback: {mode: input-required, provider: silver-portable, format: json, note: "Run the built-in Chrome suite or explicitly select a browser adapter that can return Silver observations."}
+    status: served
+
   - id: evaluate.check-responsive
     title: Check responsive behavior
     summary: Evaluate layouts and interactions across declared viewport sizes.

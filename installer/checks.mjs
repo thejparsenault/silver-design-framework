@@ -10,6 +10,7 @@
 //
 // The CLI owns this because it can reach the design-check scripts. The runtime
 // only verifies the evidence, so neither half has to trust the other.
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -18,6 +19,12 @@ import {
   runFastSuite,
 } from "../framework/skills/design-check/scripts/run-fast.mjs";
 import { createWorkspaceMutator } from "../framework/runtime/workspace-mutations.mjs";
+import * as attestation from "../framework/runtime/check-attestation.mjs";
+import * as contracts from "../framework/runtime/contracts.mjs";
+import * as managedIntegrity from "../framework/runtime/managed-integrity.mjs";
+import * as representations from "../framework/runtime/representations.mjs";
+import * as resultIndex from "../framework/runtime/result-index.mjs";
+import * as viewProvenance from "../framework/runtime/view-provenance.mjs";
 import { payloadPath } from "./payload.mjs";
 
 export const CHECK_RESULT_DIRECTORY = ".silver/results/checks";
@@ -25,6 +32,19 @@ export const CHECK_RESULT_DIRECTORY = ".silver/results/checks";
 export function checkResultPath(checker) {
   return `${CHECK_RESULT_DIRECTORY}/${checker}.json`;
 }
+
+// The compiled CLI has these modules embedded, while copied workspace scripts
+// resolve them through their own fallback ladder. Passing the native entry
+// point's dependencies into every fast checker prevents a package-relative
+// dynamic import from being the first missing module in a native executable.
+const FAST_CHECK_RUNTIME = Object.freeze({
+  attestation,
+  contracts,
+  managedIntegrity,
+  representations,
+  viewProvenance,
+  auditTrail: { ...resultIndex, assertV2: contracts.assertV2 },
+});
 
 // Checks that need a live browser. They cannot run in the fast suite, and
 // reporting them as anything but `not-run` would claim verification that did not
@@ -36,21 +56,25 @@ const BROWSER_ONLY_CHECKS = new Set([
 ]);
 
 // Run the fast suite and persist one evidence file per checker.
-export async function runCheckSuite({ root, only, now } = {}) {
+export async function runCheckSuite({ root, only, now, since, persist = true } = {}) {
   const mutator = await createWorkspaceMutator(root);
   const workspaceRoot = mutator.root;
   const suite = await runFastSuite({
     root: workspaceRoot,
+    runtime: FAST_CHECK_RUNTIME,
     ...(only ? { only } : {}),
     ...(now ? { now } : {}),
+    ...(since ? { since } : {}),
   });
   const selected = suite.results;
 
-  for (const result of selected) {
-    await mutator.write(
-      checkResultPath(result.checker),
-      `${JSON.stringify(result, null, 2)}\n`,
-    );
+  if (persist) {
+    for (const result of selected) {
+      await mutator.write(
+        checkResultPath(result.checker),
+        `${JSON.stringify(result, null, 2)}\n`,
+      );
+    }
   }
 
   return {
@@ -71,7 +95,7 @@ export async function runCheckSuite({ root, only, now } = {}) {
 // `critical-interactions` evidence; without a CLI entry point the only way to
 // reach them was `node .skills/design-check/scripts/run-browser.mjs`, which the
 // skill's own `allowed-tools` forbids.
-export async function runBrowserCheckSuite({ root, chromePath } = {}) {
+export async function runBrowserCheckSuite({ root, chromePath, browserPath, provider, prepare, observationPath } = {}) {
   // Loaded from the payload at call time rather than imported statically. The
   // browser script is written to run as a copied workspace script — top-level
   // await, `ws` behind a resolution ladder — which is fine when Node loads it
@@ -98,10 +122,22 @@ export async function runBrowserCheckSuite({ root, chromePath } = {}) {
     );
   }
   const mutator = await createWorkspaceMutator(root);
+  const observations = observationPath
+    ? JSON.parse(await readFile(path.resolve(mutator.root, observationPath), "utf8"))
+    : undefined;
   const suite = await runBrowserSuite({
     root: mutator.root,
     ...(chromePath ? { chromePath } : {}),
+    ...(browserPath ? { browserPath } : {}),
+    ...(provider ? { provider } : {}),
+    ...(prepare ? { prepare: true } : {}),
+    ...(observations ? { observations } : {}),
   });
+
+  // A prepared delegated run is deliberately read-only: its plan is what an
+  // MCP, host-native, or third-party CLI adapter must execute. Persisting a
+  // check result here would falsely claim that the plan was already inspected.
+  if (prepare) return suite;
 
   for (const result of suite.results) {
     await mutator.write(

@@ -31,6 +31,10 @@
     "invocation_id": {
       "$ref": "common.schema.json#/$defs/id"
     },
+    "retry_of": {
+      "description": "Optional immutable link to the earlier invocation this result retried. Results are create-only and never replace the earlier record.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
     "skill": {
       "type": "object",
       "additionalProperties": false,

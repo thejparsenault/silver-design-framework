@@ -34,7 +34,8 @@ import { checkSynchronizationStatus } from "./check-synchronization-status.mjs";
 import { checkViewProvenance } from "./check-view-provenance.mjs";
 
 let attestation;
-async function attestationRuntime() {
+async function attestationRuntime(injected) {
+  if (injected) return injected;
   if (attestation) return attestation;
   for (const specifier of [
     "silver-design-framework/framework/runtime/check-attestation.mjs",
@@ -86,7 +87,7 @@ export async function runFastSuite(options = {}) {
     attestCheckResults,
     unstableCheckResults,
     workspaceCheckStateDigest,
-  } = await attestationRuntime();
+  } = await attestationRuntime(options.runtime?.attestation);
   const stateBefore = await workspaceCheckStateDigest(root);
   const only = options.only ? new Set(options.only) : null;
   if (only) {
@@ -105,7 +106,7 @@ export async function runFastSuite(options = {}) {
   for (const [checker, run] of checkers) {
     if (only && !only.has(checker)) continue;
     try {
-      results.push(await run({ root }));
+      results.push(await run({ root, runtime: options.runtime, ...(options.since ? { since: options.since } : {}) }));
     } catch (error) {
       results.push(
         checkResult({

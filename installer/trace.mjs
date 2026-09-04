@@ -76,6 +76,12 @@ export async function traceArtifact({ root, target }) {
       : { record: null, consistency_findings: [] };
     const producingResult = isSkillResult ? value : joined.record?.result ?? null;
     const provenance = producingResult?.provenance ?? value.provenance ?? null;
+    // An artifact's `sources` are immutable authorship provenance. A skill
+    // result's `inputs` instead describe the live invocation that produced a
+    // particular revision. They may happen to cite similar records, but they
+    // answer different audit questions and must never be merged by a reader.
+    const artifactSourcePins = isSkillResult ? [] : value.sources ?? [];
+    const invocationInputs = producingResult?.inputs ?? [];
     const artifactStatus = isSkillResult ? null : value.status ?? null;
     const acceptance = producingResult?.acceptance?.status ?? "not-recorded";
     const consistencyFindings = [...joined.consistency_findings];
@@ -98,7 +104,11 @@ export async function traceArtifact({ root, target }) {
         path: path.relative(workspace, file).split(path.sep).join("/"),
       },
       provenance,
-      sources: provenance?.sources ?? value.sources ?? value.inputs ?? [],
+      artifact_source_pins: artifactSourcePins,
+      invocation_inputs: invocationInputs,
+      // Compatibility for trace consumers that historically read `sources`.
+      // It intentionally aliases artifact provenance, never live inputs.
+      sources: artifactSourcePins,
       practice: provenance?.practice ?? null,
       guidance: provenance?.guidance ?? [],
       linked_sources: provenance?.linked_sources ?? [],
@@ -115,6 +125,15 @@ export async function traceArtifact({ root, target }) {
               : joined.record.path,
           }
         : null,
+      joined_result: isSkillResult
+        ? { matched: false, match_count: 0, selection: "target-is-result" }
+        : {
+            matched: Boolean(joined.record),
+            match_count: joined.matches?.length ?? 0,
+            selection: joined.record
+              ? "newest-completed-at-then-invocation-id"
+              : "no-exact-output-match",
+          },
       checks: producingResult?.checks ?? [],
       readiness: producingResult?.readiness ?? [],
       consistency_findings: consistencyFindings,
@@ -149,6 +168,8 @@ export async function traceArtifact({ root, target }) {
           linked_sources: [],
           design_contexts: [],
         },
+        artifact_source_pins: [],
+        invocation_inputs: [],
         sources: [],
         practice: null,
         guidance: [],
@@ -158,6 +179,7 @@ export async function traceArtifact({ root, target }) {
         acceptance: "not-recorded",
         artifact_status: null,
         producing_result: null,
+        joined_result: { matched: false, match_count: 0, selection: "legacy-bootstrap" },
         checks: [],
         readiness: [],
         consistency_findings: [],
@@ -168,6 +190,13 @@ export async function traceArtifact({ root, target }) {
 }
 
 export function renderTrace(trace) {
+  const renderPins = (label, pins) => {
+    if (!pins?.length) return [`${label}: not recorded`];
+    return [
+      `${label}: ${pins.length}`,
+      ...pins.map((pin) => `  - ${pin.id ?? pin.path ?? "unnamed"}${pin.revision ? `@${pin.revision}` : ""}${pin.path ? ` (${pin.path})` : ""}`),
+    ];
+  };
   const lines = [
     `Trace: ${trace.target.id}`,
     `Kind: ${trace.target.kind}`,
@@ -176,13 +205,17 @@ export function renderTrace(trace) {
     `Acceptance: ${trace.acceptance}`,
     `Artifact status: ${trace.artifact_status ?? "not recorded"}`,
     `Origin: ${trace.provenance?.origin ?? "not recorded"}`,
-    `Sources: ${trace.sources.length}`,
     `Guidance pins: ${trace.provenance ? trace.guidance.length : "not recorded"}`,
     `Linked source pins: ${trace.provenance ? trace.linked_sources?.length ?? 0 : "not recorded"}`,
     `Design contexts: ${trace.provenance ? trace.design_contexts.length : "not recorded"}`,
+    ...renderPins("Artifact source pins", trace.artifact_source_pins),
+    ...renderPins("Invocation inputs", trace.invocation_inputs),
   ];
   if (trace.producing_result) {
     lines.push(`Producing result: ${trace.producing_result.invocation_id}`);
+  }
+  if (trace.joined_result) {
+    lines.push(`Joined result: ${trace.joined_result.selection} (${trace.joined_result.match_count} exact match(es))`);
   }
   for (const finding of trace.consistency_findings ?? []) {
     lines.push(`Consistency finding: ${finding}`);

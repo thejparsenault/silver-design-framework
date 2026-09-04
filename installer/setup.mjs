@@ -369,6 +369,10 @@ async function renderLock({
         reference: sourceReference,
       },
     },
+    enforcement: {
+      introduced_in: "0.9.2",
+      from: new Date().toISOString(),
+    },
     packages,
     managed_files: [
       {

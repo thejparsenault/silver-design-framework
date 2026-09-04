@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thejparsenault.github.io/silver-design-framework/schemas/v1/browser-check-observation.schema.json",
+  "title": "Silver browser check observation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "provider", "run_id", "plan_digest", "state_scope", "state_digest", "plan", "observations"],
+  "properties": {
+    "schema": { "const": "silver/browser-check-observation/v1" },
+    "provider": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
+    "run_id": { "type": "string", "format": "uuid" },
+    "plan_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "state_scope": { "const": "workspace-check-inputs/v1" },
+    "state_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "plan": { "$ref": "browser-check-plan.schema.json" },
+    "browser": { "type": "object", "additionalProperties": true },
+    "observations": { "type": "array", "items": { "$ref": "#/$defs/observation" } }
+  },
+  "$defs": {
+    "observation": {
+      "type": "object", "additionalProperties": false, "required": ["key", "report"],
+      "properties": { "key": { "type": "string", "minLength": 1 }, "report": { "type": "object" } }
+    }
+  }
+}

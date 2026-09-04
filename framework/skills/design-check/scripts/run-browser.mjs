@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { access, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import os from "node:os";
@@ -26,6 +27,49 @@ async function attestationRuntime() {
     }
   }
   throw new Error("The shared check-attestation runtime is unavailable.");
+}
+
+let providersRuntime;
+async function providersRuntimeForChecks() {
+  if (providersRuntime) return providersRuntime;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/providers.mjs",
+    "../../../.silver/runtime/providers.mjs",
+    "../../../runtime/providers.mjs",
+  ]) {
+    try {
+      providersRuntime = await import(specifier);
+      return providersRuntime;
+    } catch {
+      // Try the package, installed workspace, then source tree.
+    }
+  }
+  throw new Error("The provider runtime is unavailable.");
+}
+
+const LOCAL_BROWSER_CONTRACT = Object.freeze({
+  id: "silver-browser-local",
+  browser_checks: {
+    adapter: "chrome-cdp",
+    execution_mode: "embedded",
+    protocol_version: "silver/browser-check-adapter/v1",
+    connection_kind: "local",
+    checkers: ["accessibility", "responsive-behavior", "critical-interactions"],
+    isolation: "temporary-profile",
+  },
+});
+
+async function resolveBrowserProvider(root, id) {
+  if (id === "silver-browser-local") return LOCAL_BROWSER_CONTRACT;
+  const { discoverProviders } = await providersRuntimeForChecks();
+  const provider = (await discoverProviders({ root })).find(({ id: candidate }) => candidate === id);
+  if (!provider?.browser_checks) {
+    throw new BrowserExecutionError(
+      "provider-selection",
+      `Browser provider ${id} does not declare silver/browser-check-adapter/v1 support.`,
+    );
+  }
+  return provider;
 }
 
 let WebSocketClient;
@@ -544,17 +588,188 @@ function notRunResults(reason) {
   );
 }
 
-function browserResults({ requested, completed, findings, error }) {
+function browserResults({ requested, completed, findings, error, supported = ["accessibility", "responsive-behavior", "critical-interactions"] }) {
   return ["accessibility", "responsive-behavior", "critical-interactions"].map((checker) =>
     checkResult({
       checker,
       suite: "browser",
-      requested,
-      completed,
+      requested: supported.includes(checker) ? requested : [checker],
+      completed: supported.includes(checker) ? completed : [],
       findings: findings[checker],
+      ...(!supported.includes(checker) ? { reason: `Browser provider does not support ${checker}.` } : {}),
       ...(error ? { executionError: error.diagnostic } : {}),
     }),
   );
+}
+
+// Browser checking has one stable Silver-owned evaluation contract.  An
+// adapter may be a throwaway Chrome over CDP, a CLI, an MCP server, or an
+// agent-native browser, but it must return these observations rather than its
+// own pass/fail verdict.  That keeps accessibility and interaction policy in
+// one place and makes a provider switch auditable.
+function browserPlanDigest(plan) {
+  return `sha256:${createHash("sha256").update(JSON.stringify(plan)).digest("hex")}`;
+}
+
+function validatePreparedPlan(plan, provider) {
+  if (
+    !plan ||
+    plan.schema !== "silver/browser-check-plan/v1" ||
+    plan.adapter_protocol !== "silver/browser-check-adapter/v1" ||
+    typeof plan.run_id !== "string" ||
+    plan.provider !== provider ||
+    !Array.isArray(plan.targets) ||
+    !Array.isArray(plan.checkers)
+  ) {
+    throw new BrowserExecutionError("inspection", "Browser observations contain no valid prepared plan for this provider.");
+  }
+  const { plan_digest: recordedDigest, ...unsigned } = plan;
+  if (recordedDigest !== browserPlanDigest(unsigned)) {
+    throw new BrowserExecutionError("inspection", "Browser plan digest is invalid.");
+  }
+  return plan;
+}
+
+function targetPlan(manifest) {
+  return (manifest.checks?.render_targets ?? []).map((target) => ({
+    id: target.id,
+    path: targetPath(manifest, target),
+    viewports: target.viewports?.length
+      ? target.viewports
+      : [{ width: 1280, height: 800 }],
+  }));
+}
+
+export async function prepareBrowserCheckPlan({ root, provider = "silver-browser-local", providerContract } = {}) {
+  const workspace = path.resolve(root ?? process.cwd());
+  const { workspaceCheckStateDigest } = await attestationRuntime();
+  const { value: manifest } = await loadManifest(workspace);
+  const browserChecks = providerContract?.browser_checks ?? (await resolveBrowserProvider(workspace, provider)).browser_checks;
+  const plan = {
+    schema: "silver/browser-check-plan/v1",
+    adapter_protocol: "silver/browser-check-adapter/v1",
+    run_id: randomUUID(),
+    provider,
+    adapter: browserChecks.adapter,
+    execution_mode: browserChecks.execution_mode,
+    connection_kind: browserChecks.connection_kind,
+    adapter_version: browserChecks.protocol_version,
+    isolation: browserChecks.isolation,
+    state_scope: "workspace-check-inputs/v1",
+    state_digest: await workspaceCheckStateDigest(workspace),
+    targets: targetPlan(manifest),
+    checkers: browserChecks.checkers,
+  };
+  return { ...plan, plan_digest: browserPlanDigest(plan) };
+}
+
+function reportFindings({ manifest, target, viewport, report, findings }) {
+  for (const rule of report.accessibility ?? []) {
+    findings.accessibility.push(finding({ checker: "accessibility", rule: `browser.${rule}`, file: targetPath(manifest, target), message: `${report.title ?? target.id}: ${rule} failed at ${viewport.width}x${viewport.height}.` }));
+  }
+  for (const contrast of report.contrast ?? []) {
+    findings.accessibility.push(finding({ checker: "accessibility", rule: "browser.contrast", file: targetPath(manifest, target), message: `${contrast.tag} text contrast is ${contrast.ratio}:1 at ${viewport.width}x${viewport.height}.`, observedValue: contrast.text }));
+  }
+  if (report.responsive?.overflow) {
+    findings["responsive-behavior"].push(finding({ checker: "responsive-behavior", rule: "browser.horizontal-overflow", file: targetPath(manifest, target), message: `Document width ${report.responsive.documentWidth}px exceeds ${viewport.width}px viewport.` }));
+  }
+  if (report.interaction?.status === "fail") {
+    findings["critical-interactions"].push(finding({ checker: "critical-interactions", rule: "browser.interaction-failed", file: targetPath(manifest, target), message: `${report.interaction.detail} did not reach its observable state.` }));
+  }
+}
+
+function observationReports(plan, observations) {
+  if (!observations || observations.schema !== "silver/browser-check-observation/v1") {
+    throw new BrowserExecutionError("inspection", "Browser observations must use silver/browser-check-observation/v1.");
+  }
+  if (
+    observations.provider !== plan.provider ||
+    observations.run_id !== plan.run_id ||
+    observations.plan_digest !== plan.plan_digest ||
+    observations.state_scope !== plan.state_scope ||
+    observations.state_digest !== plan.state_digest
+  ) {
+    throw new BrowserExecutionError("inspection", "Browser observations do not belong to this provider and prepared plan.");
+  }
+  const expected = new Set(plan.targets.flatMap((target) => target.viewports.map((viewport) => `${target.id}@${viewport.width}x${viewport.height}`)));
+  const received = new Map();
+  for (const observation of observations.observations ?? []) {
+    if (!expected.has(observation.key) || received.has(observation.key) || !observation.report || typeof observation.report !== "object") {
+      throw new BrowserExecutionError("inspection", "Browser observations are incomplete, duplicate, or do not match the prepared targets.");
+    }
+    received.set(observation.key, observation.report);
+  }
+  if (received.size !== expected.size) {
+    throw new BrowserExecutionError("inspection", "Browser observations do not cover every prepared target and viewport.");
+  }
+  return received;
+}
+
+async function runCommandObservation({ command, args = [], input, timeout = 30000 }) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { shell: false, stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    const limit = 1024 * 1024;
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      reject(new BrowserExecutionError("adapter", `Browser adapter ${command} timed out after ${timeout}ms.`));
+    }, timeout);
+    const collect = (target) => (chunk) => {
+      target.value += chunk.toString("utf8");
+      if (target.value.length > limit) child.kill("SIGTERM");
+    };
+    child.stdout.on("data", (chunk) => { stdout += chunk.toString("utf8"); if (stdout.length > limit) child.kill("SIGTERM"); });
+    child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); if (stderr.length > limit) child.kill("SIGTERM"); });
+    child.once("error", (error) => { clearTimeout(timer); reject(new BrowserExecutionError("adapter", error.message)); });
+    child.once("close", (code, signal) => {
+      clearTimeout(timer);
+      if (code !== 0) {
+        reject(new BrowserExecutionError("adapter", `Browser adapter ${command} exited ${code ?? signal ?? "without a status"}: ${stderr.slice(0, 2000)}`));
+        return;
+      }
+      try { resolve(JSON.parse(stdout)); }
+      catch (error) { reject(new BrowserExecutionError("adapter", `Browser adapter ${command} returned invalid JSON: ${error.message}`)); }
+    });
+    child.stdin.end(input);
+  });
+}
+
+async function runEgoObservation({ plan, origin, command, args }) {
+  const targets = plan.targets.map((target) => ({
+    ...target,
+    url: `${origin}/${target.path.replace(/^\/+/, "")}`,
+  }));
+  // Ego owns task-space isolation. The script performs only the measurements
+  // Silver specifies, emits observations (not a pass/fail claim), and closes
+  // the agent-owned task space even when navigation or inspection fails.
+  const script = `
+const plan = ${JSON.stringify(plan)};
+const targets = ${JSON.stringify(targets)};
+const expression = ${JSON.stringify(inspectionExpression)};
+const task = await useOrCreateTaskSpace('silver-browser-check-' + plan.run_id);
+const observations = [];
+try {
+  for (const target of targets) {
+    for (const viewport of target.viewports) {
+      await openOrReuseTab(target.url, { wait: true, timeout: 20 });
+      await cdp('Emulation.setDeviceMetricsOverride', { width: viewport.width, height: viewport.height, deviceScaleFactor: 1, mobile: viewport.width < 600 });
+      await gotoAndWait(target.url, { timeout: 20, settle: 0.2 });
+      const report = await js(expression);
+      observations.push({ key: target.id + '@' + viewport.width + 'x' + viewport.height, report });
+    }
+  }
+  cliLog(JSON.stringify({ schema: 'silver/browser-check-observation/v1', provider: plan.provider, run_id: plan.run_id, plan_digest: plan.plan_digest, state_scope: plan.state_scope, state_digest: plan.state_digest, plan, browser: { name: 'Ego Lite', engine: 'Chromium', isolation: 'agent-owned' }, observations }));
+} finally {
+  await completeTaskSpace(task.id, { keep: false });
+}
+`;
+  return runCommandObservation({
+    command,
+    args,
+    input: script,
+    timeout: 60000,
+  });
 }
 
 export function browserSuiteExitCode(result) {
@@ -563,18 +778,33 @@ export function browserSuiteExitCode(result) {
 
 export async function runBrowserSuite(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
+  let provider = options.provider ?? options.observations?.provider ?? null;
   const {
     attestCheckResults,
     unstableCheckResults,
     workspaceCheckStateDigest,
   } = await attestationRuntime();
   const stateBefore = await workspaceCheckStateDigest(root);
+  let providerContract;
   const finalize = async (suite) => {
     const stateAfter = await workspaceCheckStateDigest(root);
     const completedAt = (options.now instanceof Date ? options.now : new Date(options.now ?? Date.now())).toISOString();
     const results = stateBefore === stateAfter
       ? attestCheckResults(suite.results, stateAfter, completedAt)
       : unstableCheckResults(suite.results, completedAt);
+    for (const result of results) {
+      result.extensions ??= {};
+      result.extensions["silver.browser"] = {
+        provider: suite.browser?.selected_provider ?? suite.browser?.provider ?? provider ?? "unavailable",
+        connection_kind: suite.browser?.connection_kind ?? providerContract?.browser_checks?.connection_kind ?? "local",
+        adapter_version: suite.browser?.adapter_version ?? providerContract?.browser_checks?.protocol_version ?? "silver/browser-check-adapter/v1",
+        isolation: suite.browser?.isolation ?? providerContract?.browser_checks?.isolation ?? "temporary-profile",
+        ...(suite.plan?.plan_digest ? { plan_digest: suite.plan.plan_digest } : {}),
+        ...(suite.browser?.name ? { browser_name: suite.browser.name } : {}),
+        ...(suite.browser?.engine ? { browser_engine: suite.browser.engine } : {}),
+        ...(suite.browser?.version ? { browser_version: suite.browser.version } : {}),
+      };
+    }
     const status = results.some(({ status }) => status === "error")
       ? "error"
       : results.some(({ status }) => status === "fail")
@@ -595,9 +825,105 @@ export async function runBrowserSuite(options = {}) {
     const results = notRunResults("No render targets are declared.");
     return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
   }
-  const executable = options.chromePath
-    ? await firstAccessible([options.chromePath])
+  // An explicit command always wins. Otherwise a reviewed activity binding is
+  // the durable designer choice; only absent that choice do we use Chrome.
+  provider ??= manifest.tool_preferences?.activities?.["evaluate.run-browser-suite"]?.use?.[0] ?? "silver-browser-local";
+  let plan;
+  try {
+    providerContract = await resolveBrowserProvider(root, provider);
+    plan = options.observations?.plan
+      ? validatePreparedPlan(options.observations.plan, provider)
+      : await prepareBrowserCheckPlan({ root, provider, providerContract });
+    if (plan.state_digest !== stateBefore) {
+      throw new BrowserExecutionError("inspection", "Browser plan was prepared for different workspace state; prepare a fresh inspection plan.");
+    }
+  } catch (error) {
+    const results = notRunResults(`Cannot prepare browser inspection: ${error.message}`);
+    return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
+  }
+  if (options.prepare) {
+    return { schema: "silver/browser-check-preparation/v1", status: "prepared", plan };
+  }
+
+  // Non-local providers are intentionally completed in two phases. Silver does
+  // not open an MCP connection or guess a third-party CLI protocol; the chosen
+  // adapter receives this plan and returns normalized observations.  This is
+  // how Firefox, WebKit, agent-native browsers, and tools such as Ego can join
+  // deterministic checks without pretending to be Chrome.
+  if (providerContract.browser_checks.execution_mode === "delegated" && !options.observations) {
+    const results = notRunResults(
+      `Browser provider ${provider} needs observations. Run \`silver check --browser --browser-provider ${provider} --prepare\`, execute that plan with the provider, then pass silver/browser-check-observation/v1 to \`--complete\`.`,
+    );
+    return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider }, plan, results });
+  }
+  const requestedPath = options.browserPath ?? options.chromePath;
+  const executable = requestedPath
+    ? await firstAccessible([requestedPath])
     : await firstAccessible(chromeCandidates);
+  if (options.observations) {
+    const requested = [];
+    const completed = [];
+    const findings = { accessibility: [], "responsive-behavior": [], "critical-interactions": [] };
+    let failure;
+    try {
+      const reports = observationReports(plan, options.observations);
+      for (const target of targets) {
+        for (const viewport of target.viewports?.length ? target.viewports : [{ width: 1280, height: 800 }]) {
+          const key = `${target.id}@${viewport.width}x${viewport.height}`;
+          requested.push(key);
+          reportFindings({ manifest, target, viewport, report: reports.get(key), findings });
+          completed.push(key);
+        }
+      }
+    } catch (error) {
+      failure = executionError("inspection", error);
+    }
+    const results = browserResults({ requested, completed, findings, error: failure, supported: plan.checkers });
+    return finalize({
+      schema: "silver/check-suite-result/v1", suite: "browser",
+      status: failure ? "error" : results.some(({ status }) => status === "fail") ? "fail" : "pass",
+      browser: {
+        provider,
+        adapter: providerContract.browser_checks.adapter,
+        connection_kind: providerContract.browser_checks.connection_kind,
+        adapter_version: providerContract.browser_checks.protocol_version,
+        isolation: providerContract.browser_checks.isolation,
+        ...(options.observations.browser ?? {}),
+      }, plan, results,
+      ...(failure ? { errors: [failure.diagnostic] } : {}),
+    });
+  }
+  if (providerContract.browser_checks.execution_mode === "cli") {
+    let server;
+    try {
+      server = await atStage("browser-readiness", {}, () =>
+        (options.serverFactory ?? staticServer)(root));
+      let observations;
+      if (providerContract.browser_checks.adapter === "ego-task-space") {
+        observations = await runEgoObservation({
+          plan,
+          origin: server.origin,
+          command: providerContract.browser_checks.command,
+          args: providerContract.browser_checks.args,
+        });
+      } else {
+        const command = options.browserPath ?? providerContract.browser_checks.command;
+        if (!command) throw new BrowserExecutionError("adapter", `Browser provider ${provider} declares CLI mode without a command.`);
+        observations = await runCommandObservation({
+          command,
+          args: providerContract.browser_checks.args,
+          input: JSON.stringify({ plan, origin: server.origin }),
+        });
+      }
+      return runBrowserSuite({ ...options, root, provider, observations });
+    } catch (error) {
+      const failure = executionError("adapter", error);
+      const results = browserResults({ requested: [], completed: [], findings: { accessibility: [], "responsive-behavior": [], "critical-interactions": [] }, error: failure, supported: plan.checkers });
+      return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "error", browser: { provider, adapter: providerContract.browser_checks.adapter }, plan, results, errors: [failure.diagnostic] });
+    } finally {
+      try { await server?.close(); } catch {}
+    }
+  }
   if (!executable) {
     const results = notRunResults("No compatible local Chrome executable is available.");
     return finalize({ schema: "silver/check-suite-result/v1", suite: "browser", status: "not-run", browser: { provider: "unavailable" }, results });
@@ -658,18 +984,7 @@ export async function runBrowserSuite(options = {}) {
         }
         const report = evaluation.result.value;
         completed.push(key);
-        for (const rule of report.accessibility) {
-          findings.accessibility.push(finding({ checker: "accessibility", rule: `browser.${rule}`, file: targetPath(manifest, target), message: `${report.title}: ${rule} failed at ${viewport.width}x${viewport.height}.` }));
-        }
-        for (const contrast of report.contrast) {
-          findings.accessibility.push(finding({ checker: "accessibility", rule: "browser.contrast", file: targetPath(manifest, target), message: `${contrast.tag} text contrast is ${contrast.ratio}:1 at ${viewport.width}x${viewport.height}.`, observedValue: contrast.text }));
-        }
-        if (report.responsive.overflow) {
-          findings["responsive-behavior"].push(finding({ checker: "responsive-behavior", rule: "browser.horizontal-overflow", file: targetPath(manifest, target), message: `Document width ${report.responsive.documentWidth}px exceeds ${viewport.width}px viewport.` }));
-        }
-        if (report.interaction.status === "fail") {
-          findings["critical-interactions"].push(finding({ checker: "critical-interactions", rule: "browser.interaction-failed", file: targetPath(manifest, target), message: `${report.interaction.detail} did not reach its observable state.` }));
-        }
+        reportFindings({ manifest, target, viewport, report, findings });
       }
     }
   } catch (error) {
@@ -692,7 +1007,7 @@ export async function runBrowserSuite(options = {}) {
   } catch (error) {
     failure ??= executionError("cleanup", error);
   }
-  const results = browserResults({ requested, completed, findings, error: failure });
+  const results = browserResults({ requested, completed, findings, error: failure, supported: plan.checkers });
   const status = failure
     ? "error"
     : results.some(({ status: resultStatus }) => resultStatus === "fail")
@@ -704,6 +1019,8 @@ export async function runBrowserSuite(options = {}) {
     status,
     browser: {
       provider: "chrome-cdp",
+      selected_provider: provider,
+      adapter: "chrome-cdp/v1",
       ...(browser?.version ? { version: browser.version } : {}),
       ...(cleanup ? { cleanup } : {}),
     },

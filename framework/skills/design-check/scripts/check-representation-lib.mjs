@@ -5,7 +5,8 @@ import path from "node:path";
 import { checkResult, findFiles, finding, parseYaml, workspacePath } from "./check-lib.mjs";
 
 let runtime;
-async function representationRuntime() {
+async function representationRuntime(injected) {
+  if (injected) return injected;
   if (runtime) return runtime;
   try {
     runtime = await import("silver-design-framework/framework/runtime/representations.mjs");
@@ -20,7 +21,8 @@ async function representationRuntime() {
 }
 
 let viewRuntime;
-async function viewProvenanceRuntime() {
+async function viewProvenanceRuntime(injected) {
+  if (injected) return injected;
   if (viewRuntime) return viewRuntime;
   for (const specifier of [
     "silver-design-framework/framework/runtime/view-provenance.mjs",
@@ -116,10 +118,10 @@ async function reconciliationJson(root, kind) {
 }
 
 const ruleHandlers = {
-  async "binding-integrity"(root, checker, completed, findings) {
+  async "binding-integrity"(root, checker, completed, findings, runtime) {
     const items = await bindings(root);
     if (items.length === 0) return;
-    const { validateBinding } = await representationRuntime();
+    const { validateBinding } = await representationRuntime(runtime?.representations);
     for (const item of items) {
       completed.push(item.relative);
       try {
@@ -168,8 +170,8 @@ const ruleHandlers = {
       }
     }
   },
-  async "view-provenance"(root, checker, completed, findings) {
-    const { inspectViewProvenance } = await viewProvenanceRuntime();
+  async "view-provenance"(root, checker, completed, findings, runtime) {
+    const { inspectViewProvenance } = await viewProvenanceRuntime(runtime?.viewProvenance);
     const roots = ["design/flows", "design/work/sketches", "design/work/visualizations", "design/system", "prototypes", "presentations"];
     const html = (await Promise.all(roots.map((relative) => files(root, relative, ".html")))).flat();
     const expectedViews = new Map();
@@ -373,10 +375,10 @@ const ruleHandlers = {
       }
     }
   },
-  async "secret-free-configuration"(root, checker, completed, findings) {
+  async "secret-free-configuration"(root, checker, completed, findings, runtime) {
     const items = await bindings(root);
     if (items.length === 0) return;
-    const { assertNoSecrets } = await representationRuntime();
+    const { assertNoSecrets } = await representationRuntime(runtime?.representations);
     for (const item of items) {
       completed.push(item.relative);
       try {
@@ -390,13 +392,13 @@ const ruleHandlers = {
   },
 };
 
-export async function checkRepresentationRule({ root = process.cwd(), checker }) {
+export async function checkRepresentationRule({ root = process.cwd(), checker, runtime }) {
   const workspace = path.resolve(root);
   const completed = [];
   const findings = [];
   const handler = ruleHandlers[checker];
   if (!handler) throw new Error(`Unknown representation checker: ${checker}`);
-  await handler(workspace, checker, completed, findings);
+  await handler(workspace, checker, completed, findings, runtime);
   return checkResult({
     checker,
     requested: [checker],

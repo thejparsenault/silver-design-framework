@@ -67,7 +67,9 @@ Copied-and-owned packages such as the reference system are never overwritten;
 a changed release is reported as an available proposal. Repeating the same
 update is idempotent.
 
-`silver trace <artifact-id-or-path>` writes a readable provenance view.
+`silver trace <artifact-id-or-path>` writes a readable provenance view. It
+distinguishes immutable artifact source pins from the producing invocation's
+inputs, while retaining `sources` as a compatibility alias for artifact pins.
 `silver practice apply <proposal>` updates only an approved My Practice
 proposal and commits its revision. Generalized external synchronization remains
 deferred; newly linked sources support freshness, drift, and reviewed re-pins.

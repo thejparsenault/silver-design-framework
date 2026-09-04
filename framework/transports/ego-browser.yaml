@@ -1,0 +1,66 @@
+# Ego Lite is optional.  It is never selected merely because it is installed:
+# the designer binds it explicitly, then an agent uses Ego's task-space CLI to
+# complete Silver's prepared browser-check plan and returns observations.
+schema: silver/provider/v1
+id: ego-browser
+version: 0.9.2
+kind: external
+target: browser
+variant: ego-task-space
+aliases:
+  - ego lite
+  - ego browser
+  - ego
+source:
+  publisher: Citro Labs
+  distribution:
+    kind: binary
+    ref: ego-browser CLI supplied with Ego Lite
+  evidence: verified
+  verified_at: 2026-09-03
+  verified_against: local Ego Lite task-space CLI
+guidance:
+  good_at:
+    - Isolated agent task spaces that can reuse the designer's login state
+    - Browser automation through its CLI, JavaScript, and DevTools helpers
+  not_for:
+    - Being launched as a generic Chrome executable; it does not provide Silver's required CDP page lifecycle
+  prefer_when:
+    - You explicitly choose Ego Lite and can complete a prepared Silver browser-check plan
+capabilities: [browser]
+interface:
+  kind: cli
+  command: ego-browser
+  detection:
+    executables: [ego-browser]
+browser_checks:
+  adapter: ego-task-space
+  execution_mode: cli
+  protocol_version: silver/browser-check-adapter/v1
+  connection_kind: cli
+  command: ego-browser
+  args: [nodejs]
+  checkers: [accessibility, responsive-behavior, critical-interactions]
+  isolation: agent-owned
+permissions:
+  - capability: browser
+    actions: [inspect, execute]
+    default: ask
+directions: [read]
+fidelity: partial
+maturity: experimental
+post_setup:
+  - Use Ego's agent-owned task space and close it after producing the Silver observation file. Do not launch the Ego app executable as Chrome.
+activities:
+  - id: evaluate.run-browser-suite
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.check-accessibility
+    support: partial
+    actions: [inspect, execute]
+  - id: evaluate.check-responsive
+    support: full
+    actions: [inspect, execute]
+  - id: evaluate.test-interaction
+    support: full
+    actions: [execute]

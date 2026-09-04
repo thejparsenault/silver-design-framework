@@ -33,7 +33,8 @@ function assertPortableResultShape(_schema, result) {
   }
 }
 
-async function loadRuntime() {
+async function loadRuntime(injected) {
+  if (injected) return injected;
   if (resultRuntime) return resultRuntime;
   let indexRuntime;
   for (const base of [
@@ -89,11 +90,31 @@ const digest = (content) =>
 export async function checkAuditTrailIntegrity(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const checker = "audit-trail-integrity";
-  const requested = [".silver/results/skills"];
+  const requested = [".silver/lock.yaml", ".silver/results/skills"];
   const completed = [];
   const findings = [];
   const advisories = [];
-  const { assertV2, loadSkillResultIndex } = await loadRuntime();
+  let enforcement = null;
+  try {
+    const lock = parseYaml(await readFile(path.join(root, ".silver/lock.yaml"), "utf8"));
+    if (
+      lock.schema === "silver/lock/v2" &&
+      lock.enforcement?.introduced_in === "0.9.2" &&
+      !Number.isNaN(new Date(lock.enforcement.from).valueOf())
+    ) {
+      enforcement = lock.enforcement;
+      completed.push(".silver/lock.yaml");
+    } else {
+      findings.push(finding({ checker, rule: "audit-trail.enforcement-horizon-missing", file: ".silver/lock.yaml", message: "This workspace has no valid 0.9.2 audit enforcement horizon. Run silver migrate --apply before relying on current audit gates." }));
+    }
+  } catch (error) {
+    findings.push(finding({ checker, rule: "audit-trail.enforcement-horizon-missing", file: ".silver/lock.yaml", message: `This workspace cannot establish its audit enforcement horizon: ${error.message}` }));
+  }
+  let evaluated = 0;
+  let skipped = 0;
+  const since = options.since && options.since !== "all" ? new Date(options.since).valueOf() : null;
+  if (since !== null && Number.isNaN(since)) throw new Error("--since must be an ISO timestamp or all.");
+  const { assertV2, loadSkillResultIndex } = await loadRuntime(options.runtime?.auditTrail);
   const index = await loadSkillResultIndex(root);
   for (const record of index.records) {
     completed.push(record.path);
@@ -102,11 +123,23 @@ export async function checkAuditTrailIntegrity(options = {}) {
       continue;
     }
     const result = record.result;
+    if (since !== null && new Date(result?.completed_at).valueOf() < since) {
+      skipped += 1;
+      continue;
+    }
+    const preHorizon = enforcement && new Date(result?.completed_at).valueOf() < new Date(enforcement.from).valueOf();
+    const findingStart = findings.length;
     try {
       await assertV2("skill-result.schema.json", result);
     } catch (error) {
       findings.push(finding({ checker, rule: "audit-trail.result-invalid", file: record.path, message: error.message }));
       continue;
+    }
+    if (new Date(result.started_at).valueOf() > new Date(result.completed_at).valueOf()) {
+      findings.push(finding({ checker, rule: "audit-trail.invocation-interval-invalid", file: record.path, message: "Result started_at falls after completed_at." }));
+    }
+    if (result.retry_of === result.invocation_id) {
+      findings.push(finding({ checker, rule: "audit-trail.retry-self-reference", file: record.path, message: "Result retry_of cannot reference its own invocation_id." }));
     }
     if ((result.outputs?.length ?? 0) > 0 && !result.provenance) {
       findings.push(finding({ checker, rule: "audit-trail.provenance-missing", file: record.path, message: "A durable-output result has no provenance envelope." }));
@@ -202,11 +235,52 @@ export async function checkAuditTrailIntegrity(options = {}) {
         }
       }
     }
+    // New working artifacts must pin exactly the live inputs that produced
+    // them. This checks the relationship recorded at creation, not whether a
+    // historical source remains available later.
+    for (const output of result.outputs ?? []) {
+      try {
+        const value = JSON.parse(await readFile(inside(root, output.path), "utf8"));
+        if (value.schema !== "silver/working-artifact/v2") continue;
+        const sourceKeys = (value.sources ?? []).map(key);
+        const inputKeys = (result.inputs ?? []).map(key);
+        if (sourceKeys.length !== inputKeys.length || sourceKeys.some((source, index) => source !== inputKeys[index])) {
+          findings.push(finding({ checker, rule: "audit-trail.artifact-sources-disagree", file: record.path, message: `Working artifact ${output.id}@${output.revision} sources disagree with the producing invocation inputs.` }));
+        }
+      } catch {
+        // The output may be a non-JSON companion or a historical artifact no
+        // longer present. Its availability is not a provenance failure.
+      }
+    }
+    if (preHorizon) {
+      const legacyFindings = findings.splice(findingStart);
+      skipped += legacyFindings.length;
+      for (const item of legacyFindings) advisories.push(advisory({
+        checker,
+        rule: `audit-trail.pre-horizon-${item.rule.replace(/^audit-trail\./, "")}`,
+        file: record.path,
+        message: `Pre-horizon record retained read-only: ${item.message}`,
+      }));
+    } else {
+      evaluated += 1;
+    }
   }
   for (const [output, matches] of index.byOutput) {
     if (matches.length < 2) continue;
     const [id, kind, revision] = output.split("\0");
-    findings.push(finding({ checker, rule: "audit-trail.duplicate-output-result", file: matches[0].path, message: `${matches.length} results claim the same exact output identity (${kind} ${id}@${revision}).` }));
+    const later = matches[0];
+    const preHorizon = enforcement && new Date(later.result?.completed_at).valueOf() < new Date(enforcement.from).valueOf();
+    const message = `${matches.length} results claim the same exact output identity (${kind} ${id}@${revision}).`;
+    if (preHorizon) {
+      skipped += 1;
+      advisories.push(advisory({ checker, rule: "audit-trail.pre-horizon-duplicate-output-result", file: later.path, message: `Pre-horizon duplicate retained read-only: ${message}` }));
+    } else {
+      findings.push(finding({ checker, rule: "audit-trail.duplicate-output-result", file: later.path, message }));
+      evaluated += 1;
+    }
   }
-  return checkResult({ checker, requested, completed, findings, advisories });
+  const result = checkResult({ checker, requested, completed, findings, advisories });
+  result.extensions ??= {};
+  result.extensions["silver.audit-horizon"] = { enforcement: enforcement ?? "missing", evaluated, skipped };
+  return result;
 }

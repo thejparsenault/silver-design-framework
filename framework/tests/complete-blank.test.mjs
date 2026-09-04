@@ -24,7 +24,8 @@ test("complete blank workspace invokes every skill and passes the full local loo
     result.trace_chain.design_contexts[0].id,
     "default-design-context",
   );
-  assert.ok(result.trace_chain.sources.length >= 2);
+  assert.ok(Array.isArray(result.trace_chain.sources));
+  assert.ok(Array.isArray(result.trace_chain.invocation_inputs));
   assert.equal(result.trace_chain.external_bindings[0].id, "guided-map-figma");
   assert.equal(
     result.trace_chain.external_bindings[0].path,

@@ -44,6 +44,13 @@ connection:
   config:
     command: npx
     args: ["-y", "@playwright/mcp@latest"]
+browser_checks:
+  adapter: delegated-observation
+  execution_mode: delegated
+  protocol_version: silver/browser-check-adapter/v1
+  connection_kind: mcp
+  checkers: [accessibility, responsive-behavior, critical-interactions]
+  isolation: provider-owned
 probe:
   tool: mcp__playwright__browser_snapshot
   expects: an accessibility snapshot of the current page
@@ -58,6 +65,9 @@ maturity: stable
 post_setup:
   - Install the browser binaries Playwright drives — `npx playwright install`. Silver prints this and never runs it.
 activities:
+  - id: evaluate.run-browser-suite
+    support: full
+    actions: [inspect, execute]
   - id: browser.navigate
     support: full
     actions: [inspect, execute]

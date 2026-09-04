@@ -28,7 +28,7 @@ A designer can:
 2. Establish discoverable sources of truth for brand, product, voice, design principles, system rules, research, and decisions.
 3. Install only the skills and deterministic checks appropriate to that repository.
 4. Use agent-supported workflows for brand definition, ideation, flow authoring, theming, prototyping, testing, refinement, and eventual production work.
-5. Use configured tools such as Figma or a browser through provider-neutral capabilities and environment-governed authority.
+5. Use configured tools such as Figma or a browser through provider-neutral capabilities and environment-governed authority. Chrome/Chromium remains the deterministic browser default; another browser protocol can complete the same state-bound inspection through an explicitly selected adapter.
 6. Constrain generated work to approved semantic styles and components, with explicit prototype-only suspension when desired.
 7. Share organization-level guidance across multiple products while allowing product- and codebase-specific components and rules.
 8. Run recognizable design skills independently or compose them through optional, resumable playbooks with inspectable artifact handoffs and checkpoints.

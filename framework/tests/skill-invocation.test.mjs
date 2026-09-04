@@ -624,7 +624,7 @@ test("existing outputs require matching integrity and remain unchanged on stale 
     completedAt,
   });
   assert.equal(result.execution.status, "blocked");
-  assert.match(result.execution.summary, /expected_integrity/);
+  assert.match(result.execution.summary, /already claimed.*new revision/i);
   assert.equal(await readFile(artifactPath, "utf8"), before);
 });
 
@@ -741,7 +741,7 @@ function visualizationRequest({ output, render, views, bindingStates = [], exter
           title: "My Day visualization",
           created: startedAt,
           updated: startedAt,
-          sources: [],
+          sources: [context],
           payload: {
             fidelity: "high",
             constraint_profile: "constrained",

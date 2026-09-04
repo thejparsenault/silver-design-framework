@@ -23,6 +23,7 @@ import { inspectViewProvenance } from "./view-provenance.mjs";
 import { assertManagedSkillIntegrity } from "./managed-integrity.mjs";
 import { discoverProviders } from "./providers.mjs";
 import { resolveReferenceCitations } from "./references.mjs";
+import { loadSkillResultIndex } from "./result-index.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
@@ -127,6 +128,35 @@ function referenceKey(reference) {
     path: reference.path,
     ...(reference.role ? { role: reference.role } : {}),
   });
+}
+
+function assertInvocationInterval(request, completedAt) {
+  const startedAt = new Date(request.started_at).valueOf();
+  const finishedAt = new Date(completedAt).valueOf();
+  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || startedAt > finishedAt) {
+    throw new Error("Invocation started_at must be on or before completed_at.");
+  }
+}
+
+async function assertNewOutputClaims(root, outputs) {
+  if (outputs.length === 0) return;
+  const index = await loadSkillResultIndex(root);
+  for (const output of outputs) {
+    const conflict = index.records.find((record) =>
+      record.result?.schema === "silver/skill-result/v2" &&
+      (record.result.outputs ?? []).some((claimed) =>
+        claimed.id === output.reference.id &&
+        claimed.kind === output.reference.kind &&
+        claimed.revision === output.reference.revision &&
+        claimed.path === output.reference.path,
+      ),
+    );
+    if (conflict) {
+      throw new Error(
+        `Output ${output.reference.id}@${output.reference.revision} at ${output.reference.path} is already claimed by invocation ${conflict.result.invocation_id}; create a new revision instead of rewriting history.`,
+      );
+    }
+  }
 }
 
 async function validateInvocationProvenance({ root, request, contract, completedAt }) {
@@ -549,7 +579,12 @@ async function recordResult(workspaceRoot, result) {
     workspaceRoot,
     `.silver/results/skills/${result.invocation_id}.json`,
   );
-  await atomicWrite(workspaceRoot, resultPath, `${JSON.stringify(result, null, 2)}\n`);
+  await atomicWrite(
+    workspaceRoot,
+    resultPath,
+    `${JSON.stringify(result, null, 2)}\n`,
+    { createOnly: true },
+  );
   return result;
 }
 
@@ -585,6 +620,7 @@ async function blockedResult({
   return {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
+    ...(request.retry_of ? { retry_of: request.retry_of } : {}),
     skill: { id: contract.id, version: contract.version },
     provenance,
     declared_effects: audit.declared,
@@ -871,6 +907,7 @@ export async function invokeSkill({
   );
   await assertV2("skill.schema.json", contract);
   await assertV2("skill-invocation.schema.json", request);
+  assertInvocationInterval(request, completedAt);
   const authoritativeAcceptance = effectiveAcceptance(contract, request);
   if (
     request.skill.id !== contract.id ||
@@ -1010,6 +1047,7 @@ export async function invokeSkill({
     if (contract.outputs.length > 0 && request.outputs.length === 0) {
       throw new Error(`Skill ${contract.id} requires at least one declared output.`);
     }
+    await assertNewOutputClaims(workspaceRoot, request.outputs);
     for (const output of request.outputs) {
       const rule = outputRule(contract, output.reference);
       if (!rule) {
@@ -1051,6 +1089,18 @@ export async function invokeSkill({
         throw new Error(
           `Output content identity does not match ${output.reference.id}@${output.reference.revision}.`,
         );
+      }
+      if (output.content.value?.schema === "silver/working-artifact/v2") {
+        const expectedSources = request.inputs.map(referenceKey);
+        const actualSources = (output.content.value.sources ?? []).map(referenceKey);
+        if (
+          expectedSources.length !== actualSources.length ||
+          expectedSources.some((source, index) => source !== actualSources[index])
+        ) {
+          throw new Error(
+            `Working artifact ${output.reference.id}@${output.reference.revision} sources must exactly match the producing invocation inputs.`,
+          );
+        }
       }
       prepared.push({
         absolute,
@@ -1291,6 +1341,7 @@ export async function invokeSkill({
   const result = {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
+    ...(request.retry_of ? { retry_of: request.retry_of } : {}),
     skill: { id: contract.id, version: contract.version },
     provenance:
       persistedProvenance ?? {

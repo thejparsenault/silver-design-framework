@@ -1,10 +1,27 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { parse } from "yaml";
 
 import { invokeSkill } from "../framework/runtime/invoke-skill.mjs";
-import { inspectWorkspace } from "../framework/skills/what-now/scripts/analyze-workspace.mjs";
+import * as resultIndex from "../framework/runtime/result-index.mjs";
+import { payloadPath } from "./payload.mjs";
+
+let whatNowRuntime;
+async function loadWhatNowRuntime() {
+  if (whatNowRuntime) return whatNowRuntime;
+  const script = payloadPath("framework/skills/what-now/scripts/analyze-workspace.mjs");
+  try {
+    whatNowRuntime = await import(pathToFileURL(script).href);
+    return whatNowRuntime;
+  } catch (error) {
+    throw new Error(
+      `Cannot load the what-now analysis runtime from ${script}: ${error.message}. ` +
+      "This installation looks incomplete — reinstall Silver.",
+    );
+  }
+}
 
 function invocationId(prefix, date) {
   const timestamp = date
@@ -39,7 +56,10 @@ export async function runWhatNow({
   if (Number.isNaN(observedAt.valueOf())) {
     throw new Error("what-now requires a valid analysis time.");
   }
-  const analysis = await inspectWorkspace(workspaceRoot, observedAt);
+  const { inspectWorkspace } = await loadWhatNowRuntime();
+  const analysis = await inspectWorkspace(workspaceRoot, observedAt, {
+    runtime: { resultIndex },
+  });
   const timestamp = observedAt.toISOString();
   if (!record) {
     return { analysis, result: null, recorded: false };

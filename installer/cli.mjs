@@ -46,8 +46,8 @@ Usage:
   silver invoke <skill-id> <request.json> [directory] [--json]
   silver invoke --scaffold <skill-id> [directory]
   silver what-now [directory] [--record] [--json]
-  silver check [directory] [--only <check-id,...>] [--json]
-  silver check [directory] --browser [--chrome <path>] [--json]
+  silver check [directory] [--only <check-id,...>] [--since <ISO timestamp|all>] [--json]
+  silver check [directory] --browser [--browser-provider <id>] [--browser-path <path>] [--prepare | --complete <observations.json>] [--json]
   silver tools [directory] [--list] [--json]
   silver tools [directory] --diagnose [transport-id]
   silver tools [directory] --probe [transport-id]
@@ -169,9 +169,13 @@ function parseArguments(args) {
     "as",
     "bind",
     "browser",
+    "browser-observations",
+    "browser-path",
+    "browser-provider",
     "chrome",
     "connect",
     "capture",
+    "complete",
     "declare",
     "diagnose",
     "direction",
@@ -186,10 +190,12 @@ function parseArguments(args) {
     "only",
     "practice",
     "probe",
+    "prepare",
     "record",
     "record-probe",
     "resolve",
     "scaffold",
+    "since",
     "source",
   ]);
   const positionals = [];
@@ -205,7 +211,7 @@ function parseArguments(args) {
       throw new Error(`Unknown option: --${key}`);
     }
     if (
-      ["allow-unresolved", "all", "apply", "browser", "json", "help", "list", "record", "scaffold"].includes(
+      ["allow-unresolved", "all", "apply", "browser", "json", "help", "list", "prepare", "record", "scaffold"].includes(
         key,
       )
     ) {
@@ -900,7 +906,19 @@ export async function runCli(
       if (flags.browser && only) {
         throw new Error("check --browser runs the whole browser suite; --only selects fast checks.");
       }
+      if (flags.since && flags.browser) {
+        throw new Error("check --since audits fast history and cannot be combined with --browser.");
+      }
       const checkRoot = path.resolve(positionals[0] ?? process.cwd());
+      if (flags.prepare && !flags.browser) {
+        throw new Error("check --prepare is only valid with --browser.");
+      }
+      if (flags.complete && !flags.browser) {
+        throw new Error("check --complete is only valid with --browser.");
+      }
+      if (flags.prepare && flags.complete) {
+        throw new Error("check --prepare and --complete cannot be used together.");
+      }
       // The browser suite is the only producer of accessibility,
       // responsive-behavior, and critical-interactions evidence. It needs a
       // local Chrome, so it stays opt-in rather than joining the fast suite.
@@ -908,17 +926,25 @@ export async function runCli(
         ? await runBrowserCheckSuite({
             root: checkRoot,
             ...(typeof flags.chrome === "string" ? { chromePath: flags.chrome } : {}),
+            ...(typeof flags["browser-path"] === "string" ? { browserPath: flags["browser-path"] } : {}),
+            ...(typeof flags["browser-provider"] === "string" ? { provider: flags["browser-provider"] } : {}),
+            ...(flags.prepare ? { prepare: true } : {}),
+            ...(typeof flags.complete === "string" ? { observationPath: flags.complete } : {}),
+            ...(typeof flags["browser-observations"] === "string" ? { observationPath: flags["browser-observations"] } : {}),
           })
         : await runCheckSuite({
             root: checkRoot,
             ...(only ? { only } : {}),
+            ...(flags.since ? { since: String(flags.since), persist: false } : {}),
           });
       if (flags.json) {
         stdout(JSON.stringify(suite, null, 2));
+      } else if (suite.status === "prepared") {
+        stdout(`Browser check plan prepared for ${suite.plan.provider}. Complete it with a matching silver/browser-check-observation/v1 file.`);
       } else {
         printCheck(suite, stdout);
       }
-      return suite.status === "pass" ? 0 : suite.status === "fail" ? 1 : 2;
+      return suite.status === "prepared" || suite.status === "pass" ? 0 : suite.status === "fail" ? 1 : 2;
     }
     if (command === "tools") {
       const { positionals, flags } = parseArguments(args.slice(1));

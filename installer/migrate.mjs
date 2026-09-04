@@ -404,7 +404,13 @@ async function loadWorkspace(root) {
       manifestPath,
       lock,
       lockPath,
-      current: lock.framework.version === FRAMEWORK_VERSION,
+      // A same-version 0.9.2 workspace may predate the historical-enforcement
+      // horizon. It still needs a migration, otherwise old unbounded records
+      // could satisfy a new gate merely because the package version matches.
+      current:
+        lock.framework.version === FRAMEWORK_VERSION &&
+        lock.enforcement?.introduced_in === "0.9.2" &&
+        !Number.isNaN(new Date(lock.enforcement?.from).valueOf()),
     };
   }
   const validation = await validateSchema("lock.schema.json", lock);
@@ -851,6 +857,10 @@ async function migrateWorkspaceDirect(options = {}) {
     framework: {
       version,
       source: { type: "local", reference: sourceReference },
+    },
+    enforcement: {
+      introduced_in: "0.9.2",
+      from: `${variables.DATE}T00:00:00.000Z`,
     },
     packages: records,
     managed_files: [

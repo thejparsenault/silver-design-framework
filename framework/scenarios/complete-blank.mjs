@@ -467,13 +467,13 @@ export async function runCompleteBlankScenario(options = {}) {
         summary: "A consequence summary supports confident completion.",
         testable_claim: "At least four of five evaluators correctly predict the saved result.",
         differentiators: ["Tests comprehension rather than preference"],
-      }, [refs.frame]), "working-artifact.schema.json"),
+      }, [refs.frame, refs.finding]), "working-artifact.schema.json"),
       jsonOutput(refs.selection, working(refs.selection, "Select guided setup", {
         decision: "Select the guided setup summary for specification.",
         rationale: "It addresses the accepted problem with the cheapest testable mechanism.",
         consequences: ["Add one review screen", "Retain a secondary cancel action"],
         decided_by: "release-fixture-reviewer",
-      }, [refs.concept, refs.hypothesis]), "working-artifact.schema.json"),
+      }, [refs.frame, refs.finding]), "working-artifact.schema.json"),
     ],
     checkEvidence,
   }));
@@ -621,7 +621,7 @@ export async function runCompleteBlankScenario(options = {}) {
         sanitized: true,
         observation: "The completion status appears only after the action.",
         interpretation: "A pre-action consequence sentence may improve prediction.",
-      }, [refs.prototype]), "working-artifact.schema.json"),
+      }, [refs.visualization, refs.prototype, refs.specification]), "working-artifact.schema.json"),
       jsonOutput(refs.evaluation, working(refs.evaluation, "Guided setup evaluation", {
         question: "Can a person predict what finishing setup changes?",
         method: "Sanitized expert walkthrough; no participant study was conducted.",
@@ -629,12 +629,12 @@ export async function runCompleteBlankScenario(options = {}) {
         observations: [refs.observation],
         findings: ["Consequence copy should precede the action"],
         recommendations: ["Move the saved-result sentence above the actions"],
-      }, [refs.prototype, refs.specification]), "working-artifact.schema.json"),
+      }, [refs.visualization, refs.prototype, refs.specification]), "working-artifact.schema.json"),
       jsonOutput(refs.evaluationFinding, working(refs.evaluationFinding, "Consequence copy needs earlier placement", {
         statement: "The saved-result consequence should appear before the completion action.",
         evidence_refs: ["setup-observation@r1"],
         confidence: "medium",
-      }, [refs.observation, refs.evaluation]), "working-artifact.schema.json"),
+      }, [refs.visualization, refs.prototype, refs.specification]), "working-artifact.schema.json"),
     ],
     checkEvidence,
   }));
@@ -700,7 +700,7 @@ export async function runCompleteBlankScenario(options = {}) {
     observations: [refs.observation],
     findings: ["Consequence copy now precedes the primary action"],
     recommendations: ["Proceed to the local production recipe"],
-  }, [refinedPrototype, refs.evaluationFinding]));
+  }, [refinedPrototype, refs.specification]));
   secondOutput.schema_name = "working-artifact.schema.json";
   const secondEvalResult = await invokeSkill({
     root,
@@ -940,13 +940,13 @@ export async function runCompleteBlankScenario(options = {}) {
         impact: { kind: "estimated", claim: "Fewer incorrect completion predictions", confidence: "medium", source: "setup-re-evaluation@r1" },
         tradeoffs: ["Adds one sentence to the review state"],
         decision_request: "Approve production implementation of the refined guided setup.",
-      }, [refs.evaluationFinding, secondEvaluation, refs.specification, refinedPrototype]), "working-artifact.schema.json"),
+      }, [refs.evaluationFinding, secondEvaluation, refs.specification, refinedPrototype, refs.journeyMap]), "working-artifact.schema.json"),
       jsonOutput(refs.presentation, working(refs.presentation, "Guided setup presentation view", {
         format: "html",
         view_path: "presentations/guided-setup/index.html",
         change_case_revision: "r1",
         presentation_kit_revision: "r1",
-      }, [refs.changeCase, ref("presentation-kit", "presentation-kit", "r1", "design/presentation-kit/kit.json")]), "working-artifact.schema.json"),
+      }, [refs.evaluationFinding, secondEvaluation, refs.specification, refinedPrototype, refs.journeyMap]), "working-artifact.schema.json"),
     ],
     checkEvidence,
     provenanceMetadata: {
@@ -980,7 +980,7 @@ export async function runCompleteBlankScenario(options = {}) {
           secondary_action: "Not now",
           completion_message: "Workspace setup is complete.",
         },
-      }, [refs.specification, refs.component, secondEvaluation, refinedPrototype], "accepted", "codebase"), "working-artifact.schema.json"),
+      }, [refs.specification, refs.flow, refs.component, secondEvaluation, refinedPrototype, refs.journeyMap], "accepted", "codebase"), "working-artifact.schema.json"),
       textOutput(refs.implementation, JSON.stringify({
         id: refs.implementation.id,
         kind: refs.implementation.kind,
@@ -1122,6 +1122,7 @@ export async function runCompleteBlankScenario(options = {}) {
       practice: mapTrace.practice,
       design_contexts: mapTrace.design_contexts,
       sources: mapTrace.sources,
+      invocation_inputs: mapTrace.invocation_inputs,
       external_bindings: mapTrace.provenance.external_bindings,
       implementation_checkpoint: implementationResult.git_checkpoint,
       qa_result: qaResult.invocation_id,

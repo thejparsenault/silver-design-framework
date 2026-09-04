@@ -38,17 +38,30 @@ audit checker reports historical contradictions and drift. Trace and what-now
 join exact output revisions, and generated launchers select a lock-compatible
 runtime without silently preferring an older workspace dependency.
 
+Browser checking now separates Silver's deterministic evaluation from its
+transport. Chrome/Chromium is the local default; an explicitly selected CLI,
+MCP, or host-native browser completes a versioned, state-bound inspection plan
+with a unique run ID and normalized observations. The optional Ego Lite
+transport uses its isolated task-space CLI and is neither required nor treated
+as a Chrome executable. MCP and host-native connections remain agent-owned and
+complete through the prepare/complete handoff.
+
+Historical audit enforcement is now explicit in the workspace lock. Migration
+adds the 0.9.2 horizon to same-version workspaces; pre-horizon results remain
+readable as advisories, while new result records are create-only, reject
+duplicate output claims, and require working-artifact source/input parity.
+
 Release preparation is green: 248 serialized source tests, 54 v2 schemas, 25
 v2 skills, and the exact packed-package scenario pass. The tarball contains
 5,868 files and is 12,622,737 bytes. Both native executables report `0.9.2`;
 the arm64 binary is
-`sha256:a31732fe987c663c606f56be3ac6b237c4813e909267f3f074d2114873e9cc8a`
+`sha256:594dba3369e9ea4af67c02279c640ec71cf24a44b694545b33bb748c5f1d3878`
 and the x64 binary is
-`sha256:cc8212bd170bb7d885e93b0146c8493599b9bc0c0207e4831d6578383f059e24`.
+`sha256:bfb30962ba3519d370c039daba8fae6978db18fda11f456e7b54e3b8b86b4e14`.
 The unsigned macOS packages are prepared with matching `SHA256SUMS`: arm64
-`sha256:e6850beb210f8c57b8b10b0a7573410308e5f791ed3c6925960394d64d6af7c0`
+`sha256:f67ebe38071ebed3ece4671a3206e25113e078ff7835c3a9730954769377d496`
 and x64
-`sha256:59f947ea0760bc11d73c843a6c2bc8ae43ccb6aa64532f5f14dcc9405f948606`.
+`sha256:1cfdf4545fbdc34111166bb828c59e8f716bd2dc33ce33a681f48c5d94116fd2`.
 Each package contains 1,027 payload entries and `pkgutil` confirms that neither
 is signed. Signing, notarization, publication, and installation remain separate
 actions.

@@ -9,6 +9,7 @@ import {
   BrowserExecutionError,
   DevTools,
   browserSuiteExitCode,
+  prepareBrowserCheckPlan,
   runBrowserSuite,
 } from "../skills/design-check/scripts/run-browser.mjs";
 import { setupWorkspace } from "../../installer/setup.mjs";
@@ -95,6 +96,44 @@ test("browser mechanism errors are distinct from completed design findings", asy
       assert.equal((await validateSchema("check-result.schema.json", result)).valid, true);
     }
   }
+});
+
+test("a selected delegated provider completes a state-bound observation plan", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-browser-delegated-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({ root, name: "Delegated browser", id: "delegated-browser", date: "2026-09-03" });
+
+  const provider = "agent-native-browser";
+  const plan = await prepareBrowserCheckPlan({ root, provider });
+  const observations = {
+    schema: "silver/browser-check-observation/v1",
+    provider,
+    run_id: plan.run_id,
+    plan_digest: plan.plan_digest,
+    state_scope: plan.state_scope,
+    state_digest: plan.state_digest,
+    plan,
+    observations: plan.targets.flatMap((target) => target.viewports.map((viewport) => ({
+      key: `${target.id}@${viewport.width}x${viewport.height}`,
+      report: passingReport,
+    }))),
+  };
+  const completed = await runBrowserSuite({ root, provider, observations });
+  assert.equal(completed.status, "pass", JSON.stringify(completed, null, 2));
+  assert.equal(completed.browser.adapter, "delegated-observation");
+  assert.ok(completed.results.every(({ status }) => status === "pass"));
+
+  const unavailable = await runBrowserSuite({ root, provider });
+  assert.equal(unavailable.status, "not-run");
+  assert.match(unavailable.results[0].coverage.reason, /--prepare/);
+
+  const malformed = await runBrowserSuite({
+    root,
+    provider,
+    observations: { ...observations, plan_digest: "sha256:wrong" },
+  });
+  assert.equal(malformed.status, "error");
+  assert.match(malformed.errors[0].message, /do not belong/);
 });
 
 test("browser launch retries once, reports unavailable separately, and diagnoses cleanup escalation", async (t) => {

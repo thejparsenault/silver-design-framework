@@ -251,6 +251,27 @@
         }
       }
     },
+    "browser_checks": {
+      "description": "Optional deterministic browser-check adapter contract. Silver owns the checker rules; a non-local provider returns browser-check-observation/v1 for a prepared plan. `delegated-observation` works with MCP, host-native, CLI, API, and SDK transports without Silver guessing their protocol.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "execution_mode", "protocol_version", "connection_kind", "checkers", "isolation"],
+      "properties": {
+        "adapter": { "enum": ["chrome-cdp", "cli-observation", "delegated-observation", "ego-task-space"] },
+        "execution_mode": { "enum": ["embedded", "cli", "delegated"] },
+        "protocol_version": { "const": "silver/browser-check-adapter/v1" },
+        "connection_kind": { "enum": ["local", "cli", "mcp", "host-native", "api", "sdk"] },
+        "checkers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["accessibility", "responsive-behavior", "critical-interactions"] }
+        },
+        "isolation": { "enum": ["temporary-profile", "provider-owned", "agent-owned"] },
+        "command": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "args": { "type": "array", "items": { "type": "string", "maxLength": 300 } }
+      }
+    },
     "maturity": {
       "description": "Recorded for a designer's judgment, not used for ranking (Silver does not maintain a cross-vendor league table).",
       "enum": ["stable", "preview", "beta", "experimental"]
