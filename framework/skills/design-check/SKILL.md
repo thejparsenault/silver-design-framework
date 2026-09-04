@@ -54,6 +54,17 @@ The browser suite reports `not-run` when Chrome, the selected provider, or a tar
 `error` when the browser/checking mechanism cannot complete, and `fail` only
 when completed accessibility, responsive, or interaction checks find defects.
 
+`audit-trail-integrity` evaluates result records against the workspace's
+enforcement horizon in `.silver/lock.yaml`: a record older than the horizon is
+excluded from evaluation entirely, not downgraded to a warning, because it is
+immutable history that predates the rules now in force. `silver migrate
+--apply` establishes the horizon the first time and later advances it, but
+only past a point its own most recent passing `audit-trail-integrity` result
+actually verified clean — never past records nothing has examined. Pass
+`--since <ISO timestamp>` to override the horizon for one run, or `--since
+all` to evaluate every record regardless of age, for a deliberate historical
+audit.
+
 ## Done
 
 - Satisfy: checks-independent, results-preserved, not-run-never-pass.

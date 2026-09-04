@@ -526,6 +526,41 @@ are the next recommended milestones.
     trusted to produce Silver's canonical production source. A real adapter
     package, not a declaration, would be required for any of these.
 
+## P3 — Small Technical Debt
+
+- [ ] Per-subcommand flag validation in the CLI
+  - `parseArguments` uses one global `supportedFlags` allowlist for every
+    command, so e.g. `silver setup --since x` parses without complaint and
+    the flag is silently ignored rather than rejected as unknown for that
+    command.
+
+- [ ] `presentation-view` artifact kind naming collides with the
+      visualization "view"/"render" vocabulary
+  - `presentation-view` names a rendered deck and carries its own
+    `payload.view_path` — a third, unrelated sense of "view" alongside
+    visualization renders. Renaming the artifact kind touches paths,
+    manifests, and migrations; out of scope for the views -> renders pass
+    that touched only visualization artifacts.
+
+- [ ] Nested external-snapshot double schema
+  - `installer/sync.mjs` wraps a complete `silver/external-snapshot/v1`
+    (the Figma adapter's own output) inside a `silver/external-snapshot/v2`
+    envelope's `payload`. Seven fields — id, binding_id, revision,
+    captured_at, adapter, completeness, unresolved — exist at both nesting
+    levels with nothing enforcing agreement between them. The adapter should
+    return only what's genuinely its own (variables, styles, components,
+    nodes, unresolved, object_id) and let the v2 envelope own identity,
+    timing, and integrity once.
+
+- [ ] `schemas/v2/` mixes bundle version with format version
+  - Some files in `framework/schemas/v2/` carry their own independent
+    version suffix (`representation-binding.schema.json` is v1 of the
+    binding format; `representation-binding-v2.schema.json` is v2), so the
+    directory name and the file name each claim a version and they don't
+    agree. Move superseded formats into `framework/schemas/v1/`, which
+    already exists for exactly this, and drop the `-v2` suffix from the
+    current one.
+
 ## Parking Lot
 
 - Hosted collaborative service.
