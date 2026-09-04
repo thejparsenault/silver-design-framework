@@ -174,10 +174,10 @@
             "required": ["fidelity", "constraint_profile", "question"],
             "properties": {
               "view_path": {
-                "description": "Legacy shorthand for one primary local view. New visualization work should emit views[].",
+                "description": "Legacy shorthand for one primary local render. New visualization work should emit renders[].",
                 "$ref": "common.schema.json#/$defs/relativePath"
               },
-              "views": {
+              "renders": {
                 "type": "array",
                 "minItems": 1,
                 "contains": {
@@ -227,7 +227,7 @@
             },
             "anyOf": [
               { "required": ["view_path"] },
-              { "required": ["views"] }
+              { "required": ["renders"] }
             ]
           }
         }

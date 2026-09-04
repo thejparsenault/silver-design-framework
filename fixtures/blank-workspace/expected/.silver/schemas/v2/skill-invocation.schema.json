@@ -24,6 +24,10 @@
     "invocation_id": {
       "$ref": "common.schema.json#/$defs/id"
     },
+    "retry_of": {
+      "description": "Optional immutable link to an earlier invocation this new invocation retries. A retry always receives its own invocation_id and result file.",
+      "$ref": "common.schema.json#/$defs/id"
+    },
     "skill": {
       "type": "object",
       "additionalProperties": false,

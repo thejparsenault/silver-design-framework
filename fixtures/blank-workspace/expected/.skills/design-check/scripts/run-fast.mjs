@@ -31,10 +31,11 @@ import { checkSecretFreeConfiguration } from "./check-secret-free-configuration.
 import { checkSemanticMapping } from "./check-semantic-mapping.mjs";
 import { checkStaleProposals } from "./check-stale-proposals.mjs";
 import { checkSynchronizationStatus } from "./check-synchronization-status.mjs";
-import { checkViewProvenance } from "./check-view-provenance.mjs";
+import { checkRenderProvenance } from "./check-render-provenance.mjs";
 
 let attestation;
-async function attestationRuntime() {
+async function attestationRuntime(injected) {
+  if (injected) return injected;
   if (attestation) return attestation;
   for (const specifier of [
     "silver-design-framework/framework/runtime/check-attestation.mjs",
@@ -70,7 +71,7 @@ const checkers = [
   ["managed-integrity", checkManagedIntegrity],
   ["binding-integrity", checkBindingIntegrity],
   ["provider-revision-pins", checkProviderRevisionPins],
-  ["view-provenance", checkViewProvenance],
+  ["render-provenance", checkRenderProvenance],
   ["synchronization-status", checkSynchronizationStatus],
   ["semantic-mapping", checkSemanticMapping],
   ["stale-proposals", checkStaleProposals],
@@ -86,7 +87,7 @@ export async function runFastSuite(options = {}) {
     attestCheckResults,
     unstableCheckResults,
     workspaceCheckStateDigest,
-  } = await attestationRuntime();
+  } = await attestationRuntime(options.runtime?.attestation);
   const stateBefore = await workspaceCheckStateDigest(root);
   const only = options.only ? new Set(options.only) : null;
   if (only) {
@@ -105,7 +106,7 @@ export async function runFastSuite(options = {}) {
   for (const [checker, run] of checkers) {
     if (only && !only.has(checker)) continue;
     try {
-      results.push(await run({ root }));
+      results.push(await run({ root, runtime: options.runtime, ...(options.since ? { since: options.since } : {}) }));
     } catch (error) {
       results.push(
         checkResult({

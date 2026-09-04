@@ -25,15 +25,16 @@ import {
 
 let contractsPromise;
 
-async function runtimeContracts() {
+async function runtimeContracts(injected) {
+  if (injected) return injected;
   contractsPromise ??= import(
     "silver-design-framework/framework/runtime/contracts.mjs",
   ).catch(() => null);
   return contractsPromise;
 }
 
-async function validateV2(name, value) {
-  const contracts = await runtimeContracts();
+async function validateV2(name, value, injected) {
+  const contracts = await runtimeContracts(injected);
   if (contracts) {
     await contracts.assertV2(name, value);
     return;
@@ -211,7 +212,7 @@ export async function checkArtifacts(options = {}) {
       const structuredSchema = structuredSchemaFor(artifact.kind);
       if (structuredSchema) {
         const value = await readStructured(absolute);
-        await validateV2(structuredSchema, value);
+        await validateV2(structuredSchema, value, options.runtime?.contracts);
         // token-source is a resolved DTCG tree, not a Silver artifact document
         // — it has no id of its own to compare against the manifest mapping.
         if (value.id !== undefined && value.id !== artifact.id) {
@@ -231,7 +232,7 @@ export async function checkArtifacts(options = {}) {
           throw new Error(`${registry.label} does not declare a supported schema.`);
         }
         for (const source of value.sources) {
-          await validateV2(variant.entrySchema, source);
+          await validateV2(variant.entrySchema, source, options.runtime?.contracts);
         }
         continue;
       }
@@ -310,103 +311,80 @@ export async function checkArtifacts(options = {}) {
     try {
       const artifact = JSON.parse(await readFile(absolute, "utf8"));
       if (artifact.schema !== "silver/working-artifact/v2") continue;
-      await validateV2("working-artifact.schema.json", artifact);
-      const historicalAdvisoriesApply = ![
+      await validateV2("working-artifact.schema.json", artifact, options.runtime?.contracts);
+      // Artifact sources are immutable authorship provenance. Their current
+      // availability and revision are deliberately irrelevant after this
+      // artifact revision is recorded; live inputs are checked before writes.
+      const enforceReviewSurface = ![
         "archived",
         "rejected",
         "stale",
       ].includes(artifact.status);
-      for (const reference of artifact.sources) {
-        const source = path.resolve(root, reference.path);
-        if (!source.startsWith(`${root}${path.sep}`) || !(await exists(source))) {
-          if (historicalAdvisoriesApply) advisories.push(
-            advisory({
-              checker,
-              rule: "artifact.reference-unavailable",
-              file,
-              message: `Historical source ${reference.id}@${reference.revision} is no longer available at its recorded path.`,
-              observedValue: reference.path,
-            }),
-          );
-          continue;
-        }
-        if (/\.(?:json|ya?ml|md)$/.test(source)) {
-          let sourceValue;
-          try {
-            const content = await readFile(source, "utf8");
-            sourceValue = source.endsWith(".json")
-              ? JSON.parse(content)
-              : source.endsWith(".md")
-                ? parseFrontmatter(content)
-                : await readYaml(source);
-          } catch (error) {
-            if (historicalAdvisoriesApply) advisories.push(advisory({
-              checker,
-              rule: "artifact.reference-unreadable",
-              file,
-              message: `Historical source ${reference.id}@${reference.revision} can no longer be inspected: ${error.message}`,
-              observedValue: reference.path,
-            }));
-            continue;
-          }
-          const sourceRevision =
-            typeof sourceValue.revision === "number"
-              ? `r${sourceValue.revision}`
-              : sourceValue.revision;
-          if (
-            (sourceValue.id && sourceValue.id !== reference.id) ||
-            (sourceValue.kind && sourceValue.kind !== reference.kind) ||
-            (sourceRevision && sourceRevision !== reference.revision)
-          ) {
-            if (historicalAdvisoriesApply) advisories.push(
-              advisory({
-                checker,
-                rule: "artifact.reference-revision-advanced",
-                file,
-                message: `Historical source pin ${reference.id}@${reference.revision} differs from the artifact currently at that path; the recorded pin was preserved.`,
-                observedValue: reference.path,
-              }),
-            );
-          }
-        }
-      }
-      if (artifact.kind === "visualization" && historicalAdvisoriesApply) {
-        const views = Array.isArray(artifact.payload.views)
-          ? artifact.payload.views
+      if (artifact.kind === "visualization" && enforceReviewSurface) {
+        const renders = Array.isArray(artifact.payload.renders)
+          ? artifact.payload.renders
           : artifact.payload.view_path
             ? [{ id: "primary", medium: "local", path: artifact.payload.view_path }]
             : [];
-        for (const view of views) {
-          if (view.medium === "local") {
-            const localView = path.resolve(root, view.path);
+        // A local render can be declared before its file exists — recording the
+        // visualization and adding the render are legitimately two steps, and the
+        // runtime's own handoff readiness already treats an unrendered declaration as
+        // "not yet", not as broken. Whether that gap is expected or a defect is
+        // exactly what the artifact's own status already says: a draft is still
+        // being worked on, so a missing render is only worth a note; once it is
+        // active or accepted it is something someone can be sent to review, and a
+        // missing render there is a real finding.
+        const missingLocalRenderSeverity = artifact.status === "draft" ? "advisory" : "finding";
+        for (const render of renders) {
+          if (render.medium === "local") {
+            const localRender = path.resolve(root, render.path);
             if (
-              !localView.startsWith(`${root}${path.sep}`) ||
-              !(await exists(localView))
+              !localRender.startsWith(`${root}${path.sep}`) ||
+              !(await exists(localRender))
             ) {
-              advisories.push(advisory({
+              const args = {
                 checker,
-                rule: "artifact.visualization-view-unavailable",
+                rule: "artifact.visualization-render-unavailable",
                 file,
-                message: `Local visualization view ${view.id} is unavailable.`,
-                observedValue: view.path,
-              }));
+                message: `Local visualization render ${render.id} is missing at its declared path.`,
+                observedValue: render.path,
+              };
+              (missingLocalRenderSeverity === "advisory" ? advisories : findings).push(
+                missingLocalRenderSeverity === "advisory" ? advisory(args) : finding(args),
+              );
             }
-          } else if (!view.binding) {
-            advisories.push(advisory({
+          } else if (!render.binding) {
+            findings.push(finding({
               checker,
-              rule: "artifact.visualization-view-unverified",
+              rule: "artifact.visualization-render-unverified",
               file,
-              message: `External visualization view ${view.id} has a location but no representation binding.`,
-              observedValue: view.url,
+              message: `External visualization render ${render.id} has a URL but no representation binding.`,
+              observedValue: render.url,
             }));
-          } else if (!(await exists(path.join(root, "design", "integrations", `${view.binding}.yaml`)))) {
-            advisories.push(advisory({
+          } else if (!(await exists(path.join(root, "design", "integrations", `${render.binding}.yaml`)))) {
+            findings.push(finding({
               checker,
               rule: "artifact.visualization-binding-unavailable",
               file,
-              message: `External visualization view ${view.id} references an unavailable binding.`,
-              observedValue: view.binding,
+              message: `External visualization render ${render.id} references an unavailable binding.`,
+              observedValue: render.binding,
             }));
+          } else {
+            try {
+              const binding = await readYaml(path.join(root, "design", "integrations", `${render.binding}.yaml`));
+              await validateV2("representation-binding-v2.schema.json", binding, options.runtime?.contracts);
+              if (binding.id !== render.binding) {
+                throw new Error(`Binding identifies ${binding.id}, not ${render.binding}.`);
+              }
+            } catch (error) {
+              findings.push(finding({
+                checker,
+                rule: "artifact.visualization-binding-invalid",
+                file,
+                message: `External visualization render ${render.id} has an invalid representation binding: ${error.message}`,
+                observedValue: render.binding,
+              }));
+            }
           }
         }
       }

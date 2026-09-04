@@ -40,11 +40,21 @@ guidance:
 capabilities: [browser]
 connection:
   kind: local
+browser_checks:
+  adapter: chrome-cdp
+  execution_mode: embedded
+  protocol_version: silver/browser-check-adapter/v1
+  connection_kind: local
+  checkers: [accessibility, responsive-behavior, critical-interactions]
+  isolation: temporary-profile
 availability:
   script: scripts/health.mjs
 post_setup:
   - Install Google Chrome or Chromium (google.com/chrome). If Silver reports no executable, set SILVER_CHROME_PATH to it.
 activities:
+  - id: evaluate.run-browser-suite
+    support: full
+    actions: [inspect, execute]
   - id: browser.navigate
     support: full
     actions: [inspect, execute]

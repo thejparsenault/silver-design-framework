@@ -51,7 +51,8 @@ const FOUNDATION_ACTIONS = {
 };
 
 let resultIndexRuntime;
-async function loadResultIndexRuntime() {
+async function loadResultIndexRuntime(injected) {
+  if (injected) return injected;
   if (resultIndexRuntime) return resultIndexRuntime;
   for (const specifier of [
     "silver-design-framework/framework/runtime/result-index.mjs",
@@ -258,7 +259,7 @@ function addCandidate(candidates, next) {
   }
 }
 
-async function inspectWorkspace(root, now) {
+async function inspectWorkspace(root, now, options = {}) {
   const candidates = new Map();
   const observations = [];
   const manifestRecord = await readStructured(root, "design/manifest.yaml");
@@ -414,7 +415,7 @@ async function inspectWorkspace(root, now) {
     }
   }
 
-  const { loadSkillResultIndex, currentResultRecords } = await loadResultIndexRuntime();
+  const { loadSkillResultIndex, currentResultRecords } = await loadResultIndexRuntime(options.runtime?.resultIndex);
   const resultIndex = await loadSkillResultIndex(root);
   for (const { path: relativePath, result } of currentResultRecords(resultIndex)) {
     const source = await readSafe(root, relativePath);

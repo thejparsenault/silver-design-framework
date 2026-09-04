@@ -4,7 +4,7 @@
   "title": "Silver durable provenance envelope v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "origin", "recorded_at", "sources", "guidance", "design_contexts"],
+  "required": ["schema", "origin", "recorded_at", "guidance", "design_contexts"],
   "properties": {
     "schema": { "const": "silver/provenance/v1" },
     "origin": { "enum": ["human-authored", "agent-assisted", "imported", "generated", "legacy"] },
@@ -20,10 +20,6 @@
           "id": { "type": "string", "minLength": 1, "maxLength": 160 }
         }
       }
-    },
-    "sources": {
-      "type": "array",
-      "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
     },
     "practice": {
       "type": "object",

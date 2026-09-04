@@ -2,10 +2,11 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { checkResult, findFiles, finding, parseYaml, workspacePath } from "./check-lib.mjs";
+import { advisory, checkResult, findFiles, finding, parseYaml, workspacePath } from "./check-lib.mjs";
 
 let runtime;
-async function representationRuntime() {
+async function representationRuntime(injected) {
+  if (injected) return injected;
   if (runtime) return runtime;
   try {
     runtime = await import("silver-design-framework/framework/runtime/representations.mjs");
@@ -19,22 +20,23 @@ async function representationRuntime() {
   return runtime;
 }
 
-let viewRuntime;
-async function viewProvenanceRuntime() {
-  if (viewRuntime) return viewRuntime;
+let renderRuntime;
+async function renderProvenanceRuntime(injected) {
+  if (injected) return injected;
+  if (renderRuntime) return renderRuntime;
   for (const specifier of [
-    "silver-design-framework/framework/runtime/view-provenance.mjs",
-    "../../../.silver/runtime/view-provenance.mjs",
-    "../../../runtime/view-provenance.mjs",
+    "silver-design-framework/framework/runtime/render-provenance.mjs",
+    "../../../.silver/runtime/render-provenance.mjs",
+    "../../../runtime/render-provenance.mjs",
   ]) {
     try {
-      viewRuntime = await import(specifier);
-      return viewRuntime;
+      renderRuntime = await import(specifier);
+      return renderRuntime;
     } catch {
       // Try the next source/package/installed-workspace location.
     }
   }
-  throw new Error("The shared view-provenance contract is unavailable.");
+  throw new Error("The shared render-provenance contract is unavailable.");
 }
 
 const sha = (content) =>
@@ -46,6 +48,10 @@ async function files(root, relative, extension) {
 
 function issue(checker, message, file, rule = checker) {
   return finding({ checker, rule: `${checker}.${rule}`, message, file });
+}
+
+function issueAdvisory(checker, message, file, rule = checker) {
+  return advisory({ checker, rule: `${checker}.${rule}`, message, file });
 }
 
 async function bindings(root) {
@@ -116,10 +122,10 @@ async function reconciliationJson(root, kind) {
 }
 
 const ruleHandlers = {
-  async "binding-integrity"(root, checker, completed, findings) {
+  async "binding-integrity"(root, checker, completed, findings, runtime) {
     const items = await bindings(root);
     if (items.length === 0) return;
-    const { validateBinding } = await representationRuntime();
+    const { validateBinding } = await representationRuntime(runtime?.representations);
     for (const item of items) {
       completed.push(item.relative);
       try {
@@ -168,50 +174,60 @@ const ruleHandlers = {
       }
     }
   },
-  async "view-provenance"(root, checker, completed, findings) {
-    const { inspectViewProvenance } = await viewProvenanceRuntime();
+  async "render-provenance"(root, checker, completed, findings, runtime, advisories) {
+    const { inspectRenderProvenance } = await renderProvenanceRuntime(runtime?.renderProvenance);
     const roots = ["design/flows", "design/work/sketches", "design/work/visualizations", "design/system", "prototypes", "presentations"];
     const html = (await Promise.all(roots.map((relative) => files(root, relative, ".html")))).flat();
-    const expectedViews = new Map();
+    const expectedRenders = new Map();
     for (const artifactPath of await files(root, "design/work/visualizations", ".json")) {
       try {
         const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
         if (artifact.schema !== "silver/working-artifact/v2" || artifact.kind !== "visualization") continue;
-        const views = artifact.payload?.views ?? (
+        const renders = artifact.payload?.renders ?? (
           artifact.payload?.view_path
             ? [{ medium: "local", format: "html", path: artifact.payload.view_path }]
             : []
         );
-        for (const view of views) {
-          if (view.medium !== "local" || view.format !== "html" || !view.path) continue;
-          const absolute = safeWorkspacePath(root, view.path);
-          expectedViews.set(absolute, {
+        for (const render of renders) {
+          if (render.medium !== "local" || render.format !== "html" || !render.path) continue;
+          const absolute = safeWorkspacePath(root, render.path);
+          expectedRenders.set(absolute, {
             target: "visualization",
             id: artifact.id,
             revision: artifact.revision,
+            status: artifact.status,
           });
         }
       } catch (error) {
         findings.push(issue(checker, error.message, workspacePath(root, artifactPath), "invalid-visualization"));
       }
     }
-    for (const [absolute, expected] of expectedViews) {
+    for (const [absolute, expected] of expectedRenders) {
       if (!html.includes(absolute)) {
-        findings.push(issue(checker, "Declared local visualization HTML is unavailable.", workspacePath(root, absolute), "missing-view"));
+        // A draft visualization can declare a render before the file exists — that is
+        // work in progress, not a defect; once it is active or accepted, someone can be
+        // sent to review it, and a missing render there is worth a real finding.
+        const message = "Declared local visualization HTML is unavailable.";
+        const relative = workspacePath(root, absolute);
+        if (expected.status === "draft") {
+          advisories.push(issueAdvisory(checker, message, relative, "missing-render"));
+        } else {
+          findings.push(issue(checker, message, relative, "missing-render"));
+        }
       }
     }
-    for (const absolute of new Set([...html, ...expectedViews.keys()])) {
+    for (const absolute of new Set([...html, ...expectedRenders.keys()])) {
       let content;
       try {
         content = await readFile(absolute, "utf8");
       } catch {
         continue;
       }
-      const expected = expectedViews.get(absolute);
+      const expected = expectedRenders.get(absolute);
       if (!expected && !content.includes("data-silver-target=")) continue;
       const relative = workspacePath(root, absolute);
       completed.push(relative);
-      for (const message of inspectViewProvenance(content, expected)) {
+      for (const message of inspectRenderProvenance(content, expected)) {
         findings.push(issue(checker, message, relative, "missing-pin"));
       }
       if (/https?:\/\//.test(content)) {
@@ -373,10 +389,10 @@ const ruleHandlers = {
       }
     }
   },
-  async "secret-free-configuration"(root, checker, completed, findings) {
+  async "secret-free-configuration"(root, checker, completed, findings, runtime) {
     const items = await bindings(root);
     if (items.length === 0) return;
-    const { assertNoSecrets } = await representationRuntime();
+    const { assertNoSecrets } = await representationRuntime(runtime?.representations);
     for (const item of items) {
       completed.push(item.relative);
       try {
@@ -390,17 +406,19 @@ const ruleHandlers = {
   },
 };
 
-export async function checkRepresentationRule({ root = process.cwd(), checker }) {
+export async function checkRepresentationRule({ root = process.cwd(), checker, runtime }) {
   const workspace = path.resolve(root);
   const completed = [];
   const findings = [];
+  const advisories = [];
   const handler = ruleHandlers[checker];
   if (!handler) throw new Error(`Unknown representation checker: ${checker}`);
-  await handler(workspace, checker, completed, findings);
+  await handler(workspace, checker, completed, findings, runtime, advisories);
   return checkResult({
     checker,
     requested: [checker],
     completed,
     findings,
+    advisories,
   });
 }

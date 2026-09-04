@@ -4,7 +4,8 @@ import { readFile } from "node:fs/promises";
 import { checkResult, finding, parseYaml } from "./check-lib.mjs";
 
 let runtime;
-async function managedRuntime() {
+async function managedRuntime(injected) {
+  if (injected) return injected;
   if (runtime) return runtime;
   for (const specifier of [
     "silver-design-framework/framework/runtime/managed-integrity.mjs",
@@ -27,7 +28,7 @@ export async function checkManagedIntegrity(options = {}) {
   const requested = [".silver/lock.yaml"];
   const completed = [];
   const findings = [];
-  const { inspectManagedIntegrity } = await managedRuntime();
+  const { inspectManagedIntegrity } = await managedRuntime(options.runtime?.managedIntegrity);
   let lock = null;
   try {
     lock = parseYaml(await readFile(path.join(root, ".silver/lock.yaml"), "utf8"));

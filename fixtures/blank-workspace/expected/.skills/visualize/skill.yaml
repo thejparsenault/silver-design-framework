@@ -100,7 +100,7 @@ checks:
   - id: accessibility
     required: true
     blocks: *a1
-  - id: view-provenance
+  - id: render-provenance
     required: true
     blocks: *a1
 handoffs:
@@ -109,9 +109,9 @@ handoffs:
     readiness: evaluate
     requires:
       - visualization
-    representation: &review_surface
+    representation: &render_readiness
       artifact_kind: visualization
-      role: review-surface
+      role: render
       minimum: 1
       verified: true
   - id: visualize-to-prototype
@@ -119,13 +119,13 @@ handoffs:
     readiness: prototype
     requires:
       - visualization
-    representation: *review_surface
+    representation: *render_readiness
   - id: visualize-to-component
     target: component
     readiness: component
     requires:
       - visualization
-    representation: *review_surface
+    representation: *render_readiness
 external_effects:
   - none
 scripts:

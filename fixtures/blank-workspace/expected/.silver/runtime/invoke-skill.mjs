@@ -19,10 +19,11 @@ import {
 } from "./checkpoints.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
 import { syncManifestStatus } from "./manifest-sync.mjs";
-import { inspectViewProvenance } from "./view-provenance.mjs";
+import { inspectRenderProvenance } from "./render-provenance.mjs";
 import { assertManagedSkillIntegrity } from "./managed-integrity.mjs";
 import { discoverProviders } from "./providers.mjs";
 import { resolveReferenceCitations } from "./references.mjs";
+import { loadSkillResultIndex } from "./result-index.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
@@ -129,6 +130,35 @@ function referenceKey(reference) {
   });
 }
 
+function assertInvocationInterval(request, completedAt) {
+  const startedAt = new Date(request.started_at).valueOf();
+  const finishedAt = new Date(completedAt).valueOf();
+  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || startedAt > finishedAt) {
+    throw new Error("Invocation started_at must be on or before completed_at.");
+  }
+}
+
+async function assertNewOutputClaims(root, outputs) {
+  if (outputs.length === 0) return;
+  const index = await loadSkillResultIndex(root);
+  for (const output of outputs) {
+    const conflict = index.records.find((record) =>
+      record.result?.schema === "silver/skill-result/v2" &&
+      (record.result.outputs ?? []).some((claimed) =>
+        claimed.id === output.reference.id &&
+        claimed.kind === output.reference.kind &&
+        claimed.revision === output.reference.revision &&
+        claimed.path === output.reference.path,
+      ),
+    );
+    if (conflict) {
+      throw new Error(
+        `Output ${output.reference.id}@${output.reference.revision} at ${output.reference.path} is already claimed by invocation ${conflict.result.invocation_id}; create a new revision instead of rewriting history.`,
+      );
+    }
+  }
+}
+
 async function validateInvocationProvenance({ root, request, contract, completedAt }) {
   const provenance = request.provenance;
   if (!provenance) return null;
@@ -140,12 +170,6 @@ async function validateInvocationProvenance({ root, request, contract, completed
     throw new Error(
       `Provenance acceptance ${provenance.acceptance} disagrees with authoritative acceptance ${acceptance.status}.`,
     );
-  }
-  if (
-    provenance.sources.length !== request.inputs.length ||
-    provenance.sources.some((source, index) => referenceKey(source) !== referenceKey(request.inputs[index]))
-  ) {
-    throw new Error("Provenance sources must exactly match the invocation inputs.");
   }
   const recordedAt = new Date(provenance.recorded_at).valueOf();
   const startedAt = new Date(request.started_at).valueOf();
@@ -217,7 +241,6 @@ async function validateInvocationProvenance({ root, request, contract, completed
 
   return {
     ...withoutLegacyAcceptance(provenance),
-    sources: request.inputs,
     references: await resolveReferenceCitations(root, request.references ?? []),
     external_bindings: externalBindings,
   };
@@ -549,7 +572,12 @@ async function recordResult(workspaceRoot, result) {
     workspaceRoot,
     `.silver/results/skills/${result.invocation_id}.json`,
   );
-  await atomicWrite(workspaceRoot, resultPath, `${JSON.stringify(result, null, 2)}\n`);
+  await atomicWrite(
+    workspaceRoot,
+    resultPath,
+    `${JSON.stringify(result, null, 2)}\n`,
+    { createOnly: true },
+  );
   return result;
 }
 
@@ -575,7 +603,6 @@ async function blockedResult({
     origin: "generated",
     recorded_at: completedAt,
     contributors: [{ kind: "agent", id: "silver-runtime" }],
-    sources: request.inputs,
     guidance: [],
     design_contexts: [],
     references: await resolveReferenceCitations(root, request.references ?? []),
@@ -585,6 +612,7 @@ async function blockedResult({
   return {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
+    ...(request.retry_of ? { retry_of: request.retry_of } : {}),
     skill: { id: contract.id, version: contract.version },
     provenance,
     declared_effects: audit.declared,
@@ -681,8 +709,8 @@ function freshnessBlockers(request) {
     }));
 }
 
-function visualizationViews(value) {
-  if (Array.isArray(value?.payload?.views)) return value.payload.views;
+function visualizationRenders(value) {
+  if (Array.isArray(value?.payload?.renders)) return value.payload.renders;
   if (value?.payload?.view_path) {
     return [{
       id: "primary",
@@ -695,7 +723,7 @@ function visualizationViews(value) {
   return [];
 }
 
-function validateVisualizationCompanions(prepared) {
+function validateVisualizationRenders(prepared) {
   const visualizations = prepared.filter(
     ({ reference, value }) => reference.kind === "visualization" && value,
   );
@@ -710,20 +738,20 @@ function validateVisualizationCompanions(prepared) {
   for (const companion of companions) {
     const match = visualizations.find(({ reference, value }) =>
       reference.revision === companion.reference.revision &&
-      visualizationViews(value).some(
-        (view) => view.medium === "local" && view.path === companion.reference.path,
+      visualizationRenders(value).some(
+        (render) => render.medium === "local" && render.path === companion.reference.path,
       ),
     );
     if (!match) {
       throw new Error(
-        `Visualization render ${companion.reference.path} does not match a declared local view at the same revision.`,
+        `Visualization render ${companion.reference.path} does not match a declared local render at the same revision.`,
       );
     }
-    const declared = visualizationViews(match.value).find(
-      (view) => view.medium === "local" && view.path === companion.reference.path,
+    const declared = visualizationRenders(match.value).find(
+      (render) => render.medium === "local" && render.path === companion.reference.path,
     );
     if (declared.format === "html") {
-      const provenanceFindings = inspectViewProvenance(companion.value, {
+      const provenanceFindings = inspectRenderProvenance(companion.value, {
         target: "visualization",
         id: match.reference.id,
         revision: match.reference.revision,
@@ -737,27 +765,27 @@ function validateVisualizationCompanions(prepared) {
   }
 }
 
-async function externalReviewSurfaceStatus({ root, view, visualization, request }) {
-  if (!view.binding) {
-    return { verified: false, reason: `External view ${view.id} has a URL but no representation binding.` };
+async function externalRenderStatus({ root, render, visualization, request }) {
+  if (!render.binding) {
+    return { verified: false, reason: `External render ${render.id} has a URL but no representation binding.` };
   }
-  const bindingPath = path.join(root, "design", "integrations", `${view.binding}.yaml`);
+  const bindingPath = path.join(root, "design", "integrations", `${render.binding}.yaml`);
   let binding;
   try {
     binding = parse(await readFile(bindingPath, "utf8"));
     await assertV2("representation-binding-v2.schema.json", binding);
   } catch (error) {
-    return { verified: false, reason: `External view ${view.id} binding ${view.binding} is unavailable or invalid: ${error.message}` };
+    return { verified: false, reason: `External render ${render.id} binding ${render.binding} is unavailable or invalid: ${error.message}` };
   }
   if (
     binding.artifact.id !== visualization.reference.id ||
     binding.artifact.revision !== visualization.reference.revision ||
     binding.counterpart.type !== "provider"
   ) {
-    return { verified: false, reason: `External view ${view.id} binding does not identify this visualization revision.` };
+    return { verified: false, reason: `External render ${render.id} binding does not identify this visualization revision.` };
   }
-  if (view.format === "figma") {
-    const location = new URL(view.url);
+  if (render.format === "figma") {
+    const location = new URL(render.url);
     const host = location.hostname.toLowerCase();
     const segments = location.pathname.split("/").filter(Boolean);
     const fileSegment = segments.findIndex((segment) => ["design", "file"].includes(segment));
@@ -775,40 +803,40 @@ async function externalReviewSurfaceStatus({ root, view, visualization, request 
       !objectId.includes(fileKey) ||
       !nodeMatches
     ) {
-      return { verified: false, reason: `External view ${view.id} URL and provider binding do not agree.` };
+      return { verified: false, reason: `External render ${render.id} URL and provider binding do not agree.` };
     }
   }
   const state = (request.binding_states ?? []).find(
-    ({ binding_id: bindingId }) => bindingId === view.binding,
+    ({ binding_id: bindingId }) => bindingId === render.binding,
   );
   const external = binding.base?.state === "initialized" ? binding.base.external : null;
   if (state?.state !== "current" || external?.state !== "present") {
-    return { verified: false, reason: `External view ${view.id} has not been freshly captured in a current binding state.` };
+    return { verified: false, reason: `External render ${render.id} has not been freshly captured in a current binding state.` };
   }
   return { verified: true };
 }
 
-async function reviewSurfaceStatus({ root, prepared, request, artifactKind }) {
+async function renderStatus({ root, prepared, request, artifactKind }) {
   const artifacts = prepared.filter(
     ({ reference, value }) => reference.kind === artifactKind && value,
   );
   let verified = 0;
   const reasons = [];
   for (const visualization of artifacts) {
-    for (const view of visualizationViews(visualization.value)) {
-      if (view.medium === "local") {
+    for (const render of visualizationRenders(visualization.value)) {
+      if (render.medium === "local") {
         const companion = prepared.find(
           ({ reference }) =>
             reference.kind === "x-visualization-render" &&
             reference.revision === visualization.reference.revision &&
-            reference.path === view.path,
+            reference.path === render.path,
         );
         if (companion) verified += 1;
-        else reasons.push(`Local review surface ${view.path} was not recorded by this invocation.`);
+        else reasons.push(`Local render ${render.path} was not recorded by this invocation.`);
       } else {
-        const status = await externalReviewSurfaceStatus({
+        const status = await externalRenderStatus({
           root,
-          view,
+          render,
           visualization,
           request,
         });
@@ -871,6 +899,7 @@ export async function invokeSkill({
   );
   await assertV2("skill.schema.json", contract);
   await assertV2("skill-invocation.schema.json", request);
+  assertInvocationInterval(request, completedAt);
   const authoritativeAcceptance = effectiveAcceptance(contract, request);
   if (
     request.skill.id !== contract.id ||
@@ -1010,6 +1039,7 @@ export async function invokeSkill({
     if (contract.outputs.length > 0 && request.outputs.length === 0) {
       throw new Error(`Skill ${contract.id} requires at least one declared output.`);
     }
+    await assertNewOutputClaims(workspaceRoot, request.outputs);
     for (const output of request.outputs) {
       const rule = outputRule(contract, output.reference);
       if (!rule) {
@@ -1052,6 +1082,18 @@ export async function invokeSkill({
           `Output content identity does not match ${output.reference.id}@${output.reference.revision}.`,
         );
       }
+      if (output.content.value?.schema === "silver/working-artifact/v2") {
+        const expectedSources = request.inputs.map(referenceKey);
+        const actualSources = (output.content.value.sources ?? []).map(referenceKey);
+        if (
+          expectedSources.length !== actualSources.length ||
+          expectedSources.some((source, index) => source !== actualSources[index])
+        ) {
+          throw new Error(
+            `Working artifact ${output.reference.id}@${output.reference.revision} sources must exactly match the producing invocation inputs.`,
+          );
+        }
+      }
       prepared.push({
         absolute,
         content: renderOutput(output),
@@ -1060,7 +1102,7 @@ export async function invokeSkill({
         effect,
       });
     }
-    validateVisualizationCompanions(prepared);
+    validateVisualizationRenders(prepared);
   } catch (error) {
     const result = await blockedResult({
       root: workspaceRoot,
@@ -1252,7 +1294,7 @@ export async function invokeSkill({
   } else {
     for (const handoff of contract.handoffs) {
       const representation = handoff.representation
-        ? await reviewSurfaceStatus({
+        ? await renderStatus({
             root: workspaceRoot,
             prepared,
             request,
@@ -1291,6 +1333,7 @@ export async function invokeSkill({
   const result = {
     schema: "silver/skill-result/v2",
     invocation_id: request.invocation_id,
+    ...(request.retry_of ? { retry_of: request.retry_of } : {}),
     skill: { id: contract.id, version: contract.version },
     provenance:
       persistedProvenance ?? {
@@ -1298,8 +1341,7 @@ export async function invokeSkill({
         origin: "generated",
         recorded_at: completedAt,
         contributors: [{ kind: "agent", id: "silver-runtime" }],
-        sources: request.inputs,
-        guidance: [],
+            guidance: [],
         design_contexts: [],
         references: await resolveReferenceCitations(workspaceRoot, request.references ?? []),
         change: {
