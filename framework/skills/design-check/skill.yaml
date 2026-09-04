@@ -121,7 +121,7 @@ checks:
   - id: provider-revision-pins
     required: true
     blocks: *no_blocks
-  - id: view-provenance
+  - id: render-provenance
     required: true
     blocks: *no_blocks
   - id: synchronization-status
@@ -212,8 +212,8 @@ scripts:
   - id: check-synchronization-status
     path: scripts/check-synchronization-status.mjs
     purpose: Bundled deterministic design-check operation.
-  - id: check-view-provenance
-    path: scripts/check-view-provenance.mjs
+  - id: check-render-provenance
+    path: scripts/check-render-provenance.mjs
     purpose: Bundled deterministic design-check operation.
   - id: run-browser
     path: scripts/run-browser.mjs

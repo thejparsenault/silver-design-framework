@@ -24,7 +24,7 @@ import * as contracts from "../framework/runtime/contracts.mjs";
 import * as managedIntegrity from "../framework/runtime/managed-integrity.mjs";
 import * as representations from "../framework/runtime/representations.mjs";
 import * as resultIndex from "../framework/runtime/result-index.mjs";
-import * as viewProvenance from "../framework/runtime/view-provenance.mjs";
+import * as renderProvenance from "../framework/runtime/render-provenance.mjs";
 import { payloadPath } from "./payload.mjs";
 
 export const CHECK_RESULT_DIRECTORY = ".silver/results/checks";
@@ -42,7 +42,7 @@ const FAST_CHECK_RUNTIME = Object.freeze({
   contracts,
   managedIntegrity,
   representations,
-  viewProvenance,
+  renderProvenance,
   auditTrail: { ...resultIndex, assertV2: contracts.assertV2 },
 });
 

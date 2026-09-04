@@ -10,8 +10,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(.silver/bin/silver:*), Bash($
 
 1. Declare the question, fidelity, active constraint profile, and pinned inputs.
 2. Generate alternatives that vary consequential structure or interaction.
-3. Declare one primary review surface in `payload.views[]`. A local surface uses
-   a workspace-relative path; an external surface uses an HTTPS URL and, when
+3. Declare one primary render in `payload.renders[]`. A local render uses
+   a workspace-relative path; an external render uses an HTTPS URL and, when
    verified, a v2 representation binding.
 4. Render locally with semantic styles or use a freshly captured external
    representation. A URL without a current binding remains visible but unverified.
@@ -40,5 +40,5 @@ the CLI refuses a request that still contains one.
 
 - Do not invent raw styles, even for rough wireframes; use an approved subset.
 - Static only. Interactive or testable behavior belongs to `prototype`, not here.
-- Prefer one self-contained view with labeled alternatives. Additional views may
+- Prefer one self-contained render with labeled alternatives. Additional renders may
   be sibling files or external frames, but they remain part of one visualization.

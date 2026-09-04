@@ -55,7 +55,7 @@ test("bundled fast checks pass on a fresh blank workspace", async (t) => {
       "managed-integrity",
       "binding-integrity",
       "provider-revision-pins",
-      "view-provenance",
+      "render-provenance",
       "synchronization-status",
       "semantic-mapping",
       "stale-proposals",

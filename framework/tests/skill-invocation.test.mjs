@@ -701,7 +701,7 @@ test("current input revision drift blocks before writing while historical pins r
   );
 });
 
-function visualizationRequest({ output, render, views, bindingStates = [], externalBindings = [] }) {
+function visualizationRequest({ output, render, renders, bindingStates = [], externalBindings = [] }) {
   const context = reference(
     "default-design-context",
     "design-context",
@@ -732,7 +732,7 @@ function visualizationRequest({ output, render, views, bindingStates = [], exter
             fidelity: "high",
             constraint_profile: "constrained",
             question: "Does the day layout communicate time clearly?",
-            views,
+            renders,
             alternatives: [
               { title: "Timeline", summary: "Hour-aligned layout", tradeoff: "Dense" },
               { title: "Agenda", summary: "Compact list", tradeoff: "Less spatial" },
@@ -770,7 +770,7 @@ function visualizationRequest({ output, render, views, bindingStates = [], exter
   };
 }
 
-test("visualization readiness accepts a guarded local review surface and rejects metadata-only readiness", async () => {
+test("visualization readiness accepts a guarded local render and rejects metadata-only readiness", async () => {
   const renderedRoot = await mkdtemp(path.join(os.tmpdir(), "silver-visual-local-"));
   await seedDesignContext(renderedRoot);
   await seedCheckEvidence(renderedRoot, ["contract-integrity", "semantic-styles", "accessibility"]);
@@ -786,7 +786,7 @@ test("visualization readiness accepts a guarded local review surface and rejects
     "r1",
     "design/work/visualizations/my-day/index.html",
   );
-  const views = [{
+  const renders = [{
     id: "primary",
     primary: true,
     medium: "local",
@@ -799,7 +799,7 @@ test("visualization readiness accepts a guarded local review surface and rejects
     skillDirectory: path.join(root, "framework/skills/visualize"),
     request: visualizationRequest({
       output,
-      views,
+      renders,
       render: { reference: renderReference, content: { format: "text", value: html } },
     }),
     completedAt,
@@ -813,7 +813,7 @@ test("visualization readiness accepts a guarded local review surface and rejects
   const metadataOnly = await invokeSkill({
     root: metadataRoot,
     skillDirectory: path.join(root, "framework/skills/visualize"),
-    request: visualizationRequest({ output, views }),
+    request: visualizationRequest({ output, renders }),
     completedAt,
   });
   assert.ok(metadataOnly.readiness.every(({ status }) => status === "not-ready"));
@@ -869,7 +869,7 @@ test("a current captured Figma binding satisfies visualization review readiness"
   );
   const request = visualizationRequest({
     output,
-    views: [{
+    renders: [{
       id: "figma",
       primary: true,
       medium: "external",

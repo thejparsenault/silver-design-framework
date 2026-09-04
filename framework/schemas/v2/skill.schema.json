@@ -308,7 +308,7 @@
             "required": ["artifact_kind", "role", "minimum", "verified"],
             "properties": {
               "artifact_kind": { "$ref": "common.schema.json#/$defs/artifactKind" },
-              "role": { "const": "review-surface" },
+              "role": { "const": "render" },
               "minimum": { "type": "integer", "minimum": 1 },
               "verified": { "const": true }
             }

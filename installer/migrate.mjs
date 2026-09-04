@@ -102,7 +102,7 @@ const independentChecks = [
   "managed-integrity",
   "binding-integrity",
   "provider-revision-pins",
-  "view-provenance",
+  "render-provenance",
   "synchronization-status",
   "semantic-mapping",
   "stale-proposals",

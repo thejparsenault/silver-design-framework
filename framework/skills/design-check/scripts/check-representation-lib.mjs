@@ -20,23 +20,23 @@ async function representationRuntime(injected) {
   return runtime;
 }
 
-let viewRuntime;
-async function viewProvenanceRuntime(injected) {
+let renderRuntime;
+async function renderProvenanceRuntime(injected) {
   if (injected) return injected;
-  if (viewRuntime) return viewRuntime;
+  if (renderRuntime) return renderRuntime;
   for (const specifier of [
-    "silver-design-framework/framework/runtime/view-provenance.mjs",
-    "../../../.silver/runtime/view-provenance.mjs",
-    "../../../runtime/view-provenance.mjs",
+    "silver-design-framework/framework/runtime/render-provenance.mjs",
+    "../../../.silver/runtime/render-provenance.mjs",
+    "../../../runtime/render-provenance.mjs",
   ]) {
     try {
-      viewRuntime = await import(specifier);
-      return viewRuntime;
+      renderRuntime = await import(specifier);
+      return renderRuntime;
     } catch {
       // Try the next source/package/installed-workspace location.
     }
   }
-  throw new Error("The shared view-provenance contract is unavailable.");
+  throw new Error("The shared render-provenance contract is unavailable.");
 }
 
 const sha = (content) =>
@@ -174,24 +174,24 @@ const ruleHandlers = {
       }
     }
   },
-  async "view-provenance"(root, checker, completed, findings, runtime, advisories) {
-    const { inspectViewProvenance } = await viewProvenanceRuntime(runtime?.viewProvenance);
+  async "render-provenance"(root, checker, completed, findings, runtime, advisories) {
+    const { inspectRenderProvenance } = await renderProvenanceRuntime(runtime?.renderProvenance);
     const roots = ["design/flows", "design/work/sketches", "design/work/visualizations", "design/system", "prototypes", "presentations"];
     const html = (await Promise.all(roots.map((relative) => files(root, relative, ".html")))).flat();
-    const expectedViews = new Map();
+    const expectedRenders = new Map();
     for (const artifactPath of await files(root, "design/work/visualizations", ".json")) {
       try {
         const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
         if (artifact.schema !== "silver/working-artifact/v2" || artifact.kind !== "visualization") continue;
-        const views = artifact.payload?.views ?? (
+        const renders = artifact.payload?.renders ?? (
           artifact.payload?.view_path
             ? [{ medium: "local", format: "html", path: artifact.payload.view_path }]
             : []
         );
-        for (const view of views) {
-          if (view.medium !== "local" || view.format !== "html" || !view.path) continue;
-          const absolute = safeWorkspacePath(root, view.path);
-          expectedViews.set(absolute, {
+        for (const render of renders) {
+          if (render.medium !== "local" || render.format !== "html" || !render.path) continue;
+          const absolute = safeWorkspacePath(root, render.path);
+          expectedRenders.set(absolute, {
             target: "visualization",
             id: artifact.id,
             revision: artifact.revision,
@@ -202,7 +202,7 @@ const ruleHandlers = {
         findings.push(issue(checker, error.message, workspacePath(root, artifactPath), "invalid-visualization"));
       }
     }
-    for (const [absolute, expected] of expectedViews) {
+    for (const [absolute, expected] of expectedRenders) {
       if (!html.includes(absolute)) {
         // A draft visualization can declare a render before the file exists — that is
         // work in progress, not a defect; once it is active or accepted, someone can be
@@ -210,24 +210,24 @@ const ruleHandlers = {
         const message = "Declared local visualization HTML is unavailable.";
         const relative = workspacePath(root, absolute);
         if (expected.status === "draft") {
-          advisories.push(issueAdvisory(checker, message, relative, "missing-view"));
+          advisories.push(issueAdvisory(checker, message, relative, "missing-render"));
         } else {
-          findings.push(issue(checker, message, relative, "missing-view"));
+          findings.push(issue(checker, message, relative, "missing-render"));
         }
       }
     }
-    for (const absolute of new Set([...html, ...expectedViews.keys()])) {
+    for (const absolute of new Set([...html, ...expectedRenders.keys()])) {
       let content;
       try {
         content = await readFile(absolute, "utf8");
       } catch {
         continue;
       }
-      const expected = expectedViews.get(absolute);
+      const expected = expectedRenders.get(absolute);
       if (!expected && !content.includes("data-silver-target=")) continue;
       const relative = workspacePath(root, absolute);
       completed.push(relative);
-      for (const message of inspectViewProvenance(content, expected)) {
+      for (const message of inspectRenderProvenance(content, expected)) {
         findings.push(issue(checker, message, relative, "missing-pin"));
       }
       if (/https?:\/\//.test(content)) {

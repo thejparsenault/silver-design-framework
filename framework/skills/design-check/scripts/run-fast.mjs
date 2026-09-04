@@ -31,7 +31,7 @@ import { checkSecretFreeConfiguration } from "./check-secret-free-configuration.
 import { checkSemanticMapping } from "./check-semantic-mapping.mjs";
 import { checkStaleProposals } from "./check-stale-proposals.mjs";
 import { checkSynchronizationStatus } from "./check-synchronization-status.mjs";
-import { checkViewProvenance } from "./check-view-provenance.mjs";
+import { checkRenderProvenance } from "./check-render-provenance.mjs";
 
 let attestation;
 async function attestationRuntime(injected) {
@@ -71,7 +71,7 @@ const checkers = [
   ["managed-integrity", checkManagedIntegrity],
   ["binding-integrity", checkBindingIntegrity],
   ["provider-revision-pins", checkProviderRevisionPins],
-  ["view-provenance", checkViewProvenance],
+  ["render-provenance", checkRenderProvenance],
   ["synchronization-status", checkSynchronizationStatus],
   ["semantic-mapping", checkSemanticMapping],
   ["stale-proposals", checkStaleProposals],

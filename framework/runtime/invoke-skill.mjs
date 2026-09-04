@@ -19,7 +19,7 @@ import {
 } from "./checkpoints.mjs";
 import { resolveGuardrails } from "./guardrails.mjs";
 import { syncManifestStatus } from "./manifest-sync.mjs";
-import { inspectViewProvenance } from "./view-provenance.mjs";
+import { inspectRenderProvenance } from "./render-provenance.mjs";
 import { assertManagedSkillIntegrity } from "./managed-integrity.mjs";
 import { discoverProviders } from "./providers.mjs";
 import { resolveReferenceCitations } from "./references.mjs";
@@ -709,8 +709,8 @@ function freshnessBlockers(request) {
     }));
 }
 
-function visualizationViews(value) {
-  if (Array.isArray(value?.payload?.views)) return value.payload.views;
+function visualizationRenders(value) {
+  if (Array.isArray(value?.payload?.renders)) return value.payload.renders;
   if (value?.payload?.view_path) {
     return [{
       id: "primary",
@@ -723,7 +723,7 @@ function visualizationViews(value) {
   return [];
 }
 
-function validateVisualizationCompanions(prepared) {
+function validateVisualizationRenders(prepared) {
   const visualizations = prepared.filter(
     ({ reference, value }) => reference.kind === "visualization" && value,
   );
@@ -738,20 +738,20 @@ function validateVisualizationCompanions(prepared) {
   for (const companion of companions) {
     const match = visualizations.find(({ reference, value }) =>
       reference.revision === companion.reference.revision &&
-      visualizationViews(value).some(
-        (view) => view.medium === "local" && view.path === companion.reference.path,
+      visualizationRenders(value).some(
+        (render) => render.medium === "local" && render.path === companion.reference.path,
       ),
     );
     if (!match) {
       throw new Error(
-        `Visualization render ${companion.reference.path} does not match a declared local view at the same revision.`,
+        `Visualization render ${companion.reference.path} does not match a declared local render at the same revision.`,
       );
     }
-    const declared = visualizationViews(match.value).find(
-      (view) => view.medium === "local" && view.path === companion.reference.path,
+    const declared = visualizationRenders(match.value).find(
+      (render) => render.medium === "local" && render.path === companion.reference.path,
     );
     if (declared.format === "html") {
-      const provenanceFindings = inspectViewProvenance(companion.value, {
+      const provenanceFindings = inspectRenderProvenance(companion.value, {
         target: "visualization",
         id: match.reference.id,
         revision: match.reference.revision,
@@ -765,27 +765,27 @@ function validateVisualizationCompanions(prepared) {
   }
 }
 
-async function externalReviewSurfaceStatus({ root, view, visualization, request }) {
-  if (!view.binding) {
-    return { verified: false, reason: `External view ${view.id} has a URL but no representation binding.` };
+async function externalRenderStatus({ root, render, visualization, request }) {
+  if (!render.binding) {
+    return { verified: false, reason: `External render ${render.id} has a URL but no representation binding.` };
   }
-  const bindingPath = path.join(root, "design", "integrations", `${view.binding}.yaml`);
+  const bindingPath = path.join(root, "design", "integrations", `${render.binding}.yaml`);
   let binding;
   try {
     binding = parse(await readFile(bindingPath, "utf8"));
     await assertV2("representation-binding-v2.schema.json", binding);
   } catch (error) {
-    return { verified: false, reason: `External view ${view.id} binding ${view.binding} is unavailable or invalid: ${error.message}` };
+    return { verified: false, reason: `External render ${render.id} binding ${render.binding} is unavailable or invalid: ${error.message}` };
   }
   if (
     binding.artifact.id !== visualization.reference.id ||
     binding.artifact.revision !== visualization.reference.revision ||
     binding.counterpart.type !== "provider"
   ) {
-    return { verified: false, reason: `External view ${view.id} binding does not identify this visualization revision.` };
+    return { verified: false, reason: `External render ${render.id} binding does not identify this visualization revision.` };
   }
-  if (view.format === "figma") {
-    const location = new URL(view.url);
+  if (render.format === "figma") {
+    const location = new URL(render.url);
     const host = location.hostname.toLowerCase();
     const segments = location.pathname.split("/").filter(Boolean);
     const fileSegment = segments.findIndex((segment) => ["design", "file"].includes(segment));
@@ -803,40 +803,40 @@ async function externalReviewSurfaceStatus({ root, view, visualization, request 
       !objectId.includes(fileKey) ||
       !nodeMatches
     ) {
-      return { verified: false, reason: `External view ${view.id} URL and provider binding do not agree.` };
+      return { verified: false, reason: `External render ${render.id} URL and provider binding do not agree.` };
     }
   }
   const state = (request.binding_states ?? []).find(
-    ({ binding_id: bindingId }) => bindingId === view.binding,
+    ({ binding_id: bindingId }) => bindingId === render.binding,
   );
   const external = binding.base?.state === "initialized" ? binding.base.external : null;
   if (state?.state !== "current" || external?.state !== "present") {
-    return { verified: false, reason: `External view ${view.id} has not been freshly captured in a current binding state.` };
+    return { verified: false, reason: `External render ${render.id} has not been freshly captured in a current binding state.` };
   }
   return { verified: true };
 }
 
-async function reviewSurfaceStatus({ root, prepared, request, artifactKind }) {
+async function renderStatus({ root, prepared, request, artifactKind }) {
   const artifacts = prepared.filter(
     ({ reference, value }) => reference.kind === artifactKind && value,
   );
   let verified = 0;
   const reasons = [];
   for (const visualization of artifacts) {
-    for (const view of visualizationViews(visualization.value)) {
-      if (view.medium === "local") {
+    for (const render of visualizationRenders(visualization.value)) {
+      if (render.medium === "local") {
         const companion = prepared.find(
           ({ reference }) =>
             reference.kind === "x-visualization-render" &&
             reference.revision === visualization.reference.revision &&
-            reference.path === view.path,
+            reference.path === render.path,
         );
         if (companion) verified += 1;
-        else reasons.push(`Local review surface ${view.path} was not recorded by this invocation.`);
+        else reasons.push(`Local render ${render.path} was not recorded by this invocation.`);
       } else {
-        const status = await externalReviewSurfaceStatus({
+        const status = await externalRenderStatus({
           root,
-          view,
+          render,
           visualization,
           request,
         });
@@ -1102,7 +1102,7 @@ export async function invokeSkill({
         effect,
       });
     }
-    validateVisualizationCompanions(prepared);
+    validateVisualizationRenders(prepared);
   } catch (error) {
     const result = await blockedResult({
       root: workspaceRoot,
@@ -1294,7 +1294,7 @@ export async function invokeSkill({
   } else {
     for (const handoff of contract.handoffs) {
       const representation = handoff.representation
-        ? await reviewSurfaceStatus({
+        ? await renderStatus({
             root: workspaceRoot,
             prepared,
             request,

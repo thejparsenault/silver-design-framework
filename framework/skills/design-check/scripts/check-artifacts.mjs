@@ -321,68 +321,68 @@ export async function checkArtifacts(options = {}) {
         "stale",
       ].includes(artifact.status);
       if (artifact.kind === "visualization" && enforceReviewSurface) {
-        const views = Array.isArray(artifact.payload.views)
-          ? artifact.payload.views
+        const renders = Array.isArray(artifact.payload.renders)
+          ? artifact.payload.renders
           : artifact.payload.view_path
             ? [{ id: "primary", medium: "local", path: artifact.payload.view_path }]
             : [];
-        // A local view can be declared before its file exists — recording the
+        // A local render can be declared before its file exists — recording the
         // visualization and adding the render are legitimately two steps, and the
-        // runtime's own handoff readiness already treats an unrendered view as
+        // runtime's own handoff readiness already treats an unrendered declaration as
         // "not yet", not as broken. Whether that gap is expected or a defect is
         // exactly what the artifact's own status already says: a draft is still
         // being worked on, so a missing render is only worth a note; once it is
         // active or accepted it is something someone can be sent to review, and a
         // missing render there is a real finding.
-        const missingLocalViewSeverity = artifact.status === "draft" ? "advisory" : "finding";
-        for (const view of views) {
-          if (view.medium === "local") {
-            const localView = path.resolve(root, view.path);
+        const missingLocalRenderSeverity = artifact.status === "draft" ? "advisory" : "finding";
+        for (const render of renders) {
+          if (render.medium === "local") {
+            const localRender = path.resolve(root, render.path);
             if (
-              !localView.startsWith(`${root}${path.sep}`) ||
-              !(await exists(localView))
+              !localRender.startsWith(`${root}${path.sep}`) ||
+              !(await exists(localRender))
             ) {
               const args = {
                 checker,
-                rule: "artifact.visualization-view-unavailable",
+                rule: "artifact.visualization-render-unavailable",
                 file,
-                message: `Local visualization view ${view.id} is missing at its declared path.`,
-                observedValue: view.path,
+                message: `Local visualization render ${render.id} is missing at its declared path.`,
+                observedValue: render.path,
               };
-              (missingLocalViewSeverity === "advisory" ? advisories : findings).push(
-                missingLocalViewSeverity === "advisory" ? advisory(args) : finding(args),
+              (missingLocalRenderSeverity === "advisory" ? advisories : findings).push(
+                missingLocalRenderSeverity === "advisory" ? advisory(args) : finding(args),
               );
             }
-          } else if (!view.binding) {
+          } else if (!render.binding) {
             findings.push(finding({
               checker,
-              rule: "artifact.visualization-view-unverified",
+              rule: "artifact.visualization-render-unverified",
               file,
-              message: `External visualization view ${view.id} has a URL but no representation binding.`,
-              observedValue: view.url,
+              message: `External visualization render ${render.id} has a URL but no representation binding.`,
+              observedValue: render.url,
             }));
-          } else if (!(await exists(path.join(root, "design", "integrations", `${view.binding}.yaml`)))) {
+          } else if (!(await exists(path.join(root, "design", "integrations", `${render.binding}.yaml`)))) {
             findings.push(finding({
               checker,
               rule: "artifact.visualization-binding-unavailable",
               file,
-              message: `External visualization view ${view.id} references an unavailable binding.`,
-              observedValue: view.binding,
+              message: `External visualization render ${render.id} references an unavailable binding.`,
+              observedValue: render.binding,
             }));
           } else {
             try {
-              const binding = await readYaml(path.join(root, "design", "integrations", `${view.binding}.yaml`));
+              const binding = await readYaml(path.join(root, "design", "integrations", `${render.binding}.yaml`));
               await validateV2("representation-binding-v2.schema.json", binding, options.runtime?.contracts);
-              if (binding.id !== view.binding) {
-                throw new Error(`Binding identifies ${binding.id}, not ${view.binding}.`);
+              if (binding.id !== render.binding) {
+                throw new Error(`Binding identifies ${binding.id}, not ${render.binding}.`);
               }
             } catch (error) {
               findings.push(finding({
                 checker,
                 rule: "artifact.visualization-binding-invalid",
                 file,
-                message: `External visualization view ${view.id} has an invalid representation binding: ${error.message}`,
-                observedValue: view.binding,
+                message: `External visualization render ${render.id} has an invalid representation binding: ${error.message}`,
+                observedValue: render.binding,
               }));
             }
           }

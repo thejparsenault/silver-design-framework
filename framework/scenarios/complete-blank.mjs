@@ -102,7 +102,6 @@ function provenance(
     origin: "agent-assisted",
     recorded_at: time,
     contributors: [{ kind: "agent", id: "silver-release-fixture" }],
-    sources,
     practice: {
       id: "my-practice",
       revision: "r1",
@@ -539,7 +538,7 @@ export async function runCompleteBlankScenario(options = {}) {
     fidelity: "low",
     constraint_profile: "constrained",
     question: "Which structure makes the consequence and action clearest?",
-    views: [{
+    renders: [{
       id: "primary",
       primary: true,
       medium: "local",

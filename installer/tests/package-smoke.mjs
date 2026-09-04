@@ -314,6 +314,7 @@ try {
       "prototype-policy",
       "provider-revision-pins",
       "reference-integrity",
+      "render-provenance",
       "responsive-behavior",
       "secret-free-configuration",
       "semantic-mapping",
@@ -321,7 +322,6 @@ try {
       "stale-proposals",
       "structure-integrity",
       "synchronization-status",
-      "view-provenance",
     ],
   );
   assert.ok(invocationResult.checks.every(({ status }) => status === "pass"));
@@ -562,7 +562,7 @@ try {
   for (const checker of [
     "binding-integrity",
     "provider-revision-pins",
-    "view-provenance",
+    "render-provenance",
     "synchronization-status",
     "semantic-mapping",
     "stale-proposals",

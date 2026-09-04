@@ -89,7 +89,7 @@ Every generally applicable skill has a bundled project-local baseline for its
 core task. Prose-first work uses Markdown with structured metadata; graphs,
 catalogs, tokens, policies, and state use their declared JSON or YAML
 contracts. Visual skills use self-contained semantic HTML as the default local
-review surface, while flows also provide a compact Mermaid view.
+render, while flows also provide a compact Mermaid view.
 
 External providers are optional projections or explicitly declared
 authorities. A missing optional provider does not invalidate otherwise complete
@@ -127,8 +127,8 @@ merely because an upstream artifact advances. Silver validates an input's curren
 identity when a skill consumes it, and playbooks invalidate affected downstream
 nodes when recorded inputs or outputs later change or disappear.
 
-A visualization has one or more review surfaces. Local surfaces use guarded
-workspace paths; external surfaces use HTTPS locations plus representation
+A visualization has one or more renders. Local renders use guarded
+workspace paths; external renders use HTTPS locations plus representation
 bindings when their identity and freshness are verified. A raw external URL is
 recordable, but it cannot by itself establish downstream readiness.
 
