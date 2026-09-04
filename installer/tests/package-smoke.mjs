@@ -96,7 +96,7 @@ try {
     "framework/runtime/host-mcp.mjs",
     "installer/tools.mjs",
     "installer/host-mcp-config.mjs",
-    "framework/schemas/v2/representation-binding.schema.json",
+    "framework/schemas/v2/representation-binding-v2.schema.json",
     "framework/runtime/reconciliation.mjs",
     "framework/runtime/tokens.mjs",
     "installer/templates/blank-workspace/design/system/tokens/primitive/color.tokens.json",
