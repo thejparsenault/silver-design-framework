@@ -211,7 +211,6 @@ before you commit to one, and tell me which you would pick.
 #   schema: silver/provenance/v1
 #   origin: human-authored
 #   recorded_at: ${now}
-#   sources: []
 #   guidance: []
 #   design_contexts: []
 #   change:

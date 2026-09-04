@@ -58,7 +58,6 @@ function provenance(reason = "Test fixture.") {
     schema: "silver/provenance/v1",
     origin: "agent-assisted",
     recorded_at: fixedTime,
-    sources: [],
     guidance: [],
     design_contexts: [],
     change: { reason },

@@ -30,7 +30,6 @@ function provenance(context) {
     origin: "agent-assisted",
     recorded_at: fixedTime,
     contributors: [{ kind: "agent", id: "test-agent" }],
-    sources: [],
     practice: {
       id: "my-practice",
       revision: "r2",
@@ -199,7 +198,6 @@ test("trace joins the newest exact result and exposes duplicates and disagreemen
         outputs: [output],
         provenance: {
           origin: "agent-assisted",
-          sources: [{ id: "source", kind: "evidence", revision: "r1", path: "design/evidence/source.json" }],
           guidance: [],
           design_contexts: [],
           external_bindings: [],

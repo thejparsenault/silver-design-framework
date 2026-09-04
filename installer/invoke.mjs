@@ -150,7 +150,6 @@ export async function scaffoldInvocation({ root, skillId, now = new Date() }) {
                 id: `${SCAFFOLD_PLACEHOLDER}: identify the agent or host creating this work.`,
               },
             ],
-            sources: [],
             guidance: [],
             design_contexts: designContext ? [designContext] : [],
             change: {

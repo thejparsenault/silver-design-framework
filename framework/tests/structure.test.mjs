@@ -24,7 +24,6 @@ function provenance(context) {
     origin: "agent-assisted",
     recorded_at: fixedTime,
     contributors: [{ kind: "agent", id: "test-agent" }],
-    sources: [],
     practice: { id: "my-practice", revision: "r1", methods: [] },
     guidance: [],
     design_contexts: [context],

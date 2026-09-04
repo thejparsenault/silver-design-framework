@@ -96,13 +96,12 @@ function permissionLayers(capability, actions, paths) {
   }));
 }
 
-function provenance(sources = []) {
+function provenance() {
   return {
     schema: "silver/provenance/v1",
     origin: "agent-assisted",
     recorded_at: startedAt,
     contributors: [{ kind: "agent", id: "fixture-agent" }],
-    sources,
     practice: {
       id: "my-practice",
       revision: "r1",
@@ -571,17 +570,6 @@ test("acceptance aliases and provenance relationships must agree before writes",
   assert.equal(mismatch.execution.status, "blocked");
   assert.match(mismatch.execution.summary, /disagrees with authoritative acceptance/);
 
-  const sourceMismatch = synthesizeRequest({ invocation_id: "source-mismatch" });
-  sourceMismatch.provenance.sources = [];
-  const sources = await invokeSkill({
-    root: workspace,
-    skillDirectory: path.join(root, "framework/skills/synthesize"),
-    request: sourceMismatch,
-    completedAt,
-  });
-  assert.equal(sources.execution.status, "blocked");
-  assert.match(sources.execution.summary, /sources must exactly match/);
-
   const originMismatch = synthesizeRequest({ invocation_id: "origin-mismatch" });
   originMismatch.provenance.contributors = [];
   const origin = await invokeSkill({
@@ -634,7 +622,6 @@ test("state-bound evidence survives unchanged blocked preflight and rejects work
   await seedCheckEvidence(workspace, checkers);
   const request = synthesizeRequest({ invocation_id: "state-bound-unchanged" });
   request.inputs = [];
-  request.provenance.sources = [];
 
   const unchanged = await invokeSkill({
     root: workspace,
@@ -664,7 +651,6 @@ test("checker substitution cannot reuse an otherwise current attestation", async
   await writeFile(evidencePath, `${JSON.stringify({ ...evidence, checker: "accessibility" }, null, 2)}\n`);
   const request = synthesizeRequest({ invocation_id: "checker-substitution" });
   request.inputs = [];
-  request.provenance.sources = [];
   request.checks = request.checks.filter(({ id }) => id === "contract-integrity");
   const result = await invokeSkill({
     root: workspace,

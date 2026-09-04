@@ -405,7 +405,6 @@ test("changing a studio voice through practice apply changes what resolves", asy
         schema: "silver/provenance/v1",
         origin: "human-authored",
         recorded_at: "2026-07-31T00:00:00Z",
-        sources: [],
         guidance: [],
         design_contexts: [],
         change: { reason: "Record how I want the agent to talk." },

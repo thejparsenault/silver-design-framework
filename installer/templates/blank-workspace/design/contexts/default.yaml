@@ -51,7 +51,6 @@ provenance:
   schema: silver/provenance/v1
   origin: generated
   recorded_at: "{{DATE}}T00:00:00Z"
-  sources: []
   guidance: []
   design_contexts: []
   change:

@@ -172,13 +172,6 @@ export async function checkAuditTrailIntegrity(options = {}) {
     }
 
     if (result.provenance) {
-      const sources = result.provenance.sources ?? [];
-      if (
-        sources.length !== result.inputs.length ||
-        sources.some((source, index) => key(source) !== key(result.inputs[index]))
-      ) {
-        findings.push(finding({ checker, rule: "audit-trail.sources-disagree", file: record.path, message: "Result provenance sources disagree with the invocation inputs." }));
-      }
       if (
         result.provenance.acceptance !== undefined &&
         result.provenance.acceptance !== result.acceptance.status

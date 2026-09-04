@@ -171,12 +171,6 @@ async function validateInvocationProvenance({ root, request, contract, completed
       `Provenance acceptance ${provenance.acceptance} disagrees with authoritative acceptance ${acceptance.status}.`,
     );
   }
-  if (
-    provenance.sources.length !== request.inputs.length ||
-    provenance.sources.some((source, index) => referenceKey(source) !== referenceKey(request.inputs[index]))
-  ) {
-    throw new Error("Provenance sources must exactly match the invocation inputs.");
-  }
   const recordedAt = new Date(provenance.recorded_at).valueOf();
   const startedAt = new Date(request.started_at).valueOf();
   const finishedAt = new Date(completedAt).valueOf();
@@ -247,7 +241,6 @@ async function validateInvocationProvenance({ root, request, contract, completed
 
   return {
     ...withoutLegacyAcceptance(provenance),
-    sources: request.inputs,
     references: await resolveReferenceCitations(root, request.references ?? []),
     external_bindings: externalBindings,
   };
@@ -610,7 +603,6 @@ async function blockedResult({
     origin: "generated",
     recorded_at: completedAt,
     contributors: [{ kind: "agent", id: "silver-runtime" }],
-    sources: request.inputs,
     guidance: [],
     design_contexts: [],
     references: await resolveReferenceCitations(root, request.references ?? []),
@@ -1349,8 +1341,7 @@ export async function invokeSkill({
         origin: "generated",
         recorded_at: completedAt,
         contributors: [{ kind: "agent", id: "silver-runtime" }],
-        sources: request.inputs,
-        guidance: [],
+            guidance: [],
         design_contexts: [],
         references: await resolveReferenceCitations(workspaceRoot, request.references ?? []),
         change: {
