@@ -48,6 +48,10 @@ import { payloadPath } from "./payload.mjs";
 import { doctorWorkspace } from "./doctor.mjs";
 import { runLifecycleTransaction } from "./lib/lifecycle-transaction.mjs";
 import { inspectWorkspacePath } from "../framework/runtime/workspace-mutations.mjs";
+import { checkResultPath } from "./checks.mjs";
+import { workspaceCheckStateDigest } from "../framework/runtime/check-attestation.mjs";
+import { loadSkillResultIndex } from "../framework/runtime/result-index.mjs";
+import { checkAuditTrailIntegrity } from "../framework/skills/design-check/scripts/check-audit-trail-integrity.mjs";
 import { migrateLinkedSourceV1 } from "./sources.mjs";
 import { migrateRepresentationBindingV1 } from "./sync.mjs";
 
@@ -384,6 +388,84 @@ function legacyPath(installed) {
   return null;
 }
 
+// Resolves what this migration should do with the audit enforcement horizon, against
+// the *real* workspace root and before any staging occurs — a transaction stages the
+// migration's own file changes into a copy, and the check-state digest below must
+// describe the workspace as the last audit-trail-integrity run actually saw it, not a
+// copy already mid-migration.
+//
+// A workspace with no valid prior horizon is establishing one for the first time: every
+// existing record is grandfathered as of today (amnesty). A workspace that already has
+// one only moves it forward when the most recent audit-trail-integrity result is a clean
+// pass whose recorded state_digest still matches the live workspace — otherwise the
+// horizon holds exactly where it is, because advancing it would grandfather records that
+// were never actually verified.
+async function resolveEnforcementHorizon(root, fallbackDate) {
+  let existingFrom;
+  try {
+    const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
+    existingFrom = lock?.enforcement?.from;
+  } catch {
+    existingFrom = undefined;
+  }
+  const existingValid = existingFrom && !Number.isNaN(new Date(existingFrom).valueOf());
+
+  if (!existingValid) {
+    return {
+      from: `${fallbackDate}T00:00:00.000Z`,
+      amnesty: true,
+      advanced: false,
+      reason: "no-prior-horizon",
+    };
+  }
+
+  let evidence;
+  try {
+    evidence = JSON.parse(
+      await readFile(path.join(root, checkResultPath("audit-trail-integrity")), "utf8"),
+    );
+  } catch {
+    return { from: existingFrom, amnesty: false, advanced: false, reason: "no-evidence" };
+  }
+  if (evidence.status !== "pass") {
+    return { from: existingFrom, amnesty: false, advanced: false, reason: "not-passing" };
+  }
+  if (new Date(evidence.completed_at).valueOf() <= new Date(existingFrom).valueOf()) {
+    return { from: existingFrom, amnesty: false, advanced: false, reason: "not-newer" };
+  }
+  let liveDigest;
+  try {
+    liveDigest = await workspaceCheckStateDigest(root);
+  } catch {
+    return { from: existingFrom, amnesty: false, advanced: false, reason: "digest-unavailable" };
+  }
+  if (evidence.state_digest !== liveDigest) {
+    return { from: existingFrom, amnesty: false, advanced: false, reason: "stale-evidence" };
+  }
+  return { from: evidence.completed_at, amnesty: false, advanced: true, reason: "verified-clean" };
+}
+
+// A tally of what is being grandfathered, shown once when a horizon is first
+// established. Every record predates the fresh horizon by construction (this only runs
+// on first establishment), so every finding the checker would otherwise raise today is
+// counted, grouped by rule.
+async function pendingHorizonTally(root) {
+  try {
+    const result = await checkAuditTrailIntegrity({ root, since: "all" });
+    const counts = new Map();
+    for (const item of result.findings ?? []) {
+      counts.set(item.rule, (counts.get(item.rule) ?? 0) + 1);
+    }
+    const index = await loadSkillResultIndex(root);
+    return {
+      records: index.records.length,
+      by_rule: Object.fromEntries([...counts.entries()].sort((a, b) => b[1] - a[1])),
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function loadWorkspace(root) {
   const manifestPath = path.join(root, "design", "manifest.yaml");
   const lockPath = path.join(root, ".silver", "lock.yaml");
@@ -404,12 +486,13 @@ async function loadWorkspace(root) {
       manifestPath,
       lock,
       lockPath,
-      // A same-version 0.9.2 workspace may predate the historical-enforcement
-      // horizon. It still needs a migration, otherwise old unbounded records
-      // could satisfy a new gate merely because the package version matches.
+      // A same-version workspace with no valid horizon still needs a migration,
+      // otherwise old unbounded records could satisfy a new gate merely because the
+      // package version matches. A same-version workspace that already has a valid
+      // horizon is current for migration-content purposes; migrateWorkspace still
+      // checks separately whether that horizon itself is eligible to advance.
       current:
         lock.framework.version === FRAMEWORK_VERSION &&
-        lock.enforcement?.introduced_in === "0.9.2" &&
         !Number.isNaN(new Date(lock.enforcement?.from).valueOf()),
     };
   }
@@ -629,6 +712,31 @@ async function migrateWorkspaceDirect(options = {}) {
   const sourceReference = options.sourceReference ?? LOCAL_SOURCE_REFERENCE;
   const workspace = await loadWorkspace(root);
   if (workspace.current) {
+    const horizon = options.horizonDecision;
+    if (options.apply && horizon?.advanced) {
+      const nextLock = {
+        ...workspace.lock,
+        enforcement: { ...workspace.lock.enforcement, from: horizon.from },
+      };
+      const validation = await validateSchema("v2/lock.schema.json", nextLock);
+      if (!validation.valid) {
+        throw new Error(`Generated v2 lock is invalid: ${validation.errors.join("; ")}`);
+      }
+      await writeUtf8(workspace.lockPath, stringify(nextLock));
+      return {
+        ok: true,
+        root,
+        fromVersion: workspace.lock.framework.version,
+        toVersion: version,
+        needed: true,
+        applied: true,
+        changes: [{ action: "advance-audit-horizon", path: ".silver/lock.yaml" }],
+        preserved: [],
+        conflicts: [],
+        inactiveArtifacts: [],
+        horizon,
+      };
+    }
     return {
       ok: true,
       root,
@@ -640,6 +748,7 @@ async function migrateWorkspaceDirect(options = {}) {
       preserved: [],
       conflicts: [],
       inactiveArtifacts: [],
+      horizon,
     };
   }
   const plan = await buildPlan({
@@ -859,8 +968,7 @@ async function migrateWorkspaceDirect(options = {}) {
       source: { type: "local", reference: sourceReference },
     },
     enforcement: {
-      introduced_in: "0.9.2",
-      from: `${variables.DATE}T00:00:00.000Z`,
+      from: options.horizonDecision?.from ?? `${variables.DATE}T00:00:00.000Z`,
     },
     packages: records,
     managed_files: [
@@ -889,7 +997,11 @@ async function migrateWorkspaceDirect(options = {}) {
     throw new Error(`Generated v2 lock is invalid: ${validation.errors.join("; ")}`);
   }
   await writeUtf8(workspace.lockPath, stringify(nextLock));
-  return { ...base, applied: true };
+  const horizon = options.horizonDecision;
+  if (horizon?.amnesty) {
+    horizon.tally = await pendingHorizonTally(root);
+  }
+  return { ...base, applied: true, horizon };
 }
 
 export async function migrateWorkspace(options = {}) {
@@ -940,15 +1052,21 @@ export async function migrateWorkspace(options = {}) {
       },
     };
   }
+  // Resolved against the real root, before anything is staged: a lifecycle transaction
+  // mutates a copy, and the horizon decision must reflect the workspace as its last
+  // check evidence actually saw it, not a copy already mid-migration.
+  const horizonDecision = options.apply
+    ? await resolveEnforcementHorizon(root, options.date ?? new Date().toISOString().slice(0, 10))
+    : undefined;
   if (!options.apply || options.transaction === false) {
-    return migrateWorkspaceDirect({ ...options, root });
+    return migrateWorkspaceDirect({ ...options, root, horizonDecision });
   }
   const { stagedResult, transaction } = await runLifecycleTransaction({
     root,
     command: `silver migrate ${options.version ?? FRAMEWORK_VERSION}`,
     metadata: { workflow: "migrate", target_version: options.version ?? FRAMEWORK_VERSION },
     mutate: (stagingRoot) =>
-      migrateWorkspaceDirect({ ...options, root: stagingRoot, apply: true, transaction: false }),
+      migrateWorkspaceDirect({ ...options, root: stagingRoot, apply: true, transaction: false, horizonDecision }),
     validate: async ({ journal }) => {
       const diagnosis = await doctorWorkspace({ root, ignoreTransactionId: journal.id });
       return {

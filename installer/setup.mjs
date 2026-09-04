@@ -355,6 +355,7 @@ async function renderLock({
   agentPointerContent,
   claudeMemoryContent,
   payloadRoot,
+  date,
 }) {
   const packages = (await sourcePackages({ version, payloadRoot })).map(
     ({ sourcePath, ...record }) => record,
@@ -370,8 +371,7 @@ async function renderLock({
       },
     },
     enforcement: {
-      introduced_in: "0.9.2",
-      from: new Date().toISOString(),
+      from: `${date}T00:00:00.000Z`,
     },
     packages,
     managed_files: [
@@ -643,6 +643,7 @@ export async function setupWorkspace(options = {}) {
       agentPointerContent,
       claudeMemoryContent,
       payloadRoot,
+      date,
     });
     await workspaceMutator.create(".silver/lock.yaml", lockContent);
     created.push(".silver/lock.yaml");

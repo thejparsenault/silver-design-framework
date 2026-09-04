@@ -41,7 +41,7 @@
       "description": "The point at which this workspace opts into rules introduced after historical records may already exist. Earlier records remain readable; new records are always held to the current write-time contract.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["introduced_in", "from"],
+      "required": ["from"],
       "properties": {
         "introduced_in": { "$ref": "common.schema.json#/$defs/version" },
         "from": { "type": "string", "format": "date-time" }
