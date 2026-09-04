@@ -1356,11 +1356,25 @@ export async function runCli(
 
     if (command === "migrate") {
       if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
-      const result = await migrateWorkspace({ root, apply: flags.apply });
+      let result = await migrateWorkspace({ root, apply: flags.apply });
       // Same reasoning as update: applied can be true while ok is false (a
       // migration with conflicts still aborts before committing), so both
-      // flags are required to know the real root actually changed.
-      const checkSuite = result.applied && result.ok ? await runCheckSuite({ root }) : null;
+      // flags are required to know the real root actually changed. A
+      // horizon-only advance is excluded too: re-checking after one would
+      // write fresh evidence that the *next* migrate call advances into,
+      // whose own fresh evidence the call after that advances into, forever.
+      // Real content changes are the only case worth re-verifying.
+      const isHorizonOnlyAdvance =
+        result.changes.length === 1 && result.changes[0]?.action === "advance-audit-horizon";
+      let checkSuite = null;
+      if (result.applied && result.ok && !isHorizonOnlyAdvance) {
+        checkSuite = await runCheckSuite({ root });
+        // Fold the evidence this just produced into the same report now,
+        // rather than leaving a real migration's own horizon-advance for
+        // some later invocation to notice.
+        const settled = await migrateWorkspace({ root, apply: true });
+        if (settled.applied) result = { ...result, horizon: settled.horizon };
+      }
       if (flags.json) {
         stdout(JSON.stringify({ ...result, checkSuite }, null, 2));
       } else if (!result.needed) {
