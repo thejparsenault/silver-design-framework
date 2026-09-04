@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { checkResult, findFiles, finding, parseYaml, workspacePath } from "./check-lib.mjs";
+import { advisory, checkResult, findFiles, finding, parseYaml, workspacePath } from "./check-lib.mjs";
 
 let runtime;
 async function representationRuntime(injected) {
@@ -48,6 +48,10 @@ async function files(root, relative, extension) {
 
 function issue(checker, message, file, rule = checker) {
   return finding({ checker, rule: `${checker}.${rule}`, message, file });
+}
+
+function issueAdvisory(checker, message, file, rule = checker) {
+  return advisory({ checker, rule: `${checker}.${rule}`, message, file });
 }
 
 async function bindings(root) {
@@ -170,7 +174,7 @@ const ruleHandlers = {
       }
     }
   },
-  async "view-provenance"(root, checker, completed, findings, runtime) {
+  async "view-provenance"(root, checker, completed, findings, runtime, advisories) {
     const { inspectViewProvenance } = await viewProvenanceRuntime(runtime?.viewProvenance);
     const roots = ["design/flows", "design/work/sketches", "design/work/visualizations", "design/system", "prototypes", "presentations"];
     const html = (await Promise.all(roots.map((relative) => files(root, relative, ".html")))).flat();
@@ -191,6 +195,7 @@ const ruleHandlers = {
             target: "visualization",
             id: artifact.id,
             revision: artifact.revision,
+            status: artifact.status,
           });
         }
       } catch (error) {
@@ -199,7 +204,16 @@ const ruleHandlers = {
     }
     for (const [absolute, expected] of expectedViews) {
       if (!html.includes(absolute)) {
-        findings.push(issue(checker, "Declared local visualization HTML is unavailable.", workspacePath(root, absolute), "missing-view"));
+        // A draft visualization can declare a render before the file exists — that is
+        // work in progress, not a defect; once it is active or accepted, someone can be
+        // sent to review it, and a missing render there is worth a real finding.
+        const message = "Declared local visualization HTML is unavailable.";
+        const relative = workspacePath(root, absolute);
+        if (expected.status === "draft") {
+          advisories.push(issueAdvisory(checker, message, relative, "missing-view"));
+        } else {
+          findings.push(issue(checker, message, relative, "missing-view"));
+        }
       }
     }
     for (const absolute of new Set([...html, ...expectedViews.keys()])) {
@@ -396,13 +410,15 @@ export async function checkRepresentationRule({ root = process.cwd(), checker, r
   const workspace = path.resolve(root);
   const completed = [];
   const findings = [];
+  const advisories = [];
   const handler = ruleHandlers[checker];
   if (!handler) throw new Error(`Unknown representation checker: ${checker}`);
-  await handler(workspace, checker, completed, findings, runtime);
+  await handler(workspace, checker, completed, findings, runtime, advisories);
   return checkResult({
     checker,
     requested: [checker],
     completed,
     findings,
+    advisories,
   });
 }

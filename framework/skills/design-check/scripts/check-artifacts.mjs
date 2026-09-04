@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  advisory,
   checkResult,
   exitCode,
   findFiles,
@@ -325,6 +326,15 @@ export async function checkArtifacts(options = {}) {
           : artifact.payload.view_path
             ? [{ id: "primary", medium: "local", path: artifact.payload.view_path }]
             : [];
+        // A local view can be declared before its file exists — recording the
+        // visualization and adding the render are legitimately two steps, and the
+        // runtime's own handoff readiness already treats an unrendered view as
+        // "not yet", not as broken. Whether that gap is expected or a defect is
+        // exactly what the artifact's own status already says: a draft is still
+        // being worked on, so a missing render is only worth a note; once it is
+        // active or accepted it is something someone can be sent to review, and a
+        // missing render there is a real finding.
+        const missingLocalViewSeverity = artifact.status === "draft" ? "advisory" : "finding";
         for (const view of views) {
           if (view.medium === "local") {
             const localView = path.resolve(root, view.path);
@@ -332,13 +342,16 @@ export async function checkArtifacts(options = {}) {
               !localView.startsWith(`${root}${path.sep}`) ||
               !(await exists(localView))
             ) {
-              findings.push(finding({
+              const args = {
                 checker,
                 rule: "artifact.visualization-view-unavailable",
                 file,
                 message: `Local visualization view ${view.id} is missing at its declared path.`,
                 observedValue: view.path,
-              }));
+              };
+              (missingLocalViewSeverity === "advisory" ? advisories : findings).push(
+                missingLocalViewSeverity === "advisory" ? advisory(args) : finding(args),
+              );
             }
           } else if (!view.binding) {
             findings.push(finding({
