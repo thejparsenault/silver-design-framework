@@ -156,7 +156,7 @@ packages:
     path: .skills/design-check
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:448ff7541f15f2af488eb86d7e770d4c3d07ea69a55e755f94eb6caed7e0ef3b
+    integrity: sha256:b2878f4a205516603b38c5369dc9ca4bbd1f0a00550d402bbf626741dc4046da
   - id: figma-console-mcp
     type: provider
     path: .silver/providers/figma-console-mcp
