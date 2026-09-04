@@ -79,9 +79,9 @@ export async function renderPresentation({ root = process.cwd(), changeCase, kit
   <title>${escapeHtml(change.title)}</title>
   <link rel="stylesheet" href="${escapeHtml(relativeCss)}" />
   <style>
-    .deck { min-height: 100dvh; background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
+    .deck { min-height: 100dvh; background: var(--ds-surface-page); color: var(--ds-text-primary); }
     .slide { min-height: 100dvh; display: grid; align-content: center; gap: var(--ds-space-20); padding: var(--ds-space-48); border-bottom: var(--ds-field-input-border-width) solid var(--ds-border-subtle); }
-    .slide > * { max-width: var(--ds-layout-content-max-width); }
+    .slide > * { max-width: var(--ds-layout-container-max-width); }
     .eyebrow, .source { color: var(--ds-text-muted); }
     .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); }
     .card { padding: var(--ds-space-20); background: var(--ds-surface-raised); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); }

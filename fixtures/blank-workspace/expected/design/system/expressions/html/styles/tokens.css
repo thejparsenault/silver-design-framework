@@ -35,6 +35,7 @@
   --ds-layout-container-compact-max-width: 40rem; /** Maximum width for compact page content */
   --ds-layout-container-prose-max-width: 65ch; /** Readable line length for prose */
   --ds-layout-form-max-width: 384px; /** Maximum width for a focused, single-column form composition */
+  --ds-layout-card-min-width: 240px; /** Minimum width for a card in an auto-fit grid before it wraps */
   --ds-layout-screen-reader-size: 1px; /** Clipped dimension for visually hidden accessible text */
   --ds-layout-screen-reader-offset: -1px; /** Clipped offset for visually hidden accessible text */
   --ds-layout-link-underline-offset: 0.2em; /** Readable underline offset for inline links */

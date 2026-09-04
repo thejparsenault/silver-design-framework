@@ -11,6 +11,7 @@ import { exists, snapshotFiles } from "../lib/files.mjs";
 import { migrateWorkspace } from "../migrate.mjs";
 import { validateSchema } from "../lib/schemas.mjs";
 import { setupWorkspace } from "../setup.mjs";
+import { runCli } from "../cli.mjs";
 
 async function legacyWorkspace(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-"));
@@ -712,4 +713,73 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
     "design/system/components.json",
   );
   assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("silver migrate --apply runs the fast suite automatically and reports it in JSON output", async (t) => {
+  const root = await legacyWorkspace(t);
+  const stdout = [];
+  const code = await runCli(
+    ["migrate", root, "--apply", "--json"],
+    { stdout: (message) => stdout.push(message), stderr: () => {} },
+  );
+  assert.equal(code, 0);
+  const result = JSON.parse(stdout.join("\n"));
+  assert.equal(result.applied, true);
+  assert.ok(result.checkSuite);
+  assert.ok(["pass", "fail", "not-run", "error"].includes(result.checkSuite.status));
+  const persisted = await readdir(path.join(root, ".silver/results/checks"));
+  assert.ok(persisted.includes("semantic-styles.json"));
+});
+
+test("silver migrate without --apply is a preview and never runs the fast suite", async (t) => {
+  const root = await legacyWorkspace(t);
+  const stdout = [];
+  const code = await runCli(
+    ["migrate", root, "--json"],
+    { stdout: (message) => stdout.push(message), stderr: () => {} },
+  );
+  assert.equal(code, 0);
+  const result = JSON.parse(stdout.join("\n"));
+  assert.equal(result.applied, false);
+  assert.equal(result.checkSuite, null);
+  assert.equal(await exists(path.join(root, ".silver/results/checks")), false);
+});
+
+test("silver update runs the fast suite automatically and reports it in JSON output", async (t) => {
+  // update re-syncs framework-managed packages within the current lock
+  // schema — it is not the v1-to-v2 upgrade migrate handles, so it needs a
+  // workspace already on the current schema, not the legacy migrate fixture.
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-update-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({ root, name: "Update Fixture", id: "update-fixture", date: "2026-07-23" });
+  const stdout = [];
+  const code = await runCli(
+    ["update", root, "--json"],
+    { stdout: (message) => stdout.push(message), stderr: () => {} },
+  );
+  assert.equal(code, 0);
+  const result = JSON.parse(stdout.join("\n"));
+  assert.equal(result.ok, true);
+  assert.ok(result.checkSuite);
+  const persisted = await readdir(path.join(root, ".silver/results/checks"));
+  assert.ok(persisted.includes("semantic-styles.json"));
+});
+
+test("a failing post-migrate check does not change migrate's own exit code", async (t) => {
+  const root = await legacyWorkspace(t);
+  const prototypeRoot = path.join(root, "prototypes", "broken-token");
+  await mkdir(prototypeRoot, { recursive: true });
+  await writeFile(
+    path.join(prototypeRoot, "prototype.css"),
+    ".example { color: #123456; }\n",
+  );
+  const stdout = [];
+  const code = await runCli(
+    ["migrate", root, "--apply", "--json"],
+    { stdout: (message) => stdout.push(message), stderr: () => {} },
+  );
+  const result = JSON.parse(stdout.join("\n"));
+  assert.equal(result.ok, true);
+  assert.equal(result.checkSuite.status, "fail");
+  assert.equal(code, 0);
 });

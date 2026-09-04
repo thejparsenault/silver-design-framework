@@ -218,6 +218,68 @@ test("semantic checker rejects raw visual values in prototype code", async (t) =
   );
 });
 
+test("semantic checker flags a var() reference to a token that no longer exists", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const prototypeRoot = path.join(root, "prototypes", "broken-token");
+  await mkdir(prototypeRoot, { recursive: true });
+  await writeFile(
+    path.join(prototypeRoot, "prototype.css"),
+    ".example { height: var(--ds-does-not-exist); }\n",
+  );
+
+  const result = await checkSemanticStyles({ root });
+  assert.equal(result.status, "fail");
+  const found = result.findings.find(
+    ({ rule }) => rule === "semantic-style.unresolved-token",
+  );
+  assert.ok(found);
+  assert.equal(found.observed_value, "--ds-does-not-exist");
+  assert.match(found.suggested_correction, /silver invoke prototype/);
+});
+
+test("semantic checker does not flag a var() reference to a real, currently-declared token", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const prototypeRoot = path.join(root, "prototypes", "real-token");
+  await mkdir(prototypeRoot, { recursive: true });
+  await writeFile(
+    path.join(prototypeRoot, "prototype.css"),
+    ".example { height: var(--ds-button-height-sm); }\n",
+  );
+
+  const result = await checkSemanticStyles({ root });
+  assert.ok(
+    !result.findings.some(
+      ({ rule }) => rule === "semantic-style.unresolved-token",
+    ),
+  );
+});
+
+test("semantic checker suggests re-invoking the owning skill only for artifacts a skill owns", async (t) => {
+  const root = await temporaryWorkspace(t);
+  const prototypeRoot = path.join(root, "prototypes", "raw-values");
+  await mkdir(prototypeRoot, { recursive: true });
+  await writeFile(
+    path.join(prototypeRoot, "prototype.css"),
+    ".example { color: #123456; }\n",
+  );
+  await writeFile(
+    path.join(root, "design", "system", "raw-values.css"),
+    ".example { color: #123456; }\n",
+  );
+
+  const result = await checkSemanticStyles({ root });
+  const prototypeFinding = result.findings.find(
+    ({ rule, file }) => rule === "semantic-style.raw-color" && file.startsWith("prototypes/"),
+  );
+  const systemFinding = result.findings.find(
+    ({ rule, file }) => rule === "semantic-style.raw-color" && file.startsWith("design/system/"),
+  );
+  assert.ok(prototypeFinding);
+  assert.ok(systemFinding);
+  assert.match(prototypeFinding.suggested_correction, /silver invoke prototype/);
+  assert.doesNotMatch(systemFinding.suggested_correction, /silver invoke/);
+});
+
 test("semantic checker downgrades findings to informational under the adoption policy profile", async (t) => {
   const root = await temporaryWorkspace(t);
   const prototypeRoot = path.join(root, "prototypes", "raw-values");

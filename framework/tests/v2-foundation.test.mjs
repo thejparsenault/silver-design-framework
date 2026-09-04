@@ -67,7 +67,7 @@ test("v2 schemas validate representative positive contracts", async () => {
       { id: "system", kind: "design-system", revision: "r1", path: "design/system/README.md" }
     ],
     roles: {
-      canvas: "--ds-surface-canvas",
+      canvas: "--ds-surface-page",
       surface: "--ds-surface-raised",
       heading: "--ds-text-primary",
       body: "--ds-text-primary",

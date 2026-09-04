@@ -12,7 +12,14 @@ import {
 // `yaml` inside its own package, and Node's resolver only walks upward, never
 // into a sibling package's private tree. This was the last copied script that
 // still imported one.
-import { parseYaml } from "../../design-check/scripts/check-lib.mjs";
+import { parseYaml, skillForArtifactPath } from "../../design-check/scripts/check-lib.mjs";
+
+const SKILL_ARTIFACT_LABEL = {
+  prototype: "prototypes",
+  visualize: "visualizations",
+  pitch: "presentations",
+  implement: "production",
+};
 
 const ACTION_TITLES = {
   "repair-workspace": "Repair the Silver workspace",
@@ -412,6 +419,28 @@ async function inspectWorkspace(root, now, options = {}) {
           time: sourceTime(record.value, record.source),
         }),
       );
+      const checkName = record.value?.checker ?? "A design check";
+      const bySkill = new Map();
+      for (const finding of record.value?.findings ?? []) {
+        const skill = finding?.file ? skillForArtifactPath(finding.file) : null;
+        if (!skill) continue;
+        if (!bySkill.has(skill)) bySkill.set(skill, []);
+        bySkill.get(skill).push(finding.file);
+      }
+      for (const [skill, files] of bySkill) {
+        const uniqueFiles = [...new Set(files)];
+        const label = SKILL_ARTIFACT_LABEL[skill] ?? "affected artifacts";
+        addCandidate(
+          candidates,
+          candidate({
+            action: skill,
+            priority: 3,
+            reason: `${checkName} found ${uniqueFiles.length} conformance issue(s) in ${label}; run silver check . for details, then revise and re-invoke ${skill}.`,
+            evidence: uniqueFiles,
+            time: sourceTime(record.value, record.source),
+          }),
+        );
+      }
     }
   }
 

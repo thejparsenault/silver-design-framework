@@ -99,7 +99,7 @@ export async function renderStaticImplementation({ root = process.cwd(), handoff
 </html>
 `;
   const css = `@layer components {
-  .implementation-page { min-height: 100dvh; display: grid; place-items: center; padding: var(--ds-space-24); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
+  .implementation-page { min-height: 100dvh; display: grid; place-items: center; padding: var(--ds-space-24); background: var(--ds-surface-page); color: var(--ds-text-primary); }
   .implementation-card { width: 100%; max-width: var(--ds-layout-form-max-width); display: grid; gap: var(--ds-space-16); padding: var(--ds-space-32); background: var(--ds-surface-raised); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); }
   .implementation-eyebrow, .implementation-status { color: var(--ds-text-muted); }
   .implementation-actions { display: flex; flex-wrap: wrap; gap: var(--ds-space-12); }

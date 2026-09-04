@@ -105,7 +105,9 @@ Commands:
   doctor   Diagnose workspace contracts and managed files without changing them.
   repair   Regenerate disposable indexes and agent discovery pointers.
   update   Update unmodified framework-managed packages; report owned-package proposals.
-  migrate  Preview or explicitly apply a supported workspace migration.
+           Runs the fast check suite afterward and reports it.
+  migrate  Preview or explicitly apply a supported workspace migration. --apply
+           runs the fast check suite afterward and reports it; a preview does not.
   recover  Inspect, resume, or roll back a durable workspace transaction.
   sync     Inspect and explicitly reconcile portable and external representations.
   version  Print the local framework development version.
@@ -1333,10 +1335,21 @@ export async function runCli(
 
     if (command === "update") {
       const result = await updateWorkspace({ root });
+      // A non-throwing return can still mean nothing was actually committed:
+      // runLifecycleTransaction aborts before touching the real root whenever
+      // the staged mutation itself reports ok:false. Only a real commit is
+      // worth re-checking.
+      const checkSuite = result.ok ? await runCheckSuite({ root }) : null;
       if (flags.json) {
-        stdout(JSON.stringify(result, null, 2));
+        stdout(JSON.stringify({ ...result, checkSuite }, null, 2));
       } else {
         printUpdate(result, stdout);
+        if (checkSuite) {
+          printCheck(checkSuite, stdout);
+          if (checkSuite.status !== "pass") {
+            stdout("Run `silver what-now .` to see what to do next.");
+          }
+        }
       }
       return result.ok ? 0 : 1;
     }
@@ -1344,8 +1357,12 @@ export async function runCli(
     if (command === "migrate") {
       if (flags.help) { stdout(commandUsageBlock(command)); return 0; }
       const result = await migrateWorkspace({ root, apply: flags.apply });
+      // Same reasoning as update: applied can be true while ok is false (a
+      // migration with conflicts still aborts before committing), so both
+      // flags are required to know the real root actually changed.
+      const checkSuite = result.applied && result.ok ? await runCheckSuite({ root }) : null;
       if (flags.json) {
-        stdout(JSON.stringify(result, null, 2));
+        stdout(JSON.stringify({ ...result, checkSuite }, null, 2));
       } else if (!result.needed) {
         stdout(`Workspace is already current: ${result.root}`);
         printHorizonReport(result.horizon, stdout);
@@ -1362,6 +1379,12 @@ export async function runCli(
         printHorizonReport(result.horizon, stdout);
         if (!result.applied && result.ok) {
           stdout("Run `silver migrate --apply` after reviewing this plan.");
+        }
+        if (checkSuite) {
+          printCheck(checkSuite, stdout);
+          if (checkSuite.status !== "pass") {
+            stdout("Run `silver what-now .` to see what to do next.");
+          }
         }
       }
       return result.ok ? 0 : 1;

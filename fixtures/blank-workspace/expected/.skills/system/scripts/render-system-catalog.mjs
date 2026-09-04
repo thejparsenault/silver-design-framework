@@ -66,7 +66,7 @@ export async function renderSystemCatalog({
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Design system showcase</title>
 <link rel="stylesheet" href="${escapeHtml(stylesheetHref)}" /><style>
-.catalog { max-width: var(--ds-layout-content-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
+.catalog { max-width: var(--ds-layout-container-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
 table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: var(--ds-space-12); border-bottom: var(--ds-field-input-border-width) solid var(--ds-border-subtle); }
 </style></head><body data-scheme="light" data-mode="default"><main class="catalog" data-silver-target="system-catalog" data-source-id="design-system" data-source-revision="${escapeHtml(sourceRevision)}" data-renderer-version="system-catalog-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}"><h1>Design system showcase</h1><p>This workspace's own system, rendered from its current tokens. Regenerates whenever tokens or components change — safe to delete.</p><table><thead><tr><th>Token</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></main></body></html>`;
   await mutator.write(mutator.relative(outputPath), html);

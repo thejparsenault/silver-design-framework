@@ -217,6 +217,73 @@ test("pending checkpoints, failed checks, and stale state outrank new work", asy
   );
 });
 
+test("a failing check's findings under a known artifact path name the owning skill", async () => {
+  const root = await workspace();
+  await write(
+    root,
+    ".silver/results/checks/semantic-styles.json",
+    JSON.stringify({
+      checker: "semantic-styles",
+      status: "fail",
+      completed_at: "2026-07-28T17:45:00Z",
+      findings: [
+        {
+          schema: "silver/finding/v1",
+          checker: "semantic-styles",
+          rule: "semantic-style.unresolved-token",
+          severity: "error",
+          policy_profile: "prototype",
+          file: "prototypes/hour-grid/prototype.css",
+          message: "Custom property --ds-does-not-exist does not resolve to a current design-system token.",
+        },
+      ],
+    }),
+  );
+  const analysis = await inspectWorkspace(root, now);
+  const prototypeCandidate = analysis.recommendations.find(
+    ({ action }) => action === "prototype",
+  );
+  const designCheckCandidate = analysis.recommendations.find(
+    ({ action }) => action === "design-check",
+  );
+  assert.ok(prototypeCandidate, "expected a prototype-specific candidate");
+  assert.deepEqual(prototypeCandidate.evidence, [
+    "prototypes/hour-grid/prototype.css",
+  ]);
+  assert.ok(designCheckCandidate, "expected the generic design-check candidate to remain");
+});
+
+test("a failing check with findings that don't map to a known skill only produces the generic candidate", async () => {
+  const root = await workspace();
+  await write(
+    root,
+    ".silver/results/checks/authority.json",
+    JSON.stringify({
+      checker: "authority",
+      status: "fail",
+      completed_at: "2026-07-28T17:45:00Z",
+      findings: [
+        {
+          schema: "silver/finding/v1",
+          checker: "authority",
+          rule: "authority.binding-mismatch",
+          severity: "error",
+          policy_profile: "prototype",
+          file: "design/bindings/example.yaml",
+          message: "Binding authority disagrees with its linked source.",
+        },
+      ],
+    }),
+  );
+  const analysis = await inspectWorkspace(root, now);
+  assert.ok(
+    !analysis.recommendations.some(({ action }) =>
+      ["prototype", "visualize", "pitch", "implement"].includes(action),
+    ),
+  );
+  assert.ok(analysis.recommendations.some(({ action }) => action === "design-check"));
+});
+
 test("accepted ready results contribute their declared follow-up evidence", async () => {
   const root = await workspace();
   await write(

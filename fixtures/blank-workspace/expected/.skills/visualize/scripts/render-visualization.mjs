@@ -84,8 +84,8 @@ export async function buildVisualizationHtml({ root = process.cwd(), visualizati
   <title>${escapeHtml(visualization.title)}</title>
   <link rel="stylesheet" href="${escapeHtml(relativeCss)}" />
   <style>
-    .visualization-page { min-height: 100dvh; padding: var(--ds-space-24); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
-    .visualization-shell { max-width: var(--ds-layout-content-max-width); margin: 0 auto; }
+    .visualization-page { min-height: 100dvh; padding: var(--ds-space-24); background: var(--ds-surface-page); color: var(--ds-text-primary); }
+    .visualization-shell { max-width: var(--ds-layout-container-max-width); margin: 0 auto; }
     .visualization-meta, .visualization-label { color: var(--ds-text-muted); }
     .visualization-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); margin-top: var(--ds-space-24); }
     .visualization-card { padding: var(--ds-space-20); background: var(--ds-surface-raised); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); }

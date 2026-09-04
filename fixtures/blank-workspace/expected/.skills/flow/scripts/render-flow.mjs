@@ -87,8 +87,8 @@ export function renderFlowHtml(flow, options = {}) {
   <title>${escapeHtml(flow.title)}</title>
   <style>
     @layer view {
-      body { margin: var(--ds-space-0); font-family: var(--ds-font-family-sans); background: var(--ds-surface-canvas); color: var(--ds-text-primary); }
-      .flow-page { max-width: var(--ds-layout-content-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
+      body { margin: var(--ds-space-0); font-family: var(--ds-font-family-sans); background: var(--ds-surface-page); color: var(--ds-text-primary); }
+      .flow-page { max-width: var(--ds-layout-container-max-width); margin: var(--ds-space-0) auto; padding: var(--ds-space-32); }
       .flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ds-layout-card-min-width), 1fr)); gap: var(--ds-space-16); }
       .flow-node { padding: var(--ds-space-20); border: var(--ds-field-input-border-width) solid var(--ds-border-subtle); border-radius: var(--ds-radius-lg); background: var(--ds-surface-raised); }
       .kind { color: var(--ds-text-muted); text-transform: capitalize; }

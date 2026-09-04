@@ -12,7 +12,7 @@ packages:
     path: .skills/what-now
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:b01996c41f031776cb0b840eb38abb3f0d0e73bc642a5a88b5305536080928d2
+    integrity: sha256:407c57451e0d88dff6dc97cddedde042b4001683745c149b621093a0c478a5e4
   - id: brand
     type: skill
     path: .skills/brand
@@ -48,7 +48,7 @@ packages:
     path: .skills/system
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:d75eb76684b675ec1f01d6dfd098d704e55aae86251a172f2f9c8b7ba9b5fa22
+    integrity: sha256:a27612860cb22ccc604cc97c20c51a66643063afb9279f81898c519a8b0d728a
   - id: reconcile
     type: skill
     path: .skills/reconcile
@@ -102,7 +102,7 @@ packages:
     path: .skills/flow
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:0c1f18fab5b50f7113e5e81268a31d57e402ee1e88b05a5b9d27b3c1fe05a2d7
+    integrity: sha256:2fc7e62d3fbfbf17fcf857c28ecdcd449f9b0629ac1cb781df29f7ab1af9f5ad
   - id: component
     type: skill
     path: .skills/component
@@ -114,7 +114,7 @@ packages:
     path: .skills/visualize
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:0a053685c0b54572ee1cf788b80ec2d79ee10350fbc7edbbdb02cae3f037e970
+    integrity: sha256:406f357243e85bafa6bd257a76fdd1cd898d1f0cc4b83659a493119a598e623b
   - id: prototype
     type: skill
     path: .skills/prototype
@@ -132,13 +132,13 @@ packages:
     path: .skills/pitch
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:362c06b30bc477c7190d3718612965cecd1c81f176f45ff5a286c5f617439d94
+    integrity: sha256:9b258b4c6c096a93ef9726f3fce48805decbaa6a03d147c9b5b859844011baf0
   - id: implement
     type: skill
     path: .skills/implement
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:e1456c59582058eb99a76095685dd2d0f926133ad31991b0f6c6d2f5f7e66d74
+    integrity: sha256:89e9b3b2e0c8e008b1b258646b474a2883f3ea7390c6969f5d7cc9244f3d9574
   - id: measure
     type: skill
     path: .skills/measure
@@ -156,7 +156,7 @@ packages:
     path: .skills/design-check
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:b2878f4a205516603b38c5369dc9ca4bbd1f0a00550d402bbf626741dc4046da
+    integrity: sha256:da9e958d54648d8c864edc2198fc4f34a4e63f7e9b1d33707b34947b167b2d78
   - id: figma-console-mcp
     type: provider
     path: .silver/providers/figma-console-mcp
@@ -222,7 +222,7 @@ packages:
     path: design/system/tokens
     version: 0.7.0
     ownership: copied-and-owned
-    integrity: sha256:7c2a579bcf885402a66df23c2e10b2e39c88f86432b559ead42edb0ef78963fd
+    integrity: sha256:476a7a1e5568394225c343d3c8281261c2bedd19ec1586d34d436110b5eed4ed
 managed_files:
   - path: design/INDEX.md
     owner: framework-indexer

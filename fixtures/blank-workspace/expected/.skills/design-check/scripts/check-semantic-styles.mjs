@@ -13,8 +13,34 @@ import {
   findFiles,
   parseArguments,
   resolvePolicyProfile,
+  skillForArtifactPath,
   workspacePath,
 } from "./check-lib.mjs";
+
+const TOKENS_CSS_PATH = "design/system/expressions/html/styles/tokens.css";
+const DECLARED_TOKEN_PATTERN = /(--ds-[\w-]+)\s*:/g;
+const TOKEN_REFERENCE_PATTERN = /var\(\s*(--ds-[\w-]+)\s*\)/g;
+
+async function declaredTokenNames(root) {
+  let content;
+  try {
+    content = await readFile(path.resolve(root, TOKENS_CSS_PATH), "utf8");
+  } catch {
+    return null;
+  }
+  const names = new Set();
+  DECLARED_TOKEN_PATTERN.lastIndex = 0;
+  for (const match of content.matchAll(DECLARED_TOKEN_PATTERN)) {
+    names.add(match[1]);
+  }
+  return names;
+}
+
+function withReinvokeSuggestion(baseCorrection, file) {
+  const skill = skillForArtifactPath(file);
+  if (!skill) return baseCorrection;
+  return `${baseCorrection} Then re-invoke .silver/bin/silver invoke ${skill} <request.json> . to record a new revision.`;
+}
 
 const extensions = new Set([
   ".css",
@@ -107,6 +133,7 @@ export async function checkSemanticStyles(options = {}) {
   ).flat();
   const completed = [];
   const findings = [];
+  const declaredTokens = await declaredTokenNames(root);
 
   for (const absolute of files) {
     const file = workspacePath(root, absolute);
@@ -129,7 +156,31 @@ export async function checkSemanticStyles(options = {}) {
             column,
             message: definition.message,
             observedValue: observed,
-            suggestedCorrection: definition.correction,
+            suggestedCorrection: withReinvokeSuggestion(definition.correction, file),
+          }),
+        );
+      }
+    }
+    if (declaredTokens) {
+      TOKEN_REFERENCE_PATTERN.lastIndex = 0;
+      for (const match of content.matchAll(TOKEN_REFERENCE_PATTERN)) {
+        const observed = match[1];
+        if (declaredTokens.has(observed)) continue;
+        const { line, column } = location(content, match.index);
+        findings.push(
+          conformanceFinding({
+            checker,
+            rule: "semantic-style.unresolved-token",
+            policyProfile,
+            file,
+            line,
+            column,
+            message: `Custom property ${observed} does not resolve to a current design-system token.`,
+            observedValue: observed,
+            suggestedCorrection: withReinvokeSuggestion(
+              "Replace this reference with a token that still exists, or restore the token in design/system.",
+              file,
+            ),
           }),
         );
       }

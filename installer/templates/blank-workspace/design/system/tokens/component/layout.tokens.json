@@ -25,6 +25,13 @@
         "$description": "Maximum width for a focused, single-column form composition"
       }
     },
+    "card": {
+      "min-width": {
+        "$type": "dimension",
+        "$value": { "value": 240, "unit": "px" },
+        "$description": "Minimum width for a card in an auto-fit grid before it wraps"
+      }
+    },
     "screen-reader": {
       "size": {
         "$type": "dimension",

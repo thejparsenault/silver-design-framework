@@ -367,3 +367,22 @@ export function conformanceFinding({ policyProfile, message, ...rest }) {
     message: `${message} Informational under the "adoption" policy profile — semantic conformance is not required until this system's layer is mapped.`,
   });
 }
+
+const ARTIFACT_SKILL_PREFIXES = [
+  ["prototypes/", "prototype"],
+  ["design/work/visualizations/", "visualize"],
+  ["design/work/sketches/", "visualize"], // deprecated kind, same owning skill
+  ["presentations/", "pitch"],
+  ["production/", "implement"],
+];
+
+// Maps an artifact's workspace-relative path to the skill that owns
+// re-invoking it. Returns null for design/system/** and anything else with
+// no single owning skill — callers fall back to generic behavior on null.
+export function skillForArtifactPath(relativePath) {
+  const normalized = relativePath.split(path.sep).join("/");
+  for (const [prefix, skill] of ARTIFACT_SKILL_PREFIXES) {
+    if (normalized.startsWith(prefix)) return skill;
+  }
+  return null;
+}
