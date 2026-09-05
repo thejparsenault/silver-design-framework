@@ -487,7 +487,17 @@ test("a 0.8 workspace migrates to 0.9, preserving hand-edited reference-system a
   const context = parse(await readFile(contextPath, "utf8"));
   delete context.token_source;
   context.component_catalog.path = "reference-system/html-contracts";
+  // Before 0.9.2, provenance.schema.json still allowed (and every writer
+  // populated) a `sources` field later removed as a dead mirror of the
+  // invocation's own inputs. A design context or component expression
+  // written under that older schema still carries it.
+  context.provenance.sources = [];
   await writeFile(contextPath, stringify(context), "utf8");
+
+  const expressionPath = path.join(root, "design/contexts/default-expression.yaml");
+  const expression = parse(await readFile(expressionPath, "utf8"));
+  expression.provenance.sources = [];
+  await writeFile(expressionPath, stringify(expression), "utf8");
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.applied, false);
@@ -528,6 +538,12 @@ test("a 0.8 workspace migrates to 0.9, preserving hand-edited reference-system a
   const migratedContext = parse(await readFile(contextPath, "utf8"));
   assert.equal(migratedContext.token_source.path, "design/system/tokens.json");
   assert.equal(migratedContext.component_catalog.path, "design/system/components.json");
+  assert.equal("sources" in migratedContext.provenance, false);
+
+  const migratedExpressionProvenance = parse(await readFile(expressionPath, "utf8")).provenance;
+  assert.equal("sources" in migratedExpressionProvenance, false);
+
+  assert.equal((await doctorWorkspace({ root })).ok, true);
 
   const migratedLock = parse(await readFile(lockPath, "utf8"));
   assert.ok(migratedLock.packages.some(({ id }) => id === "design-system-tokens-seed"));

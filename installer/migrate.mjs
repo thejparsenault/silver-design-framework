@@ -324,6 +324,20 @@ async function designContextFiles(root) {
     .map((entry) => path.join(directory, entry.name));
 }
 
+// provenance.schema.json dropped `sources` as a dead field mirror (kept in
+// sync with its inputs at write time, then re-checked against those same
+// inputs — a duplicate that carried no information). An artifact written
+// before that still has it recorded and, unlike a historical result record,
+// a live canonical artifact is re-validated against the current schema on
+// every run, with no horizon protection — so a leftover field here fails
+// forever until stripped. Returns the patched provenance, or null when
+// there is nothing to strip.
+function stripStaleProvenanceSources(provenance) {
+  if (!provenance || !("sources" in provenance)) return null;
+  const { sources: _sources, ...rest } = provenance;
+  return rest;
+}
+
 // A design context authored before 0.9 has no `token_source` at all (the
 // concept did not exist) and, if it names a component catalog, points it at
 // the retired reference-system/html-contracts. Returns the patched context,
@@ -343,6 +357,11 @@ function migrateDesignContext(value) {
   }
   if (next.component_catalog?.path === "reference-system/html-contracts") {
     next.component_catalog = { ...next.component_catalog, path: "design/system/components.json" };
+    changed = true;
+  }
+  const strippedProvenance = stripStaleProvenanceSources(next.provenance);
+  if (strippedProvenance) {
+    next.provenance = strippedProvenance;
     changed = true;
   }
   return changed ? next : null;
@@ -365,6 +384,11 @@ function migrateComponentExpression(value) {
       ...next.component_catalog,
       path: "design/system/components.json",
     };
+    changed = true;
+  }
+  const strippedProvenance = stripStaleProvenanceSources(next.provenance);
+  if (strippedProvenance) {
+    next.provenance = strippedProvenance;
     changed = true;
   }
   return changed ? next : null;
