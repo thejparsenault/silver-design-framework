@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, symlink, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, symlink, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -1108,4 +1108,126 @@ test("theme writes a token-source under design/system/tokens instead of being re
     ),
   );
   assert.equal(tokens.color.brand.$value, "#2f5bff");
+
+  // Writing a token source used to leave the compiled tokens.json/tokens.css
+  // and the showcase stale until setup or migrate happened to run again — no
+  // skill invocation ever rebuilt them.
+  const compiledCss = await readFile(
+    path.join(workspace, "design/system/expressions/html/styles/tokens.css"),
+    "utf8",
+  );
+  assert.match(compiledCss, /--ds-color-brand:\s*#2f5bff/);
+  await access(path.join(workspace, "design/system/tokens.json"));
+  await access(path.join(workspace, "design/system/showcase.html"));
+  assert.ok(
+    result.observed_effects.some(
+      (effect) =>
+        effect.capability === "canonical-artifact" &&
+        effect.path === "design/system/expressions/html/styles/tokens.css",
+    ),
+    "the rebuilt stylesheet should be reported as an observed effect, not a silent mutation",
+  );
+});
+
+test("a component-catalog output can be written even though its schema has no internal kind field", async () => {
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "silver-invoke-system-catalog-"),
+  );
+  await seedCheckEvidence(workspace, [
+    "contract-integrity",
+    "semantic-styles",
+    "accessibility",
+  ]);
+  const outputReference = reference(
+    "component-catalog",
+    "component-catalog",
+    "r1",
+    "design/system/components.json",
+  );
+  const request = {
+    schema: "silver/skill-invocation/v2",
+    invocation_id: "system-catalog-test-1",
+    skill: { id: "system", version: "0.9.2" },
+    started_at: startedAt,
+    inputs: [],
+    provenance: provenance(),
+    outputs: [
+      {
+        reference: outputReference,
+        schema_name: "component-catalog.schema.json",
+        content: {
+          format: "json",
+          value: {
+            schema: "silver/component-catalog/v1",
+            id: "component-catalog",
+            revision: "r1",
+            components: {
+              button: {
+                summary: "Triggers an action.",
+                states: ["default"],
+                slots: ["label"],
+              },
+            },
+          },
+        },
+      },
+    ],
+    permission_layers: [
+      ...permissionLayers(
+        "canonical-artifact",
+        ["create", "write", "update"],
+        ["design/system/**"],
+      ),
+      ...permissionLayers(
+        "repository",
+        ["read", "inspect", "create", "write", "update"],
+        ["design/**", ".silver/**"],
+      ),
+    ],
+    available_providers: [],
+    approvals: [
+      {
+        capability: "canonical-artifact",
+        action: "create",
+        path: outputReference.path,
+        approved_by: "fixture-reviewer",
+      },
+    ],
+    relaxations: [],
+    checks: [
+      {
+        id: "contract-integrity",
+        status: "pass",
+        result_path: ".silver/results/checks/contract-integrity.json",
+      },
+      {
+        id: "semantic-styles",
+        status: "pass",
+        result_path: ".silver/results/checks/semantic-styles.json",
+      },
+      {
+        id: "accessibility",
+        status: "pass",
+        result_path: ".silver/results/checks/accessibility.json",
+      },
+    ],
+    unresolved_questions: [],
+    acceptance: {
+      status: "accepted",
+      reviewer: "fixture-reviewer",
+      recorded_at: completedAt,
+    },
+  };
+  const result = await invokeSkill({
+    root: workspace,
+    skillDirectory: path.join(root, "framework/skills/system"),
+    request,
+    completedAt,
+    runChecks: fixtureCheckRunner,
+  });
+  assert.equal(result.execution.status, "complete");
+  const catalog = JSON.parse(
+    await readFile(path.join(workspace, "design/system/components.json"), "utf8"),
+  );
+  assert.equal(catalog.components.button.summary, "Triggers an action.");
 });

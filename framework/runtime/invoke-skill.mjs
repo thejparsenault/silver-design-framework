@@ -24,6 +24,8 @@ import { assertManagedSkillIntegrity } from "./managed-integrity.mjs";
 import { discoverProviders } from "./providers.mjs";
 import { resolveReferenceCitations } from "./references.mjs";
 import { loadSkillResultIndex } from "./result-index.mjs";
+import { buildDesignSystemTokens } from "./tokens.mjs";
+import { renderSystemCatalog } from "../skills/system/scripts/render-system-catalog.mjs";
 import {
   matchesPathPattern,
   resolveCapabilities,
@@ -1075,7 +1077,13 @@ export async function invokeSkill({
         output.content.format === "json" &&
         output.content.value.id &&
         (output.content.value.id !== output.reference.id ||
-          output.content.value.kind !== output.reference.kind ||
+          // Most artifact schemas carry no internal `kind` field at all —
+          // they use `schema` as their sole type discriminator (component
+          // catalogs, design contexts, component expressions, presentation
+          // kits...). Only compare kind when the content actually declares
+          // one; otherwise this rejected every such output outright.
+          (output.content.value.kind !== undefined &&
+            output.content.value.kind !== output.reference.kind) ||
           output.content.value.revision !== output.reference.revision)
       ) {
         throw new Error(
@@ -1154,6 +1162,27 @@ export async function invokeSkill({
     await atomicWrite(workspaceRoot, output.absolute, output.content);
   }
 
+  // A token-source write leaves the compiled tokens.json/tokens.css and the
+  // showcase stale until setup or migrate happens to run again — no skill
+  // invocation ever rebuilt them, even though writing through theme or system
+  // is supposed to make the change render immediately. Runs before the checks,
+  // same reasoning as manifest sync below: semantic-styles reads tokens.css,
+  // so checking first would fail on staleness this invocation is about to fix.
+  let tokenBuildPaths = [];
+  if (
+    prepared.some(({ reference }) =>
+      reference.path.split(path.sep).join("/").startsWith("design/system/tokens/"),
+    )
+  ) {
+    await buildDesignSystemTokens({ root: workspaceRoot });
+    await renderSystemCatalog({ root: workspaceRoot, replace: true });
+    tokenBuildPaths = [
+      "design/system/tokens.json",
+      "design/system/expressions/html/styles/tokens.css",
+      "design/system/showcase.html",
+    ];
+  }
+
   // An artifact that now declares itself active makes the manifest that still
   // calls it draft wrong. Reconcile both, plus everything generated from them,
   // as part of this invocation rather than leaving a hand-edit and a repair run
@@ -1194,6 +1223,11 @@ export async function invokeSkill({
     ...prepared.map(({ effect }) => effect),
     ...manifestSync.paths.map((syncPath) => ({
       capability: "repository",
+      action: "update",
+      path: syncPath,
+    })),
+    ...tokenBuildPaths.map((syncPath) => ({
+      capability: "canonical-artifact",
       action: "update",
       path: syncPath,
     })),

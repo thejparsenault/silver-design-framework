@@ -198,7 +198,7 @@ packages:
     path: .silver/runtime
     version: 0.7.0
     ownership: framework-managed
-    integrity: sha256:b646b641d1058119ab7894becdc022dfa0fa222d0e1bfaf892798f839d2ec606
+    integrity: sha256:60d005fd146133b34142f2fdaf4709c9104deed7ad646b9136e7133ea02d42f6
   - id: default-design-loop
     type: playbook
     path: .silver/playbooks
