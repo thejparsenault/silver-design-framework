@@ -61,7 +61,7 @@ test("v2 schemas validate representative positive contracts", async () => {
     id: "kit",
     revision: "r1",
     updated: "2026-07-24T20:00:00Z",
-    source_revisions: [
+    sources: [
       { id: "brand", kind: "brand", revision: "r1", path: "design/brand.md" },
       { id: "voice", kind: "voice", revision: "r1", path: "design/voice.md" },
       { id: "system", kind: "design-system", revision: "r1", path: "design/system/README.md" }

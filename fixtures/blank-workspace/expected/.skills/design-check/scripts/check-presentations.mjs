@@ -19,7 +19,7 @@ export async function checkPresentations(options = {}) {
     if (kit.schema !== "silver/presentation-kit/v2") throw new Error("Kit does not declare the v2 contract.");
     const modes = new Set(kit.templates?.map(({ mode }) => mode));
     for (const mode of ["opportunity", "proposal", "outcome"]) if (!modes.has(mode)) throw new Error(`Kit is missing ${mode} template.`);
-    for (const source of kit.source_revisions ?? []) if (!(await exists(path.join(root, source.path)))) throw new Error(`Pinned kit source is unavailable: ${source.path}.`);
+    for (const source of kit.sources ?? []) if (!(await exists(path.join(root, source.path)))) throw new Error(`Pinned kit source is unavailable: ${source.path}.`);
     completed.push(requested[0]);
   } catch (error) {
     findings.push(finding({ checker, rule: "presentation.kit-invalid", file: requested[0], message: error.message }));

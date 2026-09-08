@@ -46,7 +46,7 @@ export function validatePortableArtifact(value) {
     }
   }
   if (value.schema === "silver/flow/v1") {
-    if (!Array.isArray(value.nodes) || !Array.isArray(value.transitions) || !Number.isInteger(value.revision)) {
+    if (!Array.isArray(value.nodes) || !Array.isArray(value.transitions) || typeof value.revision !== "string") {
       throw new Error("Reconciled flow is invalid.");
     }
   }

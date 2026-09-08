@@ -150,9 +150,9 @@ function invocation(recommendedNextActions) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "what-now-test",
-    skill: { id: "what-now", version: "0.9.2" },
+    skill: { id: "what-now", version: "0.10.0" },
     started_at: "2026-07-28T18:00:00Z",
-    inputs: [],
+    sources: [],
     outputs: [],
     permission_layers: [policy()],
     available_providers: [],
@@ -197,7 +197,7 @@ test("pending checkpoints, failed checks, and stale state outrank new work", asy
         },
       ],
       node_states: [
-        { node: "prototype", status: "stale", inputs: [], outputs: [] },
+        { node: "prototype", status: "stale", sources: [], outputs: [] },
       ],
       invalidations: [],
     }),
@@ -292,7 +292,7 @@ test("accepted ready results contribute their declared follow-up evidence", asyn
     JSON.stringify({
       schema: "silver/skill-result/v2",
       invocation_id: "specify-ready",
-      skill: { id: "specify", version: "0.9.2" },
+      skill: { id: "specify", version: "0.10.0" },
       completed_at: "2026-07-28T17:50:00Z",
       execution: { status: "complete" },
       acceptance: { status: "accepted" },
@@ -331,7 +331,7 @@ test("newer accepted exact results supersede older awaiting-review records", asy
       JSON.stringify({
         schema: "silver/skill-result/v2",
         invocation_id: id,
-        skill: { id: "specify", version: "0.9.2" },
+        skill: { id: "specify", version: "0.10.0" },
         completed_at: completedAt,
         outputs: [output],
         execution: { status: "complete" },
@@ -371,6 +371,81 @@ test("analysis does not mutate the workspace and refuses symlink traversal", asy
   assert.deepEqual(after, before);
   assert.equal(analysis.recommendations[0].action, "repair-workspace");
   assert.match(analysis.recommendations[0].reason, /unsafe to read/);
+});
+
+test("a map whose cited flow has since moved gets a named, non-blocking drift suggestion", async () => {
+  const root = await workspace();
+  await write(
+    root,
+    "design/flows/campaign-setup/flow.json",
+    JSON.stringify({
+      schema: "silver/flow/v1",
+      id: "campaign-setup",
+      title: "Campaign setup",
+      kind: "user-flow",
+      scope: "product",
+      status: "active",
+      revision: "r2",
+      purpose: "Explore the shortest setup path.",
+      actors: [{ id: "marketer", name: "Marketer" }],
+      desired_outcomes: ["Campaign ready for review"],
+      start_nodes: ["node-start"],
+      nodes: [
+        { id: "node-start", title: "Start", type: "screen", actor: "marketer" },
+        { id: "node-complete", title: "Complete", type: "outcome", actor: "marketer" },
+      ],
+      transitions: [
+        { id: "continue", from: "node-start", to: "node-complete", trigger: "Continue" },
+      ],
+      created: "2026-07-20",
+      updated: "2026-07-28",
+    }, null, 2),
+  );
+  const context = { id: "default-design-context", kind: "design-context", revision: "r1", path: "design/contexts/default.yaml" };
+  await write(
+    root,
+    "design/maps/onboarding/map.json",
+    JSON.stringify({
+      schema: "silver/map/v1",
+      id: "onboarding-map",
+      kind: "map",
+      revision: "r1",
+      title: "Onboarding journey",
+      map_type: "journey",
+      state: "current",
+      question: "How does a new member become productive?",
+      actors: [{ id: "member", title: "Member" }],
+      stages: [{ id: "start", title: "Start" }],
+      lanes: [{ id: "actions", title: "Actions", kind: "actor-action" }],
+      items: [{ id: "item-1", stage: "start", lane: "actions", title: "First action", actor: "member", evidence: [], assumption: true, pain_points: [], opportunities: [] }],
+      connections: [],
+      design_contexts: [context],
+      primary_context: context.id,
+      sources: [
+        { id: "campaign-setup", kind: "flow", revision: "r1", path: "design/flows/campaign-setup/flow.json" },
+      ],
+      provenance: {
+        schema: "silver/provenance/v1",
+        origin: "agent-assisted",
+        recorded_at: "2026-07-20T00:00:00Z",
+        contributors: [{ kind: "agent", id: "test-agent" }],
+        practice: { id: "my-practice", revision: "r1", methods: ["evidence-first"] },
+        guidance: [],
+        design_contexts: [context],
+        change: { reason: "Created from reviewed evidence." },
+        acceptance: "accepted",
+        external_bindings: [],
+      },
+    }, null, 2),
+  );
+
+  const analysis = await inspectWorkspace(root, now);
+  const mapCandidate = analysis.recommendations.find(({ action }) => action === "map");
+  assert.ok(mapCandidate, "expected a map recommendation naming the drifted source");
+  assert.match(mapCandidate.reason, /campaign-setup has moved to r2/);
+  assert.match(mapCandidate.reason, /onboarding-map's sources cited r1/);
+  assert.equal(mapCandidate.confidence, "medium");
+  assert.deepEqual(mapCandidate.evidence, ["design/maps/onboarding/map.json"]);
 });
 
 test("guarded invocation preserves ranked recommendations from the contract allowlist", async () => {
@@ -425,7 +500,7 @@ test("generated what-now package stays aligned with the catalog", async () => {
     ),
   );
   assert.equal(contract.id, "what-now");
-  assert.equal(contract.version, "0.9.2");
+  assert.equal(contract.version, "0.10.0");
   assert.deepEqual(contract.outputs, []);
   assert.equal(contract.completion.review.required, false);
   assert.equal(contract.completion.quality_criteria[0].evaluation, "deterministic");

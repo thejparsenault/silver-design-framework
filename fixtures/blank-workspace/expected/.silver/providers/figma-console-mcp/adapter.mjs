@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { assertV2 } from "../../runtime/contracts.mjs";
 import { firstModeValue, isAlias, resolveReferenceToVariableId } from "./tokens.mjs";
 
-export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.9.2" };
+export const FIGMA_ADAPTER = { id: "silver-figma", version: "0.10.0" };
 
 const digest = (value) =>
   `sha256:${createHash("sha256").update(`${JSON.stringify(value, null, 2)}\\n`).digest("hex")}`;
@@ -212,7 +212,7 @@ export async function createFigmaChangeSet({
         patch: targets.flow.schema === "silver/flow/v1"
           ? [
               { op: "add", path: "/extensions/silver.reconciliation", value: { figma_revision: currentSnapshot.revision, node: node.id } },
-              { op: "replace", path: "/revision", value: Number(targets.flow.revision.replace(/^r/, "")) + 1 },
+              ...patchFor(targets.flow, "figma_behavior_changes", [node]).filter(({ path }) => path === "/revision"),
             ]
           : patchFor(targets.flow, "figma_behavior_changes", [node]),
       }));

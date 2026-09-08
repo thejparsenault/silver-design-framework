@@ -354,7 +354,7 @@ export async function inspectSourceLink({
       path: mapping.external_path,
       format: mapping.format,
     },
-    adapter: { id: "silver-repository", version: "0.9.2" },
+    adapter: { id: "silver-repository", version: "0.10.0" },
     authority: source.authority,
     round_trip: mapping.format === "binary" ? "read-only" : "lossless",
     sync_policy: source.sync_policy,

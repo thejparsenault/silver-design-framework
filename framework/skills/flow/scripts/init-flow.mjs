@@ -92,7 +92,7 @@ export async function initFlow(options) {
     kind,
     scope,
     status: "draft",
-    revision: 1,
+    revision: "r1",
     purpose,
     actors: [{ id: actorId, name: actorName }],
     desired_outcomes: [outcome],

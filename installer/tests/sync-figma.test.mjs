@@ -47,7 +47,7 @@ test("public Figma sync imports captured changes and uses a two-pass external wr
     id: "public-figma",
     artifact: { id: artifact.id, kind: artifact.kind, revision: artifact.revision, path: artifactPath },
     counterpart: { type: "provider", provider: "figma-console-mcp", object_id: "file-public-sync", revision: "v1" },
-    adapter: { id: "silver-figma", version: "0.9.2" },
+    adapter: { id: "silver-figma", version: "0.10.0" },
     authority: "shared-review",
     round_trip: "partial",
     sync_policy: "notify",

@@ -11,7 +11,7 @@
 # the probe is for. Bind it deliberately and it will be used.
 schema: silver/provider/v1
 id: agent-native-browser
-version: 0.9.2
+version: 0.10.0
 kind: external
 target: browser
 variant: host-native

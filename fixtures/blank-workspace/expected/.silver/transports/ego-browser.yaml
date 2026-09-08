@@ -3,7 +3,7 @@
 # complete Silver's prepared browser-check plan and returns observations.
 schema: silver/provider/v1
 id: ego-browser
-version: 0.9.2
+version: 0.10.0
 kind: external
 target: browser
 variant: ego-task-space

@@ -12,7 +12,7 @@
     "status",
     "created_at",
     "updated_at",
-    "inputs",
+    "sources",
     "options",
     "current_nodes",
     "node_states",
@@ -55,7 +55,8 @@
       "type": "string",
       "format": "date-time"
     },
-    "inputs": {
+    "sources": {
+      "description": "What this run was started with. Distinct from a working-artifact's sources[]: this is not accumulated history, it reflects the latest state observed for this run.",
       "type": "array",
       "items": {
         "$ref": "common.schema.json#/$defs/artifactReference"
@@ -82,7 +83,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["node", "status", "inputs", "outputs"],
+        "required": ["node", "status", "sources", "outputs"],
         "properties": {
           "node": {
             "$ref": "common.schema.json#/$defs/id"
@@ -102,7 +103,8 @@
           "invocation_id": {
             "$ref": "common.schema.json#/$defs/id"
           },
-          "inputs": {
+          "sources": {
+            "description": "The latest artifacts this node observed when it last ran. Overwritten on each (re-)run, not accumulated — unlike a working-artifact's sources[], which is permanent history.",
             "type": "array",
             "items": {
               "$ref": "common.schema.json#/$defs/artifactReference"

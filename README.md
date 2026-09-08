@@ -30,15 +30,15 @@ start any of them until you choose.
 
 ## Install Silver
 
-Silver 0.9 is distributed first as signed and Apple-verified macOS installer
+Silver 0.10 is distributed first as signed and Apple-verified macOS installer
 packages. This is the recommended option for most designers: install it once
 and the `silver` command is ready in any local project folder. Choose the
-package for your Mac from the [Silver 0.9 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.2):
+package for your Mac from the [Silver 0.10 release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.10.0):
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon (M-series) | [`Silver-0.9.2-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/Silver-0.9.2-macos-arm64.pkg) |
-| Intel | [`Silver-0.9.2-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/Silver-0.9.2-macos-x64.pkg) |
+| Apple Silicon (M-series) | [`Silver-0.10.0-macos-arm64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.10.0/Silver-0.10.0-macos-arm64.pkg) |
+| Intel | [`Silver-0.10.0-macos-x64.pkg`](https://github.com/thejparsenault/silver-design-framework/releases/download/v0.10.0/Silver-0.10.0-macos-x64.pkg) |
 
 ### For you
 
@@ -72,9 +72,9 @@ the only route on Windows and Linux. All of these need Node.js 22 or later.
 
 | Method | Command | When to use it |
 | --- | --- | --- |
-| **Into one project** | `npm install silver-design-framework@0.9.2` | The project already has a `package.json`. The version is pinned in the repository, so everyone on the team gets the same one, and the workspace launcher finds this copy first. |
-| **On your machine** | `npm install -g silver-design-framework@0.9.2` | You want the `silver` command in any folder without using the macOS package. |
-| **Without installing anything** | `npx --yes --package silver-design-framework@0.9.2 silver setup inspect . --json` | Trying Silver once. Nothing is added to the project. |
+| **Into one project** | `npm install silver-design-framework@0.10.0` | The project already has a `package.json`. The version is pinned in the repository, so everyone on the team gets the same one, and the workspace launcher finds this copy first. |
+| **On your machine** | `npm install -g silver-design-framework@0.10.0` | You want the `silver` command in any folder without using the macOS package. |
+| **Without installing anything** | `npx --yes --package silver-design-framework@0.10.0 silver setup inspect . --json` | Trying Silver once. Nothing is added to the project. |
 
 After a project or global install, `npx silver setup inspect . --json` runs the
 installed copy.
@@ -82,8 +82,8 @@ installed copy.
 ### Copy this prompt into your agent
 
 ```text
-Use the Silver 0.9 release to inspect setup in this folder. Run:
-`npx --yes --package silver-design-framework@0.9.2 silver setup inspect . --json`
+Use the Silver 0.10 release to inspect setup in this folder. Run:
+`npx --yes --package silver-design-framework@0.10.0 silver setup inspect . --json`
 
 Show me the plan and questions before making any changes. Do not run
 `npx silver`; that is a different package.
@@ -94,7 +94,7 @@ account or token. Give the agent this exact command instead:
 
 ```sh
 npx --yes \
-  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.9.2/silver-design-framework-0.9.2.tgz \
+  https://github.com/thejparsenault/silver-design-framework/releases/download/v0.10.0/silver-design-framework-0.10.0.tgz \
   setup inspect . --json
 ```
 
@@ -285,7 +285,7 @@ silver repair .                         # rebuild disposable indexes/adapters
 
 ## Current support boundary
 
-Silver 0.9 has signed macOS packages for Apple Silicon and Intel Macs. Windows
+Silver 0.10 has signed macOS packages for Apple Silicon and Intel Macs. Windows
 and Linux can use the Node.js distribution, but native signed installers for
 those platforms are not part of this release.
 

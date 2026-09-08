@@ -43,8 +43,8 @@
       "enum": ["draft", "active", "validated", "archived"]
     },
     "revision": {
-      "type": "integer",
-      "minimum": 1
+      "type": "string",
+      "pattern": "^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
     },
     "purpose": {
       "type": "string",

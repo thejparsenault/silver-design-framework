@@ -1,6 +1,6 @@
 schema: silver/skill/v2
 id: practice-review
-version: 0.9.2
+version: 0.10.0
 summary: Propose a sanitized, reusable improvement to My Practice.
 context_budget: small
 inputs:

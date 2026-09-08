@@ -159,7 +159,7 @@ export async function scaffoldInvocation({ root, skillId, now = new Date() }) {
           },
         }
       : {}),
-    inputs: [],
+    sources: [],
     outputs,
     available_providers: [],
     approvals: [],

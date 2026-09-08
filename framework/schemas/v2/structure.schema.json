@@ -4,7 +4,7 @@
   "title": "Silver portable information architecture and object structure v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "kind", "revision", "title", "structure_type", "entities", "relationships", "design_contexts", "primary_context", "provenance"],
+  "required": ["schema", "id", "kind", "revision", "title", "structure_type", "entities", "relationships", "design_contexts", "primary_context", "provenance", "sources"],
   "properties": {
     "schema": { "const": "silver/structure/v1" },
     "id": { "$ref": "common.schema.json#/$defs/id" },
@@ -49,6 +49,11 @@
       "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
     },
     "primary_context": { "$ref": "common.schema.json#/$defs/id" },
-    "provenance": { "$ref": "provenance.schema.json" }
+    "provenance": { "$ref": "provenance.schema.json" },
+    "sources": {
+      "description": "Immutable historical provenance: the artifact revisions this revision was authored from. Never re-validated after this revision is written.",
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/artifactReference" }
+    }
   }
 }

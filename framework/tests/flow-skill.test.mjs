@@ -63,7 +63,7 @@ test("flow renderer creates a revision-stamped Mermaid view", async (t) => {
     date: "2026-07-23",
   });
   const rendered = renderFlow(flow);
-  assert.match(rendered, /Generated from campaign-setup revision 1/);
+  assert.match(rendered, /Generated from campaign-setup revision r1/);
   assert.match(rendered, /node_start -->\|"Continue"\| node_complete/);
 
   const result = await renderFlowFile(outputPath);

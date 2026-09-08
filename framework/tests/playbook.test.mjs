@@ -41,14 +41,14 @@ function ref(id, kind, revision, artifactPath) {
   return { id, kind, revision, path: artifactPath };
 }
 
-function result({ id, skill, inputs = [], outputs = [] }) {
+function result({ id, skill, sources = [], outputs = [] }) {
   return {
     schema: "silver/skill-result/v2",
     invocation_id: id,
-    skill: { id: skill, version: "0.9.2" },
+    skill: { id: skill, version: "0.10.0" },
     started_at: time.start,
     completed_at: time.start,
-    inputs,
+    sources,
     outputs,
     providers: [
       {
@@ -75,7 +75,7 @@ test("default playbook is a valid graph of pinned leaf skills with bounded auton
   await assertV2("playbook.schema.json", playbook);
   assertPlaybookGraph(playbook);
   assert.ok(
-    playbook.nodes.every(({ skill }) => skill.version === "0.9.2"),
+    playbook.nodes.every(({ skill }) => skill.version === "0.10.0"),
   );
   assert.deepEqual(playbook.autonomy.forbidden_effects, [
     "canonical-write",
@@ -100,7 +100,7 @@ test("playbook pauses for selection and resumes from serialized state", async ()
   let state = createPlaybookState({
     playbook,
     runId: "campaign-loop-1",
-    inputs: [evidence],
+    sources: [evidence],
     options: {
       "include-flow": false,
       "include-visualize": false,
@@ -126,7 +126,7 @@ test("playbook pauses for selection and resumes from serialized state", async ()
     result: result({
       id: "synthesize-run-1",
       skill: "synthesize",
-      inputs: [evidence],
+      sources: [evidence],
       outputs: [finding],
     }),
     now: time.synth,
@@ -146,7 +146,7 @@ test("playbook pauses for selection and resumes from serialized state", async ()
     result: result({
       id: "ideate-run-1",
       skill: "ideate",
-      inputs: [finding],
+      sources: [finding],
       outputs: [concept],
     }),
     now: time.ideate,
@@ -198,7 +198,7 @@ test("upstream revision changes preserve old references and visibly stale downst
   let state = createPlaybookState({
     playbook,
     runId: "campaign-loop-2",
-    inputs: [evidence],
+    sources: [evidence],
     options: {
       "include-flow": false,
       "include-visualize": false,
@@ -215,7 +215,7 @@ test("upstream revision changes preserve old references and visibly stale downst
     result: result({
       id: "synthesize-run-2",
       skill: "synthesize",
-      inputs: [evidence],
+      sources: [evidence],
       outputs: [finding],
     }),
     now: time.synth,
@@ -227,7 +227,7 @@ test("upstream revision changes preserve old references and visibly stale downst
     result: result({
       id: "ideate-run-2",
       skill: "ideate",
-      inputs: [finding],
+      sources: [finding],
       outputs: [concept],
     }),
     now: time.ideate,
@@ -247,7 +247,7 @@ test("upstream revision changes preserve old references and visibly stale downst
     result: result({
       id: "specify-run-1",
       skill: "specify",
-      inputs: [concept],
+      sources: [concept],
       outputs: [specification],
     }),
     now: time.specify,

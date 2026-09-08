@@ -187,7 +187,7 @@ function checksFor(contract, evidence) {
 async function invokeCase({
   root,
   id,
-  inputs = [],
+  sources = [],
   outputs = [],
   checkEvidence,
   providers = [],
@@ -217,9 +217,9 @@ async function invokeCase({
   }
   const base = {
     schema: "silver/skill-invocation/v2",
-    skill: { id, version: "0.9.2" },
+    skill: { id, version: "0.10.0" },
     started_at: time,
-    inputs,
+    sources,
     outputs: positiveOutputs,
     provenance: provenance(
       `Recorded by the ${id} release-fixture invocation.`,
@@ -231,7 +231,7 @@ async function invokeCase({
           "design/contexts/default.yaml",
         ),
       ],
-      provenanceSources ?? inputs,
+      provenanceSources ?? sources,
       provenanceMetadata,
     ),
     available_providers: providers,
@@ -340,7 +340,7 @@ function artifactOutputs() {
   const visualization = ref("guided-setup-visualization", "visualization", "r1", "design/work/visualizations/guided-setup/visualization.json");
   const visualizationRender = ref("guided-setup-visualization-render", "x-visualization-render", "r1", "design/work/visualizations/guided-setup/index.html");
   const component = ref("setup-card", "component-proposal", "r1", "design/work/components/setup-card.json");
-  const prototype = ref("guided-setup-prototype", "prototype", "r1", "prototypes/guided-setup/prototype.json");
+  const prototype = ref("guided-setup", "prototype", "r1", "prototypes/guided-setup/prototype.json");
   const observation = ref("setup-observation", "observation", "r1", "design/evidence/setup-observation.json");
   const evaluation = ref("setup-evaluation", "evaluation", "r1", "design/work/evaluations/setup-evaluation.json");
   const evaluationFinding = ref("setup-evaluation-finding", "finding", "r1", "design/work/findings/setup-evaluation-finding.json");
@@ -409,8 +409,8 @@ export async function runCompleteBlankScenario(options = {}) {
     ["theme", [ref("brand", "brand", "r2", "design/brand.md")], [textOutput(ref("design-system", "design-system", "r2", "design/system/README.md"), markdown("design-system", "design-system", "Design system", "Semantic modes: `light/default` and `dark/default`. Product code uses surface, text, border, action, focus, and feedback roles; no raw visual values."))]],
     ["system", [ref("design-system", "design-system", "r2", "design/system/README.md")], [textOutput(ref("design-system", "design-system", "r3", "design/system/README.md"), markdown("design-system", "design-system", "Design system", "Semantic modes: `light/default` and `dark/default`. Registries distinguish primitives, reusable patterns, and product compositions. Deprecations require affected-consumer migrations."))]],
   ];
-  for (const [id, inputs, outputs] of canonicalCases) {
-    results.set(id, await invokeCase({ root, id, inputs, outputs, checkEvidence }));
+  for (const [id, sources, outputs] of canonicalCases) {
+    results.set(id, await invokeCase({ root, id, sources, outputs, checkEvidence }));
   }
   await renderSystemCatalog({ root, replace: true });
 
@@ -418,7 +418,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("research", await invokeCase({
     root,
     id: "research",
-    inputs: [ref("product", "product", "r2", "design/product.md")],
+    sources: [ref("product", "product", "r2", "design/product.md")],
     outputs: [textOutput(research, JSON.stringify({
       schema: "silver/research-plan/v1",
       id: research.id,
@@ -435,7 +435,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("synthesize", await invokeCase({
     root,
     id: "synthesize",
-    inputs: [refs.seed],
+    sources: [refs.seed],
     outputs: [
       jsonOutput(refs.finding, working(refs.finding, "Setup consequence is unclear", {
         statement: "The current setup path does not explain what completion changes.",
@@ -455,7 +455,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("ideate", await invokeCase({
     root,
     id: "ideate",
-    inputs: [refs.frame, refs.finding],
+    sources: [refs.frame, refs.finding],
     outputs: [
       jsonOutput(refs.concept, working(refs.concept, "Guided setup summary", {
         summary: "Pair the final action with a compact review of what will be saved.",
@@ -480,7 +480,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("specify", await invokeCase({
     root,
     id: "specify",
-    inputs: [refs.concept, refs.hypothesis, refs.selection],
+    sources: [refs.concept, refs.hypothesis, refs.selection],
     outputs: [jsonOutput(refs.specification, working(refs.specification, "Guided setup specification", {
       outcomes: ["People can predict what finishing setup changes"],
       hypothesis: "A concise consequence summary improves prediction accuracy.",
@@ -505,7 +505,7 @@ export async function runCompleteBlankScenario(options = {}) {
     kind: "user",
     scope: "product",
     status: "active",
-    revision: 1,
+    revision: "r1",
     purpose: "Make setup completion predictable.",
     actors: [{ id: "owner", label: "Workspace owner", type: "user" }],
     desired_outcomes: ["Setup completed with understood consequences"],
@@ -525,7 +525,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("flow", await invokeCase({
     root,
     id: "flow",
-    inputs: [refs.specification],
+    sources: [refs.specification],
     outputs: [textOutput(refs.flow, JSON.stringify(flowValue, null, 2))],
     checkEvidence,
   }));
@@ -558,7 +558,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("visualize", await invokeCase({
     root,
     id: "visualize",
-    inputs: [refs.concept, refs.specification, refs.flow],
+    sources: [refs.concept, refs.specification, refs.flow],
     outputs: [
       jsonOutput(refs.visualization, visualizationValue, "working-artifact.schema.json"),
       textOutput(refs.visualizationRender, visualizationHtml),
@@ -569,7 +569,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("component", await invokeCase({
     root,
     id: "component",
-    inputs: [refs.specification, refs.flow, refs.visualization],
+    sources: [refs.specification, refs.flow, refs.visualization],
     outputs: [jsonOutput(refs.component, working(refs.component, "Setup review card", {
       classification: "product-composition",
       anatomy: ["Heading", "Consequence summary", "Status", "Primary action", "Secondary action"],
@@ -581,28 +581,16 @@ export async function runCompleteBlankScenario(options = {}) {
     checkEvidence,
   }));
 
-  const prototypeValue = {
-    id: refs.prototype.id,
-    kind: refs.prototype.kind,
-    revision: refs.prototype.revision,
-    question: "Can a person predict and complete setup?",
-    constraint_profile: "constrained",
-    sources: [refs.specification, refs.flow, refs.visualization],
-    accepted_findings: [],
-  };
-  results.set("prototype", await invokeCase({
-    root,
-    id: "prototype",
-    inputs: [refs.specification, refs.flow, refs.visualization],
-    outputs: [jsonOutput(refs.prototype, prototypeValue)],
-    checkEvidence,
-  }));
-  await initPrototype({
+  const { metadata: prototypeMetadata } = await initPrototype({
     root,
     id: "guided-setup",
     title: "Guided setup prototype",
-    question: prototypeValue.question,
-    flowRefs: [`${refs.flow.id}@1=${refs.flow.path}`],
+    question: "Can a person predict and complete setup?",
+    sources: [
+      `${refs.specification.id}:${refs.specification.kind}@${refs.specification.revision}=${refs.specification.path}`,
+      `${refs.flow.id}:flow@${refs.flow.revision}=${refs.flow.path}`,
+      `${refs.visualization.id}:${refs.visualization.kind}@${refs.visualization.revision}=${refs.visualization.path}`,
+    ],
     date: "2026-07-24",
   });
   await renderStaticPrototype({
@@ -614,7 +602,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("evaluate", await invokeCase({
     root,
     id: "evaluate",
-    inputs: [refs.visualization, refs.prototype, refs.specification],
+    sources: [refs.visualization, refs.prototype, refs.specification],
     outputs: [
       jsonOutput(refs.observation, working(refs.observation, "Expert walkthrough observation", {
         sanitized: true,
@@ -638,18 +626,19 @@ export async function runCompleteBlankScenario(options = {}) {
     checkEvidence,
   }));
 
+  // A prototype's revision is bumped in place on the same canonical file,
+  // exactly like every other artifact kind — there is no separate per-revision
+  // snapshot file.
   const refinedPrototype = ref(
     refs.prototype.id,
     "prototype",
     "r2",
-    "prototypes/guided-setup/revisions/r2.json",
+    refs.prototype.path,
   );
   const refinedValue = {
-    ...prototypeValue,
+    ...prototypeMetadata,
     revision: "r2",
-    sources: [...prototypeValue.sources, refs.evaluationFinding],
-    accepted_findings: [refs.evaluationFinding],
-    refinement: "Moved the saved-result sentence before the completion actions.",
+    sources: [...(prototypeMetadata.sources ?? []), refs.evaluationFinding],
   };
   const prototypeContract = parse(await readFile(path.join(root, ".skills/prototype/skill.yaml"), "utf8"));
   const refinedOutput = await prepareOutputs(root, [jsonOutput(refinedPrototype, refinedValue)]);
@@ -659,9 +648,9 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "prototype-refinement",
-      skill: { id: "prototype", version: "0.9.2" },
+      skill: { id: "prototype", version: "0.10.0" },
       started_at: time,
-      inputs: [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
+      sources: [refs.specification, refs.flow, refs.visualization, refs.evaluationFinding],
       outputs: refinedOutput,
       provenance: provenance(
         "Refined the prototype from an accepted evaluation finding.",
@@ -707,9 +696,9 @@ export async function runCompleteBlankScenario(options = {}) {
     request: {
       schema: "silver/skill-invocation/v2",
       invocation_id: "evaluate-refinement",
-      skill: { id: "evaluate", version: "0.9.2" },
+      skill: { id: "evaluate", version: "0.10.0" },
       started_at: time,
-      inputs: [refinedPrototype, refs.specification],
+      sources: [refinedPrototype, refs.specification],
       outputs: [secondOutput],
       provenance: provenance(
         "Re-evaluated the accepted prototype refinement.",
@@ -748,6 +737,7 @@ export async function runCompleteBlankScenario(options = {}) {
     id: refs.journeyMap.id,
     kind: refs.journeyMap.kind,
     revision: refs.journeyMap.revision,
+    sources: [designContext, refs.seed, refs.evaluation],
     title: "Guided setup journey",
     map_type: "journey",
     state: "current",
@@ -816,7 +806,7 @@ export async function runCompleteBlankScenario(options = {}) {
         object_id: "fixture-map-node",
         revision: "v1",
       },
-      adapter: { id: "silver-figma", version: "0.9.2" },
+      adapter: { id: "silver-figma", version: "0.10.0" },
       authority: "workspace-authoritative",
       round_trip: "read-only",
       sync_policy: "manual",
@@ -826,7 +816,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("map", await invokeCase({
     root,
     id: "map",
-    inputs: [designContext, refs.seed, refs.evaluation],
+    sources: [designContext, refs.seed, refs.evaluation],
     outputs: [
       jsonOutput(refs.journeyMap, mapArtifact, "map.schema.json"),
     ],
@@ -869,7 +859,7 @@ export async function runCompleteBlankScenario(options = {}) {
         object_id: "fixture-map-node",
         revision: "v1",
       },
-      adapter: { id: "silver-figma", version: "0.9.2" },
+      adapter: { id: "silver-figma", version: "0.10.0" },
       authority: "workspace-authoritative",
       round_trip: "read-only",
       sync_policy: "manual",
@@ -915,7 +905,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("practice-review", await invokeCase({
     root,
     id: "practice-review",
-    inputs: [refs.evaluation, refs.evaluationFinding],
+    sources: [refs.evaluation, refs.evaluationFinding],
     outputs: [
       jsonOutput(
         refs.practiceChange,
@@ -929,7 +919,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("pitch", await invokeCase({
     root,
     id: "pitch",
-    inputs: [refs.evaluationFinding, secondEvaluation, refs.specification, refinedPrototype, refs.journeyMap],
+    sources: [refs.evaluationFinding, secondEvaluation, refs.specification, refinedPrototype, refs.journeyMap],
     outputs: [
       jsonOutput(refs.changeCase, working(refs.changeCase, "Make setup completion predictable", {
         mode: "proposal",
@@ -963,7 +953,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("implement", await invokeCase({
     root,
     id: "implement",
-    inputs: [refs.specification, refs.flow, refs.component, secondEvaluation, refinedPrototype, refs.journeyMap],
+    sources: [refs.specification, refs.flow, refs.component, secondEvaluation, refinedPrototype, refs.journeyMap],
     outputs: [
       jsonOutput(refs.handoff, working(refs.handoff, "Guided setup implementation handoff", {
         recipe: "static-html",
@@ -1000,7 +990,7 @@ export async function runCompleteBlankScenario(options = {}) {
   results.set("design-check", await invokeCase({
     root,
     id: "design-check",
-    inputs: [refs.journeyMap, refs.handoff],
+    sources: [refs.journeyMap, refs.handoff],
     checkEvidence,
     provenanceSources: [refs.journeyMap, refs.handoff],
     provenanceMetadata: {
@@ -1046,7 +1036,7 @@ export async function runCompleteBlankScenario(options = {}) {
   let state = createPlaybookState({
     playbook,
     runId: "complete-loop",
-    inputs: [refs.seed],
+    sources: [refs.seed],
     options: { "include-flow": true, "include-visualize": true, "include-prototype": true, "include-pitch": true, "include-implementation": true },
     now: time,
   });
@@ -1121,7 +1111,7 @@ export async function runCompleteBlankScenario(options = {}) {
       practice: mapTrace.practice,
       design_contexts: mapTrace.design_contexts,
       sources: mapTrace.sources,
-      invocation_inputs: mapTrace.invocation_inputs,
+      invocation_sources: mapTrace.invocation_sources,
       external_bindings: mapTrace.provenance.external_bindings,
       implementation_checkpoint: implementationResult.git_checkpoint,
       qa_result: qaResult.invocation_id,

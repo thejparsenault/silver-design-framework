@@ -9,7 +9,7 @@
     "id",
     "revision",
     "updated",
-    "source_revisions",
+    "sources",
     "roles",
     "components",
     "templates"
@@ -19,7 +19,8 @@
     "id": { "$ref": "common.schema.json#/$defs/id" },
     "revision": { "$ref": "common.schema.json#/$defs/revision" },
     "updated": { "type": "string", "format": "date-time" },
-    "source_revisions": {
+    "sources": {
+      "description": "Immutable historical provenance: the artifact revisions this revision was authored from. Never re-validated after this revision is written.",
       "type": "array",
       "minItems": 3,
       "items": { "$ref": "common.schema.json#/$defs/artifactReference" }

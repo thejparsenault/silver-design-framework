@@ -5,7 +5,7 @@
   "kind": "user-flow",
   "scope": "product",
   "status": "active",
-  "revision": 2,
+  "revision": "r2",
   "purpose": "Describe the shortest understandable path to a reviewable campaign.",
   "actors": [
     {

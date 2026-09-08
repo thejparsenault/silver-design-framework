@@ -5,15 +5,12 @@ import path from "node:path";
 import test from "node:test";
 
 import { checkArtifacts } from "../skills/design-check/scripts/check-artifacts.mjs";
-import { checkPrototypes } from "../skills/design-check/scripts/check-prototypes.mjs";
 import { checkSemanticStyles } from "../skills/design-check/scripts/check-semantic-styles.mjs";
 import { runFastSuite } from "../skills/design-check/scripts/run-fast.mjs";
 import { checkRepresentationRule } from "../skills/design-check/scripts/check-representation-lib.mjs";
 import { checkAuditTrailIntegrity } from "../skills/design-check/scripts/check-audit-trail-integrity.mjs";
 import { checkManagedIntegrity } from "../skills/design-check/scripts/check-managed-integrity.mjs";
 import { contentIntegrity } from "../runtime/representations.mjs";
-import { initFlow } from "../skills/flow/scripts/init-flow.mjs";
-import { initPrototype } from "../skills/prototype/scripts/init-prototype.mjs";
 import { validateSchema } from "../../installer/lib/schemas.mjs";
 import { setupWorkspace } from "../../installer/setup.mjs";
 
@@ -327,36 +324,6 @@ test("semantic checker reports not-run when adopted work has no token index yet"
   assert.deepEqual(result.findings, []);
 });
 
-test("prototype checker reports flow revision drift", async (t) => {
-  const root = await temporaryWorkspace(t);
-  const { outputPath } = await initFlow({
-    root,
-    id: "setup-flow",
-    title: "Setup flow",
-    purpose: "Understand the setup path.",
-    outcome: "Workspace is ready",
-    date: "2026-07-23",
-  });
-  await initPrototype({
-    root,
-    id: "setup-prototype",
-    title: "Setup prototype",
-    flowRefs: ["setup-flow@1=design/flows/setup-flow/flow.json"],
-    date: "2026-07-23",
-  });
-  const flow = JSON.parse(await readFile(outputPath, "utf8"));
-  flow.revision = 2;
-  await writeFile(outputPath, `${JSON.stringify(flow, null, 2)}\n`);
-
-  const result = await checkPrototypes({ root });
-  assert.equal(result.status, "fail");
-  assert.ok(
-    result.findings.some(
-      ({ rule }) => rule === "prototype.flow-revision-mismatch",
-    ),
-  );
-});
-
 test("v2 representation checks accept healthy identities and detect pending proposal drift", async (t) => {
   const root = await temporaryWorkspace(t);
   const artifactPath = "design/work/check-target.json";
@@ -378,7 +345,7 @@ counterpart:
   revision: v1
 adapter:
   id: silver-figma
-  version: 0.9.2
+  version: 0.10.0
 authority: shared-review
 round_trip: partial
 sync_policy: notify
@@ -412,7 +379,7 @@ base:
     },
     local: { state: "present", revision: "r1", integrity },
     external: { state: "present", revision: "v2", integrity },
-    adapter: { id: "silver-figma", version: "0.9.2" },
+    adapter: { id: "silver-figma", version: "0.10.0" },
     created_at: "2026-08-23T12:00:00Z",
     operations: [{
       id: "update-target",

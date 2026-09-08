@@ -38,7 +38,7 @@ test("blank workspace completes the first-iteration vertical slice", async (t) =
     access(path.join(root, "design", "flows", "campaign-setup", "flow.json")),
   );
   await assert.rejects(
-    access(path.join(root, "prototypes", "campaign-setup", "prototype.yaml")),
+    access(path.join(root, "prototypes", "campaign-setup", "prototype.json")),
   );
 
   const brandPath = path.join(root, "design", "brand.md");
@@ -89,7 +89,7 @@ Confident, oriented, and in control.
     "flow.json",
   );
   const flow = JSON.parse(await readFile(flowPath, "utf8"));
-  flow.revision = 2;
+  flow.revision = "r2";
   flow.status = "active";
   flow.updated = "2026-07-23";
   flow.nodes[0].title = "Choose campaign objective";
@@ -137,8 +137,8 @@ Confident, oriented, and in control.
       "Campaign setup walkthrough",
       "--question",
       "Can a marketer understand what remains before review?",
-      "--flow-ref",
-      "campaign-setup@2=design/flows/campaign-setup/flow.json",
+      "--source",
+      "campaign-setup:flow@r2=design/flows/campaign-setup/flow.json",
       "--date",
       "2026-07-23",
     ],
@@ -196,6 +196,6 @@ Confident, oriented, and in control.
       path.join(root, "design", "flows", "campaign-setup", "flow.mmd"),
       "utf8",
     ),
-    /revision 2/,
+    /revision r2/,
   );
 });

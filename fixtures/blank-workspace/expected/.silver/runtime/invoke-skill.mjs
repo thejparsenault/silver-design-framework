@@ -87,6 +87,31 @@ async function currentInputIdentity(root, reference) {
   return null;
 }
 
+// Read-only counterpart to validateCurrentInputs: a `sources[]` citation is
+// never re-validated for staleness once written (it is a permanent fact
+// about the revision that made it), so this never blocks anything. It only
+// reports drift for advisory surfaces like what-now, which may want to
+// suggest revisiting a prototype/map/structure/working-artifact whose cited
+// source has since moved.
+export async function findDriftedSources(root, references) {
+  const drifted = [];
+  for (const reference of references) {
+    let observed;
+    try {
+      observed = await currentInputIdentity(root, reference);
+    } catch {
+      drifted.push({ reference, observedRevision: null, state: "missing" });
+      continue;
+    }
+    if (!observed || observed.revision === undefined) continue;
+    const observedRevision = normalizeRevision(observed.revision);
+    if (observedRevision !== reference.revision) {
+      drifted.push({ reference, observedRevision, state: "moved" });
+    }
+  }
+  return drifted;
+}
+
 async function validateCurrentInputs(root, references) {
   for (const reference of references) {
     const observed = await currentInputIdentity(root, reference);
@@ -120,16 +145,6 @@ function withoutLegacyAcceptance(provenance) {
   if (!provenance) return provenance;
   const { acceptance: _legacyAcceptance, ...current } = provenance;
   return current;
-}
-
-function referenceKey(reference) {
-  return JSON.stringify({
-    id: reference.id,
-    kind: reference.kind,
-    revision: reference.revision,
-    path: reference.path,
-    ...(reference.role ? { role: reference.role } : {}),
-  });
 }
 
 function assertInvocationInterval(request, completedAt) {
@@ -622,7 +637,7 @@ async function blockedResult({
     effect_findings: audit.findings,
     started_at: request.started_at,
     completed_at: completedAt,
-    inputs: request.inputs,
+    sources: request.sources,
     outputs,
     providers: providers.map((provider) => ({
       capability: provider.capability,
@@ -1007,7 +1022,7 @@ export async function invokeSkill({
   try {
     recommendations = recommendedNextActions(contract, request);
     for (const input of contract.inputs.filter(({ required }) => required)) {
-      if (!request.inputs.some(({ kind }) => kind === input.kind)) {
+      if (!request.sources.some(({ kind }) => kind === input.kind)) {
         throw new Error(`Missing required ${input.kind} input.`);
       }
     }
@@ -1022,10 +1037,10 @@ export async function invokeSkill({
       contract,
       completedAt,
     });
-    // Inputs are live dependencies while a skill is running. Validate them
+    // Sources are live dependencies while a skill is running. Validate them
     // before any output is prepared or written; once persisted on an artifact,
     // the same references become immutable historical provenance.
-    await validateCurrentInputs(workspaceRoot, request.inputs);
+    await validateCurrentInputs(workspaceRoot, request.sources);
     if (
       request.outputs.length > 0 &&
       (contract.id === "design-check" ||
@@ -1090,17 +1105,15 @@ export async function invokeSkill({
           `Output content identity does not match ${output.reference.id}@${output.reference.revision}.`,
         );
       }
-      if (output.content.value?.schema === "silver/working-artifact/v2") {
-        const expectedSources = request.inputs.map(referenceKey);
-        const actualSources = (output.content.value.sources ?? []).map(referenceKey);
-        if (
-          expectedSources.length !== actualSources.length ||
-          expectedSources.some((source, index) => source !== actualSources[index])
-        ) {
-          throw new Error(
-            `Working artifact ${output.reference.id}@${output.reference.revision} sources must exactly match the producing invocation inputs.`,
-          );
-        }
+      // A source citation is an immutable audit record, not a live claim —
+      // it never has to equal what this invocation declared as its own
+      // inputs (those answer a different question: what did this specific
+      // run touch, not what does this revision permanently say it drew
+      // from). What does matter is that each citation is accurate the
+      // moment it's recorded, so validate whatever ends up in `sources[]`
+      // the same way `request.sources` is already validated above.
+      if (Array.isArray(output.content.value?.sources)) {
+        await validateCurrentInputs(workspaceRoot, output.content.value.sources);
       }
       prepared.push({
         absolute,
@@ -1389,7 +1402,7 @@ export async function invokeSkill({
     ...(gitCheckpoint ? { git_checkpoint: gitCheckpoint } : {}),
     started_at: request.started_at,
     completed_at: completedAt,
-    inputs: request.inputs,
+    sources: request.sources,
     outputs: prepared.map(({ reference }) => reference),
     providers: capabilityResolution.providers.map((provider) => ({
       capability: provider.capability,

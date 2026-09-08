@@ -10,7 +10,7 @@
     "skill",
     "started_at",
     "completed_at",
-    "inputs",
+    "sources",
     "outputs",
     "providers",
     "representation_coverage",
@@ -82,7 +82,7 @@
       "type": "string",
       "format": "date-time"
     },
-    "inputs": {
+    "sources": {
       "type": "array",
       "items": {
         "$ref": "common.schema.json#/$defs/artifactReference"

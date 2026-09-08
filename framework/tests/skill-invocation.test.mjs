@@ -174,9 +174,9 @@ function synthesizeRequest(overrides = {}) {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "synthesize-test-1",
-    skill: { id: "synthesize", version: "0.9.2" },
+    skill: { id: "synthesize", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [
+    sources: [
       reference(
         "seed-feedback",
         "evidence",
@@ -314,9 +314,9 @@ test("legacy Silver ask rules no longer deny repository writes", async () => {
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "brand-test-1",
-    skill: { id: "brand", version: "0.9.2" },
+    skill: { id: "brand", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [],
+    sources: [],
     outputs: [
       {
         reference: reference(
@@ -510,9 +510,9 @@ test("visual durable output without a design-context pin is blocked", async () =
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "visualize-no-context",
-    skill: { id: "visualize", version: "0.9.2" },
+    skill: { id: "visualize", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [],
+    sources: [],
     outputs: [
       {
         reference: visualization,
@@ -621,7 +621,7 @@ test("state-bound evidence survives unchanged blocked preflight and rejects work
   const checkers = ["contract-integrity", "evidence-provenance"];
   await seedCheckEvidence(workspace, checkers);
   const request = synthesizeRequest({ invocation_id: "state-bound-unchanged" });
-  request.inputs = [];
+  request.sources = [];
 
   const unchanged = await invokeSkill({
     root: workspace,
@@ -650,7 +650,7 @@ test("checker substitution cannot reuse an otherwise current attestation", async
   const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
   await writeFile(evidencePath, `${JSON.stringify({ ...evidence, checker: "accessibility" }, null, 2)}\n`);
   const request = synthesizeRequest({ invocation_id: "checker-substitution" });
-  request.inputs = [];
+  request.sources = [];
   request.checks = request.checks.filter(({ id }) => id === "contract-integrity");
   const result = await invokeSkill({
     root: workspace,
@@ -746,9 +746,9 @@ function visualizationRequest({ output, render, renders, bindingStates = [], ext
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: `visualize-${render ? "rendered" : "external"}`,
-    skill: { id: "visualize", version: "0.9.2" },
+    skill: { id: "visualize", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [context],
+    sources: [context],
     outputs,
     provenance: envelope,
     permission_layers: permissionLayers(
@@ -793,7 +793,7 @@ test("visualization readiness accepts a guarded local render and rejects metadat
     format: "html",
     path: renderReference.path,
   }];
-  const html = '<main data-silver-target="visualization" data-source-id="my-day" data-source-revision="r1" data-renderer-version="0.9.2" data-assets-revision="r1" data-design-system-revision="r1"><h1>My Day</h1></main>';
+  const html = '<main data-silver-target="visualization" data-source-id="my-day" data-source-revision="r1" data-renderer-version="0.10.0" data-assets-revision="r1" data-design-system-revision="r1"><h1>My Day</h1></main>';
   const rendered = await invokeSkill({
     root: renderedRoot,
     skillDirectory: path.join(root, "framework/skills/visualize"),
@@ -849,7 +849,7 @@ test("a current captured Figma binding satisfies visualization review readiness"
       "  revision: figma-r7",
       "adapter:",
       "  id: figma-console-mcp",
-      "  version: 0.9.2",
+      "  version: 0.10.0",
       "authority: shared-review",
       "round_trip: partial",
       "sync_policy: manual",
@@ -909,9 +909,9 @@ test("registered portable production capability is selected but empty output sti
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "implement-test-1",
-    skill: { id: "implement", version: "0.9.2" },
+    skill: { id: "implement", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [
+    sources: [
       reference(
         "accepted-spec",
         "design-specification",
@@ -1026,9 +1026,9 @@ function themeTokenRequest() {
   return {
     schema: "silver/skill-invocation/v2",
     invocation_id: "theme-test-1",
-    skill: { id: "theme", version: "0.9.2" },
+    skill: { id: "theme", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [],
+    sources: [],
     provenance: provenance(),
     outputs: [
       {
@@ -1147,9 +1147,9 @@ test("a component-catalog output can be written even though its schema has no in
   const request = {
     schema: "silver/skill-invocation/v2",
     invocation_id: "system-catalog-test-1",
-    skill: { id: "system", version: "0.9.2" },
+    skill: { id: "system", version: "0.10.0" },
     started_at: startedAt,
-    inputs: [],
+    sources: [],
     provenance: provenance(),
     outputs: [
       {

@@ -125,7 +125,7 @@ test("a claimed pass with no evidence is not believed", async (t) => {
       invocation_id: "brand-fabricated-evidence",
       skill: { id: "brand", version: (await import("../version.mjs")).FRAMEWORK_VERSION },
       started_at: "2026-07-31T00:00:00Z",
-      inputs: [],
+      sources: [],
       outputs: [],
       available_providers: [],
       approvals: [],
@@ -500,7 +500,7 @@ test("an accepted invocation refuses before writing when Git cannot commit", asy
       invocation_id: "brand-locked-index",
       skill: { id: "brand", version: FRAMEWORK_VERSION },
       started_at: "2026-07-31T00:00:00Z",
-      inputs: [],
+      sources: [],
       outputs: [
         {
           reference: {

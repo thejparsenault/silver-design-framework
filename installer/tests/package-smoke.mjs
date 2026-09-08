@@ -17,7 +17,7 @@ import { parse, stringify } from "yaml";
 
 const run = promisify(execFile);
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const expectedVersion = "0.9.2";
+const expectedVersion = "0.10.0";
 
 async function command(executable, args, options = {}) {
   return run(executable, args, {
@@ -240,7 +240,7 @@ try {
         invocation_id: "packed-design-check",
         skill: { id: "design-check", version: expectedVersion },
         started_at: "2026-07-24T22:00:00Z",
-        inputs: [],
+        sources: [],
         outputs: [],
         permission_layers: [
           {
@@ -502,7 +502,7 @@ try {
     ).stdout,
   );
   assert.equal(completeResult.status, "pass");
-  assert.equal(completeResult.skills.length, 21);
+  assert.equal(completeResult.skills.length, 20);
   assert.deepEqual(
     Object.keys(completeResult.portable_baselines).sort(),
     [...completeResult.skills].sort(),

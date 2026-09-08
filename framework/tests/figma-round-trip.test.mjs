@@ -22,7 +22,7 @@ function binding(objectId = "file-aliasing", revision = "v1") {
     id: "aliasing-figma",
     artifact: { id: "aliasing-flow", kind: "flow", revision: "r1", path: "design/flows/aliasing/flow.json" },
     counterpart: { type: "provider", provider: "figma-console-mcp", object_id: objectId, revision },
-    adapter: { id: "silver-figma", version: "0.9.2" },
+    adapter: { id: "silver-figma", version: "0.10.0" },
     authority: "workspace-authoritative",
     round_trip: "partial",
     sync_policy: "notify",

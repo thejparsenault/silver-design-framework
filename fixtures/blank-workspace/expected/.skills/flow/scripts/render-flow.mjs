@@ -43,7 +43,7 @@ function transitionLabel(transition) {
 
 export function renderFlow(flow) {
   const lines = [
-    `%% silver-view source=${flow.id}@r${flow.revision} renderer=flow-mermaid@0.4.0 assets=project-assets@r1 design-system=design-system@r1`,
+    `%% silver-view source=${flow.id}@${flow.revision} renderer=flow-mermaid@0.4.0 assets=project-assets@r1 design-system=design-system@r1`,
     `%% Generated from ${flow.id} revision ${flow.revision}. Edit flow.json, then rerender.`,
     "flowchart TD",
   ];
@@ -97,7 +97,7 @@ export function renderFlowHtml(flow, options = {}) {
   <link rel="stylesheet" href="${escapeHtml(options.stylesheetHref)}" />
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="flow-page" data-silver-target="flow" data-source-id="${escapeHtml(flow.id)}" data-source-revision="r${escapeHtml(flow.revision)}" data-renderer-version="flow-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}">
+  <main class="flow-page" data-silver-target="flow" data-source-id="${escapeHtml(flow.id)}" data-source-revision="${escapeHtml(flow.revision)}" data-renderer-version="flow-html@0.4.0" data-assets-revision="${escapeHtml(assetRevision)}" data-design-system-revision="${escapeHtml(designSystemRevision)}">
     <p class="kind">${escapeHtml(flow.kind)}</p>
     <h1>${escapeHtml(flow.title)}</h1>
     <p>${escapeHtml(flow.purpose)}</p>

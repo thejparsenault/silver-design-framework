@@ -370,6 +370,8 @@ export function conformanceFinding({ policyProfile, message, ...rest }) {
 
 const ARTIFACT_SKILL_PREFIXES = [
   ["prototypes/", "prototype"],
+  ["design/maps/", "map"],
+  ["design/structures/", "structure"],
   ["design/work/visualizations/", "visualize"],
   ["design/work/sketches/", "visualize"], // deprecated kind, same owning skill
   ["presentations/", "pitch"],

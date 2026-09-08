@@ -194,7 +194,7 @@ test("trace joins the newest exact result and exposes duplicates and disagreemen
         schema: "silver/skill-result/v2",
         invocation_id: invocationId,
         completed_at: completedAt,
-        inputs: [{ id: "current-input", kind: "design-spec", revision: "r4", path: "design/specs/current.json" }],
+        sources: [{ id: "current-input", kind: "design-spec", revision: "r4", path: "design/specs/current.json" }],
         outputs: [output],
         provenance: {
           origin: "agent-assisted",
@@ -214,12 +214,12 @@ test("trace joins the newest exact result and exposes duplicates and disagreemen
   assert.equal(trace.acceptance, "rejected");
   assert.deepEqual(trace.artifact_source_pins, artifact.sources);
   assert.deepEqual(trace.sources, artifact.sources);
-  assert.deepEqual(trace.invocation_inputs, [{ id: "current-input", kind: "design-spec", revision: "r4", path: "design/specs/current.json" }]);
+  assert.deepEqual(trace.invocation_sources, [{ id: "current-input", kind: "design-spec", revision: "r4", path: "design/specs/current.json" }]);
   assert.equal(trace.joined_result.selection, "newest-completed-at-then-invocation-id");
   assert.equal(trace.checks.length, 1);
   assert.ok(trace.consistency_findings.some((message) => /2 skill results/.test(message)));
   assert.ok(trace.consistency_findings.some((message) => /Artifact status accepted/.test(message)));
   assert.match(renderTrace(trace), /Producing result: newer-result/);
   assert.match(renderTrace(trace), /Artifact source pins: 1/);
-  assert.match(renderTrace(trace), /Invocation inputs: 1/);
+  assert.match(renderTrace(trace), /Invocation sources: 1/);
 });

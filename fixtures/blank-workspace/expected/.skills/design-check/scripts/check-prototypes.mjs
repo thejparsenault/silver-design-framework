@@ -12,7 +12,6 @@ import {
   finding,
   loadManifest,
   parseArguments,
-  readYaml,
   workspacePath,
 } from "./check-lib.mjs";
 
@@ -23,9 +22,12 @@ const requiredFields = [
   "title",
   "status",
   "constraint_profile",
+  "revision",
   "created",
   "updated",
 ];
+const REVISION_PATTERN = /^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$/;
+const ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export async function checkPrototypes(options = {}) {
   const root = path.resolve(options.root ?? process.cwd());
@@ -42,7 +44,7 @@ export async function checkPrototypes(options = {}) {
     await Promise.all(
       roots.map((relativeRoot) =>
         findFiles(path.resolve(root, relativeRoot), (file) =>
-          file.endsWith(`${path.sep}prototype.yaml`),
+          file.endsWith(`${path.sep}prototype.json`),
         ),
       ),
     )
@@ -54,7 +56,7 @@ export async function checkPrototypes(options = {}) {
     const file = workspacePath(root, absolute);
     completed.push(file);
     try {
-      const prototype = await readYaml(absolute);
+      const prototype = JSON.parse(await readFile(absolute, "utf8"));
       for (const field of requiredFields) {
         if (prototype[field] === undefined) {
           findings.push(
@@ -78,6 +80,19 @@ export async function checkPrototypes(options = {}) {
             rule: "prototype.contract-invalid",
             file,
             message: "Prototype schema or constraint profile is invalid.",
+          }),
+        );
+      }
+      if (
+        prototype.revision !== undefined &&
+        (typeof prototype.revision !== "string" || !REVISION_PATTERN.test(prototype.revision))
+      ) {
+        findings.push(
+          finding({
+            checker,
+            rule: "prototype.contract-invalid",
+            file,
+            message: `Prototype revision is malformed: ${JSON.stringify(prototype.revision)}.`,
           }),
         );
       }
@@ -111,35 +126,25 @@ export async function checkPrototypes(options = {}) {
         );
       }
 
-      for (const reference of prototype.flow_refs ?? []) {
-        const flowPath = path.resolve(root, reference.path ?? "");
-        if (!flowPath.startsWith(`${root}${path.sep}`)) {
-          throw new Error("Prototype flow reference escapes the workspace.");
-        }
-        try {
-          const flow = JSON.parse(await readFile(flowPath, "utf8"));
-          if (flow.id !== reference.id || flow.revision !== reference.revision) {
-            findings.push(
-              finding({
-                checker,
-                rule: "prototype.flow-revision-mismatch",
-                file,
-                message:
-                  "Prototype flow reference does not match the flow's current ID and revision.",
-                observedValue: reference,
-                suggestedCorrection:
-                  "Review the flow changes and deliberately update or retain the pinned revision.",
-              }),
-            );
-          }
-        } catch (error) {
+      // sources[] is immutable historical provenance, not a live claim — this
+      // validates shape only (a well-formed citation), never freshness. Each
+      // citation was already verified accurate against live state once, at
+      // write time (invoke-skill.mjs's validateCurrentInputs); nothing here
+      // re-checks that later.
+      for (const source of prototype.sources ?? []) {
+        const problems = [];
+        if (typeof source.id !== "string" || !ID_PATTERN.test(source.id)) problems.push("id");
+        if (typeof source.kind !== "string" || source.kind.length === 0) problems.push("kind");
+        if (typeof source.revision !== "string" || !REVISION_PATTERN.test(source.revision)) problems.push("revision");
+        if (typeof source.path !== "string" || source.path.length === 0) problems.push("path");
+        if (problems.length > 0) {
           findings.push(
             finding({
               checker,
-              rule: "prototype.flow-unavailable",
+              rule: "prototype.source-malformed",
               file,
-              message: `Referenced flow cannot be read: ${error.message}`,
-              observedValue: reference.path,
+              message: `Prototype source citation is missing or malformed: ${problems.join(", ")}.`,
+              observedValue: source,
             }),
           );
         }

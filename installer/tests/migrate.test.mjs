@@ -142,7 +142,7 @@ test("migration preview is read-only and apply upgrades the installed shape with
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const lock = parse(await readFile(path.join(root, ".silver", "lock.yaml"), "utf8"));
   assert.equal(lock.schema, "silver/lock/v2");
-  assert.equal(lock.framework.version, "0.9.2");
+  assert.equal(lock.framework.version, "0.10.0");
   // 0.9 adds the silver-browser-local provider, the shipped transport
   // catalog, and W10's collect/structure/measure skills (visualize replaces
   // sketch rather than adding to the count).
@@ -224,7 +224,7 @@ test("0.4-to-current migration preserves an edited legacy policy as inactive and
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.4.0");
-  assert.equal(preview.toVersion, "0.9.2");
+  assert.equal(preview.toVersion, "0.10.0");
   assert.ok(
     preview.changes.some(({ action }) => action === "bootstrap-provenance"),
   );
@@ -350,7 +350,7 @@ test("0.2 v2 workspace previews, applies, and reruns the current migration idemp
   assert.equal(applied.applied, true);
   assert.equal(await readFile(brandPath, "utf8"), ownedBrand);
   const migrated = parse(await readFile(lockPath, "utf8"));
-  assert.equal(migrated.framework.version, "0.9.2");
+  assert.equal(migrated.framework.version, "0.10.0");
   assert.deepEqual(
     migrated.packages.filter(({ type }) => type === "provider").map(({ id }) => id).sort(),
     ["figma-console-mcp", "figma-official-mcp", "silver-browser-local", "silver-portable"],
@@ -410,7 +410,7 @@ test("a pre-adapter workspace gains the agent-host adapters without touching own
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.5.0");
-  assert.equal(preview.toVersion, "0.9.2");
+  assert.equal(preview.toVersion, "0.10.0");
   assert.equal(preview.applied, false);
   for (const expected of ["CLAUDE.md", ".claude/skills", ".silver/bin/silver"]) {
     assert.ok(
@@ -678,7 +678,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
   const lock = parse(await readFile(lockPath, "utf8"));
   lock.framework.version = "0.6.0";
   for (const installed of lock.packages) {
-    if (installed.version === "0.9.2") installed.version = "0.6.0";
+    if (installed.version === "0.10.0") installed.version = "0.6.0";
   }
   await writeFile(lockPath, stringify(lock), "utf8");
   // The published 0.6 expression had no stylesheet field and still referenced
@@ -700,7 +700,7 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
 
   const preview = await migrateWorkspace({ root });
   assert.equal(preview.fromVersion, "0.6.0");
-  assert.equal(preview.toVersion, "0.9.2");
+  assert.equal(preview.toVersion, "0.10.0");
   assert.equal(preview.applied, false);
   assert.ok(
     preview.changes.some(
@@ -728,6 +728,214 @@ test("a 0.6.0 workspace migrates to the current release idempotently", async (t)
     migratedExpression.component_catalog.path,
     "design/system/components.json",
   );
+  assert.equal((await migrateWorkspace({ root })).needed, false);
+});
+
+test("a pre-0.10 workspace migrates prototype, map, structure, presentation-kit, and flow provenance to sources[]", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-sources-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre 0.10 Product",
+    id: "pre-010-product",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.9.2";
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  // A pre-0.10 flow still uses an integer revision.
+  const flowPath = path.join(root, "design/flows/campaign-setup/flow.json");
+  await mkdir(path.dirname(flowPath), { recursive: true });
+  const flow = {
+    schema: "silver/flow/v1",
+    id: "campaign-setup",
+    title: "Campaign setup",
+    kind: "user-flow",
+    scope: "product",
+    status: "draft",
+    revision: 2,
+    purpose: "Explore the shortest setup path.",
+    actors: [{ id: "marketer", name: "Marketer" }],
+    desired_outcomes: ["Campaign ready for review"],
+    start_nodes: ["node-start"],
+    nodes: [
+      { id: "node-start", title: "Start", type: "screen", actor: "marketer" },
+      { id: "node-complete", title: "Complete", type: "outcome", actor: "marketer" },
+    ],
+    transitions: [
+      { id: "continue", from: "node-start", to: "node-complete", trigger: "Continue" },
+    ],
+    created: "2026-07-23",
+    updated: "2026-07-23",
+  };
+  await writeFile(flowPath, `${JSON.stringify(flow, null, 2)}\n`);
+
+  // A pre-0.10 prototype recorded citations as `flow_refs` in a YAML file,
+  // used `test_question` instead of `question`, and carried legacy fields no
+  // current skill script reads.
+  const prototypeDir = path.join(root, "prototypes/campaign-flow");
+  await mkdir(prototypeDir, { recursive: true });
+  const prototypeYamlPath = path.join(prototypeDir, "prototype.yaml");
+  await writeFile(
+    prototypeYamlPath,
+    stringify({
+      schema: "silver/prototype/v1",
+      id: "campaign-flow",
+      title: "Campaign flow",
+      status: "active",
+      constraint_profile: "constrained",
+      revision: "r2",
+      test_question: "Can a marketer understand the setup sequence?",
+      flow_refs: [
+        { id: "campaign-setup", path: "design/flows/campaign-setup/flow.json", revision: 2 },
+      ],
+      entrypoint: "index.html",
+      created: "2026-07-23",
+      updated: "2026-07-23",
+    }),
+  );
+
+  // A second pre-0.10 prototype, cited by the first via its old .yaml path —
+  // both are converted in the same pass, so the citation must follow the rename.
+  const secondPrototypeDir = path.join(root, "prototypes/onboarding-tour");
+  await mkdir(secondPrototypeDir, { recursive: true });
+  const secondPrototypeYamlPath = path.join(secondPrototypeDir, "prototype.yaml");
+  await writeFile(
+    secondPrototypeYamlPath,
+    stringify({
+      schema: "silver/prototype/v1",
+      id: "onboarding-tour",
+      title: "Onboarding tour",
+      status: "active",
+      constraint_profile: "constrained",
+      revision: "r1",
+      inputs: [
+        { id: "campaign-flow", kind: "prototype", path: "../campaign-flow/prototype.yaml", revision: "r2" },
+      ],
+      created: "2026-07-23",
+      updated: "2026-07-23",
+    }),
+  );
+
+  // Pre-0.10 maps and structures had no `sources[]` at all.
+  const context = { id: "default-design-context", kind: "design-context", revision: "r1", path: "design/contexts/default.yaml" };
+  const provenance = {
+    schema: "silver/provenance/v1",
+    origin: "agent-assisted",
+    recorded_at: "2026-07-23T00:00:00Z",
+    contributors: [{ kind: "agent", id: "test-agent" }],
+    practice: { id: "my-practice", revision: "r1", methods: ["evidence-first"] },
+    guidance: [],
+    design_contexts: [context],
+    change: { reason: "Created from reviewed evidence." },
+    acceptance: "accepted",
+    external_bindings: [],
+  };
+  const mapPath = path.join(root, "design/maps/onboarding/map.json");
+  await mkdir(path.dirname(mapPath), { recursive: true });
+  await writeFile(mapPath, `${JSON.stringify({
+    schema: "silver/map/v1",
+    id: "onboarding-map",
+    kind: "map",
+    revision: "r1",
+    title: "Onboarding journey",
+    map_type: "journey",
+    state: "current",
+    question: "How does a new member become productive?",
+    actors: [{ id: "member", title: "Member" }],
+    stages: [{ id: "start", title: "Start" }],
+    lanes: [{ id: "actions", title: "Actions", kind: "actor-action" }],
+    items: [{ id: "item-1", stage: "start", lane: "actions", title: "First action", actor: "member", evidence: [], assumption: true, pain_points: [], opportunities: [] }],
+    connections: [],
+    design_contexts: [context],
+    primary_context: context.id,
+    provenance,
+  }, null, 2)}\n`);
+
+  const structurePath = path.join(root, "design/structures/onboarding/structure.json");
+  await mkdir(path.dirname(structurePath), { recursive: true });
+  await writeFile(structurePath, `${JSON.stringify({
+    schema: "silver/structure/v1",
+    id: "onboarding-structure",
+    kind: "structure",
+    revision: "r1",
+    title: "Onboarding structure",
+    structure_type: "information-architecture",
+    entities: [{ id: "account", title: "Account" }],
+    relationships: [],
+    design_contexts: [context],
+    primary_context: context.id,
+    provenance,
+  }, null, 2)}\n`);
+
+  // Pre-0.10 presentation-kit used `source_revisions` instead of `sources`.
+  const kitPath = path.join(root, "design/presentation-kit/kit.json");
+  const kit = JSON.parse(await readFile(kitPath, "utf8"));
+  const { sources: kitSources, ...kitRest } = kit;
+  await writeFile(kitPath, `${JSON.stringify({ ...kitRest, source_revisions: kitSources }, null, 2)}\n`);
+
+  const preview = await migrateWorkspace({ root });
+  assert.equal(preview.applied, false);
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "convert-prototype" && changed === "prototypes/campaign-flow/prototype.yaml"));
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "convert-prototype" && changed === "prototypes/onboarding-tour/prototype.yaml"));
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "upgrade-map" && changed === "design/maps/onboarding/map.json"));
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "upgrade-structure" && changed === "design/structures/onboarding/structure.json"));
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "upgrade-presentation-kit" && changed === "design/presentation-kit/kit.json"));
+  assert.ok(preview.changes.some(({ action, path: changed }) => action === "upgrade-flow" && changed === "design/flows/campaign-setup/flow.json"));
+  // Preview never writes.
+  assert.equal(await exists(prototypeYamlPath), true);
+
+  const applied = await migrateWorkspace({ root, apply: true, date: "2026-07-23" });
+  assert.equal(applied.applied, true);
+
+  assert.equal(await exists(prototypeYamlPath), false);
+  const migratedPrototype = JSON.parse(
+    await readFile(path.join(prototypeDir, "prototype.json"), "utf8"),
+  );
+  assert.deepEqual(migratedPrototype.sources, [
+    { id: "campaign-setup", kind: "flow", revision: "r2", path: "design/flows/campaign-setup/flow.json" },
+  ]);
+  assert.equal(migratedPrototype.revision, "r2");
+  assert.equal(migratedPrototype.question, "Can a marketer understand the setup sequence?");
+  assert.equal(migratedPrototype.extensions["legacy.prototype-notes"].entrypoint, "index.html");
+  assert.equal("flow_refs" in migratedPrototype, false);
+  assert.equal("test_question" in migratedPrototype, false);
+  assert.equal("entrypoint" in migratedPrototype, false);
+  assert.equal(
+    (await validateSchema("prototype.schema.json", migratedPrototype)).valid,
+    true,
+  );
+
+  assert.equal(await exists(secondPrototypeYamlPath), false);
+  const migratedSecondPrototype = JSON.parse(
+    await readFile(path.join(secondPrototypeDir, "prototype.json"), "utf8"),
+  );
+  assert.deepEqual(migratedSecondPrototype.sources, [
+    { id: "campaign-flow", kind: "prototype", revision: "r2", path: "prototypes/campaign-flow/prototype.json" },
+  ]);
+  assert.equal(
+    (await validateSchema("prototype.schema.json", migratedSecondPrototype)).valid,
+    true,
+  );
+
+  const migratedMap = JSON.parse(await readFile(mapPath, "utf8"));
+  assert.deepEqual(migratedMap.sources, []);
+
+  const migratedStructure = JSON.parse(await readFile(structurePath, "utf8"));
+  assert.deepEqual(migratedStructure.sources, []);
+
+  const migratedKit = JSON.parse(await readFile(kitPath, "utf8"));
+  assert.deepEqual(migratedKit.sources, kitSources);
+  assert.equal("source_revisions" in migratedKit, false);
+
+  const migratedFlow = JSON.parse(await readFile(flowPath, "utf8"));
+  assert.equal(migratedFlow.revision, "r2");
+
+  assert.equal((await doctorWorkspace({ root })).ok, true);
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });
 

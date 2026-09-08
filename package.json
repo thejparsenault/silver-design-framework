@@ -1,6 +1,6 @@
 {
   "name": "silver-design-framework",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "description": "The Silver Design Framework for agent-supported product design across codebases and tools",
   "type": "module",
   "license": "MIT",

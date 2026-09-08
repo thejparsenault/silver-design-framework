@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { parse } from "yaml";
 
 import { invokeSkill } from "../framework/runtime/invoke-skill.mjs";
+import * as invokeSkillRuntime from "../framework/runtime/invoke-skill.mjs";
 import * as resultIndex from "../framework/runtime/result-index.mjs";
 import { payloadPath } from "./payload.mjs";
 
@@ -58,7 +59,7 @@ export async function runWhatNow({
   }
   const { inspectWorkspace } = await loadWhatNowRuntime();
   const analysis = await inspectWorkspace(workspaceRoot, observedAt, {
-    runtime: { resultIndex },
+    runtime: { resultIndex, invokeSkill: invokeSkillRuntime },
   });
   const timestamp = observedAt.toISOString();
   if (!record) {
@@ -73,7 +74,7 @@ export async function runWhatNow({
       invocation_id: invocationId(invocationPrefix, observedAt),
       skill: { id: contract.id, version: contract.version },
       started_at: timestamp,
-      inputs: [],
+      sources: [],
       outputs: [],
       available_providers: [],
       approvals: [],

@@ -12,10 +12,12 @@ import {
 // `yaml` inside its own package, and Node's resolver only walks upward, never
 // into a sibling package's private tree. This was the last copied script that
 // still imported one.
-import { parseYaml, skillForArtifactPath } from "../../design-check/scripts/check-lib.mjs";
+import { findFiles, parseYaml, skillForArtifactPath } from "../../design-check/scripts/check-lib.mjs";
 
 const SKILL_ARTIFACT_LABEL = {
   prototype: "prototypes",
+  map: "maps",
+  structure: "structures",
   visualize: "visualizations",
   pitch: "presentations",
   implement: "production",
@@ -74,6 +76,25 @@ async function loadResultIndexRuntime(injected) {
     }
   }
   throw new Error("The shared skill-result index is unavailable.");
+}
+
+let invokeSkillRuntime;
+async function loadInvokeSkillRuntime(injected) {
+  if (injected) return injected;
+  if (invokeSkillRuntime) return invokeSkillRuntime;
+  for (const specifier of [
+    "silver-design-framework/framework/runtime/invoke-skill.mjs",
+    "../../../.silver/runtime/invoke-skill.mjs",
+    "../../../runtime/invoke-skill.mjs",
+  ]) {
+    try {
+      invokeSkillRuntime = await import(specifier);
+      return invokeSkillRuntime;
+    } catch {
+      // Try the package, installed workspace, then source tree.
+    }
+  }
+  throw new Error("The shared skill-invocation runtime is unavailable.");
 }
 
 function parseArgs(args) {
@@ -495,6 +516,46 @@ async function inspectWorkspace(root, now, options = {}) {
         );
       }
     }
+  }
+
+  // sources[] is an immutable audit record — a citation is never re-checked
+  // for staleness once written, and design-check never fails on drift. But a
+  // designer may still want to know a cited source moved on, so this surfaces
+  // it as a plain suggestion, never a blocker.
+  const { findDriftedSources } = await loadInvokeSkillRuntime(options.runtime?.invokeSkill);
+  const driftCandidates = [
+    ...(await findFiles(path.join(root, "prototypes"), (file) => file.endsWith(`${path.sep}prototype.json`))),
+    ...(await findFiles(path.join(root, "design", "maps"), (file) => file.endsWith(".json"))),
+    ...(await findFiles(path.join(root, "design", "structures"), (file) => file.endsWith(".json"))),
+  ];
+  for (const absolute of driftCandidates) {
+    const relativePath = path.relative(path.resolve(root), absolute).split(path.sep).join("/");
+    const record = await readStructured(root, relativePath);
+    if (!record.value || !Array.isArray(record.value.sources) || record.value.sources.length === 0) {
+      continue;
+    }
+    if (record.value.schema === "silver/prototype/v1" && record.value.status !== "active") continue;
+    const drifted = await findDriftedSources(root, record.value.sources);
+    if (drifted.length === 0) continue;
+    const skill = skillForArtifactPath(relativePath);
+    if (!skill) continue;
+    const label = record.value.id ?? relativePath;
+    const descriptions = drifted.map(({ reference, observedRevision, state }) =>
+      state === "missing"
+        ? `${reference.id} is no longer at ${reference.path}`
+        : `${reference.id} has moved to ${observedRevision} since ${label}'s sources cited ${reference.revision}`,
+    );
+    addCandidate(
+      candidates,
+      candidate({
+        action: skill,
+        priority: 4,
+        reason: `${descriptions[0]}; run silver invoke ${skill} to record a new revision if this should be re-authored from the current source.`,
+        evidence: relativePath,
+        time: sourceTime(record.value, record.source),
+        confidence: "medium",
+      }),
+    );
   }
 
   const fallbacks = [

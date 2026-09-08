@@ -1,4 +1,4 @@
-export const FRAMEWORK_VERSION = "0.9.2";
+export const FRAMEWORK_VERSION = "0.10.0";
 export const LOCAL_SOURCE_REFERENCE = "silver-design-framework-local";
 export const PACKAGE_NAME = "silver-design-framework";
 

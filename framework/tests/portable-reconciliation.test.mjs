@@ -26,7 +26,7 @@ function binding(base = {
     id: "figma-tokens",
     artifact: { id: "tokens", kind: "token-source", revision: "r1", path: "design/work/tokens.json" },
     counterpart: { type: "provider", provider: "figma-console-mcp", object_id: "file-1", revision: "v1" },
-    adapter: { id: "silver-figma", version: "0.9.2" },
+    adapter: { id: "silver-figma", version: "0.10.0" },
     authority: "shared-review",
     round_trip: "partial",
     sync_policy: "notify",

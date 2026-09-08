@@ -76,10 +76,10 @@ cat >&2 <<'SILVER_NOT_INSTALLED'
 Silver is not installed on this machine, and this workspace needs it.
 
 Designers - download the installer for your Mac:
-  https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.9.2
+  https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.10.0
 
 Developers - from this folder, with Node.js 22 or newer:
-  npm install silver-design-framework@0.9.2
+  npm install silver-design-framework@0.10.0
 
 Either one makes the commands in this workspace work.
 SILVER_NOT_INSTALLED

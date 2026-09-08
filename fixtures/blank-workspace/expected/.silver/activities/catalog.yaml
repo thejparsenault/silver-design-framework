@@ -36,7 +36,7 @@
 # a named gap — an activity worth having a word for that no shipped provider
 # serves yet, softened by its `fallback` rather than left silent.
 schema: silver/activity-catalog/v1
-version: 0.9.2
+version: 0.10.0
 activities:
   # --- Design tool file operations ----------------------------------------
   # Raw reads/writes against a connected design tool's own file — as opposed

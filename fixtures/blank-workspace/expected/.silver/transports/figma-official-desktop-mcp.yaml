@@ -8,7 +8,7 @@
 # desktop app and want the agent to see exactly what is selected.
 schema: silver/provider/v1
 id: figma-official-desktop-mcp
-version: 0.9.2
+version: 0.10.0
 kind: external
 target: figma
 variant: official-desktop

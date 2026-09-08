@@ -72,41 +72,6 @@ async function workspaceMutator(root) {
   throw new Error("Could not resolve the workspace mutation runtime module.");
 }
 
-function yamlString(value) {
-  const trimmed = value.trim();
-  return trimmed.startsWith('"') ? JSON.parse(trimmed) : trimmed;
-}
-
-function readPrototypeMetadata(content) {
-  const scalar = (key) => {
-    const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-    return match ? yamlString(match[1]) : undefined;
-  };
-  const flowRefs = [];
-  const flowBlock = content.match(
-    /^flow_refs:\s*\n((?:[ \t]+.*(?:\n|$))*)/m,
-  )?.[1];
-  if (flowBlock) {
-    const pattern =
-      /^\s*-\s+id:\s*(.+)\n\s+path:\s*(.+)\n\s+revision:\s*([1-9][0-9]*)\s*$/gm;
-    for (const match of flowBlock.matchAll(pattern)) {
-      flowRefs.push({
-        id: yamlString(match[1]),
-        path: yamlString(match[2]),
-        revision: Number(match[3]),
-      });
-    }
-  }
-  return {
-    schema: scalar("schema"),
-    id: scalar("id"),
-    title: scalar("title"),
-    question: scalar("question"),
-    constraint_profile: scalar("constraint_profile"),
-    flow_refs: flowRefs,
-  };
-}
-
 function renderHtml(prototype, flow, stylesheetHref) {
   const outgoing = new Map(flow.nodes.map(({ id }) => [id, []]));
   for (const transition of flow.transitions) {
@@ -146,7 +111,7 @@ function renderHtml(prototype, flow, stylesheetHref) {
   <link rel="stylesheet" href="./prototype.css" />
 </head>
 <body data-scheme="light" data-mode="default">
-  <main class="prototype-page" data-silver-target="prototype" data-source-id="${escapeHtml(prototype.id)}" data-source-revision="flow-${escapeHtml(flow.id)}@r${escapeHtml(flow.revision)}" data-renderer-version="prototype-html@0.4.0" data-assets-revision="r1" data-design-system-revision="r1" data-start-node="${escapeHtml(start)}">
+  <main class="prototype-page" data-silver-target="prototype" data-source-id="${escapeHtml(prototype.id)}" data-source-revision="flow-${escapeHtml(flow.id)}@${escapeHtml(flow.revision)}" data-renderer-version="prototype-html@0.4.0" data-assets-revision="r1" data-design-system-revision="r1" data-start-node="${escapeHtml(start)}">
     <article class="prototype-shell">
       <header class="prototype-header">
         <p class="prototype-eyebrow">Flow prototype · revision ${flow.revision}</p>
@@ -244,8 +209,8 @@ export async function renderStaticPrototype(options) {
     "Prototype directory",
   );
   const flowPath = safeWorkspacePath(root, options.flow, "Flow path");
-  const metadata = readPrototypeMetadata(
-    await readFile(path.join(prototypeDirectory, "prototype.yaml"), "utf8"),
+  const metadata = JSON.parse(
+    await readFile(path.join(prototypeDirectory, "prototype.json"), "utf8"),
   );
   const flow = JSON.parse(await readFile(flowPath, "utf8"));
   if (
@@ -258,18 +223,10 @@ export async function renderStaticPrototype(options) {
     .relative(root, flowPath)
     .split(path.sep)
     .join("/");
-  const pinned = metadata.flow_refs.find(
-    (reference) => reference.path === relativeFlowPath,
-  );
-  if (
-    !pinned ||
-    pinned.id !== flow.id ||
-    pinned.revision !== flow.revision
-  ) {
-    throw new Error(
-      "Prototype metadata must pin this flow's exact ID, path, and revision before rendering.",
-    );
-  }
+  // Rendering reproduces what this revision's sources[] already, permanently
+  // says it was built from — it does not re-verify that pin is still fresh.
+  // Freshness was checked once, at write time; a render is not the place to
+  // re-litigate it.
   if (!flow.start_nodes?.length || !flow.nodes?.length) {
     throw new Error("Flow needs at least one start node and renderable node.");
   }

@@ -3,10 +3,12 @@ id: campaign-flow
 title: Campaign flow
 status: active
 constraint_profile: constrained
+revision: r1
 question: Can a marketer understand the setup sequence?
-flow_refs:
+sources:
   - id: campaign-setup
+    kind: flow
+    revision: r2
     path: design/flows/campaign-setup/flow.json
-    revision: 2
 created: 2026-07-23
 updated: 2026-07-23

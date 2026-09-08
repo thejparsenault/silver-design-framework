@@ -10,6 +10,7 @@
     "title",
     "status",
     "constraint_profile",
+    "revision",
     "created",
     "updated"
   ],
@@ -28,6 +29,10 @@
     "status": {
       "enum": ["draft", "active", "retained", "archived", "discarded", "promoted"]
     },
+    "revision": {
+      "description": "This prototype's own revision, in the same format every other artifact kind uses. Bumped in place on refinement; other artifacts cite it the same way they cite any other source.",
+      "$ref": "#/$defs/revision"
+    },
     "constraint_profile": {
       "enum": ["constrained", "partial", "suspended"]
     },
@@ -36,25 +41,11 @@
       "minLength": 1,
       "maxLength": 500
     },
-    "flow_refs": {
+    "sources": {
+      "description": "Immutable historical provenance: the artifact revisions this revision was authored from. Never re-validated after this revision is written; a citation here is a permanent fact about this revision, not a live claim.",
       "type": "array",
-      "uniqueItems": true,
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "path", "revision"],
-        "properties": {
-          "id": {
-            "$ref": "#/$defs/id"
-          },
-          "path": {
-            "$ref": "#/$defs/relativePath"
-          },
-          "revision": {
-            "type": "integer",
-            "minimum": 1
-          }
-        }
+        "$ref": "#/$defs/artifactReference"
       }
     },
     "suspended_constraints": {
@@ -150,6 +141,10 @@
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "maxLength": 80
     },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
+    },
     "relativePath": {
       "type": "string",
       "minLength": 1,
@@ -165,6 +160,18 @@
           }
         }
       ]
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "revision", "path"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string", "minLength": 1 },
+        "revision": { "$ref": "#/$defs/revision" },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "role": { "type": "string", "minLength": 1, "maxLength": 80 }
+      }
     },
     "extensions": {
       "type": "object",

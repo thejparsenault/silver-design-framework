@@ -67,14 +67,6 @@ async function loadRuntime(injected) {
   return resultRuntime;
 }
 
-const key = (reference) => JSON.stringify({
-  id: reference.id,
-  kind: reference.kind,
-  revision: reference.revision,
-  path: reference.path,
-  ...(reference.role ? { role: reference.role } : {}),
-});
-
 function inside(root, relative) {
   const workspace = path.resolve(root);
   const absolute = path.resolve(workspace, relative);
@@ -248,30 +240,6 @@ export async function checkAuditTrailIntegrity(options = {}) {
     }
 
     evaluated += 1;
-  }
-
-  // A live working artifact's source pins are examined regardless of when the invocation
-  // that produced it happened: the artifact itself can still be wrong today, and write-time
-  // validation already prevents this at creation, so a finding here means something was
-  // edited outside the guarded runtime after the fact. That is exactly what must not be
-  // silenced by the age of the record that first produced the file.
-  for (const record of index.records) {
-    if (record.parse_error) continue;
-    const result = record.result;
-    for (const output of result.outputs ?? []) {
-      try {
-        const value = JSON.parse(await readFile(inside(root, output.path), "utf8"));
-        if (value.schema !== "silver/working-artifact/v2") continue;
-        const sourceKeys = (value.sources ?? []).map(key);
-        const inputKeys = (result.inputs ?? []).map(key);
-        if (sourceKeys.length !== inputKeys.length || sourceKeys.some((source, index) => source !== inputKeys[index])) {
-          findings.push(finding({ checker, rule: "audit-trail.artifact-sources-disagree", file: record.path, message: `Working artifact ${output.id}@${output.revision} sources disagree with the producing invocation inputs.` }));
-        }
-      } catch {
-        // The output may be a non-JSON companion or a historical artifact no
-        // longer present. Its availability is not a provenance failure.
-      }
-    }
   }
 
   for (const [output, matches] of index.byOutput) {

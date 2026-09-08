@@ -14,7 +14,7 @@ Usage:
 
 Options:
   --question <question>
-  --flow-ref <reference>         Repeat; <id>@<revision>=<workspace-path>
+  --source <citation>            Repeat; <id>:<kind>@<revision>=<workspace-path>
   --prototype-root <path>       Defaults to prototypes
   --profile <profile>           constrained, partial, or suspended
   --suspend <constraint>        Repeat for a partial profile
@@ -33,10 +33,6 @@ async function workspaceMutator(root) {
   throw new Error("Could not resolve the workspace mutation runtime module.");
 }
 
-function quote(value) {
-  return JSON.stringify(value);
-}
-
 function safeRelativePath(value, label) {
   if (
     !value ||
@@ -49,52 +45,25 @@ function safeRelativePath(value, label) {
 }
 
 function renderMetadata(metadata) {
-  const lines = [
-    `schema: ${metadata.schema}`,
-    `id: ${metadata.id}`,
-    `title: ${quote(metadata.title)}`,
-    `status: ${metadata.status}`,
-    `constraint_profile: ${metadata.constraint_profile}`,
-  ];
-  if (metadata.question) {
-    lines.push(`question: ${quote(metadata.question)}`);
-  }
-  if (metadata.flow_refs) {
-    lines.push("flow_refs:");
-    for (const flow of metadata.flow_refs) {
-      lines.push(
-        `  - id: ${flow.id}`,
-        `    path: ${quote(flow.path)}`,
-        `    revision: ${flow.revision}`,
-      );
-    }
-  }
-  if (metadata.suspended_constraints) {
-    lines.push("suspended_constraints:");
-    for (const constraint of metadata.suspended_constraints) {
-      lines.push(`  - ${quote(constraint)}`);
-    }
-  }
-  if (metadata.override_reason) {
-    lines.push(`override_reason: ${quote(metadata.override_reason)}`);
-  }
-  lines.push(`created: ${metadata.created}`, `updated: ${metadata.updated}`, "");
-  return lines.join("\n");
+  return `${JSON.stringify(metadata, null, 2)}\n`;
 }
 
-function parseFlowRef(value) {
+const REVISION_PATTERN = "(?:r[1-9][0-9]*|sha256:[a-f0-9]{64}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)";
+
+function parseSource(value) {
   const match = value.match(
-    /^([a-z][a-z0-9]*(?:-[a-z0-9]+)*)@([1-9][0-9]*)=(.+)$/,
+    new RegExp(`^([a-z][a-z0-9]*(?:-[a-z0-9]+)*):([a-z][a-z0-9-]*)@(${REVISION_PATTERN})=(.+)$`),
   );
   if (!match) {
     throw new Error(
-      "Flow references must use <id>@<revision>=<workspace-path>.",
+      "Sources must use <id>:<kind>@<revision>=<workspace-path>.",
     );
   }
   return {
     id: match[1],
-    revision: Number(match[2]),
-    path: safeRelativePath(match[3], "Flow reference path"),
+    kind: match[2],
+    revision: match[3],
+    path: safeRelativePath(match[4], "Source path"),
   };
 }
 
@@ -108,7 +77,7 @@ export async function initPrototype(options) {
     "Prototype root",
   );
   const suspended = [...new Set(options.suspendedConstraints ?? [])];
-  const flowRefs = (options.flowRefs ?? []).map(parseFlowRef);
+  const sources = (options.sources ?? []).map(parseSource);
 
   if (!idPattern.test(id ?? "")) {
     throw new Error("Prototype id must be lowercase kebab-case.");
@@ -166,8 +135,9 @@ export async function initPrototype(options) {
     title,
     status: "active",
     constraint_profile: profile,
+    revision: "r1",
     ...(options.question?.trim() ? { question: options.question.trim() } : {}),
-    ...(flowRefs.length > 0 ? { flow_refs: flowRefs } : {}),
+    ...(sources.length > 0 ? { sources } : {}),
     ...(profile === "partial"
       ? { suspended_constraints: suspended }
       : profile === "suspended"
@@ -180,7 +150,7 @@ export async function initPrototype(options) {
     updated: date,
   };
   const mutator = await workspaceMutator(root);
-  const outputRelative = path.join(prototypeRoot, id, "prototype.yaml");
+  const outputRelative = path.join(prototypeRoot, id, "prototype.json");
   const notesRelative = path.join(prototypeRoot, id, "NOTES.md");
   await mutator.create(outputRelative, renderMetadata(metadata));
   await mutator.create(notesRelative, renderNotes(metadata, prototypeRoot));
@@ -189,7 +159,7 @@ export async function initPrototype(options) {
   return { metadata, outputPath, notesPath };
 }
 
-// A prototype exists to be looked at. `prototype.yaml` recorded `run: npm run
+// A prototype exists to be looked at. `prototype.json` recorded `run: npm run
 // dev` and nothing else — not the directory to run it from, whether to install
 // first, or what URL to open — so the person it was built for had to ask how to
 // see their own prototype. This is the human-facing half.
@@ -244,7 +214,7 @@ export function renderNotes(metadata, prototypeRoot) {
 }
 
 function parseArguments(args) {
-  const values = { flowRefs: [], suspendedConstraints: [] };
+  const values = { sources: [], suspendedConstraints: [] };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--confirm-override") {
@@ -258,8 +228,8 @@ function parseArguments(args) {
     const key = argument.slice(2);
     if (key === "suspend") {
       values.suspendedConstraints.push(next);
-    } else if (key === "flow-ref") {
-      values.flowRefs.push(next);
+    } else if (key === "source") {
+      values.sources.push(next);
     } else {
       const mapping = {
         date: "date",

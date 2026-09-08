@@ -52,6 +52,7 @@ import { checkResultPath } from "./checks.mjs";
 import { workspaceCheckStateDigest } from "../framework/runtime/check-attestation.mjs";
 import { loadSkillResultIndex } from "../framework/runtime/result-index.mjs";
 import { checkAuditTrailIntegrity } from "../framework/skills/design-check/scripts/check-audit-trail-integrity.mjs";
+import { findFiles } from "../framework/skills/design-check/scripts/check-lib.mjs";
 import { migrateLinkedSourceV1 } from "./sources.mjs";
 import { migrateRepresentationBindingV1 } from "./sync.mjs";
 
@@ -405,6 +406,142 @@ async function componentExpressionFiles(root, manifest) {
   return [...new Set(files)];
 }
 
+function normalizeMigratedRevision(value) {
+  return typeof value === "number" ? `r${value}` : value;
+}
+
+// Every prototype, map, structure, and presentation-kit citation now uses the
+// same `sources[]` shape as a working-artifact's provenance: an immutable
+// record of what a revision was authored from, never re-checked afterward.
+// Before 0.10 a prototype recorded citations as `flow_refs` (bare integer
+// revision, no `kind`) or an informal, unschemaed `inputs:` list — this folds
+// either into `sources[]`. Format conversion (YAML to JSON) happens
+// separately, in `migrateWorkspaceDirect`, because it is a rename-and-delete,
+// not an in-place rewrite.
+const LEGACY_PROTOTYPE_NOTE_FIELDS = ["entrypoint", "run", "states", "feedback", "source_visual"];
+
+// A pre-0.10 citation's `path` was relative to the prototype's own directory
+// (`../../design/brand.md`), unlike every other artifact kind's workspace-root-
+// relative `sources[].path`. Only a path that actually reaches upward needs
+// resolving — an already-root-relative path is left untouched.
+function normalizeMigratedSourcePath(rawPath, sourceDir) {
+  const resolved =
+    rawPath.startsWith("..") || rawPath.startsWith("./")
+      ? path.posix.normalize(path.posix.join(sourceDir, rawPath))
+      : rawPath;
+  // Every prototype in the workspace is being renamed prototype.yaml ->
+  // prototype.json in this same pass, so a citation of one is never stale —
+  // it just needs to follow the rename, the same way the file it points at did.
+  return resolved.endsWith("/prototype.yaml")
+    ? `${resolved.slice(0, -"prototype.yaml".length)}prototype.json`
+    : resolved;
+}
+
+function migratePrototypeValue(value, sourceDir) {
+  const legacyRefs = [
+    ...(Array.isArray(value.sources) ? value.sources : []),
+    ...(Array.isArray(value.flow_refs) ? value.flow_refs : []),
+    ...(Array.isArray(value.inputs) ? value.inputs : []),
+  ];
+  const {
+    flow_refs: _flowRefs,
+    inputs: _inputs,
+    sources: _sources,
+    test_question: testQuestion,
+    question,
+    revision,
+    ...rest
+  } = value;
+  const legacyNotes = Object.fromEntries(
+    LEGACY_PROTOTYPE_NOTE_FIELDS.filter((field) => field in rest).map((field) => [field, rest[field]]),
+  );
+  for (const field of LEGACY_PROTOTYPE_NOTE_FIELDS) delete rest[field];
+  return {
+    ...rest,
+    revision: normalizeMigratedRevision(revision) ?? "r1",
+    ...(question ?? testQuestion ? { question: question ?? testQuestion } : {}),
+    sources: legacyRefs.map((ref) => ({
+      id: ref.id,
+      kind: ref.kind ?? "flow",
+      revision: normalizeMigratedRevision(ref.revision),
+      path: normalizeMigratedSourcePath(ref.path, sourceDir),
+      ...(ref.role ? { role: ref.role } : {}),
+    })),
+    ...(Object.keys(legacyNotes).length > 0
+      ? { extensions: { ...rest.extensions, "legacy.prototype-notes": legacyNotes } }
+      : {}),
+  };
+}
+
+async function legacyPrototypeFiles(root, manifest) {
+  const roots = manifest.prototype_policy?.roots ?? ["prototypes"];
+  const files = (
+    await Promise.all(
+      roots.map((relativeRoot) =>
+        findFiles(path.resolve(root, relativeRoot), (file) =>
+          file.endsWith(`${path.sep}prototype.yaml`),
+        ),
+      ),
+    )
+  ).flat();
+  return [...new Set(files)];
+}
+
+// Maps and structures were already JSON; 0.10 only adds the `sources[]`
+// citation list they never had, additive and non-breaking.
+function migrateMapValue(value) {
+  if (Array.isArray(value.sources)) return null;
+  return { ...value, sources: [] };
+}
+
+function migrateStructureValue(value) {
+  if (Array.isArray(value.sources)) return null;
+  return { ...value, sources: [] };
+}
+
+async function mapFiles(root) {
+  return findFiles(path.join(root, "design", "maps"), (file) => file.endsWith(".json"));
+}
+
+async function structureFiles(root) {
+  return findFiles(path.join(root, "design", "structures"), (file) => file.endsWith(".json"));
+}
+
+// Pure rename: `source_revisions` and `sources` were always the same shape.
+function migratePresentationKitValue(value) {
+  if (!value.source_revisions) return null;
+  const { source_revisions: sourceRevisions, ...rest } = value;
+  return { ...rest, sources: sourceRevisions };
+}
+
+function presentationKitFile(root, manifest) {
+  const entry = manifest.artifacts.find(({ kind }) => kind === "presentation-kit");
+  return entry ? path.join(root, entry.path) : null;
+}
+
+// Flow was the one artifact kind still using an integer revision; every other
+// schema in the framework uses the shared `r${n}`/content-hash/semver string
+// format. Citations of a flow's old integer revision live inside a
+// prototype's `flow_refs`/`inputs`, already corrected by migratePrototypeValue.
+function migrateFlowValue(value) {
+  if (typeof value.revision !== "number") return null;
+  return { ...value, revision: `r${value.revision}` };
+}
+
+async function flowFiles(root, manifest) {
+  const roots = manifest.flow_policy?.roots ?? ["design/flows"];
+  const files = (
+    await Promise.all(
+      roots.map((relativeRoot) =>
+        findFiles(path.resolve(root, relativeRoot), (file) =>
+          file.endsWith(`${path.sep}flow.json`),
+        ),
+      ),
+    )
+  ).flat();
+  return [...new Set(files)];
+}
+
 function legacyPath(installed) {
   if (installed.path) return installed.path;
   if (installed.type === "skill") return `.skills/${installed.id}`;
@@ -661,6 +798,49 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       });
     }
   }
+  for (const file of await legacyPrototypeFiles(root, nextManifest)) {
+    changes.push({
+      action: "convert-prototype",
+      path: path.relative(root, file).split(path.sep).join("/"),
+    });
+  }
+  for (const file of await mapFiles(root)) {
+    const value = JSON.parse(await readUtf8(file));
+    if (migrateMapValue(value)) {
+      changes.push({
+        action: "upgrade-map",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
+  for (const file of await structureFiles(root)) {
+    const value = JSON.parse(await readUtf8(file));
+    if (migrateStructureValue(value)) {
+      changes.push({
+        action: "upgrade-structure",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
+  const kitPathForPlan = presentationKitFile(root, nextManifest);
+  if (kitPathForPlan && (await exists(kitPathForPlan))) {
+    const value = JSON.parse(await readUtf8(kitPathForPlan));
+    if (migratePresentationKitValue(value)) {
+      changes.push({
+        action: "upgrade-presentation-kit",
+        path: path.relative(root, kitPathForPlan).split(path.sep).join("/"),
+      });
+    }
+  }
+  for (const file of await flowFiles(root, nextManifest)) {
+    const value = JSON.parse(await readUtf8(file));
+    if (migrateFlowValue(value)) {
+      changes.push({
+        action: "upgrade-flow",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
   for (const relative of newProjectFiles) {
     if (await exists(path.join(root, relative))) {
       preserved.push({ path: relative, reason: "Existing project-owned file is preserved." });
@@ -860,6 +1040,65 @@ async function migrateWorkspaceDirect(options = {}) {
       );
     }
     await writeUtf8(file, stringify(patched));
+  }
+
+  for (const file of await legacyPrototypeFiles(root, plan.nextManifest)) {
+    const value = parse(await readUtf8(file));
+    const sourceDir = path.relative(root, path.dirname(file)).split(path.sep).join("/");
+    const migrated = migratePrototypeValue(value, sourceDir);
+    const prototypeValidation = await validateSchema("prototype.schema.json", migrated);
+    if (!prototypeValidation.valid) {
+      throw new Error(`Migrated prototype is invalid: ${prototypeValidation.errors.join("; ")}`);
+    }
+    const jsonPath = path.join(path.dirname(file), "prototype.json");
+    await writeNewFile(jsonPath, `${JSON.stringify(migrated, null, 2)}\n`);
+    await rm(file, { force: true });
+  }
+
+  for (const file of await mapFiles(root)) {
+    const value = JSON.parse(await readUtf8(file));
+    const patched = migrateMapValue(value);
+    if (!patched) continue;
+    const mapValidation = await validateSchema("v2/map.schema.json", patched);
+    if (!mapValidation.valid) {
+      throw new Error(`Migrated map is invalid: ${mapValidation.errors.join("; ")}`);
+    }
+    await writeUtf8(file, `${JSON.stringify(patched, null, 2)}\n`);
+  }
+
+  for (const file of await structureFiles(root)) {
+    const value = JSON.parse(await readUtf8(file));
+    const patched = migrateStructureValue(value);
+    if (!patched) continue;
+    const structureValidation = await validateSchema("v2/structure.schema.json", patched);
+    if (!structureValidation.valid) {
+      throw new Error(`Migrated structure is invalid: ${structureValidation.errors.join("; ")}`);
+    }
+    await writeUtf8(file, `${JSON.stringify(patched, null, 2)}\n`);
+  }
+
+  const kitPath = presentationKitFile(root, plan.nextManifest);
+  if (kitPath && (await exists(kitPath))) {
+    const value = JSON.parse(await readUtf8(kitPath));
+    const patched = migratePresentationKitValue(value);
+    if (patched) {
+      const kitValidation = await validateSchema("v2/presentation-kit.schema.json", patched);
+      if (!kitValidation.valid) {
+        throw new Error(`Migrated presentation kit is invalid: ${kitValidation.errors.join("; ")}`);
+      }
+      await writeUtf8(kitPath, `${JSON.stringify(patched, null, 2)}\n`);
+    }
+  }
+
+  for (const file of await flowFiles(root, plan.nextManifest)) {
+    const value = JSON.parse(await readUtf8(file));
+    const patched = migrateFlowValue(value);
+    if (!patched) continue;
+    const flowValidation = await validateSchema("flow.schema.json", patched);
+    if (!flowValidation.valid) {
+      throw new Error(`Migrated flow is invalid: ${flowValidation.errors.join("; ")}`);
+    }
+    await writeUtf8(file, `${JSON.stringify(patched, null, 2)}\n`);
   }
 
   const sourceRegistryPath = path.join(root, "design/sources/sources.yaml");

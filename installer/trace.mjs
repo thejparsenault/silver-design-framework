@@ -77,11 +77,11 @@ export async function traceArtifact({ root, target }) {
     const producingResult = isSkillResult ? value : joined.record?.result ?? null;
     const provenance = producingResult?.provenance ?? value.provenance ?? null;
     // An artifact's `sources` are immutable authorship provenance. A skill
-    // result's `inputs` instead describe the live invocation that produced a
+    // result's `sources` instead describe the live invocation that produced a
     // particular revision. They may happen to cite similar records, but they
     // answer different audit questions and must never be merged by a reader.
     const artifactSourcePins = isSkillResult ? [] : value.sources ?? [];
-    const invocationInputs = producingResult?.inputs ?? [];
+    const invocationSources = producingResult?.sources ?? [];
     const artifactStatus = isSkillResult ? null : value.status ?? null;
     const acceptance = producingResult?.acceptance?.status ?? "not-recorded";
     const consistencyFindings = [...joined.consistency_findings];
@@ -105,7 +105,7 @@ export async function traceArtifact({ root, target }) {
       },
       provenance,
       artifact_source_pins: artifactSourcePins,
-      invocation_inputs: invocationInputs,
+      invocation_sources: invocationSources,
       // Compatibility for trace consumers that historically read `sources`.
       // It intentionally aliases artifact provenance, never live inputs.
       sources: artifactSourcePins,
@@ -169,7 +169,7 @@ export async function traceArtifact({ root, target }) {
           design_contexts: [],
         },
         artifact_source_pins: [],
-        invocation_inputs: [],
+        invocation_sources: [],
         sources: [],
         practice: null,
         guidance: [],
@@ -209,7 +209,7 @@ export function renderTrace(trace) {
     `Linked source pins: ${trace.provenance ? trace.linked_sources?.length ?? 0 : "not recorded"}`,
     `Design contexts: ${trace.provenance ? trace.design_contexts.length : "not recorded"}`,
     ...renderPins("Artifact source pins", trace.artifact_source_pins),
-    ...renderPins("Invocation inputs", trace.invocation_inputs),
+    ...renderPins("Invocation sources", trace.invocation_sources),
   ];
   if (trace.producing_result) {
     lines.push(`Producing result: ${trace.producing_result.invocation_id}`);

@@ -176,7 +176,7 @@ export function assertPlaybookGraph(playbook) {
 export function createPlaybookState({
   playbook,
   runId,
-  inputs,
+  sources,
   options = {},
   now,
 }) {
@@ -192,7 +192,7 @@ export function createPlaybookState({
     status: "running",
     created_at: now,
     updated_at: now,
-    inputs: clone(inputs),
+    sources: clone(sources),
     options: clone(options),
     current_nodes: [...playbook.entry_nodes],
     node_states: playbook.nodes.map((node) => ({
@@ -202,7 +202,7 @@ export function createPlaybookState({
           ? "paused"
           : "ready"
         : "pending",
-      inputs: [],
+      sources: [],
       outputs: [],
     })),
     checkpoints: [],
@@ -266,7 +266,7 @@ export function recordNodeResult({
     );
   }
   observed.invocation_id = result.invocation_id;
-  observed.inputs = clone(result.inputs);
+  observed.sources = clone(result.sources);
   observed.outputs = clone(result.outputs);
   observed.status = ["complete", "complete-with-findings"].includes(
     result.execution.status,
@@ -362,7 +362,7 @@ export function resumePlaybook({
     if (observed.status !== "completed") {
       continue;
     }
-    for (const reference of [...observed.inputs, ...observed.outputs]) {
+    for (const reference of [...observed.sources, ...observed.outputs]) {
       const actual = current.get(reference.id);
       if (actual?.revision === reference.revision) {
         continue;

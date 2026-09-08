@@ -6,7 +6,7 @@
 # `doctor` tell you which of those is happening.
 schema: silver/provider/v1
 id: figma-console-mcp
-version: 0.9.2
+version: 0.10.0
 kind: external
 target: figma
 variant: console
@@ -123,5 +123,5 @@ operations:
     effect: preview-write
 adapter:
   id: silver-figma
-  version: 0.9.2
+  version: 0.10.0
   script: adapter.mjs

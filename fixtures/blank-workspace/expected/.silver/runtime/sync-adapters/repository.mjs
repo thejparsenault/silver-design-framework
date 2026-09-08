@@ -11,7 +11,7 @@ import {
 export const REPOSITORY_ADAPTER = Object.freeze({
   schema: "silver/representation-adapter/v1",
   id: "silver-repository",
-  version: "0.9.2",
+  version: "0.10.0",
   counterparts: ["linked-source"],
   formats: ["json", "yaml", "dtcg-json", "markdown-frontmatter", "text", "binary"],
   directions: ["external-to-local", "local-to-external"],
