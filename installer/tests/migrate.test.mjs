@@ -939,6 +939,102 @@ test("a pre-0.10 workspace migrates prototype, map, structure, presentation-kit,
   assert.equal((await migrateWorkspace({ root })).needed, false);
 });
 
+test("migration renames stored skill-result inputs to sources without gating on full schema conformance", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "silver-migrate-results-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await setupWorkspace({
+    root,
+    name: "Pre 0.10 Results",
+    id: "pre-010-results",
+    date: "2026-07-23",
+    sourceReference: "migration-fixture-source",
+  });
+  const lockPath = path.join(root, ".silver", "lock.yaml");
+  const lock = parse(await readFile(lockPath, "utf8"));
+  lock.framework.version = "0.9.2";
+  await writeFile(lockPath, stringify(lock), "utf8");
+
+  const resultsDir = path.join(root, ".silver/results/skills");
+  await mkdir(resultsDir, { recursive: true });
+
+  // A pre-0.10 result recorded citations as `inputs`.
+  const legacyResultPath = path.join(resultsDir, "specify-legacy.json");
+  await writeFile(
+    legacyResultPath,
+    `${JSON.stringify({
+      schema: "silver/skill-result/v2",
+      invocation_id: "specify-legacy",
+      skill: { id: "specify", version: "0.9.2" },
+      started_at: "2026-07-20T00:00:00Z",
+      completed_at: "2026-07-20T00:00:01Z",
+      inputs: [
+        { id: "seed", kind: "evidence", revision: "r1", path: "design/evidence/seed.json" },
+      ],
+      outputs: [],
+      providers: [],
+      degraded_capabilities: [],
+      execution: { status: "complete", summary: "Done." },
+      acceptance: { status: "accepted" },
+      readiness: [],
+      checks: [],
+      guardrails: [],
+      unresolved_questions: [],
+      recommended_next_actions: [],
+    }, null, 2)}\n`,
+  );
+
+  // A record already on the current shape is left untouched.
+  const currentResultPath = path.join(resultsDir, "specify-current.json");
+  const currentResultContent = `${JSON.stringify({
+    schema: "silver/skill-result/v2",
+    invocation_id: "specify-current",
+    skill: { id: "specify", version: "0.9.2" },
+    started_at: "2026-07-21T00:00:00Z",
+    completed_at: "2026-07-21T00:00:01Z",
+    sources: [],
+    outputs: [],
+    providers: [],
+    degraded_capabilities: [],
+    execution: { status: "complete", summary: "Done." },
+    acceptance: { status: "accepted" },
+    readiness: [],
+    checks: [],
+    guardrails: [],
+    unresolved_questions: [],
+    recommended_next_actions: [],
+  }, null, 2)}\n`;
+  await writeFile(currentResultPath, currentResultContent);
+
+  // A corrupted record must not abort the whole migration.
+  const corruptResultPath = path.join(resultsDir, "specify-corrupt.json");
+  await writeFile(corruptResultPath, "{not-json\n");
+
+  const preview = await migrateWorkspace({ root });
+  assert.ok(
+    preview.changes.some(
+      ({ action, path: changed }) =>
+        action === "upgrade-skill-result" && changed === ".silver/results/skills/specify-legacy.json",
+    ),
+  );
+  assert.ok(
+    !preview.changes.some(
+      ({ action, path: changed }) => action === "upgrade-skill-result" && changed.includes("specify-current"),
+    ),
+  );
+
+  const applied = await migrateWorkspace({ root, apply: true, date: "2026-07-23" });
+  assert.equal(applied.applied, true);
+
+  const migratedLegacy = JSON.parse(await readFile(legacyResultPath, "utf8"));
+  assert.deepEqual(migratedLegacy.sources, [
+    { id: "seed", kind: "evidence", revision: "r1", path: "design/evidence/seed.json" },
+  ]);
+  assert.equal("inputs" in migratedLegacy, false);
+
+  assert.equal(await readFile(currentResultPath, "utf8"), currentResultContent);
+  assert.equal(await readFile(corruptResultPath, "utf8"), "{not-json\n");
+});
+
 test("silver migrate --apply runs the fast suite automatically and reports it in JSON output", async (t) => {
   const root = await legacyWorkspace(t);
   const stdout = [];

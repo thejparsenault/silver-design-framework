@@ -542,6 +542,23 @@ async function flowFiles(root, manifest) {
   return [...new Set(files)];
 }
 
+// Stored skill-result history predates whatever schema currently applies.
+// Migration exists to translate a renamed field forward — it never gates on
+// full current-schema validity here, because that is exactly what the audit
+// enforcement horizon already does by design: a record from an older
+// vocabulary is immutable history, not a defect to force into conformance.
+function migrateSkillResultValue(value) {
+  if (!Array.isArray(value.inputs) || Array.isArray(value.sources)) return null;
+  const { inputs, ...rest } = value;
+  return { ...rest, sources: inputs };
+}
+
+async function skillResultFiles(root) {
+  return findFiles(path.join(root, ".silver", "results", "skills"), (file) =>
+    file.endsWith(".json"),
+  );
+}
+
 function legacyPath(installed) {
   if (installed.path) return installed.path;
   if (installed.type === "skill") return `.skills/${installed.id}`;
@@ -841,6 +858,20 @@ async function buildPlan({ root, manifest, lock, payloadRoot, version }) {
       });
     }
   }
+  for (const file of await skillResultFiles(root)) {
+    let value;
+    try {
+      value = JSON.parse(await readUtf8(file));
+    } catch {
+      continue;
+    }
+    if (migrateSkillResultValue(value)) {
+      changes.push({
+        action: "upgrade-skill-result",
+        path: path.relative(root, file).split(path.sep).join("/"),
+      });
+    }
+  }
   for (const relative of newProjectFiles) {
     if (await exists(path.join(root, relative))) {
       preserved.push({ path: relative, reason: "Existing project-owned file is preserved." });
@@ -1098,6 +1129,18 @@ async function migrateWorkspaceDirect(options = {}) {
     if (!flowValidation.valid) {
       throw new Error(`Migrated flow is invalid: ${flowValidation.errors.join("; ")}`);
     }
+    await writeUtf8(file, `${JSON.stringify(patched, null, 2)}\n`);
+  }
+
+  for (const file of await skillResultFiles(root)) {
+    let value;
+    try {
+      value = JSON.parse(await readUtf8(file));
+    } catch {
+      continue;
+    }
+    const patched = migrateSkillResultValue(value);
+    if (!patched) continue;
     await writeUtf8(file, `${JSON.stringify(patched, null, 2)}\n`);
   }
 
