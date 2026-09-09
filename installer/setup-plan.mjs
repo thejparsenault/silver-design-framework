@@ -139,7 +139,7 @@ export async function inspectSetup({
         {
           value: "separate",
           summary: "Create a separate design repository beside this one.",
-          effect: `Creates a new workspace at ${workspaceRoot} and initializes Git there. The product repository is not modified.`,
+          effect: `Creates a new workspace at ${workspaceRoot}. The product repository is not modified.`,
         },
       ],
       recommended: recommendation.recommended,
@@ -188,11 +188,19 @@ export async function inspectSetup({
   // Git matters before hundreds of files exist, not after. Accepted work is
   // checkpointed into local Git, so a workspace without a repository silently
   // loses that — and then every later skill repeats "not-a-repository" as if it
-  // were a new problem.
-  if (!topLevelEntries.includes(".git") && selected === "integrated") {
+  // were a new problem. This applies the same way regardless of topology: a
+  // separate workspace is usually a brand-new directory with no .git yet, and
+  // an integrated one may or may not already have one.
+  const workspaceHasGit =
+    selected === "integrated"
+      ? topLevelEntries.includes(".git")
+      : await exists(path.join(workspaceRoot, ".git"));
+  const needsGitDecision = !workspaceHasGit;
+  const initializeGitAnswer = answers.initialize_git ?? "yes";
+  if (needsGitDecision) {
     questions.push({
       id: "initialize_git",
-      question: `${productRoot} is not a Git repository. Initialize one before applying?`,
+      question: `${workspaceRoot} is not a Git repository. Initialize one before applying?`,
       explanation:
         "Silver checkpoints accepted design work into local Git. Without a repository, accepted invocations still write their files but record no checkpoint, and there is no rollback point.",
       options: [
@@ -257,7 +265,7 @@ export async function inspectSetup({
     ],
     git_actions: [
       ...(practiceAction === "create" ? ["init-practice", "commit-practice"] : []),
-      ...(selected === "separate" ? ["init-workspace"] : []),
+      ...(needsGitDecision && initializeGitAnswer !== "no" ? ["init-workspace"] : []),
       "checkpoint-workspace",
     ],
     external_actions: answers.create_github
@@ -378,7 +386,7 @@ export async function applySetupPlan({ plan, allowUnresolved = false }) {
       stringify(context),
     );
   }
-  if (plan.topology.selected === "separate") await initGit(plan.workspace.root);
+  if (plan.git_actions.includes("init-workspace")) await initGit(plan.workspace.root);
   const checkpointPaths = [
     "AGENTS.md",
     "design",

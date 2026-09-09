@@ -16,6 +16,7 @@ import { promisify } from "node:util";
 import { parse, stringify } from "yaml";
 
 import { createCheckpoint } from "../checkpoint.mjs";
+import { exists } from "../lib/files.mjs";
 import { resolveDesignContext } from "../context.mjs";
 import {
   applyGuidanceRepin,
@@ -154,6 +155,83 @@ test("setup inspection recommends topology and applies an approved plan idempote
   const status = (await git(root, ["status", "--porcelain"])).stdout;
   assert.match(status, /package\.json/);
   assert.doesNotMatch(status, /^A  package\.json$/m);
+});
+
+test("integrated and separate setups both honor the initialize_git answer instead of ignoring it", async (t) => {
+  const practiceRoot = await temporaryDirectory(t, "silver-practice-");
+
+  const declined = await temporaryDirectory(t, "silver-setup-no-git-");
+  const declinedPlan = await inspectSetup({
+    target: declined,
+    answers: {
+      name: "No Git Product",
+      id: "no-git-product",
+      team_shape: "solo",
+      topology: "integrated",
+      practice_root: practiceRoot,
+      initialize_git: "no",
+    },
+    now: fixedTime,
+  });
+  assert.ok(!declinedPlan.git_actions.includes("init-workspace"));
+  await applySetupPlan({ plan: declinedPlan });
+  assert.equal(await exists(path.join(declined, ".git")), false);
+
+  const accepted = await temporaryDirectory(t, "silver-setup-yes-git-");
+  const acceptedPlan = await inspectSetup({
+    target: accepted,
+    answers: {
+      name: "Yes Git Product",
+      id: "yes-git-product",
+      team_shape: "solo",
+      topology: "integrated",
+      practice_root: practiceRoot,
+      initialize_git: "yes",
+    },
+    now: fixedTime,
+  });
+  assert.ok(acceptedPlan.git_actions.includes("init-workspace"));
+  const applied = await applySetupPlan({ plan: acceptedPlan });
+  assert.equal(await exists(path.join(accepted, ".git")), true);
+  assert.equal(applied.checkpoint.status, "committed");
+
+  // The recommended default ("yes") applies when the question goes unanswered.
+  const defaulted = await temporaryDirectory(t, "silver-setup-default-git-");
+  const defaultedPlan = await inspectSetup({
+    target: defaulted,
+    answers: {
+      name: "Default Git Product",
+      id: "default-git-product",
+      team_shape: "solo",
+      topology: "integrated",
+      practice_root: practiceRoot,
+    },
+    now: fixedTime,
+  });
+  assert.ok(defaultedPlan.git_actions.includes("init-workspace"));
+  await applySetupPlan({ plan: defaultedPlan });
+  assert.equal(await exists(path.join(defaulted, ".git")), true);
+
+  // A separate topology asks (and defaults) the same way as an integrated one.
+  const separateProduct = await temporaryDirectory(t, "silver-setup-separate-product-");
+  const separateWorkspace = await temporaryDirectory(t, "silver-setup-separate-design-");
+  const separateDeclinedPlan = await inspectSetup({
+    target: separateProduct,
+    answers: {
+      name: "Separate No Git",
+      id: "separate-no-git",
+      team_shape: "split",
+      topology: "separate",
+      design_workspace_path: separateWorkspace,
+      practice_root: practiceRoot,
+      separate_disciplines: true,
+      initialize_git: "no",
+    },
+    now: fixedTime,
+  });
+  assert.ok(!separateDeclinedPlan.git_actions.includes("init-workspace"));
+  await applySetupPlan({ plan: separateDeclinedPlan });
+  assert.equal(await exists(path.join(separateWorkspace, ".git")), false);
 });
 
 test("My Practice changes are sanitized, revisioned, and isolated in local Git", async (t) => {

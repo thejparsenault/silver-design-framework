@@ -27,8 +27,10 @@ links, codebase bindings, design contexts, unresolved questions, and optional
 external actions. It does not silently choose.
 
 `setup apply` verifies the inspected state is unchanged, applies only the
-reviewed plan, and is idempotent. Separate setup initializes a local Git
-repository. Integrated setup installs in the selected repository. GitHub
+reviewed plan, and is idempotent. Either topology asks whether to initialize
+a local Git repository when the target workspace doesn't already have one,
+recommending yes. Integrated setup installs in the selected repository;
+separate setup creates a new one beside it. GitHub
 creation is never performed by Silver: the plan previews an external action
 that an agent may perform after confirmation, then Silver records and verifies
 the resulting remote.
