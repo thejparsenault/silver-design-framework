@@ -2,6 +2,32 @@
 
 ## Current Focus
 
+Silver `0.10.0`, **One Provenance Model**, was published on 2026-09-10. All 262
+serialized source tests and the exact-package smoke test passed. The 5,867-file,
+12,640,833-byte tarball is
+`sha256:0d2855120520c90d099fdd297db106f0465c322b67e13100bffc7c37057003fa`.
+It is published to npm as `silver-design-framework@0.10.0` and `latest`; clean,
+unauthenticated `npx` executions from both npm and the GitHub tarball report
+`0.10.0`.
+
+The public [`v0.10.0` GitHub release](https://github.com/thejparsenault/silver-design-framework/releases/tag/v0.10.0)
+contains the exact npm tarball and checksum plus both native macOS installers.
+The native executables carry hardened Developer ID Application signatures; the
+packages carry Developer ID Installer signatures with trusted timestamps,
+accepted Apple notarization tickets, and stapled tickets. Gatekeeper accepts
+both as Notarized Developer ID installers. Final package checksums are arm64
+`sha256:82525c2d0b41ba0ff84adcd448eb799822f69ddd37e8005708a0cfc7899e1f76`
+and x64
+`sha256:b1998f132bb659a4093930bee25df9b932a055b9ca6d0e5b83c1e4927c1cc4b2`.
+
+The release unifies citation-bearing artifact provenance on `sources[]`,
+renames run-observed inputs to `sources[]`, migrates prototype metadata to
+JSON, and removes false equality between immutable artifact citations and the
+latest sources observed by a run. Existing workspaces upgrade with
+`silver migrate . --apply`.
+
+Historical release preparation follows below.
+
 Silver `0.9.2`, **One Representation Model**, is prepared on the working tree
 as a corrective release. Live representation binding, state calculation,
 repository synchronization, captured-Figma synchronization, provider

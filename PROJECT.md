@@ -8,7 +8,7 @@ visibility: public
 github_user: thejparsenault
 context_budget: small
 created: 2026-06-05
-updated: 2026-09-03
+updated: 2026-09-10
 ---
 
 # The Silver Design Framework
@@ -63,29 +63,18 @@ build
 
 ## Latest Release
 
-Silver `0.9.2`, **One Representation Model**, is the current corrective release
-candidate. It completes 0.9's representation transition by making v2 the only
-live binding, change-set, result, provider-operation, and synchronization model;
-keeps historical v1 reconciliation evidence readable; repairs every fast
-representation check; and requires migration plus fresh inspection for live v1
-bindings. `docs/release-notes/v0.9.2.md` defines the patch boundary.
+Silver `0.10.0`, **One Provenance Model**, is the current public release. It
+unifies dependent-artifact citations on `sources[]`, gives playbook and skill
+runs one consistently named observed-source field, migrates prototype metadata
+to JSON, and removes false equality between immutable artifact citations and
+the latest inputs observed by an invocation. `docs/release-notes/v0.10.0.md`
+defines the release boundary and migration path.
 
-The prepared release includes unsigned native CLI and macOS package outputs for
-Apple Silicon and Intel. Signing, notarization, publication, and installation
-are explicit later actions.
-
-The corrective release also separates immutable artifact provenance from live
-skill inputs and makes visualization review surfaces representation-aware.
-Historical source revisions now remain truthful non-blocking evidence, while
-new invocations reject stale inputs before writing. Visualizations may declare
-guarded local files or verified external HTTPS views such as Figma, and their
-downstream handoffs wait for at least one verified review surface.
-
-Check evidence is now bound to a deterministic workspace snapshot rather than
-trusted by age or filename. Managed runtime integrity, invocation provenance,
-acceptance, trace joins, recommendations, and version-aware launchers share
-their write/read contracts, so a later reader cannot silently reinterpret what
-an earlier writer recorded.
+The release passed all 262 serialized source tests and the exact packed-package
+smoke test. Its npm tarball is published as
+`silver-design-framework@0.10.0`; the matching GitHub `v0.10.0` release carries
+the tarball, checksum, and Developer ID signed, Apple-notarized, stapled macOS
+installers for Apple Silicon and Intel.
 
 Silver `0.8.0`, **Tools That Are Actually There**, is the previous release.
 It made the provider-selection layer real: `resolveCapabilities` no longer

@@ -1,5 +1,13 @@
 # Tasks
 
+## Silver 0.10.0 — One Provenance Model
+
+- [x] Publish the complete 0.10.0 release
+  - type: release
+  - priority: high
+  - context: medium
+  - notes: Complete on 2026-09-10. All 262 source tests and the exact-package smoke test passed. Both native executables and installers are Developer ID signed; both installers are Apple-notarized, stapled, and accepted by Gatekeeper. The five-asset GitHub v0.10.0 release is public, silver-design-framework@0.10.0 is npm latest, and clean unauthenticated executions from both channels report 0.10.0.
+
 ## Silver 0.9.2 — One Representation Model
 
 - [x] Consolidate live representation and reconciliation behavior on v2
